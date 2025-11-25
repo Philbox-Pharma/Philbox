@@ -5,12 +5,13 @@ import { ROUTES } from "../../../../../constants/global.routes.constants.js";
 import { upload } from "../../../../../middlewares/multer.middleware.js";
 import { validate } from "../../../../../validator/joiValidate.middleware.js";
 import { createBranchAdminSchema, updateBranchAdminSchema } from "../../../../../dto/branchAdmin.dto.js";
+import { paginationSchema } from "../../../../../dto/pagination.dto.js";
 
 const router = express.Router();
 
 // 🟩 CREATE Branch Admin
 router.post(
-  `${ROUTES.SUPER_ADMIN}/branch-admin`,
+  `/branch-admin`,
   authenticate,
   isSuperAdmin,
   upload.single("profile_img"),
@@ -18,15 +19,22 @@ router.post(
   createBranchAdmin
 );
 
-// 🟦 READ All Branch Admins
-router.get(`${ROUTES.SUPER_ADMIN}/branch-admin`, authenticate, isSuperAdmin, listAdmins);
+// 🟦 READ All Branch Admins (with pagination)
+router.get(
+  `/branch-admin`,
+  authenticate,
+  isSuperAdmin,
+  validate(paginationSchema, "query"),
+  listAdmins
+);
+
 
 // 🟨 READ Single Branch Admin
-router.get(`${ROUTES.SUPER_ADMIN}/branch-admin/search`, authenticate, isSuperAdmin, searchBranchAdmin);
+router.get(`/branch-admin/search`, authenticate, isSuperAdmin, searchBranchAdmin);
 
 // 🟧 UPDATE Branch Admin
 router.put(
-  `${ROUTES.SUPER_ADMIN}/branch-admin/:id`,
+  `/branch-admin/:id`,
   authenticate,
   isSuperAdmin,
   upload.single("profile_img"),
@@ -35,6 +43,6 @@ router.put(
 );
 
 // 🟥 DELETE Branch Admin
-router.delete(`${ROUTES.SUPER_ADMIN}/branch-admin/:id`, authenticate, isSuperAdmin, removeBranchAdmin);
+router.delete(`/branch-admin/:id`, authenticate, isSuperAdmin, removeBranchAdmin);
 
 export default router;

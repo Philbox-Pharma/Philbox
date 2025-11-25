@@ -11,7 +11,6 @@ export const uploadToCloudinary = async (localFilePath, folder) => {
 
     // Delete local file after upload
     fs.unlinkSync(localFilePath);
-
     return result.secure_url;
   } catch (error) {
     console.error("Cloudinary upload failed:", error);

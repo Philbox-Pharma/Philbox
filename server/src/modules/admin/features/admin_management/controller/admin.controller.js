@@ -24,6 +24,7 @@ export const createBranchAdmin = async (req, res) => {
       profile_img_url = await uploadToCloudinary(profileImage.path, "branch_admins");
     }
 
+
     const newAdmin = new Admin({
       name,
       email: email.toLowerCase(),
@@ -69,23 +70,28 @@ export const createBranchAdmin = async (req, res) => {
   }
 };
 
-// 🟦 READ ALL Branch Admins
+// 🟦 READ ALL Branch Admins with Pagination
 export const listAdmins = async (req, res) => {
   try {
-    const admins = await Admin.find({ category: "branch-admin" })
-      .select("-password")
-      .populate("branches_managed", "branch_name city")
-      .populate("addresses");
+    let { page = 1, limit = 10 } = req.query;
 
-    if (!admins || admins.length === 0)
+    const { data, total, totalPages, currentPage } = await paginate(Admin, { category: "branch-admin" }, page, limit);
+    if (!data.length)
       return sendResponse(res, 404, "No Branch Admins found");
 
-    return sendResponse(res, 200, "Branch Admins fetched successfully", admins);
+    return sendResponse(res, 200, "Branch Admins fetched successfully", {
+      total,
+      totalPages,
+      currentPage,
+      limit,
+      data,
+    });
   } catch (err) {
     console.error(err);
     return sendResponse(res, 500, "Server Error", null, err);
   }
 };
+
 
 // 🟦 READ ONE Branch Admin (Search)
 export const searchBranchAdmin = async (req, res) => {

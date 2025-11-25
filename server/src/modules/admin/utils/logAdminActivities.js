@@ -20,7 +20,7 @@ export const logAdminActivity = async (
   changes = {}
 ) => {
   try {
-    const user = req.admin;
+    const user = req.user || req.admin;
     if (!user || !user._id) {
       console.warn("⚠️ Activity not logged — missing req.user");
       return;
@@ -39,6 +39,9 @@ export const logAdminActivity = async (
     };
     
     await AdminActivityLog.create(baseData);
+
+    console.log("✅ Activity logged successfully");
+
 
   } catch (error) {
     console.error("❌ Failed to log admin activity:", error);
