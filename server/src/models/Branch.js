@@ -2,6 +2,7 @@ import mongoose from "mongoose"
 
 const Schema = {
   name: {type: String, required: true},
+  code: {type: String},
   under_administration_of: [{type: mongoose.Schema.Types.ObjectId, ref:"Admin"}],
   address_id: {type: mongoose.Schema.Types.ObjectId, ref: "Address"},
   status: {type: String, enum: ["Active", "Inactive"], default: "Active"},
