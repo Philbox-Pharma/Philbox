@@ -519,9 +519,9 @@ Configure these settings in GitHub/GitLab:
 
 ## Contact
 
-**Project Lead**: Syed Abdul Ali Shah\
+**Project Lead**: [Syed Abdul Ali Shah](http://linkedin.com/in/syed-abdul-ali-shah/)\
 **Team Chat**: [Discord Server](https://discord.gg/QbDXBa4F)\
-**Repository**: [Github URL](https://github.com/shah541-g/Philbox)\
+**Repository**: [Github URL](https://github.com/shah541-g/Philbox)
 
 ---
 
