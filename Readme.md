@@ -520,8 +520,8 @@ Configure these settings in GitHub/GitLab:
 ## Contact
 
 **Project Lead**: Syed Abdul Ali Shah\
-**Team Chat**: [Discord Server(https://discord.gg/QbDXBa4F)]\
-**Repository**: [Github URL(https://github.com/shah541-g/Philbox)]\
+**Team Chat**: [Discord Server](https://discord.gg/QbDXBa4F)\
+**Repository**: [Github URL](https://github.com/shah541-g/Philbox)\
 
 ---
 
