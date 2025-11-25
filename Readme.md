@@ -519,11 +519,11 @@ Configure these settings in GitHub/GitLab:
 
 ## Contact
 
-**Project Lead**: [Your Name]
-**Team Chat**: [Slack/Discord/Teams channel]
-**Repository**: [GitHub/GitLab URL]
+**Project Lead**: [Syed Abdul Ali Shah]
+**Team Chat**: [Discord Server](https://discord.gg/QbDXBa4F)]
+**Repository**: [https://github.com/shah541-g/Philbox]
 
 ---
 
-**Last Updated**: [Date]
-**Version**: 1.0
+**Last Updated**: [25th November, 2025]
+**Version**: 0.1
