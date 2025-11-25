@@ -469,7 +469,7 @@ git push origin your-branch
 ### Questions?
 
 1. **Check this README first**
-2. **Ask in team chat** (Slack/Discord/Teams)
+2. **Ask in team chat** [Discord Server](https://discord.gg/QbDXBa4F)
 3. **Consult with team lead**
 4. **Review Git documentation**: https://git-scm.com/doc
 
