@@ -119,6 +119,21 @@ git commit -m "Add user authentication form"
 # Step 4: Push to remote
 git push origin feature/your-feature-name
 ```
+### 3. Before committing:
+
+```bash
+#Frontend
+cd client
+npm run lint          # Check for errors
+npm run lint:fix      # Auto-fix errors
+npm run format        # Format all files
+
+# Backend
+cd server
+npm run lint          # Check for errors
+npm run lint:fix      # Auto-fix errors
+npm run format        # Format all files
+```
 
 **Commit Message Guidelines:**
 ```
@@ -130,7 +145,7 @@ git push origin feature/your-feature-name
 ❌ "asdfgh"
 ```
 
-### 3. Keeping Your Branch Updated
+### 4. Keeping Your Branch Updated
 
 Update your feature branch with latest `dev` changes regularly (at least daily):
 
@@ -153,7 +168,7 @@ git commit -m "Merge dev into feature branch"
 git push origin feature/your-feature-name
 ```
 
-### 4. Completing Your Work
+### 5. Completing Your Work
 
 ```bash
 # Step 1: Ensure all changes are committed and pushed
