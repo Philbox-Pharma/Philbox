@@ -9,7 +9,13 @@
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "test": "jest",
+    "lint": "eslint src --ext .js",
+    "lint:fix": "eslint src --ext .js --fix",
+    "format": "prettier --write \"src/**/*.{js,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{js,json,md}\"",
+    "code:check": "npm run lint && npm run format:check"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -30,6 +36,12 @@
     "nodemailer": "^7.0.9"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-security": "^3.0.1",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.6.2"
   }
 }

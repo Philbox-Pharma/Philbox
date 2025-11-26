@@ -1,0 +1,3 @@
+
+npx --no-install eslint client/src --ext .js,.jsx
+npx --no-install eslint ../server/src --ext .js

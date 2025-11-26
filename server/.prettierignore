@@ -1,0 +1,24 @@
+# Dependencies
+node_modules
+package-lock.json
+yarn.lock
+
+# Environment files
+.env*
+
+# Testing
+coverage
+
+# Build outputs
+dist
+build
+
+# Logs
+logs
+*.log
+
+# Misc
+.git
+.DS_Store
+uploads
+temp

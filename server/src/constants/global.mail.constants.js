@@ -88,7 +88,7 @@ export const OTP_MESSAGE = `<!DOCTYPE html>
         </tr>
     </table>
 </body>
-</html>`
+</html>`;
 
 export const RESET_MAIL = `<!DOCTYPE html>
 <html lang="en">
