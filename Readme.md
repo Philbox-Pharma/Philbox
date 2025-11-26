@@ -135,22 +135,23 @@ npm run lint:fix      # Auto-fix errors
 npm run format        # Format all files
 ```
 
-# Check code quality without fixing
+#### Check code quality without fixing
 ```bash
 npm run code:check
 ```
-# Fix all auto-fixable issues
+#### Fix all auto-fixable issues
 ```bash
 npm run lint:fix
 ```
-# Format all files
+#### Format all files
 ```bash
 npm run format
 ```
-# Check if files are formatted correctly
+#### Check if files are formatted correctly
 ```bash
 npm run format:check
 ```
+
 **Commit Message Guidelines:**
 ```
 ✅ "Add user login validation"
@@ -556,5 +557,5 @@ Configure these settings in GitHub/GitLab:
 
 ---
 
-**Last Updated**: 25th November, 2025
+**Last Updated**: 26th November, 2025
 **Version**: 0.1
