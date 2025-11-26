@@ -1,17 +1,16 @@
-import mongoose from "mongoose"
+import mongoose from 'mongoose';
 
-async function connectDB(uri){
+async function connectDB(uri) {
   try {
-    const connecttoMongo = await mongoose.connect(uri)
+    const connecttoMongo = await mongoose.connect(uri);
     if (connecttoMongo) {
-    console.log("MongoDB Connected")
-    } 
-    else{
-      console.log("error connecting ")
+      console.log('MongoDB Connected');
+    } else {
+      console.log('error connecting ');
     }
-  }  catch (error) {
-    console.error("❌ Error connecting to MongoDB:", error.message);
-    process.exit(1); 
+  } catch (error) {
+    console.error('❌ Error connecting to MongoDB:', error.message);
+    process.exit(1);
   }
 }
 

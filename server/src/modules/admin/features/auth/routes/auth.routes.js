@@ -1,20 +1,20 @@
-import express from "express";
-import { validate } from "../../../../../validator/joiValidate.middleware.js";
+import express from 'express';
+import { validate } from '../../../../../validator/joiValidate.middleware.js';
 import {
   loginDTO,
   verifyOtpDTO,
   forgetPasswordDTO,
   resetPasswordDTO,
-} from "../../../../../dto/auth.dto.js";
+} from '../../../../../dto/auth.dto.js';
 import {
   login,
   verifyOTP,
   forgetPassword,
   resetPassword,
   logout,
-} from "../controller/auth.controller.js";
-import { authRoutesLimiter } from "../../../../../utils/authRoutesLimiter.js";
-import { authenticate } from "../../../middleware/auth.middleware.js";
+} from '../controller/auth.controller.js';
+import { authRoutesLimiter } from '../../../../../utils/authRoutesLimiter.js';
+import { authenticate } from '../../../middleware/auth.middleware.js';
 
 const router = express.Router();
 router.use(authRoutesLimiter);
@@ -32,5 +32,5 @@ router.post(`/forget-password`, validate(forgetPasswordDTO), forgetPassword);
 router.post(`/reset-password`, validate(resetPasswordDTO), resetPassword);
 
 // ✅ Logout
-router.post(`/logout`, authenticate, logout)
+router.post(`/logout`, authenticate, logout);
 export default router;

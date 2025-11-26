@@ -119,6 +119,21 @@ git commit -m "Add user authentication form"
 # Step 4: Push to remote
 git push origin feature/your-feature-name
 ```
+### 3. Before committing:
+
+```bash
+#Frontend
+cd client
+npm run lint          # Check for errors
+npm run lint:fix      # Auto-fix errors
+npm run format        # Format all files
+
+# Backend
+cd server
+npm run lint          # Check for errors
+npm run lint:fix      # Auto-fix errors
+npm run format        # Format all files
+```
 
 **Commit Message Guidelines:**
 ```
@@ -130,7 +145,7 @@ git push origin feature/your-feature-name
 ❌ "asdfgh"
 ```
 
-### 3. Keeping Your Branch Updated
+### 4. Keeping Your Branch Updated
 
 Update your feature branch with latest `dev` changes regularly (at least daily):
 
@@ -153,7 +168,7 @@ git commit -m "Merge dev into feature branch"
 git push origin feature/your-feature-name
 ```
 
-### 4. Completing Your Work
+### 5. Completing Your Work
 
 ```bash
 # Step 1: Ensure all changes are committed and pushed
@@ -469,7 +484,7 @@ git push origin your-branch
 ### Questions?
 
 1. **Check this README first**
-2. **Ask in team chat** (Slack/Discord/Teams)
+2. **Ask in team chat** [Discord Server](https://discord.gg/QbDXBa4F)
 3. **Consult with team lead**
 4. **Review Git documentation**: https://git-scm.com/doc
 
@@ -519,11 +534,11 @@ Configure these settings in GitHub/GitLab:
 
 ## Contact
 
-**Project Lead**: [Your Name]
-**Team Chat**: [Slack/Discord/Teams channel]
-**Repository**: [GitHub/GitLab URL]
+**Project Lead**: [Syed Abdul Ali Shah](http://linkedin.com/in/syed-abdul-ali-shah/)\
+**Team Chat**: [Discord Server](https://discord.gg/QbDXBa4F)\
+**Repository**: [Github URL](https://github.com/shah541-g/Philbox)
 
 ---
 
-**Last Updated**: [Date]
-**Version**: 1.0
+**Last Updated**: 25th November, 2025
+**Version**: 0.1
