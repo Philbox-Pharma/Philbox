@@ -135,6 +135,22 @@ npm run lint:fix      # Auto-fix errors
 npm run format        # Format all files
 ```
 
+# Check code quality without fixing
+```bash
+npm run code:check
+```
+# Fix all auto-fixable issues
+```bash
+npm run lint:fix
+```
+# Format all files
+```bash
+npm run format
+```
+# Check if files are formatted correctly
+```bash
+npm run format:check
+```
 **Commit Message Guidelines:**
 ```
 ✅ "Add user login validation"
