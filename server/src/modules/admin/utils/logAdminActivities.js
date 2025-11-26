@@ -1,5 +1,5 @@
 // src/utils/logAdminActivity.js
-import AdminActivityLog from "../../../models/AdminActivityLog.js";
+import AdminActivityLog from '../../../models/AdminActivityLog.js';
 /**
  * Logs actions performed by any admin (SuperAdmin or BranchAdmin).
  *
@@ -22,7 +22,7 @@ export const logAdminActivity = async (
   try {
     const user = req.user || req.admin;
     if (!user || !user._id) {
-      console.warn("⚠️ Activity not logged — missing req.user");
+      console.warn('⚠️ Activity not logged — missing req.user');
       return;
     }
 
@@ -34,16 +34,14 @@ export const logAdminActivity = async (
       target_id,
       changes,
       ip_address: req.ip,
-      device_info: req.headers["user-agent"],
+      device_info: req.headers['user-agent'],
       created_at: new Date(),
     };
-    
+
     await AdminActivityLog.create(baseData);
 
-    console.log("✅ Activity logged successfully");
-
-
+    console.log('✅ Activity logged successfully');
   } catch (error) {
-    console.error("❌ Failed to log admin activity:", error);
+    console.error('❌ Failed to log admin activity:', error);
   }
 };
