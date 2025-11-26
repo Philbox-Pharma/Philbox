@@ -1,3 +1,5 @@
+echo "Running ESLint on client..."
+npx eslint --config ./client/eslint.config.js "client/src/**/*.{js,jsx}"
 
-npx --no-install eslint client/src --ext .js,.jsx
-npx --no-install eslint ../server/src --ext .js
+echo "Running ESLint on server..."
+npx eslint --config ./server/eslint.config.js "server/src/**/*.js"
