@@ -71,7 +71,8 @@ export const createBranchAdmin = async (req, res) => {
       { new: newAdmin }
     );
 
-    const { password: _, ...safeData } = newAdmin.toObject();
+    const { pass, ...safeData } = newAdmin.toObject();
+
     return sendResponse(
       res,
       201,
