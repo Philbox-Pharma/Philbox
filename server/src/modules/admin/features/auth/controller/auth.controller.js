@@ -1,37 +1,28 @@
-import Admin from '../../../../../models/Admin.js';
-import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
 import sendResponse from '../../../../../utils/sendResponse.js';
-import dotenv from 'dotenv';
-import { generateOTPAndExpiryDate } from '../../../../../utils/generateOTP.js';
-import { sendOTP, sendResetEmail } from '../../../../../utils/sendEmail.js';
-import { logAdminActivity } from '../../../utils/logAdminActivities.js';
-
-dotenv.config();
+import adminAuthService from '../services/auth.service.js';
 
 // ------------------------- LOGIN --------------------------
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const admin = await Admin.findOne({ email: email.toLowerCase() });
-    if (!admin) return sendResponse(res, 404, 'Invalid email');
 
-    const isMatch = await bcrypt.compare(password, admin.password);
-    if (!isMatch) return sendResponse(res, 401, 'Invalid Credentials');
-
-    // ✅ Always send OTP for super admin (no check for isTwoFactorEnabled)
-    const { otp, expiresIn } = generateOTPAndExpiryDate();
-    admin.otpCode = otp;
-    admin.otpExpiresAt = expiresIn;
-    await admin.save();
-    await sendOTP(admin.email, otp);
+    const result = await adminAuthService.login(email, password, req);
 
     // Store pending admin info in session for OTP verification
-    req.session.pendingAdminId = admin._id.toString();
+    req.session.pendingAdminId = result.adminId;
 
     return sendResponse(res, 200, 'OTP sent to email');
   } catch (err) {
     console.error(err);
+
+    if (err.message === 'INVALID_EMAIL') {
+      return sendResponse(res, 404, 'Invalid email');
+    }
+
+    if (err.message === 'INVALID_CREDENTIALS') {
+      return sendResponse(res, 401, 'Invalid Credentials');
+    }
+
     return sendResponse(res, 500, 'Server Error', null, err.message);
   }
 };
@@ -40,46 +31,37 @@ export const login = async (req, res) => {
 export const verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
+    const pendingAdminId = req.session.pendingAdminId;
 
-    const admin = await Admin.findOne({ email }).select('-password');
-    if (!admin || !admin.otpCode)
+    const result = await adminAuthService.verifyOTP(
+      email,
+      otp,
+      pendingAdminId,
+      req
+    );
+
+    // Create actual session
+    req.session.adminId = result.adminId;
+    req.session.adminCategory = result.adminCategory;
+    req.session.adminEmail = result.adminEmail;
+    delete req.session.pendingAdminId;
+
+    return sendResponse(res, 200, '2FA Verified', { admin: result.admin });
+  } catch (err) {
+    console.error(err);
+
+    if (err.message === 'INVALID_REQUEST') {
       return sendResponse(res, 400, 'Invalid Request');
+    }
 
-    // Verify the admin matches the pending session
-    if (
-      !req.session.pendingAdminId ||
-      req.session.pendingAdminId !== admin._id.toString()
-    ) {
+    if (err.message === 'INVALID_SESSION') {
       return sendResponse(res, 400, 'Invalid session');
     }
 
-    if (admin.otpCode !== otp || admin.otpExpiresAt < Date.now()) {
+    if (err.message === 'INVALID_OR_EXPIRED_OTP') {
       return sendResponse(res, 400, 'Invalid or expired OTP');
     }
 
-    // ✅ Clear OTP after verification
-    admin.otpCode = null;
-    admin.otpExpiresAt = null;
-    await admin.save();
-
-    // Create actual session
-    req.session.adminId = admin._id.toString();
-    req.session.adminCategory = admin.category;
-    req.session.adminEmail = admin.email;
-    delete req.session.pendingAdminId;
-
-    await logAdminActivity(
-      { user: admin, ip: req.ip, headers: req.headers },
-      'verify_otp',
-      `Admin (${admin.email}) verified OTP successfully`,
-      'admins',
-      admin._id
-    );
-
-    const { password: _, ...safe } = admin.toObject();
-    return sendResponse(res, 200, '2FA Verified', { admin: safe });
-  } catch (err) {
-    console.error(err);
     return sendResponse(res, 500, 'Server Error', null, err.message);
   }
 };
@@ -89,15 +71,9 @@ export const logout = async (req, res) => {
   try {
     const admin = req.admin;
 
-    await logAdminActivity(
-      { user: admin, ip: req.ip, headers: req.headers },
-      'logout',
-      `Admin (${admin.email}) logged out successfully`,
-      'admins',
-      admin._id
-    );
+    await adminAuthService.logout(admin, req);
 
-    // ✅ Just destroy session - no need to modify admin document
+    // Destroy session
     req.session.destroy(err => {
       if (err) {
         console.error('Session destruction error:', err);
@@ -117,33 +93,17 @@ export const logout = async (req, res) => {
 export const forgetPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    const admin = await Admin.findOne({ email: email.toLowerCase() });
-    if (!admin) return sendResponse(res, 404, 'Admin not found');
 
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenHash = crypto
-      .createHash('sha256')
-      .update(resetToken)
-      .digest('hex');
-
-    admin.resetPasswordToken = resetTokenHash;
-    admin.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
-    await admin.save();
-
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-    await sendResetEmail(admin.email, resetLink, admin.name);
-
-    await logAdminActivity(
-      { user: admin, ip: req.ip, headers: req.headers },
-      'forget_password',
-      `Password reset link sent to ${admin.email}`,
-      'admins',
-      admin._id
-    );
+    await adminAuthService.forgetPassword(email, req);
 
     return sendResponse(res, 200, 'Password reset email sent successfully');
   } catch (err) {
     console.error(err);
+
+    if (err.message === 'ADMIN_NOT_FOUND') {
+      return sendResponse(res, 404, 'Admin not found');
+    }
+
     return sendResponse(res, 500, 'Server Error', null, err.message);
   }
 };
@@ -152,35 +112,17 @@ export const forgetPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
-    const resetTokenHash = crypto
-      .createHash('sha256')
-      .update(token)
-      .digest('hex');
 
-    const admin = await Admin.findOne({
-      resetPasswordToken: resetTokenHash,
-      resetPasswordExpires: { $gt: Date.now() },
-    });
-
-    if (!admin) return sendResponse(res, 400, 'Invalid or expired token');
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    admin.password = hashedPassword;
-    admin.resetPasswordToken = undefined;
-    admin.resetPasswordExpires = undefined;
-    await admin.save();
-
-    await logAdminActivity(
-      { user: admin, ip: req.ip, headers: req.headers },
-      'reset_password',
-      `Admin (${admin.email}) reset password successfully`,
-      'admins',
-      admin._id
-    );
+    await adminAuthService.resetPassword(token, newPassword, req);
 
     return sendResponse(res, 200, 'Password reset successfully');
   } catch (err) {
     console.error(err);
+
+    if (err.message === 'INVALID_OR_EXPIRED_TOKEN') {
+      return sendResponse(res, 400, 'Invalid or expired token');
+    }
+
     return sendResponse(res, 500, 'Server Error', null, err.message);
   }
 };
