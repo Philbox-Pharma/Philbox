@@ -1,6 +1,7 @@
 # Git Branching Strategy & Workflow
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [Branch Structure](#branch-structure)
 - [Branch Naming Conventions](#branch-naming-conventions)
@@ -17,6 +18,7 @@
 This project follows a modified Git Flow strategy with three main branches and feature-based development. This approach ensures code quality, enables parallel development, and maintains stable releases.
 
 **Key Principles:**
+
 - Never commit directly to `main`, `staging`, or `dev`
 - Always work in feature branches
 - All changes must go through Pull Requests (PRs)
@@ -41,11 +43,11 @@ main (Production)
 
 ### Main Branches
 
-| Branch | Purpose | Protected | Deploy To |
-|--------|---------|-----------|-----------|
-| `main` | Production-ready code only | ✅ Yes | Production |
-| `staging` | Pre-production testing & QA | ✅ Yes | Staging Server |
-| `dev` | Integration of all features | ✅ Yes | Development Server |
+| Branch    | Purpose                     | Protected | Deploy To          |
+| --------- | --------------------------- | --------- | ------------------ |
+| `main`    | Production-ready code only  | ✅ Yes    | Production         |
+| `staging` | Pre-production testing & QA | ✅ Yes    | Staging Server     |
+| `dev`     | Integration of all features | ✅ Yes    | Development Server |
 
 ### Working Branches
 
@@ -61,16 +63,17 @@ Use lowercase with hyphens and be descriptive:
 
 **Types:**
 
-| Prefix | Purpose | Example |
-|--------|---------|---------|
-| `feature/` | New feature development | `feature/user-profile` |
-| `bugfix/` | Bug fixes in development | `bugfix/login-timeout` |
-| `hotfix/` | Urgent production fixes | `hotfix/payment-crash` |
-| `refactor/` | Code refactoring | `refactor/api-structure` |
-| `docs/` | Documentation updates | `docs/api-endpoints` |
-| `test/` | Test additions/fixes | `test/user-authentication` |
+| Prefix      | Purpose                  | Example                    |
+| ----------- | ------------------------ | -------------------------- |
+| `feature/`  | New feature development  | `feature/user-profile`     |
+| `bugfix/`   | Bug fixes in development | `bugfix/login-timeout`     |
+| `hotfix/`   | Urgent production fixes  | `hotfix/payment-crash`     |
+| `refactor/` | Code refactoring         | `refactor/api-structure`   |
+| `docs/`     | Documentation updates    | `docs/api-endpoints`       |
+| `test/`     | Test additions/fixes     | `test/user-authentication` |
 
 **Examples:**
+
 ```
 ✅ feature/user-authentication
 ✅ bugfix/navbar-responsive
@@ -119,6 +122,7 @@ git commit -m "Add user authentication form"
 # Step 4: Push to remote
 git push origin feature/your-feature-name
 ```
+
 ### 3. Before committing:
 
 ```bash
@@ -135,7 +139,32 @@ npm run lint:fix      # Auto-fix errors
 npm run format        # Format all files
 ```
 
+#### Check code quality without fixing
+
+```bash
+npm run code:check
+```
+
+#### Fix all auto-fixable issues
+
+```bash
+npm run lint:fix
+```
+
+#### Format all files
+
+```bash
+npm run format
+```
+
+#### Check if files are formatted correctly
+
+```bash
+npm run format:check
+```
+
 **Commit Message Guidelines:**
+
 ```
 ✅ "Add user login validation"
 ✅ "Fix navbar collapse on mobile"
@@ -207,9 +236,11 @@ git branch -d feature/your-feature-name
 
 ```markdown
 ## Description
+
 Brief description of what this PR does.
 
 ## Type of Change
+
 - [ ] New feature
 - [ ] Bug fix
 - [ ] Refactoring
@@ -217,22 +248,27 @@ Brief description of what this PR does.
 - [ ] Other (specify)
 
 ## Related Issue
+
 Closes #issue_number
 
 ## Changes Made
+
 - Added user authentication form
 - Implemented JWT token validation
 - Updated API endpoints
 
 ## Testing Done
+
 - [ ] Unit tests added/updated
 - [ ] Manual testing completed
 - [ ] Tested on multiple browsers (if frontend)
 
 ## Screenshots (if applicable)
+
 Add screenshots for UI changes
 
 ## Checklist
+
 - [ ] Code follows project style guidelines
 - [ ] Self-review completed
 - [ ] Comments added for complex logic
@@ -243,6 +279,7 @@ Add screenshots for UI changes
 ### Code Review Guidelines
 
 **For Reviewers:**
+
 - Review within 24 hours
 - Check code quality, logic, and best practices
 - Test the changes locally if possible
@@ -250,6 +287,7 @@ Add screenshots for UI changes
 - Approve or request changes clearly
 
 **For Authors:**
+
 - Respond to feedback promptly
 - Don't take criticism personally
 - Make requested changes or discuss alternatives
@@ -464,12 +502,12 @@ git push origin your-branch
 
 ### Weekly Cycle
 
-| Day | Activity |
-|-----|----------|
-| Monday - Thursday | Feature development, merge to `dev` continuously |
-| Friday AM | Merge `dev` → `staging`, deploy to staging server |
-| Friday PM | QA testing on staging |
-| Weekend | Fix critical staging issues if any |
+| Day               | Activity                                          |
+| ----------------- | ------------------------------------------------- |
+| Monday - Thursday | Feature development, merge to `dev` continuously  |
+| Friday AM         | Merge `dev` → `staging`, deploy to staging server |
+| Friday PM         | QA testing on staging                             |
+| Weekend           | Fix critical staging issues if any                |
 
 ### Bi-weekly Release
 
@@ -523,6 +561,7 @@ git branch -vv
 Configure these settings in GitHub/GitLab:
 
 ### For `main`, `staging`, `dev`:
+
 - ✅ Require pull request before merging
 - ✅ Require at least 1 approval
 - ✅ Require status checks to pass
@@ -540,5 +579,5 @@ Configure these settings in GitHub/GitLab:
 
 ---
 
-**Last Updated**: 25th November, 2025
+**Last Updated**: 26th November, 2025
 **Version**: 0.1
