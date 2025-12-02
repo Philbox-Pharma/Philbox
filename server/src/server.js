@@ -13,6 +13,8 @@ import adminAuthRoutes from './modules/admin/features/auth/routes/auth.routes.js
 import adminAdminManagementRoutes from './modules/admin/features/admin_management/routes/admin.routes.js';
 import adminBranchManagementRoutes from './modules/admin/features/branch_management/routes/branch.routes.js';
 import adminSalespersonManagementRoutes from './modules/admin/features/salesperson_management/routes/salesperson.routes.js';
+import healthRouter from './shared/routes/health.route.js';
+
 import { ROUTES } from './constants/global.routes.constants.js';
 
 dotenv.config();
@@ -64,6 +66,7 @@ app.use(helmet());
 app.use(express.json());
 app.use(morgan('dev'));
 
+app.use('/api', healthRouter);
 app.use(`/api/${ROUTES.ADMIN_AUTH}`, adminAuthRoutes);
 app.use(`/api/${ROUTES.SUPER_ADMIN}`, adminAdminManagementRoutes);
 app.use(`/api/${ROUTES.SUPER_ADMIN}`, adminBranchManagementRoutes);
