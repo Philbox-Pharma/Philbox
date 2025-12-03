@@ -8,7 +8,7 @@ import {
   listSalespersons,
 } from '../controller/salesperson.controller.js';
 import { ROUTES } from '../../../../../constants/global.routes.constants.js';
-import { createSalespersonDTO } from '../../../../../dto/salesperson.dto.js';
+import { createSalespersonDTO } from '../../../../../dto/admin/salesperson.dto.js';
 import { validate } from '../../../../../validator/joiValidate.middleware.js';
 
 const router = express.Router();
