@@ -8,13 +8,57 @@ import {
   sendDoctorResetEmail,
 } from '../../../../utils/sendEmail.js';
 import { logDoctorActivity } from '../../utils/logDoctorActivities.js';
+import { uploadToCloudinary } from '../../../../utils/uploadToCloudinary.js';
+import { ROUTES } from '../../../../constants/global.routes.constants.js';
 
 class DoctorAuthService {
   /**
+   * Helper function to determine next step for doctor
+   */
+  async determineNextStep(doctorId) {
+    const doctor = await Doctor.findById(doctorId);
+
+    // Check if they've submitted documents
+    const hasDocuments = await DoctorDocuments.findOne({ doctor_id: doctorId });
+
+    if (!hasDocuments) {
+      return 'submit-application'; // Need to submit documents first
+    }
+
+    // Check if documents are approved
+    const application = await DoctorApplication.findOne({
+      applications_documents_id: hasDocuments._id,
+    });
+
+    if (!application) {
+      return 'submit-application';
+    }
+
+    if (application.status === 'pending') {
+      return 'waiting-approval'; // Documents submitted, waiting for admin
+    }
+
+    if (application.status === 'rejected') {
+      return 'resubmit-application'; // Documents rejected, need to resubmit
+    }
+
+    if (application.status === 'approved') {
+      // Check if profile is complete
+      if (
+        !doctor.educational_details ||
+        doctor.educational_details.length === 0
+      ) {
+        return 'complete-profile'; // Documents approved, now complete profile
+      }
+      return 'dashboard'; // Everything done
+    }
+
+    return 'submit-application'; // Default
+  }
+
+  /**
    * Register a new Doctor
    */
-  // In auth.service.js
-
   async register(data, req) {
     const { fullName, email, password, gender, dateOfBirth, contactNumber } =
       data;
@@ -26,9 +70,8 @@ class DoctorAuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate Verification Token
     const verificationToken = crypto.randomBytes(32).toString('hex');
-    const verificationTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+    const verificationTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000;
 
     const newDoctor = new Doctor({
       fullName,
@@ -40,13 +83,12 @@ class DoctorAuthService {
       verificationToken,
       verificationTokenExpiresAt,
       is_Verified: false,
-      'account-_status': 'suspended/freezed',
+      account_status: 'suspended/freezed',
       onboarding_status: 'pending',
     });
 
     await newDoctor.save();
 
-    // Send Verification Email
     const verifyLink = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
     await sendVerificationEmail(
       newDoctor.email,
@@ -54,7 +96,6 @@ class DoctorAuthService {
       newDoctor.fullName
     );
 
-    // 👇 FIX: Manually assign the new doctor to req.doctor so the logger can read it
     req.doctor = {
       _id: newDoctor._id,
       email: newDoctor.email,
@@ -69,7 +110,11 @@ class DoctorAuthService {
       newDoctor._id
     );
 
-    return newDoctor;
+    const { passwordHash, ...safeDoctor } = newDoctor.toObject();
+    return {
+      doctor: safeDoctor,
+      nextStep: 'verify-email',
+    };
   }
 
   /**
@@ -90,6 +135,12 @@ class DoctorAuthService {
     doctor.verificationTokenExpiresAt = undefined;
     await doctor.save();
 
+    req.doctor = {
+      _id: doctor._id,
+      email: doctor.email,
+      fullName: doctor.fullName,
+    };
+
     await logDoctorActivity(
       req,
       'verify_email',
@@ -97,6 +148,10 @@ class DoctorAuthService {
       'doctors',
       doctor._id
     );
+
+    return {
+      nextStep: 'login',
+    };
   }
 
   /**
@@ -112,13 +167,18 @@ class DoctorAuthService {
 
     if (!doctor.is_Verified) throw new Error('EMAIL_NOT_VERIFIED');
 
-    // Check account status (Note: schema has "account-_status")
-    if (doctor['account-_status'] === 'blocked/removed') {
+    if (doctor.account_status === 'blocked/removed') {
       throw new Error('ACCOUNT_BLOCKED');
     }
 
     doctor.last_login = Date.now();
     await doctor.save();
+
+    req.doctor = {
+      _id: doctor._id,
+      email: doctor.email,
+      fullName: doctor.fullName,
+    };
 
     await logDoctorActivity(
       req,
@@ -128,96 +188,256 @@ class DoctorAuthService {
       doctor._id
     );
 
-    // Check application status to see if they completed onboarding
-    const application = await DoctorApplication.findOne({
-      // We need to find the application linked to this doctor via documents
-      // This requires an aggregation or a two-step lookup in a real scenario
-      // For now, we assume frontend checks if "account-_status" is active
-    });
+    // Determine next step
+    const nextStep = await this.determineNextStep(doctor._id);
 
     const safeDoctor = doctor.toObject();
     delete safeDoctor.passwordHash;
 
     return {
       doctorId: doctor._id.toString(),
-      accountStatus: doctor['account-_status'],
+      accountStatus: doctor.account_status,
       doctor: safeDoctor,
+      nextStep,
     };
   }
 
   /**
-   * Onboarding: Submit Documents
+   * Submit Application (Document Upload)
    */
-  async submitOnboarding(doctorId, files, req) {
-    // 1. Check if documents already exist/application pending
-    const existingDocs = await DoctorDocuments.findOne({ doctor_id: doctorId });
-    if (existingDocs) {
-      // Logic: If rejected, allow update. If pending, throw error.
-      const existingApp = await DoctorApplication.findOne({
-        applications_documents_id: existingDocs._id,
-      });
-      if (existingApp && existingApp.status === 'pending') {
-        throw new Error('ALREADY_SUBMITTED');
+  async submitApplication(doctorId, files, req) {
+    try {
+      const doctor = await Doctor.findById(doctorId);
+      if (!doctor) {
+        throw new Error('DOCTOR_NOT_FOUND');
       }
+
+      req.doctor = {
+        _id: doctor._id,
+        email: doctor.email,
+        fullName: doctor.fullName,
+      };
+
+      // Validate required files
+      const requiredFiles = ['medical_license', 'mbbs_md_degree', 'cnic'];
+      const missingFiles = [];
+
+      for (const fileKey of requiredFiles) {
+        if (!files[fileKey] || !files[fileKey][0]) {
+          missingFiles.push(fileKey.replace(/_/g, ' ').toUpperCase());
+        }
+      }
+
+      if (missingFiles.length > 0) {
+        const error = new Error(
+          `MISSING_REQUIRED_FILES: ${missingFiles.join(', ')}`
+        );
+        error.statusCode = 400;
+        error.missingFiles = missingFiles;
+        throw error;
+      }
+
+      // Check if application already pending
+      const existingDocs = await DoctorDocuments.findOne({
+        doctor_id: doctorId,
+      });
+      if (existingDocs) {
+        const existingApp = await DoctorApplication.findOne({
+          applications_documents_id: existingDocs._id,
+        });
+        if (existingApp && existingApp.status === 'pending') {
+          const error = new Error('ALREADY_SUBMITTED');
+          error.statusCode = 400;
+          throw error;
+        }
+      }
+
+      // Upload files to Cloudinary
+      const docData = { doctor_id: doctorId };
+
+      if (files['cnic'] && files['cnic'][0]) {
+        docData.CNIC = await uploadToCloudinary(
+          files['cnic'][0].path,
+          'doctor_documents/cnic'
+        );
+      }
+
+      if (files['medical_license'] && files['medical_license'][0]) {
+        docData.medical_license = await uploadToCloudinary(
+          files['medical_license'][0].path,
+          'doctor_documents/medical_license'
+        );
+      }
+
+      if (files['specialist_license'] && files['specialist_license'][0]) {
+        docData.specialist_license = await uploadToCloudinary(
+          files['specialist_license'][0].path,
+          'doctor_documents/specialist_license'
+        );
+      }
+
+      if (files['mbbs_md_degree'] && files['mbbs_md_degree'][0]) {
+        docData.mbbs_md_degree = await uploadToCloudinary(
+          files['mbbs_md_degree'][0].path,
+          'doctor_documents/degrees'
+        );
+      }
+
+      if (files['experience_letters'] && files['experience_letters'][0]) {
+        docData.experience_letters = await uploadToCloudinary(
+          files['experience_letters'][0].path,
+          'doctor_documents/experience'
+        );
+      }
+
+      // Save or update documents
+      let docs;
+      if (existingDocs) {
+        Object.assign(existingDocs, docData);
+        docs = await existingDocs.save();
+      } else {
+        docs = await DoctorDocuments.create(docData);
+      }
+
+      // Create/Update application
+      await DoctorApplication.findOneAndUpdate(
+        { applications_documents_id: docs._id },
+        {
+          applications_documents_id: docs._id,
+          status: 'pending',
+        },
+        { upsert: true, new: true }
+      );
+
+      // Update doctor status
+      await Doctor.findByIdAndUpdate(doctorId, {
+        account_status: 'suspended/freezed',
+        onboarding_status: 'documents-submitted',
+      });
+
+      await logDoctorActivity(
+        req,
+        'application_submit',
+        `Documents submitted for verification`,
+        'doctors_documents',
+        docs._id
+      );
+
+      return {
+        success: true,
+        message:
+          'Application submitted successfully. Please wait for admin approval.',
+        documentId: docs._id,
+        nextStep: 'waiting-approval',
+      };
+    } catch (error) {
+      console.error('Error in submitApplication:', error);
+      throw error;
     }
+  }
 
-    // 2. Prepare file URLs (Assuming file upload middleware returns file location/path)
-    // Adjust 'files.cnic[0].path' based on your cloud storage response (e.g., S3 URL)
-    const docData = {
-      doctor_id: doctorId,
-      CNIC: files['cnic'] ? files['cnic'][0].path : null,
-      medical_license: files['medical_license']
-        ? files['medical_license'][0].path
-        : null,
-      specialist_license: files['specialist_license']
-        ? files['specialist_license'][0].path
-        : null,
-      mbbs_md_degree: files['mbbs_md_degree']
-        ? files['mbbs_md_degree'][0].path
-        : null,
-      experience_letters: files['experience_letters']
-        ? files['experience_letters'][0].path
-        : null,
-    };
+  /**
+   * Complete Profile (Education, Experience, Specialization)
+   */
+  async completeProfile(doctorId, profileData, files, req) {
+    try {
+      const doctor = await Doctor.findById(doctorId);
+      if (!doctor) {
+        throw new Error('DOCTOR_NOT_FOUND');
+      }
 
-    // 3. Save Documents
-    let docs;
-    if (existingDocs) {
-      // Update existing if re-submitting
-      Object.assign(existingDocs, docData);
-      docs = await existingDocs.save();
-    } else {
-      docs = await DoctorDocuments.create(docData);
+      req.doctor = {
+        _id: doctor._id,
+        email: doctor.email,
+        fullName: doctor.fullName,
+      };
+
+      // Check if application is approved
+      const docRecords = await DoctorDocuments.findOne({ doctor_id: doctorId });
+      if (!docRecords) {
+        throw new Error('APPLICATION_NOT_APPROVED');
+      }
+
+      const application = await DoctorApplication.findOne({
+        applications_documents_id: docRecords._id,
+      });
+
+      if (!application || application.status !== 'approved') {
+        throw new Error('APPLICATION_NOT_APPROVED');
+      }
+
+      // Upload profile and cover images
+      if (files['profile_img'] && files['profile_img'][0]) {
+        profileData.profile_img_url = await uploadToCloudinary(
+          files['profile_img'][0].path,
+          'doctor_profiles'
+        );
+      }
+
+      if (files['cover_img'] && files['cover_img'][0]) {
+        profileData.cover_img_url = await uploadToCloudinary(
+          files['cover_img'][0].path,
+          'doctor_covers'
+        );
+      }
+
+      if (files['digital_signature'] && files['digital_signature'][0]) {
+        profileData.digital_signature = await uploadToCloudinary(
+          files['digital_signature'][0].path,
+          'doctor_signatures'
+        );
+      }
+
+      // Upload education files
+      if (files['education_files'] && files['education_files'].length > 0) {
+        for (let i = 0; i < files['education_files'].length; i++) {
+          if (profileData.educational_details[i]) {
+            profileData.educational_details[i].fileUrl =
+              await uploadToCloudinary(
+                files['education_files'][i].path,
+                'doctor_education'
+              );
+          }
+        }
+      }
+
+      // Upload experience institution images
+      if (files['experience_files'] && files['experience_files'].length > 0) {
+        for (let i = 0; i < files['experience_files'].length; i++) {
+          if (profileData.experience_details[i]) {
+            profileData.experience_details[i].institution_img_url =
+              await uploadToCloudinary(
+                files['experience_files'][i].path,
+                'doctor_experience'
+              );
+          }
+        }
+      }
+
+      // Update doctor with profile data
+      await Doctor.findByIdAndUpdate(doctorId, {
+        ...profileData,
+        account_status: 'active',
+        onboarding_status: 'completed',
+      });
+
+      await logDoctorActivity(
+        req,
+        'profile_complete',
+        `Doctor completed profile setup`,
+        'doctors',
+        doctorId
+      );
+
+      return {
+        success: true,
+        message: 'Profile completed successfully. Welcome to PhilBox!',
+        nextStep: 'dashboard',
+      };
+    } catch (error) {
+      console.error('Error in completeProfile:', error);
+      throw error;
     }
-
-    // 4. Create/Update Application
-    const applicationData = {
-      applications_documents_id: docs._id,
-      status: 'pending', // Send for admin approval
-    };
-
-    // Update existing application to pending or create new
-    await DoctorApplication.findOneAndUpdate(
-      { applications_documents_id: docs._id },
-      applicationData,
-      { upsert: true, new: true }
-    );
-
-    // 5. Update Doctor Status
-    // We keep them suspended/freezed until Admin approves
-    await Doctor.findByIdAndUpdate(doctorId, {
-      'account-_status': 'suspended/freezed',
-    });
-
-    await logDoctorActivity(
-      req,
-      'onboarding_submit',
-      `Documents submitted`,
-      'doctors_documents',
-      docs._id
-    );
-
-    return true;
   }
 
   /**
@@ -237,8 +457,14 @@ class DoctorAuthService {
     doctor.resetPasswordExpiresAt = Date.now() + 10 * 60 * 1000;
     await doctor.save();
 
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    const resetLink = `${process.env.FRONTEND_URL}/${ROUTES.DOCTOR_AUTH}/reset-password/${resetToken}`;
     await sendDoctorResetEmail(doctor.email, resetLink, doctor.fullName);
+
+    req.doctor = {
+      _id: doctor._id,
+      email: doctor.email,
+      fullName: doctor.fullName,
+    };
 
     await logDoctorActivity(
       req,
@@ -247,6 +473,10 @@ class DoctorAuthService {
       'doctors',
       doctor._id
     );
+
+    return {
+      nextStep: 'check-email',
+    };
   }
 
   /**
@@ -270,6 +500,12 @@ class DoctorAuthService {
     doctor.resetPasswordExpiresAt = undefined;
     await doctor.save();
 
+    req.doctor = {
+      _id: doctor._id,
+      email: doctor.email,
+      fullName: doctor.fullName,
+    };
+
     await logDoctorActivity(
       req,
       'reset_password',
@@ -277,6 +513,10 @@ class DoctorAuthService {
       'doctors',
       doctor._id
     );
+
+    return {
+      nextStep: 'login',
+    };
   }
 
   async logout(doctor, req) {
@@ -287,6 +527,10 @@ class DoctorAuthService {
       'doctors',
       doctor._id
     );
+
+    return {
+      nextStep: 'login',
+    };
   }
 }
 

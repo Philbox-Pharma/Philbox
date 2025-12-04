@@ -8,7 +8,8 @@ export const register = async (req, res) => {
     return sendResponse(
       res,
       201,
-      'Registration successful. Please verify your email.'
+      'Registration successful. Please verify your email.',
+      { nextStep: result.nextStep }
     );
   } catch (err) {
     console.error(err);
@@ -23,17 +24,70 @@ export const register = async (req, res) => {
 export const verifyEmail = async (req, res) => {
   try {
     const { token } = req.body;
-    await doctorAuthService.verifyEmail(token, req);
+    const result = await doctorAuthService.verifyEmail(token, req);
     return sendResponse(
       res,
       200,
-      'Email verified successfully. You can now login.'
+      'Email verified successfully. You can now login.',
+      { nextStep: result.nextStep }
     );
   } catch (err) {
     console.error(err);
     if (err.message === 'INVALID_OR_EXPIRED_TOKEN') {
       return sendResponse(res, 400, 'Invalid or expired verification token');
     }
+    return sendResponse(res, 500, 'Server Error', null, err.message);
+  }
+};
+
+// ------------------------- FORGET PASSWORD --------------------------
+export const forgetPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const result = await doctorAuthService.forgetPassword(email, req);
+    return sendResponse(res, 200, 'Password reset email sent', {
+      nextStep: result.nextStep,
+    });
+  } catch (err) {
+    if (err.message === 'USER_NOT_FOUND')
+      return sendResponse(res, 404, 'User not found');
+    return sendResponse(res, 500, 'Server Error', null, err.message);
+  }
+};
+
+// ------------------------- RESET PASSWORD --------------------------
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    const result = await doctorAuthService.resetPassword(
+      token,
+      newPassword,
+      req
+    );
+    return sendResponse(res, 200, 'Password reset successfully', {
+      nextStep: result.nextStep,
+    });
+  } catch (err) {
+    if (err.message === 'INVALID_OR_EXPIRED_TOKEN')
+      return sendResponse(res, 400, 'Invalid token');
+    return sendResponse(res, 500, 'Server Error', null, err.message);
+  }
+};
+
+// ------------------------- LOGOUT --------------------------
+export const logout = async (req, res) => {
+  try {
+    const doctor = req.doctor;
+    const result = await doctorAuthService.logout(doctor, req);
+
+    req.session.destroy(err => {
+      if (err) return sendResponse(res, 500, 'Could not log out');
+      res.clearCookie('connect.sid');
+      return sendResponse(res, 200, 'Logout successful', {
+        nextStep: result.nextStep,
+      });
+    });
+  } catch (err) {
     return sendResponse(res, 500, 'Server Error', null, err.message);
   }
 };
@@ -49,12 +103,10 @@ export const login = async (req, res) => {
     req.session.role = 'doctor';
     req.session.status = result.accountStatus;
 
-    // Check if onboarding is required (Logic: if status is not active, they might need to upload docs)
-    const requiresOnboarding = result.onboardingStatus === 'pending';
-
     return sendResponse(res, 200, 'Login successful', {
       doctor: result.doctor,
-      requiresOnboarding,
+      accountStatus: result.accountStatus,
+      nextStep: result.nextStep, // 'submit-application' or 'complete-profile' or 'dashboard'
     });
   } catch (err) {
     console.error(err);
@@ -69,70 +121,194 @@ export const login = async (req, res) => {
   }
 };
 
-// ------------------------- ONBOARDING (DOCS SUBMISSION) --------------------------
-export const submitOnboarding = async (req, res) => {
+// ------------------------- SUBMIT APPLICATION (DOCUMENTS) --------------------------
+export const submitApplication = async (req, res) => {
   try {
-    // req.files contains the uploaded file info (from multer)
-    if (!req.files || Object.keys(req.files).length === 0) {
-      return sendResponse(res, 400, 'No documents uploaded');
+    const doctorId = req.session.doctorId || req.doctor?._id;
+
+    if (!doctorId) {
+      return sendResponse(
+        res,
+        401,
+        'Unauthorized',
+        null,
+        'Doctor authentication required'
+      );
     }
 
-    const doctorId = req.doctor._id; // Retrieved from authenticate middleware
+    const files = req.files;
 
-    await doctorAuthService.submitOnboarding(doctorId, req.files, req);
+    if (!files || Object.keys(files).length === 0) {
+      return sendResponse(
+        res,
+        400,
+        'Bad Request',
+        null,
+        'No files uploaded. Please upload required documents.'
+      );
+    }
+
+    const result = await doctorAuthService.submitApplication(
+      doctorId,
+      files,
+      req
+    );
+
+    return sendResponse(res, 200, result.message, result);
+  } catch (error) {
+    console.warn(error);
+
+    if (error.message === 'DOCTOR_NOT_FOUND') {
+      return sendResponse(
+        res,
+        404,
+        'Doctor Not Found',
+        null,
+        'The specified doctor does not exist.'
+      );
+    }
+
+    if (error.message === 'ALREADY_SUBMITTED') {
+      return sendResponse(
+        res,
+        400,
+        'Application Already Submitted',
+        null,
+        'Your documents are already pending review. Please wait for admin approval.'
+      );
+    }
+
+    if (error.message.startsWith('MISSING_REQUIRED_FILES')) {
+      return sendResponse(
+        res,
+        400,
+        'Missing Required Documents',
+        { missingFiles: error.missingFiles },
+        `Please upload the following required documents: ${error.missingFiles.join(', ')}`
+      );
+    }
+
+    if (error.name === 'ValidationError') {
+      const missingFields = Object.keys(error.errors).map(key =>
+        key.replace(/_/g, ' ').toUpperCase()
+      );
+      return sendResponse(
+        res,
+        400,
+        'Validation Failed',
+        { missingFields },
+        `Missing required documents: ${missingFields.join(', ')}`
+      );
+    }
+
+    if (
+      error.message.includes('Cloudinary') ||
+      error.message.includes('upload')
+    ) {
+      return sendResponse(
+        res,
+        500,
+        'File Upload Failed',
+        null,
+        'There was an error uploading your documents. Please try again.'
+      );
+    }
 
     return sendResponse(
       res,
-      200,
-      'Documents submitted successfully. Waiting for Admin Approval.'
+      500,
+      'Server Error',
+      null,
+      'An unexpected error occurred. Please try again later.'
     );
-  } catch (err) {
-    console.error(err);
-    if (err.message === 'ALREADY_SUBMITTED') {
-      return sendResponse(res, 400, 'Application already under review');
+  }
+};
+
+// ------------------------- COMPLETE PROFILE (EDUCATION, EXPERIENCE, ETC) --------------------------
+export const completeProfile = async (req, res) => {
+  try {
+    const doctorId = req.session.doctorId || req.doctor?._id;
+
+    if (!doctorId) {
+      return sendResponse(
+        res,
+        401,
+        'Unauthorized',
+        null,
+        'Doctor authentication required'
+      );
     }
-    return sendResponse(res, 500, 'Server Error', null, err.message);
-  }
-};
 
-// ------------------------- LOGOUT --------------------------
-export const logout = async (req, res) => {
-  try {
-    const doctor = req.doctor;
-    await doctorAuthService.logout(doctor, req);
+    const profileData = {
+      educational_details: req.body.educational_details
+        ? JSON.parse(req.body.educational_details)
+        : [],
+      specialization: req.body.specialization
+        ? JSON.parse(req.body.specialization)
+        : [],
+      experience_details: req.body.experience_details
+        ? JSON.parse(req.body.experience_details)
+        : [],
+      license_number: req.body.license_number,
+      affiliated_hospital: req.body.affiliated_hospital,
+      consultation_type: req.body.consultation_type,
+      consultation_fee: req.body.consultation_fee,
+      onlineProfileURL: req.body.onlineProfileURL,
+    };
 
-    req.session.destroy(err => {
-      if (err) return sendResponse(res, 500, 'Could not log out');
-      res.clearCookie('connect.sid');
-      return sendResponse(res, 200, 'Logout successful');
-    });
-  } catch (err) {
-    return sendResponse(res, 500, 'Server Error', null, err.message);
-  }
-};
+    const files = req.files;
 
-// ------------------------- FORGET PASSWORD --------------------------
-export const forgetPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
-    await doctorAuthService.forgetPassword(email, req);
-    return sendResponse(res, 200, 'Password reset email sent');
-  } catch (err) {
-    if (err.message === 'USER_NOT_FOUND')
-      return sendResponse(res, 404, 'User not found');
-    return sendResponse(res, 500, 'Server Error', null, err.message);
-  }
-};
+    const result = await doctorAuthService.completeProfile(
+      doctorId,
+      profileData,
+      files,
+      req
+    );
 
-// ------------------------- RESET PASSWORD --------------------------
-export const resetPassword = async (req, res) => {
-  try {
-    const { token, newPassword } = req.body;
-    await doctorAuthService.resetPassword(token, newPassword, req);
-    return sendResponse(res, 200, 'Password reset successfully');
-  } catch (err) {
-    if (err.message === 'INVALID_OR_EXPIRED_TOKEN')
-      return sendResponse(res, 400, 'Invalid token');
-    return sendResponse(res, 500, 'Server Error', null, err.message);
+    return sendResponse(res, 200, result.message, result);
+  } catch (error) {
+    console.warn(error);
+
+    if (error.message === 'DOCTOR_NOT_FOUND') {
+      return sendResponse(
+        res,
+        404,
+        'Doctor Not Found',
+        null,
+        'The specified doctor does not exist.'
+      );
+    }
+
+    if (error.message === 'APPLICATION_NOT_APPROVED') {
+      return sendResponse(
+        res,
+        403,
+        'Application Not Approved',
+        null,
+        'Your document verification is still pending. Please wait for admin approval before completing your profile.'
+      );
+    }
+
+    if (error.message === 'PROFILE_ALREADY_COMPLETED') {
+      return sendResponse(
+        res,
+        400,
+        'Profile Already Completed',
+        null,
+        'Your profile has already been completed.'
+      );
+    }
+
+    if (error.name === 'ValidationError') {
+      return sendResponse(res, 400, 'Validation Failed', null, error.message);
+    }
+
+    return sendResponse(
+      res,
+      500,
+      'Server Error',
+      null,
+      'An unexpected error occurred. Please try again later.'
+    );
   }
 };

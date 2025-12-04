@@ -6,25 +6,26 @@ import {
   loginDTO,
   forgetPasswordDTO,
   resetPasswordDTO,
-  // Note: Onboarding DTO is complex due to files, validation usually happens in controller or multer
+  completeProfileDTO,
 } from '../../../../dto/doctor/auth.dto.js';
 import {
   register,
   verifyEmail,
   login,
-  submitOnboarding,
+  submitApplication,
+  completeProfile,
   forgetPassword,
   resetPassword,
   logout,
 } from '../controllers/auth.controller.js';
 import { authRoutesLimiter } from '../../../../utils/authRoutesLimiter.js';
 import { authenticate } from '../../middleware/auth.middleware.js';
-import { upload } from '../../../../middlewares/multer.middleware.js'; // You need this for files
+import { upload } from '../../../../middlewares/multer.middleware.js';
 
 const router = express.Router();
 router.use(authRoutesLimiter);
 
-// ✅ 1. Registration (Basic Info)
+// ✅ 1. Registration (Basic Info: name, email, password, gender, DOB, contact)
 router.post(`/register`, validate(doctorRegisterDTO), register);
 
 // ✅ 2. Verify Email
@@ -33,10 +34,10 @@ router.post(`/verify-email`, validate(verifyEmailDTO), verifyEmail);
 // ✅ 3. Login
 router.post(`/login`, validate(loginDTO), login);
 
-// ✅ 4. Onboarding (Submit Documents) - Requires Authentication first
-// 'fields' configures multer to accept specific file keys
+// ✅ 4. Application Submission (Document Upload) - Step 1 of Onboarding
+// This submits documents for admin verification
 router.post(
-  `/onboarding`,
+  `/submit-application`,
   authenticate,
   upload.fields([
     { name: 'cnic', maxCount: 1 },
@@ -45,7 +46,22 @@ router.post(
     { name: 'mbbs_md_degree', maxCount: 1 },
     { name: 'experience_letters', maxCount: 1 },
   ]),
-  submitOnboarding
+  submitApplication
+);
+
+// ✅ 5. Complete Profile (Education, Experience, Specialization) - Step 2 of Onboarding
+// This is done AFTER admin approves the documents
+router.post(
+  `/complete-profile`,
+  authenticate,
+  upload.fields([
+    { name: 'education_files', maxCount: 5 }, // Multiple degree certificates
+    { name: 'experience_files', maxCount: 10 }, // Multiple institution images
+    { name: 'digital_signature', maxCount: 1 },
+    { name: 'profile_img', maxCount: 1 },
+    { name: 'cover_img', maxCount: 1 },
+  ]),
+  completeProfile
 );
 
 // ✅ Forget Password

@@ -50,7 +50,7 @@ const Schema = {
   passwordHash: { type: String, required: true },
 
   // Status with hyphen requires quotes in key
-  'account-_status': {
+  account_status: {
     type: String,
     enum: ['active', 'suspended/freezed', 'blocked/removed'],
     default: 'suspended/freezed', // Default to suspended until approved
