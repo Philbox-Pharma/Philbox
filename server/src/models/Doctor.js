@@ -47,7 +47,13 @@ const Schema = {
   onlineProfileURL: { type: String },
   digital_signature: { type: String },
 
-  passwordHash: { type: String, required: true },
+  passwordHash: {
+    type: String,
+    required: function () {
+      // ⚠️ Only require password if oauth_id is NOT present
+      return !this.oauth_id;
+    },
+  },
 
   // Status with hyphen requires quotes in key
   account_status: {
@@ -92,6 +98,12 @@ const Schema = {
   // 🔑 Password Reset Fields
   resetPasswordToken: { type: String },
   resetPasswordExpiresAt: { type: Date },
+  oauth_provider: {
+    type: String,
+    enum: ['google', 'local'],
+    default: 'local',
+  },
+  oauth_id: { type: String },
 };
 
 const Timestamp = {

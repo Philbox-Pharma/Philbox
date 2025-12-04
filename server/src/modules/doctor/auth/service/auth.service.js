@@ -110,6 +110,7 @@ class DoctorAuthService {
       newDoctor._id
     );
 
+    // eslint-disable-next-line no-unused-vars
     const { passwordHash, ...safeDoctor } = newDoctor.toObject();
     return {
       doctor: safeDoctor,
@@ -530,6 +531,48 @@ class DoctorAuthService {
 
     return {
       nextStep: 'login',
+    };
+  }
+
+  async oauthLogin(doctorData, req) {
+    const doctor = await Doctor.findById(doctorData._id);
+
+    if (!doctor) throw new Error('DOCTOR_NOT_FOUND');
+
+    // Check account status
+    if (doctor.account_status === 'blocked/removed') {
+      throw new Error('ACCOUNT_BLOCKED');
+    }
+
+    doctor.last_login = Date.now();
+    await doctor.save();
+
+    req.doctor = {
+      _id: doctor._id,
+      email: doctor.email,
+      fullName: doctor.fullName,
+    };
+
+    await logDoctorActivity(
+      req,
+      'oauth_login',
+      `Doctor logged in via ${doctor.oauth_provider}`,
+      'doctors',
+      doctor._id
+    );
+
+    // Determine next step
+    const nextStep = await this.determineNextStep(doctor._id);
+
+    const safeDoctor = doctor.toObject();
+    delete safeDoctor.passwordHash;
+
+    return {
+      doctorId: doctor._id.toString(),
+      accountStatus: doctor.account_status,
+      doctor: safeDoctor,
+      nextStep,
+      isNewUser: doctor.created_at > Date.now() - 60000, // Created in last minute
     };
   }
 }

@@ -17,10 +17,13 @@ import {
   forgetPassword,
   resetPassword,
   logout,
+  googleAuth, // <--- Add this
+  googleAuthCallback, // <--- Add this
 } from '../controllers/auth.controller.js';
 import { authRoutesLimiter } from '../../../../utils/authRoutesLimiter.js';
 import { authenticate } from '../../middleware/auth.middleware.js';
 import { upload } from '../../../../middlewares/multer.middleware.js';
+import passport from '../config/passport.js';
 
 const router = express.Router();
 router.use(authRoutesLimiter);
@@ -54,6 +57,7 @@ router.post(
 router.post(
   `/complete-profile`,
   authenticate,
+  validate(completeProfileDTO),
   upload.fields([
     { name: 'education_files', maxCount: 5 }, // Multiple degree certificates
     { name: 'experience_files', maxCount: 10 }, // Multiple institution images
@@ -72,5 +76,15 @@ router.post(`/reset-password`, validate(resetPasswordDTO), resetPassword);
 
 // ✅ Logout
 router.post(`/logout`, authenticate, logout);
+
+// ✅ 4. Google OAuth
+router.get(`/google`, googleAuth);
+router.get(
+  `/google/callback`,
+  passport.authenticate('doctor-google', {
+    failureRedirect: '/auth/oauth/error',
+  }),
+  googleAuthCallback
+);
 
 export default router;

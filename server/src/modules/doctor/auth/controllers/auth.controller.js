@@ -1,5 +1,6 @@
 import sendResponse from '../../../../utils/sendResponse.js';
 import doctorAuthService from '../service/auth.service.js';
+import passport from '../config/passport.js';
 
 // ------------------------- REGISTER --------------------------
 export const register = async (req, res) => {
@@ -310,5 +311,29 @@ export const completeProfile = async (req, res) => {
       null,
       'An unexpected error occurred. Please try again later.'
     );
+  }
+};
+
+export const googleAuth = passport.authenticate('doctor-google', {
+  scope: ['profile', 'email'],
+});
+
+export const googleAuthCallback = async (req, res) => {
+  try {
+    // Passport adds user to req after successful authentication
+    const result = await doctorAuthService.oauthLogin(req.user, req);
+
+    // Create session
+    req.session.doctorId = result.doctorId;
+    req.session.role = 'doctor';
+    req.session.status = result.accountStatus;
+
+    // Redirect to frontend with success
+    const redirectUrl = `${process.env.FRONTEND_URL}/auth/oauth/success?nextStep=${result.nextStep}&isNewUser=${result.isNewUser}`;
+    return res.redirect(redirectUrl);
+  } catch (err) {
+    console.error('Google OAuth Error:', err);
+    const errorUrl = `${process.env.FRONTEND_URL}/auth/oauth/error?message=${encodeURIComponent(err.message)}`;
+    return res.redirect(errorUrl);
   }
 };

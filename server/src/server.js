@@ -15,6 +15,7 @@ import adminBranchManagementRoutes from './modules/admin/features/branch_managem
 import adminSalespersonManagementRoutes from './modules/admin/features/salesperson_management/routes/salesperson.routes.js';
 
 import doctorAuthRoutes from './modules/doctor/auth/routes/auth.routes.js';
+import passport from './modules/doctor/auth/config/passport.js';
 
 import healthRouter from './shared/routes/health.route.js';
 
@@ -69,6 +70,8 @@ app.use(helmet());
 app.use(express.json());
 app.use(morgan('dev'));
 
+app.use(passport.initialize());
+app.use(passport.session());
 app.use('/api', healthRouter);
 app.use(`/api/${ROUTES.ADMIN_AUTH}`, adminAuthRoutes);
 app.use(`/api/${ROUTES.SUPER_ADMIN}`, adminAdminManagementRoutes);
