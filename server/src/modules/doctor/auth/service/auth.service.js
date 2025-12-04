@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import {
   sendVerificationEmail,
-  sendDoctorResetEmail,
+  sendResetEmail,
 } from '../../../../utils/sendEmail.js';
 import { logDoctorActivity } from '../../utils/logDoctorActivities.js';
 import { uploadToCloudinary } from '../../../../utils/uploadToCloudinary.js';
@@ -93,7 +93,8 @@ class DoctorAuthService {
     await sendVerificationEmail(
       newDoctor.email,
       verifyLink,
-      newDoctor.fullName
+      newDoctor.fullName,
+      'Doctor'
     );
 
     req.doctor = {
@@ -459,7 +460,7 @@ class DoctorAuthService {
     await doctor.save();
 
     const resetLink = `${process.env.FRONTEND_URL}/${ROUTES.DOCTOR_AUTH}/reset-password/${resetToken}`;
-    await sendDoctorResetEmail(doctor.email, resetLink, doctor.fullName);
+    await sendResetEmail(doctor.email, resetLink, doctor.fullName, 'Doctor');
 
     req.doctor = {
       _id: doctor._id,

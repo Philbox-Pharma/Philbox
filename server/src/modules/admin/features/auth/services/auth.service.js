@@ -25,7 +25,7 @@ class AdminAuthService {
     admin.otpCode = otp;
     admin.otpExpiresAt = expiresIn;
     await admin.save();
-    await sendOTP(admin.email, otp);
+    await sendOTP(admin.email, otp, 'Admin');
 
     // Return admin ID to store in session
     return {
@@ -115,7 +115,7 @@ class AdminAuthService {
 
     // Send reset email
     const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-    await sendResetEmail(admin.email, resetLink, admin.name);
+    await sendResetEmail(admin.email, resetLink, admin.name, 'Admin');
 
     // Log activity
     await logAdminActivity(
