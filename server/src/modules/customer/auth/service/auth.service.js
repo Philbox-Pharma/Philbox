@@ -8,7 +8,6 @@ import {
 } from '../../../../utils/sendEmail.js';
 import { logCustomerActivity } from '../../utils/logCustomerActivities.js';
 import { uploadToCloudinary } from '../../../../utils/uploadToCloudinary.js';
-import { ROUTES } from '../../../../constants/global.routes.constants.js'; // Assuming you have this
 
 class CustomerAuthService {
   /**
