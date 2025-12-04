@@ -5,7 +5,7 @@ import {
   verifyOtpDTO,
   forgetPasswordDTO,
   resetPasswordDTO,
-} from '../../../../../dto/auth.dto.js';
+} from '../../../../../dto/admin/auth.dto.js';
 import {
   login,
   verifyOTP,
