@@ -15,8 +15,8 @@ import { validate } from '../../../../../validator/joiValidate.middleware.js';
 import {
   createBranchAdminSchema,
   updateBranchAdminSchema,
-} from '../../../../../dto/branchAdmin.dto.js';
-import { paginationSchema } from '../../../../../dto/pagination.dto.js';
+} from '../../../../../dto/admin/branchAdmin.dto.js';
+import { paginationSchema } from '../../../../../dto/admin/pagination.dto.js';
 
 const router = express.Router();
 
