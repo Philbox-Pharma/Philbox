@@ -17,6 +17,8 @@ import adminSalespersonManagementRoutes from './modules/admin/features/salespers
 import doctorAuthRoutes from './modules/doctor/auth/routes/auth.routes.js';
 import passport from './modules/doctor/auth/config/passport.js';
 
+import customerAuthRoutes from './modules/customer/auth/routes/auth.routes.js';
+
 import healthRouter from './shared/routes/health.route.js';
 
 import { ROUTES } from './constants/global.routes.constants.js';
@@ -79,6 +81,7 @@ app.use(`/api/${ROUTES.SUPER_ADMIN}`, adminBranchManagementRoutes);
 app.use(`/api/${ROUTES.SUPER_ADMIN}`, adminSalespersonManagementRoutes);
 
 app.use(`/api/${ROUTES.DOCTOR_AUTH}`, doctorAuthRoutes);
+app.use(`/api/${ROUTES.CUSTOMER_AUTH}`, customerAuthRoutes);
 
 const start_server = async () => {
   try {

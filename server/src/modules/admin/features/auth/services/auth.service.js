@@ -8,6 +8,7 @@ import { logAdminActivity } from '../../../utils/logAdminActivities.js';
 class AdminAuthService {
   /**
    * Authenticate admin and send OTP
+   * Next Step: verify-otp
    */
   async login(email, password, req) {
     const admin = await Admin.findOne({ email: email.toLowerCase() });
@@ -25,17 +26,20 @@ class AdminAuthService {
     admin.otpCode = otp;
     admin.otpExpiresAt = expiresIn;
     await admin.save();
-    await sendOTP(admin.email, otp);
+
+    await sendOTP(admin.email, otp, 'Admin');
 
     // Return admin ID to store in session
     return {
       adminId: admin._id.toString(),
       email: admin.email,
+      nextStep: 'verify-otp', // <--- Added Next Step
     };
   }
 
   /**
    * Verify OTP and complete login
+   * Next Step: dashboard
    */
   async verifyOTP(email, otp, pendingAdminId, req) {
     const admin = await Admin.findOne({ email }).select('-password');
@@ -59,6 +63,9 @@ class AdminAuthService {
     admin.otpExpiresAt = null;
     await admin.save();
 
+    // ✅ Log Fix: Manually attach admin to req
+    req.admin = admin;
+
     // Log activity
     await logAdminActivity(
       req,
@@ -70,18 +77,24 @@ class AdminAuthService {
 
     // Return session data
     const { password: _, ...safeAdmin } = admin.toObject();
+
     return {
       adminId: admin._id.toString(),
       adminCategory: admin.category,
       adminEmail: admin.email,
       admin: safeAdmin,
+      nextStep: 'dashboard', // <--- Added Next Step
     };
   }
 
   /**
    * Logout admin
+   * Next Step: login
    */
   async logout(admin, req) {
+    // ✅ Log Fix: Ensure admin is on req
+    if (!req.admin && admin) req.admin = admin;
+
     await logAdminActivity(
       req,
       'logout',
@@ -90,11 +103,14 @@ class AdminAuthService {
       admin._id
     );
 
-    return true;
+    return {
+      nextStep: 'login', // <--- Added Next Step
+    };
   }
 
   /**
    * Request password reset
+   * Next Step: check-email
    */
   async forgetPassword(email, req) {
     const admin = await Admin.findOne({ email: email.toLowerCase() });
@@ -115,7 +131,10 @@ class AdminAuthService {
 
     // Send reset email
     const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-    await sendResetEmail(admin.email, resetLink, admin.name);
+    await sendResetEmail(admin.email, resetLink, admin.name, 'Admin');
+
+    // ✅ Log Fix: Manually attach admin to req
+    req.admin = admin;
 
     // Log activity
     await logAdminActivity(
@@ -129,11 +148,13 @@ class AdminAuthService {
     return {
       email: admin.email,
       name: admin.name,
+      nextStep: 'check-email', // <--- Added Next Step
     };
   }
 
   /**
    * Reset password with token
+   * Next Step: login
    */
   async resetPassword(token, newPassword, req) {
     const resetTokenHash = crypto
@@ -157,6 +178,9 @@ class AdminAuthService {
     admin.resetPasswordExpires = undefined;
     await admin.save();
 
+    // ✅ Log Fix: Manually attach admin to req
+    req.admin = admin;
+
     // Log activity
     await logAdminActivity(
       req,
@@ -169,6 +193,7 @@ class AdminAuthService {
     return {
       email: admin.email,
       name: admin.name,
+      nextStep: 'login', // <--- Added Next Step
     };
   }
 }
