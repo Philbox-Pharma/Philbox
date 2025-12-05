@@ -25,7 +25,7 @@ class AdminAuthService {
     admin.otpCode = otp;
     admin.otpExpiresAt = expiresIn;
     await admin.save();
-    await sendOTP(admin.email, otp);
+    await sendOTP(admin.email, otp, 'Admin');
 
     // Return admin ID to store in session
     return {
@@ -59,6 +59,9 @@ class AdminAuthService {
     admin.otpExpiresAt = null;
     await admin.save();
 
+    // ✅ FIX: Manually attach admin to req so logger can find it
+    req.admin = admin;
+
     // Log activity
     await logAdminActivity(
       req,
@@ -82,6 +85,11 @@ class AdminAuthService {
    * Logout admin
    */
   async logout(admin, req) {
+    // ✅ Note: Ensure 'authenticate' middleware is used on the logout route
+    // If middleware is used, req.admin is already set.
+    // If passed explicitly as argument 'admin', we can ensure it's on req:
+    if (!req.admin && admin) req.admin = admin;
+
     await logAdminActivity(
       req,
       'logout',
@@ -115,7 +123,10 @@ class AdminAuthService {
 
     // Send reset email
     const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-    await sendResetEmail(admin.email, resetLink, admin.name);
+    await sendResetEmail(admin.email, resetLink, admin.name, 'Admin');
+
+    // ✅ FIX: Manually attach admin to req
+    req.admin = admin;
 
     // Log activity
     await logAdminActivity(
@@ -156,6 +167,9 @@ class AdminAuthService {
     admin.resetPasswordToken = undefined;
     admin.resetPasswordExpires = undefined;
     await admin.save();
+
+    // ✅ FIX: Manually attach admin to req
+    req.admin = admin;
 
     // Log activity
     await logAdminActivity(
