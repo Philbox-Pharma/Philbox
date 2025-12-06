@@ -1,145 +1,386 @@
-# 🛡️ Admin Portal - Frontend Integration Guide
+# Admin Authentication API - Mock Data
 
-## 📌 Overview & Logic Flow
+## Base URL
 
-The Admin authentication system is **Session-Based** and strictly enforces **2-Step Verification (2FA)**. An admin cannot access the dashboard immediately after entering their password; they must verify an OTP sent to their email.
-
-### 🔄 The "Next Step" Logic
-
-The API returns a `nextStep` variable in the response data. The Frontend **must** handle these redirects:
-
-1.  **Login Success** $\rightarrow$ Returns `nextStep: 'verify-otp'`. Redirect to **OTP Entry Page**.
-2.  **OTP Success** $\rightarrow$ Returns `nextStep: 'dashboard'`. Redirect to **Admin Dashboard**.
-3.  **Logout / Reset** $\rightarrow$ Returns `nextStep: 'login'`. Redirect to **Login Page**.
+```
+http://localhost:5000/api/admin/auth
+```
 
 ---
 
-## 📂 1. Required Frontend Pages & Routes
+## 1. Login (Step 1 - Send OTP)
 
-Based on the backend logic, please create the following routes/pages:
+**Endpoint:** `POST /login`
 
-| Page Name           | Suggested Route                | Description                               |
-| :------------------ | :----------------------------- | :---------------------------------------- |
-| **Admin Login**     | `/admin/login`                 | Email & Password form.                    |
-| **Verify OTP**      | `/admin/verify-otp`            | Input for 6-digit OTP code.               |
-| **Forgot Password** | `/admin/forgot-password`       | Form to input email.                      |
-| **Reset Password**  | `/admin/reset-password/:token` | Form to input new password.               |
-| **Dashboard**       | `/admin/dashboard`             | **(Protected)** Main Admin control panel. |
+### Request Body
+
+```json
+{
+  "email": "admin@philbox.com",
+  "password": "Admin123456"
+}
+```
+
+### Response (200)
+
+```json
+{
+  "status": 200,
+  "message": "OTP sent to email"
+}
+```
+
+**Note:** After this step, the backend stores `pendingAdminId` in the session and sends an OTP to the admin's email.
+
+### Error Responses
+
+```json
+// Invalid email (404)
+{
+  "status": 404,
+  "message": "Invalid email"
+}
+
+// Invalid credentials (401)
+{
+  "status": 401,
+  "message": "Invalid Credentials"
+}
+```
 
 ---
 
-## 📡 2. API Integration Details
+## 2. Verify OTP (Step 2 - Complete Login)
 
-**Base URL:** `http://localhost:5000/api/admin/auth`
-**Credentials:** All requests must include credentials (cookies).
+**Endpoint:** `POST /verify-otp`
 
-- **Axios:** `axios.defaults.withCredentials = true;`
-- **Fetch:** `credentials: 'include'`
+### Request Body
 
-### A. Authentication Flow (2FA)
+```json
+{
+  "email": "admin@philbox.com",
+  "otp": "123456"
+}
+```
 
-#### 1. Login (Step 1)
+### Response (200)
 
-- **Endpoint:** `POST /login`
-- **Payload (JSON):**
-  ```json
-  {
-    "email": "admin@example.com",
-    "password": "SecurePassword123"
-  }
-  ```
-- **Response (200):**
-  ```json
-  {
-    "success": true,
-    "message": "OTP sent to email",
-    "data": {
-      "adminId": "...",
-      "email": "admin@example.com",
-      "nextStep": "verify-otp" // <--- Trigger Redirect
+```json
+{
+  "status": 200,
+  "message": "2FA Verified",
+  "data": {
+    "admin": {
+      "_id": "507f1f77bcf86cd799439031",
+      "name": "Super Admin",
+      "email": "admin@philbox.com",
+      "phone_number": "+923001234567",
+      "category": "super-admin",
+      "profile_img_url": "https://avatar.iran.liara.run/username?username=Super Admin",
+      "cover_img_url": "https://placehold.co/1920x480/EAEAEA/000000?text=Super Admin",
+      "isTwoFactorEnabled": false,
+      "addresses": [],
+      "branches_managed": [],
+      "created_at": "2025-01-01T00:00:00.000Z",
+      "updated_at": "2025-12-06T12:30:00.000Z"
     }
   }
-  ```
-- **Frontend Action:**
-  1.  Store the `email` temporarily (state/context) to pre-fill it on the next page.
-  2.  Redirect to `/admin/verify-otp`.
+}
+```
 
-#### 2. Verify OTP (Step 2)
+**Note:** After successful OTP verification, the session is fully created with `adminId`, `adminCategory`, and `adminEmail`.
 
-- **Endpoint:** `POST /verify-otp`
-- **Description:** Validates the OTP and establishes the full session.
-- **Payload (JSON):**
-  ```json
-  {
-    "email": "admin@example.com",
-    "otp": "123456"
-  }
-  ```
-- **Response (200):**
-  ```json
-  {
-    "success": true,
-    "message": "2FA Verified",
-    "data": {
-      "admin": {
-        "_id": "...",
-        "name": "Super Admin",
-        "email": "...",
-        "category": "super-admin"
-      },
-      "nextStep": "dashboard" // <--- Trigger Redirect
-    }
-  }
-  ```
+### Error Responses
+
+```json
+// Invalid request (400)
+{
+  "status": 400,
+  "message": "Invalid Request"
+}
+
+// Invalid session (400)
+{
+  "status": 400,
+  "message": "Invalid session"
+}
+
+// Invalid or expired OTP (400)
+{
+  "status": 400,
+  "message": "Invalid or expired OTP"
+}
+```
 
 ---
 
-### B. Password Recovery
+## 3. Forget Password
 
-#### 1. Forgot Password
+**Endpoint:** `POST /forget-password`
 
-- **Endpoint:** `POST /forget-password`
-- **Payload:** `{ "email": "admin@example.com" }`
-- **Success (200):** `{ "nextStep": "check-email" }`
+### Request Body
 
-#### 2. Reset Password
+```json
+{
+  "email": "admin@philbox.com"
+}
+```
 
-- **Endpoint:** `POST /reset-password`
-- **Payload:**
-  ```json
-  {
-    "token": "token_from_url_params",
-    "newPassword": "NewSecurePassword123"
-  }
-  ```
-- **Success (200):** `{ "nextStep": "login" }`
+### Response (200)
+
+```json
+{
+  "status": 200,
+  "message": "Password reset email sent successfully"
+}
+```
+
+### Error Response (404)
+
+```json
+{
+  "status": 404,
+  "message": "Admin not found"
+}
+```
 
 ---
 
-### C. Logout
+## 4. Reset Password
 
-- **Endpoint:** `POST /logout`
-- **Action:** Clears cookies/session.
-- **Success (200):** `{ "nextStep": "login" }`
+**Endpoint:** `POST /reset-password`
+
+### Request Body
+
+```json
+{
+  "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
+  "newPassword": "NewAdmin123456"
+}
+```
+
+### Response (200)
+
+```json
+{
+  "status": 200,
+  "message": "Password reset successfully"
+}
+```
+
+### Error Response (400)
+
+```json
+{
+  "status": 400,
+  "message": "Invalid or expired token"
+}
+```
 
 ---
 
-## 🛠 Developer Notes
+## 5. Logout
 
-1.  **Session & Cookies:**
-    - The "Login" step creates a **temporary session** (`pendingAdminId`).
-    - The "Verify OTP" step converts that into a **full session** (`adminId`).
-    - **Implication:** If the user refreshes the browser or closes the tab between Step 1 and Step 2, the temporary session might be lost depending on cookie persistence settings. Ensure the `verify-otp` page handles "Session Expired" errors gracefully (redirect back to login).
+**Endpoint:** `POST /logout`
 
-2.  **Validation:**
-    - **Password:** Min 8 characters (as per Joi).
-    - **OTP:** Must be exactly 6 digits.
-    - API returns `400 Bad Request` if validation fails.
+**Note:** Requires authentication. Include session cookie.
 
-3.  **Error Handling:**
-    - `INVALID_CREDENTIALS` (401): Wrong password.
-    - `INVALID_OR_EXPIRED_OTP` (400): Wrong code or time ran out.
-    - `INVALID_SESSION` (400): Trying to verify OTP without logging in first.
+### Request Body
 
-4.  **Admin Categories:**
-    - The `admin` object returned in Verify OTP contains a `category` field (e.g., `super-admin`, `support`). Use this for frontend Role-Based Access Control (RBAC) to hide/show sidebar items.
+```json
+{}
+```
+
+### Response (200)
+
+```json
+{
+  "status": 200,
+  "message": "Logout successful"
+}
+```
+
+### Error Response (500)
+
+```json
+{
+  "status": 500,
+  "message": "Could not log out"
+}
+```
+
+---
+
+## Complete Admin Objects
+
+### Super Admin
+
+```json
+{
+  "_id": "507f1f77bcf86cd799439031",
+  "name": "Super Admin",
+  "email": "admin@philbox.com",
+  "phone_number": "+923001234567",
+  "category": "super-admin",
+  "profile_img_url": "https://avatar.iran.liara.run/username?username=Super Admin",
+  "cover_img_url": "https://placehold.co/1920x480/EAEAEA/000000?text=Super Admin",
+  "isTwoFactorEnabled": false,
+  "otpCode": null,
+  "otpExpiresAt": null,
+  "resetPasswordToken": null,
+  "resetPasswordExpires": null,
+  "addresses": [],
+  "branches_managed": [],
+  "created_at": "2025-01-01T00:00:00.000Z",
+  "updated_at": "2025-12-06T12:30:00.000Z"
+}
+```
+
+### Branch Admin
+
+```json
+{
+  "_id": "507f1f77bcf86cd799439032",
+  "name": "Branch Admin Lahore",
+  "email": "branch.admin.lahore@philbox.com",
+  "phone_number": "+923009876543",
+  "category": "branch-admin",
+  "status": "active",
+  "profile_img_url": "https://avatar.iran.liara.run/username?username=Branch Admin Lahore",
+  "cover_img_url": "https://placehold.co/1920x480/EAEAEA/000000?text=Branch Admin Lahore",
+  "isTwoFactorEnabled": false,
+  "otpCode": null,
+  "otpExpiresAt": null,
+  "resetPasswordToken": null,
+  "resetPasswordExpires": null,
+  "addresses": ["507f1f77bcf86cd799439033"],
+  "branches_managed": ["507f1f77bcf86cd799439034"],
+  "created_at": "2025-02-15T10:00:00.000Z",
+  "updated_at": "2025-12-06T12:30:00.000Z"
+}
+```
+
+---
+
+## Admin Activity Log Sample
+
+```json
+{
+  "_id": "507f1f77bcf86cd799439035",
+  "admin_id": "507f1f77bcf86cd799439031",
+  "action_type": "verify_otp",
+  "description": "Admin (admin@philbox.com) verified OTP successfully",
+  "target_collection": "admins",
+  "target_id": "507f1f77bcf86cd799439031",
+  "changes": null,
+  "ip_address": "192.168.1.100",
+  "device_info": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+  "created_at": "2025-12-06T12:30:00.000Z"
+}
+```
+
+---
+
+## Authentication Flow
+
+### Two-Factor Authentication Flow:
+
+1. **Step 1**: User submits email and password via `/login`
+   - Backend validates credentials
+   - Generates 6-digit OTP
+   - Stores OTP in database with expiration (typically 5-10 minutes)
+   - Sends OTP to admin's email
+   - Stores `pendingAdminId` in session
+   - Returns: `"OTP sent to email"`
+
+2. **Step 2**: User submits email and OTP via `/verify-otp`
+   - Backend validates OTP against stored value
+   - Checks OTP hasn't expired
+   - Verifies session's `pendingAdminId` matches
+   - Clears OTP from database
+   - Creates full session with `adminId`, `adminCategory`, `adminEmail`
+   - Returns: Admin object and success message
+
+### Session Data:
+
+After successful login (after OTP verification):
+
+```javascript
+req.session = {
+  adminId: "507f1f77bcf86cd799439031",
+  adminCategory: "super-admin",
+  adminEmail: "admin@philbox.com",
+};
+```
+
+During OTP pending:
+
+```javascript
+req.session = {
+  pendingAdminId: "507f1f77bcf86cd799439031",
+};
+```
+
+---
+
+## Authentication Notes
+
+1. **Two-Factor Authentication**: Admin login requires OTP verification
+2. **Session-based authentication**: After successful OTP verification, session is created
+3. **Protected routes**: `/logout` requires authentication
+4. **Include credentials**: Frontend should send requests with `credentials: 'include'`
+5. **OTP Expiration**: OTP typically expires in 5-10 minutes (check `otpExpiresAt`)
+6. **Admin Categories**:
+   - `super-admin`: Full system access, no status field
+   - `branch-admin`: Branch-specific access, has `status` field (active/suspended/blocked)
+
+7. **nextStep values** (from service):
+   - `verify-otp`: User needs to verify OTP after login
+   - `check-email`: Check email for reset link
+   - `login`: User should login
+   - `dashboard`: Logged in successfully, go to dashboard
+
+---
+
+## Sample OTP Email Content
+
+The OTP sent to admin's email would look like:
+
+```
+Subject: Your PhilBox Admin Login OTP
+
+Dear Super Admin,
+
+Your OTP code is: 123456
+
+This code will expire in 10 minutes.
+
+If you did not request this code, please ignore this email.
+
+Best regards,
+PhilBox Team
+```
+
+---
+
+## Password Reset Flow
+
+1. Admin requests password reset via `/forget-password`
+2. Backend generates reset token and sends email with reset link
+3. Reset link format: `http://localhost:3000/admin/auth/reset-password/{token}`
+4. Admin clicks link and submits new password via `/reset-password`
+5. Backend validates token, updates password, and clears reset token
+
+---
+
+## Error Handling Best Practices
+
+For the frontend developer:
+
+- Always check `status` code in response
+- Handle 400-level errors with user-friendly messages
+- For OTP errors, allow user to request new OTP (would need additional endpoint)
+- Store `pendingAdminId` state in frontend during OTP flow
+- Clear any pending state on successful login or logout
+- Implement OTP input UI with 6-digit input fields
+- Add countdown timer for OTP expiration (typically 10 minutes)

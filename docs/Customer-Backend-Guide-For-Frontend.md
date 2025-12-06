@@ -1,198 +1,497 @@
----
+# Customer Authentication API - Mock Data
 
-# 🛒 Customer Portal - Frontend Integration Guide
+## Base URL
 
-## 📌 Overview & Logic Flow
-
-The Customer authentication system follows a session-based approach. While it is simpler than the Doctor flow, there is one critical logic check the frontend must perform after login: **Address Verification**.
-
-### 🔄 The "Next Step" Logic
-
-The backend Service calculates a "Next Step", but the Controller returns the `customer` object. The Frontend should use the following logic to determine where to redirect the user after login:
-
-1.  **If `!customer.is_Verified`**: Redirect to **Verify Email Page** (This usually happens at login failure, but good to know).
-2.  **If `!customer.address_id`** (Address is missing): Redirect to **Complete Profile / Address Form**.
-3.  **Default**: Redirect to **Home / Dashboard**.
+```
+http://localhost:5000/api/customer/auth
+```
 
 ---
 
-## 📂 1. Required Frontend Pages & Routes
+## 1. Register
 
-Based on the backend logic, please create the following routes/pages:
+**Endpoint:** `POST /register`
 
-| Page Name            | Suggested Route          | Description                                                               |
-| :------------------- | :----------------------- | :------------------------------------------------------------------------ |
-| **Login**            | `/login`                 | Email/Password form + Google Login button.                                |
-| **Register**         | `/register`              | Basic info: Name, Email, Pass, Gender, Contact.                           |
-| **Verify Email**     | `/verify-email/:token`   | Landing page from email link. Auto-triggers API.                          |
-| **Forgot Password**  | `/forgot-password`       | Form to input email.                                                      |
-| **Reset Password**   | `/reset-password/:token` | Form to input new password.                                               |
-| **Complete Profile** | `/profile/edit`          | **(Protected)** Form to add Address (Street, City, etc.) & Upload Avatar. |
-| **Dashboard/Home**   | `/` or `/dashboard`      | **(Protected)** Main shopping area.                                       |
-| **OAuth Success**    | `/auth/oauth/success`    | Handles redirection after Google Login.                                   |
-| **OAuth Error**      | `/auth/oauth/error`      | Displays error if Google Login fails.                                     |
+### Request Body
+
+```json
+{
+  "fullName": "Sarah Ahmed",
+  "email": "sarah.ahmed@example.com",
+  "password": "SecurePass123",
+  "contactNumber": "03001234567",
+  "gender": "Female",
+  "dateOfBirth": "1995-08-20"
+}
+```
+
+### Response (201)
+
+```json
+{
+  "status": 201,
+  "message": "Registration successful. Please verify your email.",
+  "data": {
+    "customer": {
+      "_id": "507f1f77bcf86cd799439021",
+      "fullName": "Sarah Ahmed",
+      "email": "sarah.ahmed@example.com",
+      "gender": "Female",
+      "dateOfBirth": "1995-08-20T00:00:00.000Z",
+      "contactNumber": "03001234567",
+      "account_status": "active",
+      "is_Verified": false,
+      "refreshTokens": [],
+      "created_at": "2025-12-06T10:00:00.000Z",
+      "updated_at": "2025-12-06T10:00:00.000Z"
+    },
+    "nextStep": "verify-email"
+  }
+}
+```
+
+### Error Response (409)
+
+```json
+{
+  "status": 409,
+  "message": "Email already exists"
+}
+```
 
 ---
 
-## 📡 2. API Integration Details
+## 2. Verify Email
 
-**Base URL:** `http://localhost:5000/api/customer/auth`
-**Credentials:** All requests must include credentials (cookies).
+**Endpoint:** `POST /verify-email`
 
-- **Axios:** `axios.defaults.withCredentials = true;`
-- **Fetch:** `credentials: 'include'`
+### Request Body
 
-### A. Authentication
+```json
+{
+  "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6"
+}
+```
 
-#### 1. Register
+### Response (200)
 
-- **Endpoint:** `POST /register`
-- **Payload (JSON):**
-  ```json
-  {
-    "fullName": "Jane Doe",
-    "email": "jane@example.com",
-    "password": "Password123",
-    "contactNumber": "03001234567",
+```json
+{
+  "status": 200,
+  "message": "Email verified successfully. Please login."
+}
+```
+
+### Error Response (400)
+
+```json
+{
+  "status": 400,
+  "message": "Invalid or expired verification token"
+}
+```
+
+---
+
+## 3. Login
+
+**Endpoint:** `POST /login`
+
+### Request Body
+
+```json
+{
+  "email": "sarah.ahmed@example.com",
+  "password": "SecurePass123"
+}
+```
+
+### Response (200)
+
+```json
+{
+  "status": 200,
+  "message": "Login successful",
+  "data": {
+    "customer": {
+      "_id": "507f1f77bcf86cd799439021",
+      "fullName": "Sarah Ahmed",
+      "email": "sarah.ahmed@example.com",
+      "gender": "Female",
+      "dateOfBirth": "1995-08-20T00:00:00.000Z",
+      "contactNumber": "03001234567",
+      "account_status": "active",
+      "is_Verified": true,
+      "refreshTokens": [],
+      "last_login": "2025-12-06T11:30:00.000Z",
+      "created_at": "2025-12-06T10:00:00.000Z",
+      "updated_at": "2025-12-06T11:30:00.000Z"
+    },
+    "accountStatus": "active"
+  }
+}
+```
+
+### Error Responses
+
+```json
+// Invalid credentials (401)
+{
+  "status": 401,
+  "message": "Invalid Credentials"
+}
+
+// Email not verified (403)
+{
+  "status": 403,
+  "message": "Please verify your email first"
+}
+
+// Account blocked (403)
+{
+  "status": 403,
+  "message": "Your account has been blocked or suspended"
+}
+```
+
+---
+
+## 4. Google OAuth - Initiate
+
+**Endpoint:** `GET /google`
+
+**Note:** This redirects to Google OAuth. No JSON response.
+
+### URL
+
+```
+http://localhost:5000/api/customer/auth/google
+```
+
+---
+
+## 5. Google OAuth - Callback
+
+**Endpoint:** `GET /google/callback`
+
+**Note:** This is called by Google after authentication. Redirects to frontend.
+
+### Success Redirect
+
+```
+http://localhost:3000/auth/oauth/success?role=customer&isNewUser=true
+```
+
+### Error Redirect
+
+```
+http://localhost:3000/auth/oauth/error?message=Authentication%20failed
+```
+
+---
+
+## 6. Forget Password
+
+**Endpoint:** `POST /forget-password`
+
+### Request Body
+
+```json
+{
+  "email": "sarah.ahmed@example.com"
+}
+```
+
+### Response (200)
+
+```json
+{
+  "status": 200,
+  "message": "Password reset email sent"
+}
+```
+
+### Error Response (404)
+
+```json
+{
+  "status": 404,
+  "message": "User not found"
+}
+```
+
+---
+
+## 7. Reset Password
+
+**Endpoint:** `POST /reset-password`
+
+### Request Body
+
+```json
+{
+  "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
+  "newPassword": "NewSecurePass456"
+}
+```
+
+### Response (200)
+
+```json
+{
+  "status": 200,
+  "message": "Password reset successfully"
+}
+```
+
+### Error Response (400)
+
+```json
+{
+  "status": 400,
+  "message": "Invalid token"
+}
+```
+
+---
+
+## 8. Get Current User (Me)
+
+**Endpoint:** `GET /me`
+
+**Note:** Requires authentication. Include session cookie.
+
+### Response (200)
+
+```json
+{
+  "status": 200,
+  "message": "Current user fetched",
+  "data": {
+    "_id": "507f1f77bcf86cd799439021",
+    "fullName": "Sarah Ahmed",
+    "email": "sarah.ahmed@example.com",
     "gender": "Female",
-    "dateOfBirth": "1995-05-20"
+    "dateOfBirth": "1995-08-20T00:00:00.000Z",
+    "contactNumber": "03001234567",
+    "account_status": "active",
+    "is_Verified": true,
+    "address_id": "507f1f77bcf86cd799439022",
+    "profile_img_url": "https://res.cloudinary.com/example/customer_profiles/sarah_ahmed.jpg",
+    "cover_img_url": "https://res.cloudinary.com/example/customer_covers/sarah_ahmed_cover.jpg",
+    "refreshTokens": [],
+    "last_login": "2025-12-06T11:30:00.000Z",
+    "created_at": "2025-12-06T10:00:00.000Z",
+    "updated_at": "2025-12-06T11:30:00.000Z"
   }
-  ```
-- **Success (201):**
-  ```json
-  {
-    "success": true,
-    "message": "Registration successful...",
-    "data": { "nextStep": "verify-email" }
-  }
-  ```
-- **Frontend Action:** Redirect to a "Check your email" confirmation page.
+}
+```
 
-#### 2. Verify Email
+### Error Response (401)
 
-- **Endpoint:** `POST /verify-email`
-- **Payload (JSON):** `{ "token": "string_from_url" }`
-- **Success (200):** Message confirming verification.
-- **Frontend Action:** Redirect to **Login**.
+```json
+{
+  "status": 401,
+  "message": "No session, authorization denied"
+}
+```
 
-#### 3. Login
+---
 
-- **Endpoint:** `POST /login`
-- **Payload (JSON):**
-  ```json
-  {
-    "email": "jane@example.com",
-    "password": "Password123"
-  }
-  ```
-- **Success (200):**
-  ```json
-  {
-    "success": true,
-    "message": "Login successful",
-    "data": {
-      "customer": {
-        "_id": "...",
-        "fullName": "...",
-        "address_id": null, // <--- CHECK THIS
-        ...
+## 9. Update Profile
+
+**Endpoint:** `PUT /profile`
+
+**Note:** Requires authentication. Include session cookie.
+
+### Request Body (multipart/form-data)
+
+```
+fullName: "Sarah Ahmed Khan"
+contactNumber: "03009876543"
+gender: "Female"
+dateOfBirth: "1995-08-20"
+street: "123 Main Street, Block A"
+city: "Lahore"
+province: "Punjab"
+zip_code: "54000"
+country: "Pakistan"
+google_map_link: "https://maps.google.com/?q=31.5204,74.3587"
+profile_img: [File] (optional)
+cover_img: [File] (optional)
+```
+
+### Response (200)
+
+```json
+{
+  "status": 200,
+  "message": "Profile updated successfully",
+  "data": {
+    "customer": {
+      "_id": "507f1f77bcf86cd799439021",
+      "fullName": "Sarah Ahmed Khan",
+      "email": "sarah.ahmed@example.com",
+      "gender": "Female",
+      "dateOfBirth": "1995-08-20T00:00:00.000Z",
+      "contactNumber": "03009876543",
+      "account_status": "active",
+      "is_Verified": true,
+      "address_id": {
+        "_id": "507f1f77bcf86cd799439022",
+        "street": "123 Main Street, Block A",
+        "city": "Lahore",
+        "province": "Punjab",
+        "zip_code": "54000",
+        "country": "Pakistan",
+        "google_map_link": "https://maps.google.com/?q=31.5204,74.3587",
+        "customer_id": "507f1f77bcf86cd799439021",
+        "created_at": "2025-12-06T11:45:00.000Z",
+        "updated_at": "2025-12-06T12:00:00.000Z"
       },
-      "accountStatus": "active"
-    }
-  }
-  ```
-- **Frontend Action (Critical):**
-  1.  Check `response.data.customer.address_id`.
-  2.  If **null** $\rightarrow$ Redirect to `/profile/edit` (User needs to set address).
-  3.  If **exists** $\rightarrow$ Redirect to `/dashboard`.
-
-#### 4. Google OAuth
-
-- **Action:** Redirect user browser to `BACKEND_URL/google`
-- **Callback Handling:**
-  - Backend redirects to: `FRONTEND_URL/auth/oauth/success?role=customer&isNewUser=true`
-  - **Frontend Logic:**
-    1.  Parse URL params.
-    2.  Call **Get Current User (`/me`)** to get the customer object.
-    3.  Perform the "Address Check" logic (step 3 above) to decide where to send them.
-
----
-
-### B. Profile & Address Management (Protected)
-
-#### 1. Get Current User
-
-- **Endpoint:** `GET /me`
-- **Description:** Used to re-fetch user data or check session validity on page load.
-- **Success (200):** Returns full customer object.
-
-#### 2. Update Profile & Address
-
-- **Endpoint:** `PUT /profile`
-- **Content-Type:** `multipart/form-data`
-- **Description:** Updates text info, creates/updates the Address, and uploads images.
-- **Usage:** Use this for the "Complete Profile" step AND general profile editing.
-
-- **Form Data - Files:**
-  - `profile_img` (File)
-  - `cover_img` (File)
-
-- **Form Data - Text Fields:**
-  - `fullName`: "Jane Doe"
-  - `contactNumber`: "0300..."
-  - `gender`: "Female"
-  - `street`: "House 12, Street 5"
-  - `city`: "Lahore"
-  - `province`: "Punjab"
-  - `zip_code`: "54000"
-  - `country`: "Pakistan"
-  - `google_map_link`: "https://maps.google..."
-
-- **Success (200):**
-  ```json
-  {
-    "success": true,
+      "profile_img_url": "https://res.cloudinary.com/example/customer_profiles/sarah_ahmed_new.jpg",
+      "cover_img_url": "https://res.cloudinary.com/example/customer_covers/sarah_ahmed_cover_new.jpg",
+      "refreshTokens": [],
+      "last_login": "2025-12-06T11:30:00.000Z",
+      "created_at": "2025-12-06T10:00:00.000Z",
+      "updated_at": "2025-12-06T12:00:00.000Z"
+    },
     "message": "Profile updated successfully",
-    "data": {
-      "customer": { ... } // Contains updated address_id
-    }
+    "nextStep": "dashboard"
   }
-  ```
+}
+```
+
+### Error Response (401)
+
+```json
+{
+  "status": 401,
+  "message": "No session, authorization denied"
+}
+```
 
 ---
 
-### C. Password Recovery
+## 10. Logout
 
-#### 1. Forgot Password
+**Endpoint:** `POST /logout`
 
-- **Endpoint:** `POST /forget-password`
-- **Payload:** `{ "email": "jane@example.com" }`
+**Note:** Requires authentication. Include session cookie.
 
-#### 2. Reset Password
+### Request Body
 
-- **Endpoint:** `POST /reset-password`
-- **Payload:** `{ "token": "...", "newPassword": "..." }`
+```json
+{}
+```
+
+### Response (200)
+
+```json
+{
+  "status": 200,
+  "message": "Logout successful"
+}
+```
+
+### Error Response (500)
+
+```json
+{
+  "status": 500,
+  "message": "Could not log out"
+}
+```
 
 ---
 
-### D. Logout
+## Complete Customer Object (With Address)
 
-- **Endpoint:** `POST /logout`
-- **Success:** Clears session. Redirect to Login.
+```json
+{
+  "_id": "507f1f77bcf86cd799439021",
+  "fullName": "Sarah Ahmed Khan",
+  "email": "sarah.ahmed@example.com",
+  "gender": "Female",
+  "dateOfBirth": "1995-08-20T00:00:00.000Z",
+  "contactNumber": "03009876543",
+  "account_status": "active",
+  "is_Verified": true,
+  "oauthId": null,
+  "address_id": {
+    "_id": "507f1f77bcf86cd799439022",
+    "street": "123 Main Street, Block A",
+    "city": "Lahore",
+    "province": "Punjab",
+    "zip_code": "54000",
+    "country": "Pakistan",
+    "google_map_link": "https://maps.google.com/?q=31.5204,74.3587",
+    "customer_id": "507f1f77bcf86cd799439021",
+    "created_at": "2025-12-06T11:45:00.000Z",
+    "updated_at": "2025-12-06T12:00:00.000Z"
+  },
+  "profile_img_url": "https://res.cloudinary.com/example/customer_profiles/sarah_ahmed.jpg",
+  "cover_img_url": "https://res.cloudinary.com/example/customer_covers/sarah_ahmed_cover.jpg",
+  "refreshTokens": [],
+  "last_login": "2025-12-06T11:30:00.000Z",
+  "created_at": "2025-12-06T10:00:00.000Z",
+  "updated_at": "2025-12-06T12:00:00.000Z"
+}
+```
+
+## Address Model (Standalone)
+
+```json
+{
+  "_id": "507f1f77bcf86cd799439022",
+  "street": "123 Main Street, Block A",
+  "city": "Lahore",
+  "province": "Punjab",
+  "zip_code": "54000",
+  "country": "Pakistan",
+  "google_map_link": "https://maps.google.com/?q=31.5204,74.3587",
+  "customer_id": "507f1f77bcf86cd799439021",
+  "created_at": "2025-12-06T11:45:00.000Z",
+  "updated_at": "2025-12-06T12:00:00.000Z"
+}
+```
 
 ---
 
-## 🛠 Developer Notes
+## Authentication Notes
 
-1.  **Address Object:** The customer object has an `address_id` field.
-    - When you call `PUT /profile`, the backend creates an Address document and links it to the customer.
-    - Subsequent calls to `GET /me` or `PUT /profile` response will show the `address_id` populated (or linked).
-    - **Logic:** If `address_id` is missing, the user cannot receive deliveries. Force them to the profile page.
+1. **Session-based authentication**: After login, the backend sets a session cookie (`connect.sid`)
+2. **Protected routes**: `/me`, `/profile`, and `/logout` require authentication
+3. **Include credentials**: Frontend should send requests with `credentials: 'include'` to maintain session
+4. **nextStep values** (from service logic):
+   - `verify-email`: User needs to verify email
+   - `complete-profile`: User should add address information
+   - `dashboard`: Profile is complete, go to dashboard
+   - `check-email`: Check email for reset link
+   - `login`: User should login
 
-2.  **Validation:**
-    - Passwords must be 3-30 chars and alphanumeric.
-    - Contact numbers must be 10-15 digits.
-    - The API returns `400` with specific messages if validation fails.
+5. **Account Status**:
+   - `active`: Normal functioning account
+   - `suspended/freezed`: Temporarily suspended
+   - `blocked/removed`: Permanently blocked
 
-3.  **Images:**
-    - `profile_img` and `cover_img` are handled by Cloudinary on the backend. You just need to send the file object in FormData.
+6. **Profile Completion**: Unlike doctors, customers don't have a complex onboarding process. They can optionally complete their profile by adding an address and uploading images.
+
+---
+
+## Customer Activity Log Sample
+
+```json
+{
+  "_id": "507f1f77bcf86cd799439023",
+  "customer_id": "507f1f77bcf86cd799439021",
+  "action_type": "login",
+  "description": "Customer logged in",
+  "target_collection": "customers",
+  "target_id": "507f1f77bcf86cd799439021",
+  "changes": null,
+  "ip_address": "192.168.1.100",
+  "device_info": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+  "created_at": "2025-12-06T11:30:00.000Z"
+}
+```
