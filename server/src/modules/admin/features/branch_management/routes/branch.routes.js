@@ -15,7 +15,7 @@ import {
   branchQueryDTO,
   createBranchDTO,
   updateBranchDTO,
-} from '../../../../../dto/branch.dto.js';
+} from '../../../../../dto/admin/branch.dto.js';
 
 const router = express.Router();
 
