@@ -1,15 +1,18 @@
+/* eslint-disable no-unused-vars */
 import Admin from '../../../../../models/Admin.js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { generateOTPAndExpiryDate } from '../../../../../utils/generateOTP.js';
 import { sendOTP, sendResetEmail } from '../../../../../utils/sendEmail.js';
 import { logAdminActivity } from '../../../utils/logAdminActivities.js';
+import { ROUTES } from '../../../../../constants/global.routes.constants.js';
 
 class AdminAuthService {
   /**
    * Authenticate admin and send OTP
    * Next Step: verify-otp
    */
+
   async login(email, password, req) {
     const admin = await Admin.findOne({ email: email.toLowerCase() });
     if (!admin) {
@@ -76,7 +79,7 @@ class AdminAuthService {
     );
 
     // Return session data
-    const { password: _, ...safeAdmin } = admin.toObject();
+    const { password, ...safeAdmin } = admin.toObject();
 
     return {
       adminId: admin._id.toString(),
@@ -130,7 +133,7 @@ class AdminAuthService {
     await admin.save();
 
     // Send reset email
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    const resetLink = `${process.env.FRONTEND_URL}/${ROUTES.ADMIN_AUTH}/reset-password/${resetToken}`;
     await sendResetEmail(admin.email, resetLink, admin.name, 'Admin');
 
     // ✅ Log Fix: Manually attach admin to req

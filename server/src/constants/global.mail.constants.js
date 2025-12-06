@@ -48,7 +48,7 @@ export const OTP_TEMPLATE = `<!DOCTYPE html>
 </body>
 </html>`;
 
-// 2. Generic Verification Template (Works for Doctor & Customer)
+// 2. Generic Verification Template
 export const VERIFICATION_EMAIL_TEMPLATE = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -135,6 +135,55 @@ export const PASSWORD_RESET_TEMPLATE = `<!DOCTYPE html>
     <tr>
       <td class="footer">
         <p>If you didn’t request this, you can safely ignore this message.</p>
+        <p>&copy; ${CURRENT_YEAR} Philbox. All rights reserved.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+// 4. ✅ NEW: Generic Welcome / Account Created Template
+export const WELCOME_EMAIL_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to Philbox</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .header { background-color: #28a745; color: #ffffff; padding: 20px; text-align: center; }
+    .content { padding: 30px 20px; text-align: center; }
+    .credentials-box { background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 15px; margin: 20px 0; text-align: left; display: inline-block; width: 90%; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff !important; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+    .instructions { color: #666666; line-height: 1.5; margin-bottom: 20px; }
+    .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #999999; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <table class="container" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td class="header">
+        <h1>Welcome to the Team!</h1>
+      </td>
+    </tr>
+    <tr>
+      <td class="content">
+        <p style="font-size:16px; color:#333;">Hello {{NAME}},</p>
+        <p class="instructions">Your account has been successfully created as a <strong>{{ROLE}}</strong> at Philbox.</p>
+
+        <div class="credentials-box">
+            <p style="margin: 5px 0;"><strong>Login Email:</strong> {{EMAIL}}</p>
+            <p style="margin: 5px 0;"><strong>Password:</strong> {{PASSWORD}}</p>
+        </div>
+
+        <p class="instructions">Please login immediately and change your password for security purposes.</p>
+        <a href="{{LINK}}" class="btn">Login to Dashboard</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="footer">
+        <p>Welcome aboard!</p>
         <p>&copy; ${CURRENT_YEAR} Philbox. All rights reserved.</p>
       </td>
     </tr>
