@@ -1,354 +1,503 @@
-```
-BASE URL: http://localhost:5000/api/doctor/auth
-```
+# Doctor Authentication API - Mock Data
 
-I’ve included:
+## Base URL
 
-✅ Endpoint
-✅ **Request body (mock request data)**
-✅ **Mock success response**
-❗ File upload endpoints included
-❗ Token-based endpoints included
-❗ Google OAuth endpoints included
+```
+http://localhost:5000/api/doctor/auth
+```
 
 ---
 
-# ✅ **1. Registration — `/register`**
+## 1. Register
 
-### **POST** `http://localhost:5000/api/doctor/auth/register`
+**Endpoint:** `POST /register`
 
-### ✔ **Request Body (Mock)**
+### Request Body
 
 ```json
 {
-  "fullName": "Dr. John Doe",
-  "email": "johndoe@example.com",
-  "password": "SecurePass123",
-  "contactNumber": "03001234567",
+  "fullName": "Dr. Ahmed Hassan",
+  "email": "ahmed.hassan@example.com",
+  "password": "SecurePass123!",
+  "contactNumber": "+923001234567",
   "gender": "Male",
-  "dateOfBirth": "1990-05-15"
+  "dateOfBirth": "1985-03-15"
 }
 ```
 
-### ✔ **Mock Success Response**
+### Response (201)
 
 ```json
 {
-  "success": true,
-  "statusCode": 201,
+  "status": 201,
   "message": "Registration successful. Please verify your email.",
   "data": {
-    "nextStep": "VERIFY_EMAIL"
+    "nextStep": "verify-email"
   }
+}
+```
+
+### Error Response (409)
+
+```json
+{
+  "status": 409,
+  "message": "Email already exists"
 }
 ```
 
 ---
 
-# ✅ **2. Verify Email — `/verify-email`**
+## 2. Verify Email
 
-### **POST** `http://localhost:5000/api/doctor/auth/verify-email`
+**Endpoint:** `POST /verify-email`
 
-### ✔ **Request Body (Mock)**
+### Request Body
 
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6..."
+  "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6"
 }
 ```
 
-### ✔ **Mock Response**
+### Response (200)
 
 ```json
 {
-  "success": true,
-  "statusCode": 200,
+  "status": 200,
   "message": "Email verified successfully. You can now login.",
   "data": {
-    "nextStep": "LOGIN"
+    "nextStep": "login"
   }
+}
+```
+
+### Error Response (400)
+
+```json
+{
+  "status": 400,
+  "message": "Invalid or expired verification token"
 }
 ```
 
 ---
 
-# ✅ **3. Login — `/login`**
+## 3. Login
 
-### **POST** `http://localhost:5000/api/doctor/auth/login`
+**Endpoint:** `POST /login`
 
-### ✔ **Request Body (Mock)**
+### Request Body
 
 ```json
 {
-  "email": "johndoe@example.com",
-  "password": "SecurePass123"
+  "email": "ahmed.hassan@example.com",
+  "password": "SecurePass123!"
 }
 ```
 
-### ✔ **Mock Response**
+### Response (200)
 
 ```json
 {
-  "success": true,
-  "statusCode": 200,
+  "status": 200,
   "message": "Login successful",
   "data": {
-    "accessToken": "jwt-token-here",
     "doctor": {
-      "id": "67a2bc1234ff890a0b123cd9",
-      "fullName": "Dr. John Doe",
-      "email": "johndoe@example.com",
-      "status": "PENDING_VERIFICATION"
-    }
+      "_id": "507f1f77bcf86cd799439011",
+      "fullName": "Dr. Ahmed Hassan",
+      "email": "ahmed.hassan@example.com",
+      "gender": "Male",
+      "dateOfBirth": "1985-03-15T00:00:00.000Z",
+      "contactNumber": "+923001234567",
+      "account_status": "suspended/freezed",
+      "is_Verified": true,
+      "onboarding_status": "pending",
+      "profile_img_url": "https://avatar.iran.liara.run/username?username=Dr. Ahmed Hassan",
+      "cover_img_url": "https://placehold.co/1920x480/EAEAEA/000000?text=Dr. Ahmed Hassan",
+      "averageRating": 0,
+      "educational_details": [],
+      "specialization": [],
+      "experience_details": [],
+      "oauth_provider": "local",
+      "created_at": "2025-12-01T10:30:00.000Z",
+      "updated_at": "2025-12-06T08:15:00.000Z"
+    },
+    "accountStatus": "suspended/freezed",
+    "nextStep": "submit-application"
   }
+}
+```
+
+### Error Responses
+
+```json
+// Invalid credentials (401)
+{
+  "status": 401,
+  "message": "Invalid Credentials"
+}
+
+// Email not verified (403)
+{
+  "status": 403,
+  "message": "Please verify your email first"
+}
+
+// Account blocked (403)
+{
+  "status": 403,
+  "message": "Your account has been blocked"
 }
 ```
 
 ---
 
-# ✅ **4. Submit Application (Upload Docs) — `/submit-application`**
+## 4. Submit Application (Document Upload)
 
-### **POST**
+**Endpoint:** `POST /submit-application`
 
-`http://localhost:5000/api/doctor/auth/submit-application`
-🔐 Requires Authentication
-📁 **multipart/form-data**
+**Note:** Requires authentication. Include session cookie.
 
-### ✔ **Form-Data Fields**
+### Request Body (multipart/form-data)
 
 ```
-cnic: <file>
-medical_license: <file>
-specialist_license: <file>
-mbbs_md_degree: <file>
-experience_letters: <file>
+cnic: [File - image/pdf]
+medical_license: [File - image/pdf]
+specialist_license: [File - image/pdf] (optional)
+mbbs_md_degree: [File - image/pdf]
+experience_letters: [File - image/pdf] (optional)
 ```
 
-Example via Postman form-data:
-
-| Key                | Type | Value          |
-| ------------------ | ---- | -------------- |
-| cnic               | File | cnic.png       |
-| medical_license    | File | license.pdf    |
-| specialist_license | File | specialist.pdf |
-| mbbs_md_degree     | File | degree.pdf     |
-| experience_letters | File | exp_letter.pdf |
-
-### ✔ **Mock Response**
+### Response (200)
 
 ```json
 {
-  "success": true,
-  "statusCode": 200,
-  "message": "Application submitted successfully. Await admin approval.",
+  "status": 200,
+  "message": "Application submitted successfully. Please wait for admin approval.",
   "data": {
-    "nextStep": "WAITING_FOR_ADMIN_APPROVAL"
+    "success": true,
+    "message": "Application submitted successfully. Please wait for admin approval.",
+    "documentId": "507f1f77bcf86cd799439012",
+    "nextStep": "waiting-approval"
   }
 }
 ```
 
----
-
-# ✅ **5. Complete Profile — `/complete-profile`**
-
-### **POST**
-
-`http://localhost:5000/api/doctor/auth/complete-profile`
-🔐 Auth Required
-📁 multipart/form-data
-📌 JSON strings inside form-data
-
----
-
-### ✔ **Form-Data (Mock)**
-
-#### **educational_details (stringified JSON)**
+### Error Responses
 
 ```json
-[
-  {
-    "degree": "MBBS",
-    "institution": "XYZ Medical College",
-    "yearOfCompletion": 2015,
-    "specialization": "General Medicine"
-  }
-]
-```
-
-#### **specialization (stringified JSON)**
-
-```json
-["Cardiology", "Internal Medicine"]
-```
-
-#### **experience_details (stringified JSON)**
-
-```json
-[
-  {
-    "institution": "ABC Hospital",
-    "starting_date": "2018-01-10",
-    "ending_date": "2020-05-30",
-    "is_going_on": false
-  }
-]
-```
-
-#### **Other fields**
-
-```
-license_number: ABCD-12345
-affiliated_hospital: XYZ Hospital
-consultation_type: both
-consultation_fee: 1500
-onlineProfileURL: https://linkedin.com/in/dr-john-doe
-```
-
-#### **Files**
-
-```
-education_files[]: file1.pdf, file2.pdf
-experience_files[]: exp1.jpg, exp2.jpg
-digital_signature: signature.png
-profile_img: profile.jpg
-cover_img: cover.jpg
-```
-
----
-
-### ✔ **Mock Response**
-
-```json
+// Missing files (400)
 {
-  "success": true,
-  "statusCode": 200,
-  "message": "Profile completed successfully.",
+  "status": 400,
+  "message": "Missing Required Documents",
   "data": {
-    "nextStep": "PROFILE_REVIEW_PENDING"
-  }
+    "missingFiles": ["MEDICAL LICENSE", "MBBS MD DEGREE"]
+  },
+  "error": "Missing required documents: MEDICAL LICENSE, MBBS MD DEGREE"
+}
+
+// Already submitted (400)
+{
+  "status": 400,
+  "message": "Application Already Submitted",
+  "error": "Your documents are already pending review. Please wait for admin approval."
+}
+
+// Unauthorized (401)
+{
+  "status": 401,
+  "message": "Unauthorized",
+  "error": "Doctor authentication required"
 }
 ```
 
 ---
 
-# ✅ **6. Forget Password — `/forget-password`**
+## 5. Complete Profile
 
-### **POST**
+**Endpoint:** `POST /complete-profile`
 
-`http://localhost:5000/api/doctor/auth/forget-password`
+**Note:** Requires authentication. Include session cookie. Only available after admin approves documents.
 
-### ✔ **Request Body**
+### Request Body (multipart/form-data)
+
+```
+educational_details: '[{"degree":"MBBS","institution":"King Edward Medical University","yearOfCompletion":2010,"specialization":"General Medicine"}]'
+
+specialization: '["Cardiology","Internal Medicine"]'
+
+experience_details: '[{"institution":"Jinnah Hospital","starting_date":"2011-01-15","ending_date":"2015-12-31","is_going_on":false},{"institution":"Shaukat Khanum Hospital","starting_date":"2016-01-01","ending_date":null,"is_going_on":true}]'
+
+license_number: "PMC-12345-A"
+
+affiliated_hospital: "Shaukat Khanum Memorial Cancer Hospital"
+
+consultation_type: "both"
+
+consultation_fee: 3000
+
+onlineProfileURL: "https://linkedin.com/in/dr-ahmed-hassan"
+
+education_files: [File, File] (multiple files)
+experience_files: [File, File] (multiple files)
+digital_signature: [File] (single file)
+profile_img: [File] (single file)
+cover_img: [File] (single file)
+```
+
+### Response (200)
 
 ```json
 {
-  "email": "johndoe@example.com"
+  "status": 200,
+  "message": "Profile completed successfully. Welcome to PhilBox!",
+  "data": {
+    "success": true,
+    "message": "Profile completed successfully. Welcome to PhilBox!",
+    "nextStep": "dashboard"
+  }
 }
 ```
 
-### ✔ **Mock Response**
+### Error Responses
+
+```json
+// Not approved yet (403)
+{
+  "status": 403,
+  "message": "Application Not Approved",
+  "error": "Your document verification is still pending. Please wait for admin approval before completing your profile."
+}
+
+// Profile already completed (400)
+{
+  "status": 400,
+  "message": "Profile Already Completed",
+  "error": "Your profile has already been completed."
+}
+
+// Validation error (400)
+{
+  "status": 400,
+  "message": "Validation Failed",
+  "error": "Educational details must be valid JSON"
+}
+```
+
+---
+
+## 6. Forget Password
+
+**Endpoint:** `POST /forget-password`
+
+### Request Body
 
 ```json
 {
-  "success": true,
-  "statusCode": 200,
+  "email": "ahmed.hassan@example.com"
+}
+```
+
+### Response (200)
+
+```json
+{
+  "status": 200,
   "message": "Password reset email sent",
   "data": {
-    "nextStep": "CHECK_EMAIL"
+    "nextStep": "check-email"
   }
+}
+```
+
+### Error Response (404)
+
+```json
+{
+  "status": 404,
+  "message": "User not found"
 }
 ```
 
 ---
 
-# ✅ **7. Reset Password — `/reset-password`**
+## 7. Reset Password
 
-### **POST**
+**Endpoint:** `POST /reset-password`
 
-`http://localhost:5000/api/doctor/auth/reset-password`
-
-### ✔ **Request Body**
+### Request Body
 
 ```json
 {
-  "token": "reset-token-here",
-  "newPassword": "NewSecurePassword123"
+  "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
+  "newPassword": "NewSecurePass456!"
 }
 ```
 
-### ✔ Mock Response
+### Response (200)
 
 ```json
 {
-  "success": true,
-  "statusCode": 200,
+  "status": 200,
   "message": "Password reset successfully",
   "data": {
-    "nextStep": "LOGIN"
+    "nextStep": "login"
   }
 }
 ```
 
----
-
-# ✅ **8. Logout — `/logout`**
-
-### **POST**
-
-`http://localhost:5000/api/doctor/auth/logout`
-🔐 Auth Required
-
-### ✔ **Request Body**
-
-❌ No body
-(cookie/session based logout)
-
-### ✔ **Mock Response**
+### Error Response (400)
 
 ```json
 {
-  "success": true,
-  "statusCode": 200,
-  "message": "Logged out successfully"
+  "status": 400,
+  "message": "Invalid token"
 }
 ```
 
 ---
 
-# ✅ **9. Google OAuth — `/google`**
+## 8. Logout
 
-### **GET**
+**Endpoint:** `POST /logout`
 
-`http://localhost:5000/api/doctor/auth/google`
+**Note:** Requires authentication. Include session cookie.
 
-Redirects to Google Login.
+### Request Body
 
----
+```json
+{}
+```
 
-# ✅ **10. Google OAuth Callback — `/google/callback`**
-
-### **GET**
-
-Handled by Passport.
-
-### ✔ **Mock Response (after successful OAuth)**
+### Response (200)
 
 ```json
 {
-  "success": true,
-  "statusCode": 200,
-  "message": "Google authentication successful",
+  "status": 200,
+  "message": "Logout successful",
   "data": {
-    "accessToken": "jwt-token-here",
-    "doctor": {
-      "id": "67a2bc1234ff890a0b123cd9",
-      "fullName": "Dr. John Doe",
-      "email": "john@gmail.com",
-      "loginMethod": "GOOGLE"
-    }
+    "nextStep": "login"
   }
 }
 ```
 
 ---
 
-# ✔ All Endpoints Covered
+## 9. Google OAuth - Initiate
+
+**Endpoint:** `GET /google`
+
+**Note:** This redirects to Google OAuth. No JSON response.
+
+### URL
+
+```
+http://localhost:5000/api/doctor/auth/google
+```
+
+---
+
+## 10. Google OAuth - Callback
+
+**Endpoint:** `GET /google/callback`
+
+**Note:** This is called by Google after authentication. Redirects to frontend.
+
+### Success Redirect
+
+```
+http://localhost:3000/auth/oauth/success?nextStep=submit-application&isNewUser=true
+```
+
+### Error Redirect
+
+```
+http://localhost:3000/auth/oauth/error?message=Authentication%20failed
+```
+
+---
+
+## Complete Doctor Object (After Profile Completion)
+
+```json
+{
+  "_id": "507f1f77bcf86cd799439011",
+  "fullName": "Dr. Ahmed Hassan",
+  "email": "ahmed.hassan@example.com",
+  "gender": "Male",
+  "dateOfBirth": "1985-03-15T00:00:00.000Z",
+  "contactNumber": "+923001234567",
+  "educational_details": [
+    {
+      "degree": "MBBS",
+      "institution": "King Edward Medical University",
+      "yearOfCompletion": 2010,
+      "specialization": "General Medicine",
+      "fileUrl": "https://res.cloudinary.com/example/doctor_education/mbbs_cert.pdf",
+      "_id": "507f1f77bcf86cd799439013"
+    },
+    {
+      "degree": "FCPS",
+      "institution": "College of Physicians and Surgeons Pakistan",
+      "yearOfCompletion": 2015,
+      "specialization": "Cardiology",
+      "fileUrl": "https://res.cloudinary.com/example/doctor_education/fcps_cert.pdf",
+      "_id": "507f1f77bcf86cd799439014"
+    }
+  ],
+  "specialization": ["Cardiology", "Internal Medicine"],
+  "experience_details": [
+    {
+      "institution": "Jinnah Hospital",
+      "starting_date": "2011-01-15T00:00:00.000Z",
+      "ending_date": "2015-12-31T00:00:00.000Z",
+      "institution_img_url": "https://res.cloudinary.com/example/doctor_experience/jinnah_hospital.jpg",
+      "is_going_on": false,
+      "_id": "507f1f77bcf86cd799439015"
+    },
+    {
+      "institution": "Shaukat Khanum Hospital",
+      "starting_date": "2016-01-01T00:00:00.000Z",
+      "ending_date": null,
+      "institution_img_url": "https://res.cloudinary.com/example/doctor_experience/shaukat_khanum.jpg",
+      "is_going_on": true,
+      "_id": "507f1f77bcf86cd799439016"
+    }
+  ],
+  "license_number": "PMC-12345-A",
+  "affiliated_hospital": "Shaukat Khanum Memorial Cancer Hospital",
+  "consultation_type": "both",
+  "consultation_fee": 3000,
+  "onlineProfileURL": "https://linkedin.com/in/dr-ahmed-hassan",
+  "digital_signature": "https://res.cloudinary.com/example/doctor_signatures/signature.png",
+  "account_status": "active",
+  "isVerified": "yes",
+  "is_Verified": true,
+  "averageRating": 4.7,
+  "profile_img_url": "https://res.cloudinary.com/example/doctor_profiles/ahmed_hassan.jpg",
+  "cover_img_url": "https://res.cloudinary.com/example/doctor_covers/ahmed_hassan_cover.jpg",
+  "last_login": "2025-12-06T08:15:00.000Z",
+  "oauth_provider": "local",
+  "onboarding_status": "completed",
+  "created_at": "2025-12-01T10:30:00.000Z",
+  "updated_at": "2025-12-06T08:15:00.000Z"
+}
+```
+
+---
+
+## Authentication Notes
+
+1. **Session-based authentication**: After login, the backend sets a session cookie (`connect.sid`)
+2. **Protected routes**: `/submit-application`, `/complete-profile`, and `/logout` require authentication
+3. **Include credentials**: Frontend should send requests with `credentials: 'include'` to maintain session
+4. **nextStep values**:
+   - `verify-email`: User needs to verify email
+   - `login`: User should login
+   - `submit-application`: User needs to submit documents
+   - `waiting-approval`: Documents submitted, waiting for admin
+   - `resubmit-application`: Documents rejected
+   - `complete-profile`: Documents approved, complete profile
+   - `dashboard`: Onboarding complete, go to dashboard
+   - `check-email`: Check email for reset link
