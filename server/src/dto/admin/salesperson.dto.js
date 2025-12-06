@@ -1,47 +1,43 @@
 import Joi from 'joi';
 
 export const createSalespersonDTO = Joi.object({
-  fullName: Joi.string().trim().required().messages({
-    'string.base': 'Full name must be a string',
-    'any.required': 'Full name is required',
-  }),
-
-  gender: Joi.string().valid('male', 'female', 'other').required().messages({
-    'any.only': "Gender must be one of 'male', 'female', or 'other'",
-    'any.required': 'Gender is required',
-  }),
-
+  fullName: Joi.string().min(3).max(50).required(),
+  email: Joi.string().email().required(),
+  password: Joi.string().min(8).required(),
   contactNumber: Joi.string()
-    .trim()
-    .pattern(/^[0-9+\-\s()]+$/)
+    .pattern(/^[0-9]+$/)
+    .min(10)
+    .max(15)
+    .required(),
+  gender: Joi.string().valid('Male', 'Female').required(),
+  dateOfBirth: Joi.date().optional(),
+  // Must be an array of valid Branch ObjectIds
+  branches_to_be_managed: Joi.array()
+    .items(Joi.string().hex().length(24))
+    .min(1)
     .required()
     .messages({
-      'string.pattern.base':
-        'Contact number must contain only digits and symbols like +, -, ()',
-      'any.required': 'Contact number is required',
+      'array.min': 'At least one branch must be assigned to the salesperson.',
     }),
+});
 
-  email: Joi.string().email().required().messages({
-    'string.email': 'Invalid email format',
-    'any.required': 'Email is required',
-  }),
+export const updateSalespersonDTO = Joi.object({
+  fullName: Joi.string().min(3).max(50).optional(),
+  contactNumber: Joi.string()
+    .pattern(/^[0-9]+$/)
+    .min(10)
+    .max(15)
+    .optional(),
+  gender: Joi.string().valid('Male', 'Female').optional(),
+  dateOfBirth: Joi.date().optional(),
+  branches_to_be_managed: Joi.array()
+    .items(Joi.string().hex().length(24))
+    .optional(),
+});
 
-  city: Joi.string().trim().required().messages({
-    'string.base': 'City must be a string',
-    'any.required': 'City is required',
-  }),
-
-  province: Joi.string().trim().required().messages({
-    'string.base': 'Province must be a string',
-    'any.required': 'Province is required',
-  }),
-
-  country: Joi.string().trim().required().messages({
-    'string.base': 'Country must be a string',
-    'any.required': 'Country is required',
-  }),
-
-  branch_assigned: Joi.string().hex().length(24).optional().messages({
-    'string.length': 'Branch ID must be a valid ObjectId',
-  }),
+export const changeStatusDTO = Joi.object({
+  status: Joi.string()
+    .lowercase()
+    .valid('active', 'suspended', 'blocked')
+    .required(),
 });

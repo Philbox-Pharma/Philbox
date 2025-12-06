@@ -10,14 +10,16 @@ import connectDB from './config/db.config.js';
 import seedSuperAdmin from './modules/admin/features/auth/utils/seedSuperAdmin.js';
 
 import adminAuthRoutes from './modules/admin/features/auth/routes/auth.routes.js';
-import adminAdminManagementRoutes from './modules/admin/features/admin_management/routes/admin.routes.js';
+import adminAdminManagementRoutes from './modules/admin/features/staff_management/admin_management/routes/admin.routes.js';
 import adminBranchManagementRoutes from './modules/admin/features/branch_management/routes/branch.routes.js';
-import adminSalespersonManagementRoutes from './modules/admin/features/salesperson_management/routes/salesperson.routes.js';
+import adminSalespersonManagementRoutes from './modules/admin/features/staff_management/salesperson_management/routes/salesperson.routes.js';
 
-import doctorAuthRoutes from './modules/doctor/auth/routes/auth.routes.js';
-import passport from './modules/doctor/auth/config/passport.js';
+import doctorAuthRoutes from './modules/doctor/features/auth/routes/auth.routes.js';
+import passport from './modules/doctor/features/auth/config/passport.js';
 
-import customerAuthRoutes from './modules/customer/auth/routes/auth.routes.js';
+import customerAuthRoutes from './modules/customer/features/auth/routes/auth.routes.js';
+
+import salespersonAuthRoutes from './modules/salesperson/features/auth/routes/auth.routes.js';
 
 import healthRouter from './shared/routes/health.route.js';
 
@@ -78,10 +80,14 @@ app.use('/api', healthRouter);
 app.use(`/api/${ROUTES.ADMIN_AUTH}`, adminAuthRoutes);
 app.use(`/api/${ROUTES.SUPER_ADMIN}`, adminAdminManagementRoutes);
 app.use(`/api/${ROUTES.SUPER_ADMIN}`, adminBranchManagementRoutes);
-app.use(`/api/${ROUTES.SUPER_ADMIN}`, adminSalespersonManagementRoutes);
+app.use(
+  `/api/${ROUTES.SUPER_ADMIN_SALESPERSON_MANAGEMENT}`,
+  adminSalespersonManagementRoutes
+);
 
 app.use(`/api/${ROUTES.DOCTOR_AUTH}`, doctorAuthRoutes);
 app.use(`/api/${ROUTES.CUSTOMER_AUTH}`, customerAuthRoutes);
+app.use(`/api/${ROUTES.SALESPERSON_AUTH}`, salespersonAuthRoutes);
 
 const start_server = async () => {
   try {

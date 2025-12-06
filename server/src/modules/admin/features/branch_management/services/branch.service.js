@@ -103,7 +103,15 @@ class BranchService {
       'address_id',
     ]);
 
-    return result;
+    return {
+      branches: result.list,
+      pagination: {
+        total: result.total,
+        page: result.currentPage,
+        pages: result.totalPages,
+        limit: result.limit,
+      },
+    };
   }
 
   /**

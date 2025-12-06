@@ -3,6 +3,7 @@ import {
   VERIFICATION_EMAIL_TEMPLATE,
   PASSWORD_RESET_TEMPLATE,
   OTP_TEMPLATE,
+  WELCOME_EMAIL_TEMPLATE,
 } from '../constants/global.mail.constants.js';
 
 /**
@@ -109,5 +110,44 @@ export const sendOTP = async (email, otp) => {
       return console.error('Error sending OTP email:', error);
     }
     console.log(`OTP email sent: ${info.response}`);
+  });
+};
+
+/**
+ * ✅ NEW: Send Welcome Email with Credentials
+ * Reusable for Salesperson, Branch Admin, etc.
+ * @param {string} email - User email
+ * @param {string} name - User full name
+ * @param {string} password - The password set by admin (sent to user)
+ * @param {string} role - e.g. 'Salesperson'
+ * @param {string} loginLink - URL to login page
+ */
+export const sendWelcomeEmail = async (
+  email,
+  name,
+  password,
+  role,
+  loginLink
+) => {
+  const greetingName = getGreetingName(name, role);
+
+  const message = WELCOME_EMAIL_TEMPLATE.replace('{{NAME}}', greetingName)
+    .replace('{{ROLE}}', role)
+    .replace('{{EMAIL}}', email)
+    .replace('{{PASSWORD}}', password)
+    .replace('{{LINK}}', loginLink);
+
+  const emailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: `Welcome to Philbox - Your ${role} Account`,
+    html: message,
+  };
+
+  transporter.sendMail(emailOptions, (error, info) => {
+    if (error) {
+      return console.error(`Error sending ${role} welcome email:`, error);
+    }
+    console.log(`${role} welcome email sent: ${info.response}`);
   });
 };

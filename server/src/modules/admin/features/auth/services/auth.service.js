@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { generateOTPAndExpiryDate } from '../../../../../utils/generateOTP.js';
 import { sendOTP, sendResetEmail } from '../../../../../utils/sendEmail.js';
 import { logAdminActivity } from '../../../utils/logAdminActivities.js';
+import { ROUTES } from '../../../../../constants/global.routes.constants.js';
 
 class AdminAuthService {
   /**
@@ -130,7 +131,7 @@ class AdminAuthService {
     await admin.save();
 
     // Send reset email
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    const resetLink = `${process.env.FRONTEND_URL}/${ROUTES.ADMIN_AUTH}/reset-password/${resetToken}`;
     await sendResetEmail(admin.email, resetLink, admin.name, 'Admin');
 
     // ✅ Log Fix: Manually attach admin to req
