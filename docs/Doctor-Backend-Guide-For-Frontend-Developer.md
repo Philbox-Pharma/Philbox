@@ -1,57 +1,36 @@
-# Doctor Backend Integration Documentation
+```
+BASE URL: http://localhost:5000/api/doctor/auth
+```
 
-This documentation details the API endpoints, request formats, and response structures based on the provided backend code.
+I’ve included:
 
-## 🌍 Base Configuration
-
-- **Base URL:** `https://localhost:5000/api/doctor/auth`
-- **Authentication Method:** Session-based (Cookies).
-- **CORS/cookies:** All requests **must** include credentials to persist the session.
-  - **Axios:** `withCredentials: true`
-  - **Fetch:** `credentials: 'include'`
-
----
-
-## 🧭 Navigation Logic (`nextStep`)
-
-Most authentication responses return a `nextStep` field. The Frontend **must** route the user based on this value:
-
-| `nextStep` Value       | Action / Redirect                                                |
-| :--------------------- | :--------------------------------------------------------------- |
-| `verify-email`         | Redirect to **Email Verification Page**.                         |
-| `submit-application`   | Redirect to **Onboarding Step 1** (Document Upload).             |
-| `waiting-approval`     | Redirect to **Status Page** (Message: "Documents under review"). |
-| `resubmit-application` | Redirect to **Onboarding Step 1** (Previous docs rejected).      |
-| `complete-profile`     | Redirect to **Onboarding Step 2** (Details & Education).         |
-| `dashboard`            | Redirect to **Doctor Dashboard** (Login complete).               |
-| `login`                | Redirect to **Login Page**.                                      |
-| `check-email`          | Show message: "Check your email for the reset link".             |
+✅ Endpoint
+✅ **Request body (mock request data)**
+✅ **Mock success response**
+❗ File upload endpoints included
+❗ Token-based endpoints included
+❗ Google OAuth endpoints included
 
 ---
 
-## 🔐 Authentication Endpoints
+# ✅ **1. Registration — `/register`**
 
-### 1. Register
+### **POST** `http://localhost:5000/api/doctor/auth/register`
 
-- **Page:** Registration Page
-- **Method:** `POST`
-- **Endpoint:** `/register`
-- **Content-Type:** `application/json`
-
-**Request Body:**
+### ✔ **Request Body (Mock)**
 
 ```json
 {
-  "fullName": "John Doe",
-  "email": "john@example.com",
-  "password": "SecurePassword123",
+  "fullName": "Dr. John Doe",
+  "email": "johndoe@example.com",
+  "password": "SecurePass123",
+  "contactNumber": "03001234567",
   "gender": "Male",
-  "dateOfBirth": "1990-05-20",
-  "contactNumber": "+1234567890"
+  "dateOfBirth": "1990-05-15"
 }
 ```
 
-**Success Response (201 Created):**
+### ✔ **Mock Success Response**
 
 ```json
 {
@@ -59,34 +38,26 @@ Most authentication responses return a `nextStep` field. The Frontend **must** r
   "statusCode": 201,
   "message": "Registration successful. Please verify your email.",
   "data": {
-    "nextStep": "verify-email"
+    "nextStep": "VERIFY_EMAIL"
   }
 }
 ```
 
-**Error Responses:**
-
-- **409 Conflict:** `{"success": false, "statusCode": 409, "message": "Email already exists"}`
-- **500 Server Error:** `{"success": false, "statusCode": 500, "message": "Server Error", ...}`
-
 ---
 
-### 2. Verify Email
+# ✅ **2. Verify Email — `/verify-email`**
 
-- **Page:** Verify Email Page (Link from email: `/verify-email/:token`)
-- **Method:** `POST`
-- **Endpoint:** `/verify-email`
-- **Content-Type:** `application/json`
+### **POST** `http://localhost:5000/api/doctor/auth/verify-email`
 
-**Request Body:**
+### ✔ **Request Body (Mock)**
 
 ```json
 {
-  "token": "38475928347592834..." // Extracted from URL parameter
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6..."
 }
 ```
 
-**Success Response (200 OK):**
+### ✔ **Mock Response**
 
 ```json
 {
@@ -94,34 +65,27 @@ Most authentication responses return a `nextStep` field. The Frontend **must** r
   "statusCode": 200,
   "message": "Email verified successfully. You can now login.",
   "data": {
-    "nextStep": "login"
+    "nextStep": "LOGIN"
   }
 }
 ```
 
-**Error Responses:**
-
-- **400 Bad Request:** `{"message": "Invalid or expired verification token"}`
-
 ---
 
-### 3. Login
+# ✅ **3. Login — `/login`**
 
-- **Page:** Login Page
-- **Method:** `POST`
-- **Endpoint:** `/login`
-- **Content-Type:** `application/json`
+### **POST** `http://localhost:5000/api/doctor/auth/login`
 
-**Request Body:**
+### ✔ **Request Body (Mock)**
 
 ```json
 {
-  "email": "john@example.com",
-  "password": "SecurePassword123"
+  "email": "johndoe@example.com",
+  "password": "SecurePass123"
 }
 ```
 
-**Success Response (200 OK):**
+### ✔ **Mock Response**
 
 ```json
 {
@@ -129,184 +93,159 @@ Most authentication responses return a `nextStep` field. The Frontend **must** r
   "statusCode": 200,
   "message": "Login successful",
   "data": {
+    "accessToken": "jwt-token-here",
     "doctor": {
-      "_id": "...",
-      "email": "...",
-      "fullName": "..."
-    },
-    "accountStatus": "active", // or 'suspended/freezed'
-    "nextStep": "dashboard" // OR 'submit-application', 'waiting-approval', etc.
+      "id": "67a2bc1234ff890a0b123cd9",
+      "fullName": "Dr. John Doe",
+      "email": "johndoe@example.com",
+      "status": "PENDING_VERIFICATION"
+    }
   }
 }
 ```
 
-**Error Responses:**
-
-- **401 Unauthorized:** `{"message": "Invalid Credentials"}`
-- **403 Forbidden:** `{"message": "Please verify your email first"}`
-- **403 Forbidden:** `{"message": "Your account has been blocked"}`
-
 ---
 
-### 4. Logout
+# ✅ **4. Submit Application (Upload Docs) — `/submit-application`**
 
-- **Page:** Dashboard / Navbar
-- **Method:** `POST`
-- **Endpoint:** `/logout`
-- **Headers:** Cookie required.
+### **POST**
 
-**Success Response (200 OK):**
+`http://localhost:5000/api/doctor/auth/submit-application`
+🔐 Requires Authentication
+📁 **multipart/form-data**
+
+### ✔ **Form-Data Fields**
+
+```
+cnic: <file>
+medical_license: <file>
+specialist_license: <file>
+mbbs_md_degree: <file>
+experience_letters: <file>
+```
+
+Example via Postman form-data:
+
+| Key                | Type | Value          |
+| ------------------ | ---- | -------------- |
+| cnic               | File | cnic.png       |
+| medical_license    | File | license.pdf    |
+| specialist_license | File | specialist.pdf |
+| mbbs_md_degree     | File | degree.pdf     |
+| experience_letters | File | exp_letter.pdf |
+
+### ✔ **Mock Response**
 
 ```json
 {
   "success": true,
   "statusCode": 200,
-  "message": "Logout successful",
+  "message": "Application submitted successfully. Await admin approval.",
   "data": {
-    "nextStep": "login"
+    "nextStep": "WAITING_FOR_ADMIN_APPROVAL"
   }
 }
 ```
 
 ---
 
-## 🚀 Google OAuth
+# ✅ **5. Complete Profile — `/complete-profile`**
 
-### 1. Initiate Login
+### **POST**
 
-- **Method:** `GET`
-- **Endpoint:** `/google`
-- **Action:** Redirect the browser window to this URL.
-
-### 2. Callback (Handled by Backend)
-
-The backend handles the callback. Based on success or failure, it will **redirect** the browser to the Frontend URL (defined in `process.env.FRONTEND_URL`).
-
-**Success Redirect:**
-`[FRONTEND_URL]/auth/oauth/success?nextStep=dashboard&isNewUser=false`
-
-**Error Redirect:**
-`[FRONTEND_URL]/auth/oauth/error?message=ErrorDescription`
+`http://localhost:5000/api/doctor/auth/complete-profile`
+🔐 Auth Required
+📁 multipart/form-data
+📌 JSON strings inside form-data
 
 ---
 
-## 📄 Onboarding Flows
+### ✔ **Form-Data (Mock)**
 
-### 1. Submit Application (Step 1)
-
-- **Condition:** User lands here if `nextStep` is `submit-application` or `resubmit-application`.
-- **Method:** `POST`
-- **Endpoint:** `/submit-application`
-- **Content-Type:** `multipart/form-data`
-- **Headers:** Cookie required.
-
-**Request Body (FormData):**
-
-- `cnic`: File (Required, Max 1)
-- `medical_license`: File (Required, Max 1)
-- `mbbs_md_degree`: File (Required, Max 1)
-- `specialist_license`: File (Optional, Max 1)
-- `experience_letters`: File (Optional, Max 1)
-
-**Success Response (200 OK):**
+#### **educational_details (stringified JSON)**
 
 ```json
-{
-  "success": true,
-  "statusCode": 200,
-  "message": "Application submitted successfully. Please wait for admin approval.",
-  "data": {
-    "success": true,
-    "message": "...",
-    "documentId": "...",
-    "nextStep": "waiting-approval"
-  }
-}
-```
-
-**Error Responses:**
-
-- **401 Unauthorized:** `{"message": "Unauthorized", "details": "Doctor authentication required"}`
-- **400 Bad Request:** `{"message": "No files uploaded..."}`
-- **400 Missing Files:**
-  ```json
+[
   {
-    "message": "Missing Required Documents",
-    "data": { "missingFiles": ["CNIC", "MEDICAL LICENSE"] }
+    "degree": "MBBS",
+    "institution": "XYZ Medical College",
+    "yearOfCompletion": 2015,
+    "specialization": "General Medicine"
   }
-  ```
-- **400 Already Submitted:** `{"message": "Application Already Submitted"}`
+]
+```
+
+#### **specialization (stringified JSON)**
+
+```json
+["Cardiology", "Internal Medicine"]
+```
+
+#### **experience_details (stringified JSON)**
+
+```json
+[
+  {
+    "institution": "ABC Hospital",
+    "starting_date": "2018-01-10",
+    "ending_date": "2020-05-30",
+    "is_going_on": false
+  }
+]
+```
+
+#### **Other fields**
+
+```
+license_number: ABCD-12345
+affiliated_hospital: XYZ Hospital
+consultation_type: both
+consultation_fee: 1500
+onlineProfileURL: https://linkedin.com/in/dr-john-doe
+```
+
+#### **Files**
+
+```
+education_files[]: file1.pdf, file2.pdf
+experience_files[]: exp1.jpg, exp2.jpg
+digital_signature: signature.png
+profile_img: profile.jpg
+cover_img: cover.jpg
+```
 
 ---
 
-### 2. Complete Profile (Step 2)
-
-- **Condition:** User lands here if `nextStep` is `complete-profile` (Admin approved docs).
-- **Method:** `POST`
-- **Endpoint:** `/complete-profile`
-- **Content-Type:** `multipart/form-data`
-- **Headers:** Cookie required.
-
-**Request Body (FormData):**
-
-**⚠️ IMPORTANT:** The backend parses `educational_details`, `specialization`, and `experience_details` using `JSON.parse()`. You must **JSON.stringify** these arrays before appending them to FormData.
-
-- **Text/Data Fields:**
-  - `educational_details`: Stringified Array of objects.
-  - `specialization`: Stringified Array.
-  - `experience_details`: Stringified Array of objects.
-  - `license_number`: String
-  - `affiliated_hospital`: String
-  - `consultation_type`: String
-  - `consultation_fee`: String/Number
-  - `onlineProfileURL`: String
-- **File Fields:**
-  - `profile_img`: File (Max 1)
-  - `cover_img`: File (Max 1)
-  - `digital_signature`: File (Max 1)
-  - `education_files`: Files (Max 5, Multiple) - Corresponds to education array order.
-  - `experience_files`: Files (Max 10, Multiple) - Corresponds to experience array order.
-
-**Success Response (200 OK):**
+### ✔ **Mock Response**
 
 ```json
 {
   "success": true,
   "statusCode": 200,
-  "message": "Profile completed successfully. Welcome to PhilBox!",
+  "message": "Profile completed successfully.",
   "data": {
-    "success": true,
-    "nextStep": "dashboard"
+    "nextStep": "PROFILE_REVIEW_PENDING"
   }
 }
 ```
 
-**Error Responses:**
-
-- **403 Forbidden:** `{"message": "Application Not Approved"}` (If user tries to skip Step 1 or Admin hasn't approved yet).
-- **400 Bad Request:** `{"message": "Profile Already Completed"}`.
-- **400 Validation:** `{"message": "Validation Failed"}` (Joi validation errors).
-
 ---
 
-## 🔑 Password Management
+# ✅ **6. Forget Password — `/forget-password`**
 
-### 1. Forget Password
+### **POST**
 
-- **Page:** Forgot Password Page
-- **Method:** `POST`
-- **Endpoint:** `/forget-password`
-- **Content-Type:** `application/json`
+`http://localhost:5000/api/doctor/auth/forget-password`
 
-**Request Body:**
+### ✔ **Request Body**
 
 ```json
 {
-  "email": "john@example.com"
+  "email": "johndoe@example.com"
 }
 ```
 
-**Success Response (200 OK):**
+### ✔ **Mock Response**
 
 ```json
 {
@@ -314,34 +253,29 @@ The backend handles the callback. Based on success or failure, it will **redirec
   "statusCode": 200,
   "message": "Password reset email sent",
   "data": {
-    "nextStep": "check-email"
+    "nextStep": "CHECK_EMAIL"
   }
 }
 ```
 
-**Error Responses:**
-
-- **404 Not Found:** `{"message": "User not found"}`
-
 ---
 
-### 2. Reset Password
+# ✅ **7. Reset Password — `/reset-password`**
 
-- **Page:** Reset Password Page (Link from email: `/reset-password/:token`)
-- **Method:** `POST`
-- **Endpoint:** `/reset-password`
-- **Content-Type:** `application/json`
+### **POST**
 
-**Request Body:**
+`http://localhost:5000/api/doctor/auth/reset-password`
+
+### ✔ **Request Body**
 
 ```json
 {
-  "token": "token_from_url",
-  "newPassword": "newSecurePassword123"
+  "token": "reset-token-here",
+  "newPassword": "NewSecurePassword123"
 }
 ```
 
-**Success Response (200 OK):**
+### ✔ Mock Response
 
 ```json
 {
@@ -349,11 +283,72 @@ The backend handles the callback. Based on success or failure, it will **redirec
   "statusCode": 200,
   "message": "Password reset successfully",
   "data": {
-    "nextStep": "login"
+    "nextStep": "LOGIN"
   }
 }
 ```
 
-**Error Responses:**
+---
 
-- **400 Bad Request:** `{"message": "Invalid token"}` (Token expired or incorrect).
+# ✅ **8. Logout — `/logout`**
+
+### **POST**
+
+`http://localhost:5000/api/doctor/auth/logout`
+🔐 Auth Required
+
+### ✔ **Request Body**
+
+❌ No body
+(cookie/session based logout)
+
+### ✔ **Mock Response**
+
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Logged out successfully"
+}
+```
+
+---
+
+# ✅ **9. Google OAuth — `/google`**
+
+### **GET**
+
+`http://localhost:5000/api/doctor/auth/google`
+
+Redirects to Google Login.
+
+---
+
+# ✅ **10. Google OAuth Callback — `/google/callback`**
+
+### **GET**
+
+Handled by Passport.
+
+### ✔ **Mock Response (after successful OAuth)**
+
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "message": "Google authentication successful",
+  "data": {
+    "accessToken": "jwt-token-here",
+    "doctor": {
+      "id": "67a2bc1234ff890a0b123cd9",
+      "fullName": "Dr. John Doe",
+      "email": "john@gmail.com",
+      "loginMethod": "GOOGLE"
+    }
+  }
+}
+```
+
+---
+
+# ✔ All Endpoints Covered
