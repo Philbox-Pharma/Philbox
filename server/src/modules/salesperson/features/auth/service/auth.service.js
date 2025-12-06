@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { sendResetEmail } from '../../../../../utils/sendEmail.js';
 import { logSalespersonActivity } from '../../../utils/logSalespersonActivity.js';
+import { ROUTES } from '../../../../../constants/global.routes.constants.js';
 
 class SalespersonAuthService {
   /**
@@ -77,7 +78,7 @@ class SalespersonAuthService {
     await salesperson.save();
 
     // Send reset email
-    const resetLink = `${process.env.FRONTEND_URL}/salesperson/reset-password/${resetToken}`;
+    const resetLink = `${process.env.FRONTEND_URL}/${ROUTES.SALESPERSON_AUTH}/reset-password/${resetToken}`;
     await sendResetEmail(
       salesperson.email,
       resetLink,

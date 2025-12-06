@@ -8,6 +8,7 @@ import {
 } from '../../../../../utils/sendEmail.js';
 import { logCustomerActivity } from '../../../utils/logCustomerActivities.js';
 import { uploadToCloudinary } from '../../../../../utils/uploadToCloudinary.js';
+import { ROUTES } from '../../../../../constants/global.routes.constants.js';
 
 class CustomerAuthService {
   /**
@@ -312,7 +313,7 @@ class CustomerAuthService {
     customer.resetPasswordExpiresAt = Date.now() + 10 * 60 * 1000;
     await customer.save();
 
-    const resetLink = `${process.env.FRONTEND_URL}/customer/reset-password/${resetToken}`;
+    const resetLink = `${process.env.FRONTEND_URL}/${ROUTES.CUSTOMER_AUTH}/reset-password/${resetToken}`;
 
     // Using the reusable email function with role 'Customer'
     await sendResetEmail(

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import Admin from '../../../../../models/Admin.js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
@@ -11,6 +12,7 @@ class AdminAuthService {
    * Authenticate admin and send OTP
    * Next Step: verify-otp
    */
+
   async login(email, password, req) {
     const admin = await Admin.findOne({ email: email.toLowerCase() });
     if (!admin) {
@@ -77,7 +79,7 @@ class AdminAuthService {
     );
 
     // Return session data
-    const { password: _, ...safeAdmin } = admin.toObject();
+    const { password, ...safeAdmin } = admin.toObject();
 
     return {
       adminId: admin._id.toString(),
