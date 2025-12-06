@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import Admin from '../../../../../../models/Admin.js';
 import Branch from '../../../../../../models/Branch.js';
 import bcrypt from 'bcryptjs';
