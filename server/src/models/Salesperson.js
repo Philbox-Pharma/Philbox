@@ -60,6 +60,13 @@ const salespersonSchema = new mongoose.Schema(
     resetPasswordExpires: {
       type: Date,
     },
+
+    // 🔐 RBAC - Role-Based Access Control
+    roleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Role',
+      required: true,
+    },
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

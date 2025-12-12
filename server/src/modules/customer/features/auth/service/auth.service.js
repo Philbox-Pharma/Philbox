@@ -1,5 +1,6 @@
 import Customer from '../../../../../models/Customer.js';
 import Address from '../../../../../models/Address.js';
+import Role from '../../../../../models/Role.js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import {
@@ -51,6 +52,12 @@ class CustomerAuthService {
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const verificationTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000;
 
+    // 🔐 RBAC - Fetch customer role and assign to new user
+    const customerRole = await Role.findOne({ name: 'customer' });
+    if (!customerRole) {
+      throw new Error('CUSTOMER_ROLE_NOT_FOUND');
+    }
+
     const newCustomer = new Customer({
       fullName,
       email: email.toLowerCase(),
@@ -62,6 +69,7 @@ class CustomerAuthService {
       verificationTokenExpiresAt,
       is_Verified: false,
       account_status: 'active',
+      roleId: customerRole._id, // 🔐 RBAC - Assign customer role
     });
 
     await newCustomer.save();

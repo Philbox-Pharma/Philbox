@@ -1,6 +1,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import Doctor from '../../../../../models/Doctor.js';
+import Role from '../../../../../models/Role.js';
 
 // Google Strategy
 passport.use(
@@ -27,6 +28,12 @@ passport.use(
         }
 
         // Create new doctor with OAuth data
+        // 🔐 RBAC - Fetch doctor role for new OAuth user
+        const doctorRole = await Role.findOne({ name: 'doctor' });
+        if (!doctorRole) {
+          throw new Error('DOCTOR_ROLE_NOT_FOUND');
+        }
+
         doctor = new Doctor({
           fullName,
           email: email.toLowerCase(),
@@ -38,6 +45,7 @@ passport.use(
           onboarding_status: 'pending',
           oauth_provider: 'google',
           oauth_id: profile.id,
+          roleId: doctorRole._id, // 🔐 RBAC - Assign doctor role
         });
 
         await doctor.save();

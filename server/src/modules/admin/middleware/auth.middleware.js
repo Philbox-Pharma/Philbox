@@ -15,13 +15,14 @@ export async function authenticate(req, res, next) {
       return sendResponse(res, 401, 'Admin not found');
     }
 
-    // Attach admin to request
+    // Attach admin to request with roleId for RBAC
     req.admin = {
       _id: admin._id,
       id: admin._id,
       category: admin.category,
       email: admin.email,
       name: admin.name,
+      roleId: admin.roleId, // 🔐 RBAC - Include roleId for middleware
     };
 
     next();

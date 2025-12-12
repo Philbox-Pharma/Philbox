@@ -41,7 +41,10 @@ export async function authenticate(req, res, next) {
       status: doctor['account-_status'], // 'active', 'suspended/freezed', 'blocked/removed'
       isVerified: doctor.is_Verified,
       onboardingStatus: doctor.onboarding_status,
+      roleId: doctor.roleId, // 🔐 RBAC - Include roleId for middleware
     };
+    // Also set req.user for RBAC middleware compatibility
+    req.user = req.doctor;
 
     next();
   } catch (err) {
