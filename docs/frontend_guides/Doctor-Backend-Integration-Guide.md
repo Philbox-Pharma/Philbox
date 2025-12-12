@@ -8,10 +8,11 @@
 
 1. [Base Configuration](#base-configuration)
 2. [Authentication Endpoints](#authentication-endpoints)
-3. [Onboarding Process](#onboarding-process)
-4. [Google OAuth Integration](#google-oauth-integration)
-5. [Error Handling](#error-handling)
-6. [Frontend Pages & Integration Points](#frontend-pages--integration-points)
+3. [Session Management](#session-management)
+4. [Onboarding Process](#onboarding-process)
+5. [Google OAuth Integration](#google-oauth-integration)
+6. [Error Handling](#error-handling)
+7. [Frontend Pages & Integration Points](#frontend-pages--integration-points)
 
 ---
 
@@ -472,6 +473,333 @@ const handleLogin = async (email, password) => {
     "nextStep": "login"
   }
 }
+```
+
+---
+
+## Session Management
+
+### Session Overview
+
+After successful login, a session is automatically created via `connect.sid` cookie. Doctor accounts start in a suspended state pending admin verification.
+
+**Session Properties:**
+
+- **Cookie Name**: `connect.sid`
+- **Type**: HttpOnly (cannot be accessed via JavaScript)
+- **Duration**: 7 days
+- **Auto-Renewal**: Renewed on each request
+- **Status Tracking**: Account status (suspended/pending/active) included in session
+
+### Session Storage with Status Tracking
+
+Store doctor data including account status in React Context:
+
+```javascript
+// Context/DoctorContext.jsx
+import { createContext, useState, useCallback } from "react";
+
+export const DoctorContext = createContext();
+
+export const DoctorProvider = ({ children }) => {
+  const [doctor, setDoctor] = useState(null);
+  const [accountStatus, setAccountStatus] = useState(null); // suspended|pending|active
+  const [onboardingStep, setOnboardingStep] = useState(null); // submit-application|submit-profile|complete
+  const [isLoading, setIsLoading] = useState(true);
+
+  // After login success
+  const handleLoginSuccess = useCallback((doctorData) => {
+    setDoctor(doctorData);
+    setAccountStatus(doctorData.account_status);
+    setOnboardingStep(doctorData.profile_completion_status);
+    localStorage.setItem("doctorEmail", doctorData.email);
+  }, []);
+
+  // Update onboarding step
+  const updateOnboardingStep = useCallback((step) => {
+    setOnboardingStep(step);
+  }, []);
+
+  // Logout
+  const handleLogout = useCallback(() => {
+    setDoctor(null);
+    setAccountStatus(null);
+    setOnboardingStep(null);
+    localStorage.removeItem("doctorEmail");
+  }, []);
+
+  return (
+    <DoctorContext.Provider
+      value={{
+        doctor,
+        accountStatus,
+        onboardingStep,
+        isLoading,
+        handleLoginSuccess,
+        updateOnboardingStep,
+        handleLogout,
+      }}
+    >
+      {children}
+    </DoctorContext.Provider>
+  );
+};
+```
+
+### Account Status Management
+
+Doctor accounts have special status handling:
+
+```javascript
+// useAccountStatusCheck.js
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDoctor } from "./useDoctor";
+
+export const useAccountStatusCheck = () => {
+  const navigate = useNavigate();
+  const { doctor, accountStatus } = useDoctor();
+
+  useEffect(() => {
+    if (!doctor || !accountStatus) return;
+
+    // Handle different account statuses
+    if (accountStatus === "suspended") {
+      // Account suspended by admin - cannot proceed
+      showNotification(
+        "Your account has been suspended. Please contact support.",
+        "error",
+      );
+      navigate("/doctor/account-suspended");
+    } else if (accountStatus === "pending") {
+      // Normal state - awaiting admin verification
+      navigate("/doctor/application-pending");
+    } else if (accountStatus === "active") {
+      // Account verified - can proceed to dashboard or onboarding
+      navigate("/doctor/dashboard");
+    }
+  }, [accountStatus]);
+};
+```
+
+### Onboarding Status Routing
+
+Doctor routing depends on both account status and onboarding completion:
+
+```javascript
+// DoctorRouter.jsx
+export const DoctorRouter = () => {
+  const { doctor, accountStatus, onboardingStep } = useDoctor();
+
+  if (!doctor) {
+    return <Navigate to="/doctor/login" />;
+  }
+
+  // First check account status
+  if (accountStatus === "suspended") {
+    return <AccountSuspendedPage />;
+  }
+
+  if (accountStatus === "pending") {
+    // Doctor can login but account awaits admin verification
+    if (onboardingStep === "pending") {
+      // Step 1: Submit application documents
+      return <SubmitApplicationPage />;
+    } else if (onboardingStep === "processing") {
+      // Awaiting admin review
+      return <ApplicationReviewPage />;
+    }
+  }
+
+  if (accountStatus === "active") {
+    // Account verified, check onboarding completion
+    if (onboardingStep === "pending" || onboardingStep === "processing") {
+      // Step 2: Complete profile
+      return <CompleteProfilePage />;
+    }
+    // Fully onboarded
+    return <DoctorDashboard />;
+  }
+
+  return <LoadingSpinner />;
+};
+```
+
+### Session with OAuth2 (Google Sign-in)
+
+Google OAuth also creates a session and follows same onboarding:
+
+```javascript
+// GoogleOAuthCallback.jsx
+useEffect(() => {
+  // After OAuth redirect, session is created
+  verifyDoctorSession().then((result) => {
+    if (result.valid) {
+      handleLoginSuccess(result.doctor);
+      // Status management is automatic via useAccountStatusCheck hook
+    } else {
+      navigate("/doctor/login");
+    }
+  });
+}, []);
+```
+
+### Session Verification Endpoint
+
+**Endpoint:** `GET /auth/me`
+
+**Purpose:** Verify session and get current doctor profile with status
+
+```javascript
+const verifyDoctorSession = async () => {
+  try {
+    const response = await fetch("http://localhost:5000/api/doctor/auth/me", {
+      method: "GET",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      return {
+        valid: true,
+        doctor: result.data.doctor,
+        accountStatus: result.data.doctor.account_status,
+        onboardingStep: result.data.doctor.profile_completion_status,
+      };
+    } else if (response.status === 401) {
+      return { valid: false, reason: "not_authenticated" };
+    }
+  } catch (error) {
+    console.error("Session verification failed:", error);
+    return { valid: false, reason: "network_error" };
+  }
+};
+
+// Use on app initialization
+useEffect(() => {
+  verifyDoctorSession().then((result) => {
+    if (result.valid) {
+      handleLoginSuccess(result.doctor);
+      // useAccountStatusCheck will handle routing
+    } else {
+      navigate("/doctor/login");
+    }
+  });
+}, []);
+```
+
+### Protected Route for Doctors
+
+```javascript
+// ProtectedDoctorRoute.jsx
+import { Navigate } from "react-router-dom";
+import { useDoctor } from "./hooks/useDoctor";
+
+export const ProtectedDoctorRoute = ({
+  children,
+  requiredStatus = null,
+  requiredOnboardingStep = null,
+}) => {
+  const { doctor, accountStatus, onboardingStep, isLoading } = useDoctor();
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (!doctor) {
+    return <Navigate to="/doctor/login" replace />;
+  }
+
+  if (requiredStatus && accountStatus !== requiredStatus) {
+    return <Navigate to="/doctor/account-status" replace />;
+  }
+
+  if (requiredOnboardingStep && onboardingStep !== requiredOnboardingStep) {
+    return <Navigate to="/doctor/onboarding-step" replace />;
+  }
+
+  return children;
+};
+
+// Usage
+<Routes>
+  <Route
+    path="/submit-documents"
+    element={
+      <ProtectedDoctorRoute requiredOnboardingStep="pending">
+        <SubmitDocumentsPage />
+      </ProtectedDoctorRoute>
+    }
+  />
+  <Route
+    path="/complete-profile"
+    element={
+      <ProtectedDoctorRoute requiredOnboardingStep="processing">
+        <CompleteProfilePage />
+      </ProtectedDoctorRoute>
+    }
+  />
+  <Route
+    path="/dashboard"
+    element={
+      <ProtectedDoctorRoute requiredStatus="active">
+        <DoctorDashboard />
+      </ProtectedDoctorRoute>
+    }
+  />
+</Routes>;
+```
+
+### Session Recovery and Suspension Handling
+
+```javascript
+// useDoctorSessionRecovery.js
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDoctor } from "./useDoctor";
+
+export const useDoctorSessionRecovery = () => {
+  const navigate = useNavigate();
+  const { handleLoginSuccess, handleLogout } = useDoctor();
+
+  useEffect(() => {
+    const handleOnline = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/doctor/auth/me",
+          {
+            method: "GET",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          handleLoginSuccess(result.data.doctor);
+
+          // Check if account was suspended while offline
+          if (result.data.doctor.account_status === "suspended") {
+            showNotification("Your account has been suspended", "error");
+            navigate("/doctor/account-suspended");
+          }
+
+          showNotification("Connection restored", "success");
+        } else if (response.status === 401) {
+          // Session expired
+          handleLogout();
+          navigate("/doctor/login");
+        }
+      } catch (error) {
+        console.error("Session recovery failed:", error);
+      }
+    };
+
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [handleLoginSuccess, handleLogout, navigate]);
+};
 ```
 
 ---

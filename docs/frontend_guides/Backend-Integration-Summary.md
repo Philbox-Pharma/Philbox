@@ -60,12 +60,15 @@ This documentation package contains complete backend integration guides for all 
 
 **For Salesperson Portal Developers**
 
-- **Login** with Email/Password
+- **2FA Login** (OTP verification via email)
 - **Forget Password** - Email reset link
 - **Reset Password** - Password change via token
-- **Logout** - Session destruction
-- **Pages**: Login, Forget Password, Reset Password, Dashboard
-- **Permissions**: Orders, Medicines, Prescriptions, Customers, Appointments, Reports (9/32 available, operations not yet implemented)
+- **Session Management**: Branch scope, permission checking
+- **Order Management**: View, create, update orders in managed branches
+- **Customer Management**: View and manage customers in branches
+- **Pages**: Login, OTP, Forgot Password, Reset, Dashboard, Orders, Customers, Settings
+- **Permissions**: Orders (create, read, update), Customers (read), Branch access control (9/32)
+- **Special Feature**: Branch-scoped access - only manages assigned branches
 
 ---
 
@@ -109,13 +112,14 @@ This documentation package contains complete backend integration guides for all 
 
 ### Step 1: Choose Your Portal
 
-| Role         | Guide                                 | Auth Type   | Pages Count |
-| ------------ | ------------------------------------- | ----------- | ----------- |
-| Super Admin  | Admin-Backend-Integration-Guide       | 2FA OTP     | 8+          |
-| Branch Admin | BranchAdmin-Backend-Integration-Guide | 2FA OTP     | 7+          |
-| Doctor       | Doctor-Backend-Integration-Guide      | Email/OAuth | 7+          |
-| Salesperson  | Salesperson-Backend-Integration-Guide | Email       | 8+          |
-| Customer     | Customer-Backend-Integration-Guide    | Email/OAuth | 9+          |
+| Role         | Guide                                 | Auth Type   | Session | Pages Count |
+| ------------ | ------------------------------------- | ----------- | ------- | ----------- |
+| Super Admin  | Admin-Backend-Integration-Guide       | 2FA OTP     | ✅ Yes  | 8+          |
+| Branch Admin | BranchAdmin-Backend-Integration-Guide | 2FA OTP     | ✅ Yes  | 7+          |
+| Doctor       | Doctor-Backend-Integration-Guide      | Email/OAuth | ✅ Yes  | 7+          |
+| Salesperson  | Salesperson-Backend-Integration-Guide | 2FA OTP     | ✅ Yes  | 8+          |
+| Customer     | Customer-Backend-Integration-Guide    | Email/OAuth | ✅ Yes  | 9+          |
+| Customer     | Customer-Backend-Integration-Guide    | Email/OAuth | 9+      |
 
 ### Step 2: Read the Overview Section
 

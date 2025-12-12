@@ -8,11 +8,12 @@
 
 1. [Base Configuration](#base-configuration)
 2. [Authentication Endpoints](#authentication-endpoints)
-3. [Staff Management Endpoints](#staff-management-endpoints)
-4. [Branch Management Endpoints](#branch-management-endpoints)
-5. [Permissions Management Endpoints](#permissions-management-endpoints)
-6. [Error Handling](#error-handling)
-7. [Frontend Pages & Integration Points](#frontend-pages--integration-points)
+3. [Session Management](#session-management)
+4. [Staff Management Endpoints](#staff-management-endpoints)
+5. [Branch Management Endpoints](#branch-management-endpoints)
+6. [Permissions Management Endpoints](#permissions-management-endpoints)
+7. [Error Handling](#error-handling)
+8. [Frontend Pages & Integration Points](#frontend-pages--integration-points)
 
 ---
 
@@ -406,6 +407,279 @@ export const useLogout = () => {
   return logout;
 };
 ```
+
+---
+
+## Session Management
+
+### Session Overview
+
+After successful OTP verification (Step 2 of 2FA), a session is automatically created and maintained via `connect.sid` cookie. This section explains session handling patterns and best practices.
+
+**Session Properties:**
+
+- **Cookie Name**: `connect.sid`
+- **Type**: HttpOnly (cannot be accessed via JavaScript)
+- **Duration**: 7 days
+- **Auto-Renewal**: Renewed on each request
+- **Auto-Expiration**: Clears on browser close or after 7 days
+
+### Session Storage (Context/Redux Pattern)
+
+After OTP verification, store admin data in Context or Redux:
+
+```javascript
+// Context/AdminContext.jsx
+import { createContext, useState, useCallback } from "react";
+
+export const AdminContext = createContext();
+
+export const AdminProvider = ({ children }) => {
+  const [admin, setAdmin] = useState(null);
+  const [permissions, setPermissions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // After OTP verification (from verify-otp response)
+  const handleLoginSuccess = useCallback((adminData, adminPermissions) => {
+    setAdmin(adminData);
+    setPermissions(adminPermissions);
+    localStorage.setItem("adminEmail", adminData.email);
+  }, []);
+
+  // Logout
+  const handleLogout = useCallback(() => {
+    setAdmin(null);
+    setPermissions([]);
+    localStorage.removeItem("adminEmail");
+  }, []);
+
+  return (
+    <AdminContext.Provider
+      value={{
+        admin,
+        permissions,
+        isLoading,
+        handleLoginSuccess,
+        handleLogout,
+      }}
+    >
+      {children}
+    </AdminContext.Provider>
+  );
+};
+```
+
+### Session Verification Endpoint
+
+**Endpoint:** `GET /auth/verify-session`
+
+**Purpose:** Check if current session is valid
+
+**Use Cases:**
+
+- Page refresh - verify session still active
+- Navigate to protected route - check authorization
+- Recover from network error - revalidate session
+
+```javascript
+const verifySession = async () => {
+  try {
+    const response = await fetch(
+      "http://localhost:5000/api/admin/auth/verify-session",
+      {
+        method: "GET",
+        credentials: "include", // Send session cookie
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+
+    if (response.ok) {
+      const result = await response.json();
+      // Session is valid, update admin context if needed
+      return { valid: true, admin: result.data.admin };
+    } else if (response.status === 401) {
+      // Session expired or not authenticated
+      return { valid: false, reason: "not_authenticated" };
+    }
+  } catch (error) {
+    console.error("Session verification failed:", error);
+    return { valid: false, reason: "network_error" };
+  }
+};
+
+// Use in App.jsx or Protected Route component
+useEffect(() => {
+  verifySession().then((result) => {
+    if (result.valid) {
+      setIsAuthenticated(true);
+    } else {
+      navigate("/admin/login");
+    }
+  });
+}, []);
+```
+
+### Protected Route Pattern
+
+```javascript
+// ProtectedRoute.jsx
+import { Navigate } from "react-router-dom";
+import { useAdmin } from "./hooks/useAdmin";
+
+export const ProtectedRoute = ({ children, requiredPermission }) => {
+  const { admin, permissions, isLoading } = useAdmin();
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (!admin) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  if (requiredPermission && !permissions.includes(requiredPermission)) {
+    return <Navigate to="/admin/unauthorized" replace />;
+  }
+
+  return children;
+};
+
+// Usage
+<Routes>
+  <Route
+    path="/dashboard"
+    element={
+      <ProtectedRoute requiredPermission="read_dashboard">
+        <Dashboard />
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="/staff"
+    element={
+      <ProtectedRoute requiredPermission="read_users">
+        <StaffManagement />
+      </ProtectedRoute>
+    }
+  />
+</Routes>;
+```
+
+### Session Recovery (Network Errors)
+
+When network connectivity is restored after a disconnection:
+
+```javascript
+// useSessionRecovery.js
+import { useEffect } from "react";
+import { useAdmin } from "./useAdmin";
+
+export const useSessionRecovery = () => {
+  const { handleLoginSuccess } = useAdmin();
+
+  useEffect(() => {
+    // Listen for online event
+    const handleOnline = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/admin/auth/verify-session",
+          {
+            method: "GET",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          // Session recovered, update context
+          handleLoginSuccess(
+            result.data.admin,
+            result.data.admin.role.permissions,
+          );
+          showNotification("Connection restored", "success");
+        }
+      } catch (error) {
+        console.error("Session recovery failed:", error);
+      }
+    };
+
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [handleLoginSuccess]);
+};
+```
+
+### Session Timeout Handling
+
+```javascript
+// useSessionTimeout.js
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
+export const useSessionTimeout = (timeoutMinutes = 420) => {
+  const navigate = useNavigate();
+  let timeoutId;
+
+  const resetTimeout = () => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(
+      () => {
+        // Session likely expired
+        console.warn("Session timeout");
+        navigate("/admin/login");
+      },
+      timeoutMinutes * 60 * 1000,
+    );
+  };
+
+  useEffect(() => {
+    // Reset timeout on user activity
+    const events = ["mousedown", "keydown", "scroll", "touchstart"];
+
+    const handleActivity = () => {
+      resetTimeout();
+    };
+
+    events.forEach((event) => {
+      document.addEventListener(event, handleActivity);
+    });
+
+    resetTimeout();
+
+    return () => {
+      events.forEach((event) => {
+        document.removeEventListener(event, handleActivity);
+      });
+      clearTimeout(timeoutId);
+    };
+  }, [navigate, timeoutMinutes]);
+};
+```
+
+### Cookie Handling Best Practices
+
+1. **Automatic Cookie Management**: Browsers automatically send `connect.sid` cookie with credentials option
+
+   ```javascript
+   // Correct - cookie is sent automatically
+   fetch(url, { credentials: "include" });
+   ```
+
+2. **Never Manual Cookie Handling**: Do NOT try to manually handle the session cookie
+
+   ```javascript
+   // ❌ WRONG - Do not do this
+   const cookie = document.cookie;
+   headers["Cookie"] = cookie;
+   ```
+
+3. **Session Available On Every Request**: Once authenticated, session is available on all subsequent requests
+   ```javascript
+   // Session cookie is automatically included in all these requests
+   fetch("/api/admin/staff-management/admins", { credentials: "include" });
+   fetch("/api/admin/branch-management/branches", { credentials: "include" });
+   ```
 
 ---
 

@@ -8,9 +8,10 @@
 
 1. [Base Configuration](#base-configuration)
 2. [Authentication Endpoints](#authentication-endpoints)
-3. [Branch Admin Operations](#branch-admin-operations)
-4. [Error Handling](#error-handling)
-5. [Frontend Pages & Integration Points](#frontend-pages--integration-points)
+3. [Session Management](#session-management)
+4. [Branch Admin Operations](#branch-admin-operations)
+5. [Error Handling](#error-handling)
+6. [Frontend Pages & Integration Points](#frontend-pages--integration-points)
 
 ---
 
@@ -412,6 +413,300 @@ export const BranchAdminLoginFlow = () => {
   "message": "Logout successful",
   "data": null
 }
+```
+
+---
+
+## Session Management
+
+### Session Overview
+
+Branch Admin uses same authentication endpoint as Super Admin but with distinct `admin_category` field. Session creation and management follows similar patterns.
+
+**Session Properties:**
+
+- **Cookie Name**: `connect.sid`
+- **Type**: HttpOnly (cannot be accessed via JavaScript)
+- **Duration**: 7 days
+- **Admin Category**: `branch_admin` (distinguishes from `super_admin`)
+- **Branch Scope**: Permissions and access scoped to assigned branch
+
+### Session Storage with Category Distinction
+
+Store branch admin data with admin_category tracking:
+
+```javascript
+// Context/BranchAdminContext.jsx
+import { createContext, useState, useCallback } from "react";
+
+export const BranchAdminContext = createContext();
+
+export const BranchAdminProvider = ({ children }) => {
+  const [admin, setAdmin] = useState(null);
+  const [adminCategory, setAdminCategory] = useState(null); // branch_admin|super_admin
+  const [permissions, setPermissions] = useState([]);
+  const [branchId, setBranchId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // After OTP verification
+  const handleLoginSuccess = useCallback((adminData, adminPermissions) => {
+    setAdmin(adminData);
+    setAdminCategory(adminData.admin_category);
+    setPermissions(adminPermissions);
+    setBranchId(adminData.branch_id);
+    localStorage.setItem("adminEmail", adminData.email);
+    localStorage.setItem("adminCategory", adminData.admin_category);
+  }, []);
+
+  // Check if current admin is branch admin
+  const isBranchAdmin = adminCategory === "branch_admin";
+
+  // Logout
+  const handleLogout = useCallback(() => {
+    setAdmin(null);
+    setAdminCategory(null);
+    setPermissions([]);
+    setBranchId(null);
+    localStorage.removeItem("adminEmail");
+    localStorage.removeItem("adminCategory");
+  }, []);
+
+  return (
+    <BranchAdminContext.Provider
+      value={{
+        admin,
+        adminCategory,
+        permissions,
+        branchId,
+        isBranchAdmin,
+        isLoading,
+        handleLoginSuccess,
+        handleLogout,
+      }}
+    >
+      {children}
+    </BranchAdminContext.Provider>
+  );
+};
+```
+
+### Branch-Scoped Permission Checking
+
+Branch Admin permissions are automatically scoped to their assigned branch:
+
+```javascript
+// usePermissionCheck.js
+import { useAdmin } from "./useAdmin";
+
+export const usePermissionCheck = () => {
+  const { permissions, isBranchAdmin, branchId } = useAdmin();
+
+  // Check if branch admin has specific permission
+  const hasPermission = useCallback(
+    (permission) => {
+      if (!isBranchAdmin) return false; // Non-branch admins shouldn't access these endpoints
+      return permissions.includes(permission);
+    },
+    [permissions, isBranchAdmin],
+  );
+
+  // Permissions are automatically scoped to branchId
+  const getBranchScopedEndpoint = useCallback(
+    (endpoint) => {
+      if (!isBranchAdmin || !branchId) return null;
+      // All endpoints automatically filter by current branch
+      return endpoint; // Backend handles branch filtering
+    },
+    [isBranchAdmin, branchId],
+  );
+
+  return { hasPermission, getBranchScopedEndpoint, isBranchAdmin, branchId };
+};
+```
+
+### Session Verification with Category Check
+
+Verify session and confirm branch admin category:
+
+```javascript
+const verifyBranchAdminSession = async () => {
+  try {
+    const response = await fetch(
+      "http://localhost:5000/api/admin/auth/verify-session",
+      {
+        method: "GET",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+
+    if (response.ok) {
+      const result = await response.json();
+      const admin = result.data.admin;
+
+      // Verify this is a branch admin, not super admin
+      if (admin.admin_category !== "branch_admin") {
+        console.warn("Not a branch admin");
+        return { valid: false, reason: "not_branch_admin" };
+      }
+
+      return {
+        valid: true,
+        admin: admin,
+        isBranchAdmin: true,
+        branchId: admin.branch_id,
+      };
+    } else if (response.status === 401) {
+      return { valid: false, reason: "not_authenticated" };
+    }
+  } catch (error) {
+    console.error("Session verification failed:", error);
+    return { valid: false, reason: "network_error" };
+  }
+};
+
+// Use on app initialization
+useEffect(() => {
+  verifyBranchAdminSession().then((result) => {
+    if (result.valid && result.isBranchAdmin) {
+      handleLoginSuccess(result.admin, result.admin.role.permissions);
+    } else {
+      navigate("/admin/login");
+    }
+  });
+}, []);
+```
+
+### Protected Route for Branch Admin
+
+```javascript
+// ProtectedBranchAdminRoute.jsx
+import { Navigate } from "react-router-dom";
+import { useAdmin } from "./hooks/useAdmin";
+
+export const ProtectedBranchAdminRoute = ({
+  children,
+  requiredPermission = null,
+}) => {
+  const { admin, permissions, isBranchAdmin, isLoading } = useAdmin();
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (!admin || !isBranchAdmin) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  if (requiredPermission && !permissions.includes(requiredPermission)) {
+    return <Navigate to="/admin/unauthorized" replace />;
+  }
+
+  return children;
+};
+
+// Usage
+<Routes>
+  <Route
+    path="/branch-dashboard"
+    element={
+      <ProtectedBranchAdminRoute>
+        <BranchDashboard />
+      </ProtectedBranchAdminRoute>
+    }
+  />
+  <Route
+    path="/salespersons"
+    element={
+      <ProtectedBranchAdminRoute requiredPermission="read_salespersons">
+        <SalespersonManagement />
+      </ProtectedBranchAdminRoute>
+    }
+  />
+  <Route
+    path="/branch-orders"
+    element={
+      <ProtectedBranchAdminRoute requiredPermission="read_orders">
+        <OrderManagement />
+      </ProtectedBranchAdminRoute>
+    }
+  />
+</Routes>;
+```
+
+### Branch Scope Enforcement
+
+All endpoints automatically scope data to branch admin's assigned branch:
+
+```javascript
+// Example: Get salespersons for current branch
+const getSalespersons = async (page = 1, limit = 10) => {
+  const { branchId } = useAdmin();
+
+  try {
+    const response = await fetch(
+      `http://localhost:5000/api/admin/user-management/salespersons?page=${page}&limit=${limit}`,
+      {
+        method: "GET",
+        credentials: "include", // Session automatically restricts to branch
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+
+    if (response.ok) {
+      const result = await response.json();
+      // Result contains only salespersons from this branch admin's branch
+      return result.data.salespersons;
+    }
+  } catch (error) {
+    console.error("Failed to fetch salespersons:", error);
+  }
+};
+
+// All other endpoints (branch-management, etc.) also automatically filtered
+// by branch admin's branch_id from session
+```
+
+### Session Recovery for Branch Admin
+
+```javascript
+// useBranchAdminSessionRecovery.js
+import { useEffect } from "react";
+import { useAdmin } from "./useAdmin";
+
+export const useBranchAdminSessionRecovery = () => {
+  const { handleLoginSuccess } = useAdmin();
+
+  useEffect(() => {
+    const handleOnline = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/admin/auth/verify-session",
+          {
+            method: "GET",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          const admin = result.data.admin;
+
+          if (admin.admin_category === "branch_admin") {
+            handleLoginSuccess(admin, admin.role.permissions);
+            showNotification("Connection restored", "success");
+          }
+        }
+      } catch (error) {
+        console.error("Session recovery failed:", error);
+      }
+    };
+
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [handleLoginSuccess]);
+};
 ```
 
 ---

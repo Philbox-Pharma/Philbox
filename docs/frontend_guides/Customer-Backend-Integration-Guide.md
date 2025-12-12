@@ -10,10 +10,11 @@ This guide covers all customer-facing endpoints, authentication flow, and page i
 
 1. [Base Configuration](#base-configuration)
 2. [Authentication Endpoints](#authentication-endpoints)
-3. [Customer Profile Endpoints](#customer-profile-endpoints)
-4. [Google OAuth Integration](#google-oauth-integration)
-5. [Error Handling](#error-handling)
-6. [Frontend Pages & Integration Points](#frontend-pages--integration-points)
+3. [Session Management](#session-management)
+4. [Customer Profile Endpoints](#customer-profile-endpoints)
+5. [Google OAuth Integration](#google-oauth-integration)
+6. [Error Handling](#error-handling)
+7. [Frontend Pages & Integration Points](#frontend-pages--integration-points)
 
 ---
 
@@ -641,6 +642,293 @@ export const useCustomerLogout = () => {
   };
 
   return logout;
+};
+```
+
+---
+
+## Session Management
+
+### Session Overview
+
+After successful login (or email verification + OAuth), a session is automatically created via `connect.sid` cookie. This section covers session handling for customer portal.
+
+**Session Properties:**
+
+- **Cookie Name**: `connect.sid`
+- **Type**: HttpOnly (cannot be accessed via JavaScript)
+- **Duration**: 7 days
+- **Auto-Renewal**: Renewed on each request
+- **Scope**: Customer user data accessible via context/state
+
+### Session Storage Pattern
+
+Store customer data in React Context after successful login:
+
+```javascript
+// Context/CustomerContext.jsx
+import { createContext, useState, useCallback } from "react";
+
+export const CustomerContext = createContext();
+
+export const CustomerProvider = ({ children }) => {
+  const [customer, setCustomer] = useState(null);
+  const [isVerified, setIsVerified] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // After login success
+  const handleLoginSuccess = useCallback((customerData) => {
+    setCustomer(customerData);
+    setIsVerified(customerData.is_Verified);
+    localStorage.setItem("customerEmail", customerData.email);
+  }, []);
+
+  // After logout
+  const handleLogout = useCallback(() => {
+    setCustomer(null);
+    setIsVerified(false);
+    localStorage.removeItem("customerEmail");
+  }, []);
+
+  // After email verification
+  const handleEmailVerified = useCallback(() => {
+    setIsVerified(true);
+  }, []);
+
+  return (
+    <CustomerContext.Provider
+      value={{
+        customer,
+        isVerified,
+        isLoading,
+        handleLoginSuccess,
+        handleLogout,
+        handleEmailVerified,
+      }}
+    >
+      {children}
+    </CustomerContext.Provider>
+  );
+};
+```
+
+### Email Verification Session Flow
+
+Email verification creates an unverified session. Update verification status after `/auth/verify-email`:
+
+```javascript
+// VerifyEmailPage.jsx
+const handleVerifyEmail = async (token) => {
+  try {
+    const response = await fetch(
+      "http://localhost:5000/api/customer/auth/verify-email",
+      {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      },
+    );
+
+    if (response.ok) {
+      // Session now has verified status
+      // Fetch updated profile to confirm
+      const profileResponse = await fetch(
+        "http://localhost:5000/api/customer/auth/me",
+        {
+          method: "GET",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+
+      const profileResult = await profileResponse.json();
+      handleEmailVerified(); // Update context
+      navigate("/customer/dashboard");
+    }
+  } catch (error) {
+    console.error("Verification failed:", error);
+  }
+};
+```
+
+### Google OAuth Session Integration
+
+OAuth2 flow also creates session. After Google callback redirect:
+
+```javascript
+// OAuthSuccessPage.jsx
+useEffect(() => {
+  // After OAuth redirect, session is already created
+  // Fetch customer profile
+  const fetchCustomerProfile = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/customer/auth/me",
+        {
+          method: "GET",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        handleLoginSuccess(result.data.customer);
+        // If verified already, redirect to dashboard
+        if (result.data.customer.is_Verified) {
+          navigate("/customer/dashboard");
+        } else {
+          // Redirect to email verification
+          navigate("/customer/verify-email");
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+      navigate("/customer/login");
+    }
+  };
+
+  fetchCustomerProfile();
+}, []);
+```
+
+### Session Verification Endpoint
+
+**Endpoint:** `GET /auth/me`
+
+**Purpose:** Verify session and get current customer profile
+
+**Use Cases:**
+
+- App initialization - check if customer is authenticated
+- Page refresh - restore customer data
+- Protected route - verify authorization
+
+```javascript
+const verifyCustomerSession = async () => {
+  try {
+    const response = await fetch("http://localhost:5000/api/customer/auth/me", {
+      method: "GET",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      return {
+        valid: true,
+        customer: result.data.customer,
+        verified: result.data.customer.is_Verified,
+      };
+    } else if (response.status === 401) {
+      return { valid: false, reason: "not_authenticated" };
+    }
+  } catch (error) {
+    console.error("Session verification failed:", error);
+    return { valid: false, reason: "network_error" };
+  }
+};
+
+// Use in App.jsx on mount
+useEffect(() => {
+  verifyCustomerSession().then((result) => {
+    if (result.valid) {
+      handleLoginSuccess(result.customer);
+      if (!result.verified) {
+        navigate("/customer/verify-email");
+      }
+    } else {
+      navigate("/customer/login");
+    }
+  });
+}, []);
+```
+
+### Protected Route for Verified Customers
+
+```javascript
+// ProtectedRoute.jsx
+import { Navigate } from "react-router-dom";
+import { useCustomer } from "./hooks/useCustomer";
+
+export const ProtectedCustomerRoute = ({
+  children,
+  requireVerified = false,
+}) => {
+  const { customer, isVerified, isLoading } = useCustomer();
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (!customer) {
+    return <Navigate to="/customer/login" replace />;
+  }
+
+  if (requireVerified && !isVerified) {
+    return <Navigate to="/customer/verify-email" replace />;
+  }
+
+  return children;
+};
+
+// Usage
+<Routes>
+  <Route
+    path="/dashboard"
+    element={
+      <ProtectedCustomerRoute requireVerified={true}>
+        <Dashboard />
+      </ProtectedCustomerRoute>
+    }
+  />
+  <Route
+    path="/profile"
+    element={
+      <ProtectedCustomerRoute requireVerified={true}>
+        <ProfilePage />
+      </ProtectedCustomerRoute>
+    }
+  />
+</Routes>;
+```
+
+### Session Recovery After Network Issues
+
+```javascript
+// useCustomerSessionRecovery.js
+import { useEffect } from "react";
+import { useCustomer } from "./useCustomer";
+
+export const useCustomerSessionRecovery = () => {
+  const { handleLoginSuccess } = useCustomer();
+
+  useEffect(() => {
+    const handleOnline = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/customer/auth/me",
+          {
+            method: "GET",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          handleLoginSuccess(result.data.customer);
+          showNotification("Connection restored", "success");
+        }
+      } catch (error) {
+        console.error("Session recovery failed:", error);
+      }
+    };
+
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [handleLoginSuccess]);
 };
 ```
 
