@@ -2,6 +2,7 @@ import Admin from '../../../../../models/Admin.js';
 import Salesperson from '../../../../../models/Salesperson.js';
 import Branch from '../../../../../models/Branch.js';
 import Role from '../../../../../models/Role.js';
+import SalespersonTask from '../../../../../models/SalespersonTask.js';
 import bcrypt from 'bcryptjs';
 import { seedAddress } from '../../../utils/seedAddress.js';
 import { logAdminActivity } from '../../../utils/logAdminActivities.js';
@@ -743,6 +744,209 @@ class UserManagementService {
     );
 
     return { fullName: salesperson.fullName, email: salesperson.email };
+  }
+
+  /**
+   * Get Salesperson Task Performance
+   * Super Admin: can view all salesperson tasks
+   * Branch Admin: can only view tasks for salespersons in their managed branches
+   */
+  async getSalespersonTaskPerformance(filters, adminId, adminCategory, req) {
+    const {
+      salesperson_id,
+      branch_id,
+      status,
+      priority,
+      from_date,
+      to_date,
+      page = 1,
+      limit = 10,
+    } = filters;
+
+    // Build base query
+    const query = {};
+
+    // If branch admin, restrict to their branches only
+    if (adminCategory === 'branch_admin') {
+      const admin = await Admin.findById(adminId);
+      if (!admin || admin.branches_managed.length === 0) {
+        throw new Error('ADMIN_NO_BRANCHES');
+      }
+      query.branch_id = { $in: admin.branches_managed };
+    }
+
+    // Apply filters
+    if (salesperson_id) {
+      query.salesperson_id = salesperson_id;
+    }
+
+    if (branch_id) {
+      // If branch admin, validate they manage this branch
+      if (adminCategory === 'branch_admin') {
+        const admin = await Admin.findById(adminId);
+        if (!admin.branches_managed.includes(branch_id)) {
+          throw new Error('UNAUTHORIZED_BRANCH_ACCESS');
+        }
+      }
+      query.branch_id = branch_id;
+    }
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (priority) {
+      query.priority = priority;
+    }
+
+    if (from_date || to_date) {
+      query.created_at = {};
+      if (from_date) {
+        query.created_at.$gte = new Date(from_date);
+      }
+      if (to_date) {
+        query.created_at.$lte = new Date(to_date);
+      }
+    }
+
+    // Get paginated tasks
+    const options = {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      sort: { created_at: -1 },
+      populate: [
+        {
+          path: 'salesperson_id',
+          select: 'fullName email phone_number',
+        },
+        {
+          path: 'branch_id',
+          select: 'name city',
+        },
+        {
+          path: 'assigned_by_admin_id',
+          select: 'name email',
+        },
+      ],
+    };
+
+    const tasks = await paginate(SalespersonTask, query, options);
+
+    // Calculate performance metrics
+    const performanceMetrics = await this.calculateTaskPerformanceMetrics(
+      query,
+      salesperson_id
+    );
+
+    // Log activity
+    await logAdminActivity(
+      req,
+      'view_task_performance',
+      `${adminCategory === 'super_admin' ? 'Super Admin' : 'Branch Admin'} viewed salesperson task performance`,
+      'salesperson_tasks',
+      null,
+      { filters }
+    );
+
+    return {
+      tasks,
+      metrics: performanceMetrics,
+    };
+  }
+
+  /**
+   * Calculate task performance metrics
+   */
+  async calculateTaskPerformanceMetrics(baseQuery, salespersonId = null) {
+    // If specific salesperson, get their metrics
+    const query = { ...baseQuery };
+    if (salespersonId) {
+      query.salesperson_id = salespersonId;
+    }
+
+    const totalTasks = await SalespersonTask.countDocuments(query);
+
+    const statusBreakdown = await SalespersonTask.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const priorityBreakdown = await SalespersonTask.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: '$priority',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Calculate completion rate
+    const completedTasks =
+      statusBreakdown.find(s => s._id === 'completed')?.count || 0;
+    const completionRate =
+      totalTasks > 0 ? ((completedTasks / totalTasks) * 100).toFixed(2) : 0;
+
+    // Get overdue tasks (past deadline and not completed)
+    const overdueTasks = await SalespersonTask.countDocuments({
+      ...query,
+      deadline: { $lt: new Date() },
+      status: { $in: ['pending', 'in_progress'] },
+    });
+
+    // Get average completion time for completed tasks
+    const completedTasksData = await SalespersonTask.find({
+      ...query,
+      status: 'completed',
+    }).select('created_at updated_at');
+
+    let averageCompletionDays = 0;
+    if (completedTasksData.length > 0) {
+      const totalDays = completedTasksData.reduce((sum, task) => {
+        const days =
+          (new Date(task.updated_at) - new Date(task.created_at)) /
+          (1000 * 60 * 60 * 24);
+        return sum + days;
+      }, 0);
+      averageCompletionDays = (totalDays / completedTasksData.length).toFixed(
+        2
+      );
+    }
+
+    // Format status breakdown
+    const statusCounts = {
+      pending: 0,
+      in_progress: 0,
+      completed: 0,
+      cancelled: 0,
+    };
+    statusBreakdown.forEach(item => {
+      statusCounts[item._id] = item.count;
+    });
+
+    // Format priority breakdown
+    const priorityCounts = {
+      low: 0,
+      medium: 0,
+      high: 0,
+    };
+    priorityBreakdown.forEach(item => {
+      priorityCounts[item._id] = item.count;
+    });
+
+    return {
+      totalTasks,
+      statusBreakdown: statusCounts,
+      priorityBreakdown: priorityCounts,
+      completionRate: `${completionRate}%`,
+      overdueTasks,
+      averageCompletionDays: parseFloat(averageCompletionDays),
+    };
   }
 }
 

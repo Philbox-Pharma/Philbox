@@ -513,6 +513,181 @@ GET /api/super-admin/salesperson/search?q=jane
 
 ---
 
+## 3. Salesperson Task Performance
+
+### 3.1 Get Salesperson Task Performance
+
+**Endpoint:** `GET /api/super-admin/users/salesperson-tasks/performance`
+**Authentication:** Required (Super Admin or Branch Admin)
+
+**Access Control:**
+
+- **Super Admin**: Can view tasks for all salespersons across all branches
+- **Branch Admin**: Can only view tasks for salespersons in their managed branches
+
+**Query Parameters:**
+
+| Parameter        | Type     | Description                                                                | Required |
+| ---------------- | -------- | -------------------------------------------------------------------------- | -------- |
+| `salesperson_id` | ObjectId | Filter by specific salesperson                                             | No       |
+| `branch_id`      | ObjectId | Filter by branch                                                           | No       |
+| `status`         | String   | Filter by task status (`pending`, `in_progress`, `completed`, `cancelled`) | No       |
+| `priority`       | String   | Filter by priority (`low`, `medium`, `high`)                               | No       |
+| `from_date`      | Date     | Filter tasks created after this date (ISO 8601)                            | No       |
+| `to_date`        | Date     | Filter tasks created before this date (ISO 8601)                           | No       |
+| `page`           | Number   | Page number for pagination (default: 1)                                    | No       |
+| `limit`          | Number   | Items per page (default: 10)                                               | No       |
+
+**Example Requests:**
+
+```
+# Get all tasks (Super Admin)
+GET /api/super-admin/users/salesperson-tasks/performance
+
+# Get tasks for specific salesperson
+GET /api/super-admin/users/salesperson-tasks/performance?salesperson_id=64sales123
+
+# Get pending tasks for a branch
+GET /api/super-admin/users/salesperson-tasks/performance?branch_id=64branch123&status=pending
+
+# Get high priority tasks
+GET /api/super-admin/users/salesperson-tasks/performance?priority=high
+
+# Get tasks within date range
+GET /api/super-admin/users/salesperson-tasks/performance?from_date=2025-01-01&to_date=2025-12-31
+
+# Paginated results
+GET /api/super-admin/users/salesperson-tasks/performance?page=2&limit=20
+```
+
+**Success Response:**
+
+```json
+{
+  "success": true,
+  "message": "Salesperson task performance retrieved successfully",
+  "data": {
+    "tasks": {
+      "docs": [
+        {
+          "_id": "64task123...",
+          "title": "Follow up with 3 new leads",
+          "description": "Contact leads from yesterday's campaign",
+          "priority": "high",
+          "status": "in_progress",
+          "deadline": "2025-12-20T23:59:59.000Z",
+          "assigned_by_admin_id": {
+            "_id": "64admin123...",
+            "name": "Admin User",
+            "email": "admin@philbox.com"
+          },
+          "assigned_by_role": "super_admin",
+          "salesperson_id": {
+            "_id": "64sales123...",
+            "fullName": "Jane Smith",
+            "email": "jane@philbox.com",
+            "phone_number": "+923001234567"
+          },
+          "branch_id": {
+            "_id": "64branch123...",
+            "name": "Karachi Branch",
+            "city": "Karachi"
+          },
+          "updates": [
+            {
+              "updated_by": "64sales123...",
+              "role": "salesperson",
+              "message": "Contacted 2 out of 3 leads",
+              "updated_at": "2025-12-18T10:30:00.000Z"
+            }
+          ],
+          "created_at": "2025-12-15T09:00:00.000Z",
+          "updated_at": "2025-12-18T10:30:00.000Z"
+        }
+      ],
+      "totalDocs": 50,
+      "limit": 10,
+      "page": 1,
+      "totalPages": 5,
+      "hasNextPage": true,
+      "hasPrevPage": false,
+      "nextPage": 2,
+      "prevPage": null
+    },
+    "metrics": {
+      "totalTasks": 50,
+      "statusBreakdown": {
+        "pending": 15,
+        "in_progress": 10,
+        "completed": 20,
+        "cancelled": 5
+      },
+      "priorityBreakdown": {
+        "low": 10,
+        "medium": 25,
+        "high": 15
+      },
+      "completionRate": "40.00%",
+      "overdueTasks": 3,
+      "averageCompletionDays": 4.5
+    }
+  }
+}
+```
+
+**Performance Metrics Explained:**
+
+- **totalTasks**: Total number of tasks matching the filters
+- **statusBreakdown**: Count of tasks by status
+  - `pending`: Tasks not yet started
+  - `in_progress`: Tasks currently being worked on
+  - `completed`: Successfully completed tasks
+  - `cancelled`: Tasks that were cancelled
+- **priorityBreakdown**: Count of tasks by priority level
+  - `low`: Low priority tasks
+  - `medium`: Medium priority tasks
+  - `high`: High priority tasks
+- **completionRate**: Percentage of completed tasks out of total tasks
+- **overdueTasks**: Number of tasks past their deadline and not completed
+- **averageCompletionDays**: Average number of days to complete a task
+
+**Error Responses:**
+
+```json
+// Branch admin with no managed branches
+{
+  "success": false,
+  "message": "You do not manage any branches"
+}
+```
+
+```json
+// Branch admin trying to access another branch's data
+{
+  "success": false,
+  "message": "You do not have access to this branch"
+}
+```
+
+```json
+// Admin not found
+{
+  "success": false,
+  "message": "Admin not found"
+}
+```
+
+**Use Cases:**
+
+1. **Super Admin Dashboard**: View overall task performance across all branches
+2. **Branch Admin Dashboard**: Monitor tasks for their specific branch salespersons
+3. **Salesperson Performance Review**: Filter by specific salesperson to evaluate individual performance
+4. **Task Management**: Track pending, overdue, and completed tasks
+5. **Priority Management**: Identify high-priority tasks that need attention
+6. **Deadline Monitoring**: Find overdue tasks using the metrics
+
+---
+
 ## Error Response Format
 
 ```json
@@ -528,7 +703,7 @@ GET /api/super-admin/salesperson/search?q=jane
 - `200` - Success
 - `400` - Bad Request (validation error)
 - `401` - Unauthorized (not logged in)
-- `403` - Forbidden (not super admin)
+- `403` - Forbidden (not super admin or unauthorized branch access)
 - `404` - Not Found
 - `409` - Conflict (email already exists)
 - `500` - Server Error
