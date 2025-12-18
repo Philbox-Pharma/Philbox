@@ -329,3 +329,48 @@ export const deleteSalesperson = async (req, res) => {
     return sendResponse(res, 500, 'Server Error', null, err);
   }
 };
+
+/**
+ * Get Salesperson Task Performance
+ * Accessible by Super Admin and Branch Admin
+ */
+export const getSalespersonTaskPerformance = async (req, res) => {
+  try {
+    const filters = req.query;
+    const adminId = req.session.adminId;
+
+    // Get admin to check category
+    const Admin = (await import('../../../../../models/Admin.js')).default;
+    const admin = await Admin.findById(adminId).select('category');
+
+    if (!admin) {
+      return sendResponse(res, 404, 'Admin not found');
+    }
+
+    const result = await UserManagementService.getSalespersonTaskPerformance(
+      filters,
+      adminId,
+      admin.category,
+      req
+    );
+
+    return sendResponse(
+      res,
+      200,
+      'Salesperson task performance retrieved successfully',
+      result
+    );
+  } catch (err) {
+    console.error(err);
+
+    if (err.message === 'ADMIN_NO_BRANCHES') {
+      return sendResponse(res, 403, 'You do not manage any branches');
+    }
+
+    if (err.message === 'UNAUTHORIZED_BRANCH_ACCESS') {
+      return sendResponse(res, 403, 'You do not have access to this branch');
+    }
+
+    return sendResponse(res, 500, 'Server Error', null, err);
+  }
+};
