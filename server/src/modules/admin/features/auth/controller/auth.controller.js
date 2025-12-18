@@ -8,10 +8,28 @@ export const login = async (req, res) => {
 
     const result = await adminAuthService.login(email, password, req);
 
-    // Store pending admin info in session for OTP verification
-    req.session.pendingAdminId = result.adminId;
+    // If 2FA is enabled, store pending admin ID in session
+    if (result.isTwoFactorEnabled) {
+      req.session.pendingAdminId = result.adminId;
+      req.session.pendingEmail = result.email;
 
-    return sendResponse(res, 200, 'OTP sent to email');
+      return sendResponse(res, 200, 'OTP sent to your email', {
+        email: result.email,
+        nextStep: result.nextStep,
+        isTwoFactorEnabled: true,
+      });
+    } else {
+      // Direct login without 2FA
+      req.session.adminId = result.adminId;
+      req.session.adminCategory = result.adminCategory;
+      req.session.adminEmail = result.adminEmail;
+
+      return sendResponse(res, 200, 'Login successful', {
+        admin: result.admin,
+        nextStep: result.nextStep,
+        isTwoFactorEnabled: false,
+      });
+    }
   } catch (err) {
     console.error(err);
 
@@ -121,6 +139,36 @@ export const resetPassword = async (req, res) => {
 
     if (err.message === 'INVALID_OR_EXPIRED_TOKEN') {
       return sendResponse(res, 400, 'Invalid or expired token');
+    }
+
+    return sendResponse(res, 500, 'Server Error', null, err.message);
+  }
+};
+
+// ------------------------- UPDATE 2FA SETTINGS --------------------------
+export const update2FASettings = async (req, res) => {
+  try {
+    const { isTwoFactorEnabled } = req.body;
+    const adminId = req.session.adminId || req.admin?._id;
+
+    if (!adminId) {
+      return sendResponse(res, 401, 'Unauthorized. Please login.');
+    }
+
+    const result = await adminAuthService.update2FASettings(
+      adminId,
+      isTwoFactorEnabled,
+      req
+    );
+
+    return sendResponse(res, 200, result.message, {
+      isTwoFactorEnabled: result.isTwoFactorEnabled,
+    });
+  } catch (err) {
+    console.error(err);
+
+    if (err.message === 'ADMIN_NOT_FOUND') {
+      return sendResponse(res, 404, 'Admin not found');
     }
 
     return sendResponse(res, 500, 'Server Error', null, err.message);

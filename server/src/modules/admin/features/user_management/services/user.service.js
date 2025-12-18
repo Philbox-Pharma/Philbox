@@ -14,7 +14,7 @@ class UserManagementService {
   /**
    * Create Admin User
    */
-  async createAdmin(data, profileImage, req) {
+  async createAdmin(data, profileImage, coverImage, req) {
     const {
       name,
       email,
@@ -22,6 +22,10 @@ class UserManagementService {
       phone_number,
       branches_managed = [],
       addresses = [],
+      roleId,
+      category,
+      status,
+      isTwoFactorEnabled,
     } = data;
 
     // Check if email already exists
@@ -34,44 +38,71 @@ class UserManagementService {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Upload profile image if provided
-    let profile_img_url = null;
-    if (profileImage) {
-      profile_img_url = await uploadToCloudinary(profileImage.path, 'admins');
+    // Get role - either from provided roleId or default to branch_admin
+    let adminRoleId = roleId;
+    if (!adminRoleId) {
+      const role = await Role.findOne({ name: 'branch_admin' });
+      if (role) {
+        adminRoleId = role._id;
+      }
     }
 
-    // Get branch_admin role
-    let roleId = null;
-    const role = await Role.findOne({ name: 'branch_admin' });
-    if (role) {
-      roleId = role._id;
-    }
-
-    // Create new admin
-    const newAdmin = new Admin({
+    // Create new admin object
+    const adminData = {
       name,
       email: email.toLowerCase(),
       password: hashedPassword,
       phone_number: phone_number || '',
-      category: 'branch-admin',
+      category: category || 'branch-admin',
       branches_managed,
-      profile_img_url,
-      roleId,
-    });
+      roleId: adminRoleId,
+      isTwoFactorEnabled: isTwoFactorEnabled || false,
+    };
 
-    // Update branches with new admin
-    for (let branchId of branches_managed) {
-      const branch = await Branch.findById(branchId);
-      if (branch) {
-        branch.under_administration_of.push(newAdmin._id);
-        await branch.save();
+    // Only set status if provided (let model default handle it otherwise)
+    if (status) {
+      adminData.status = status;
+    }
+
+    // Upload and set profile image if provided, otherwise let model default handle it
+    if (profileImage) {
+      adminData.profile_img_url = await uploadToCloudinary(
+        profileImage.path,
+        'admins/profiles'
+      );
+    }
+
+    // Upload and set cover image if provided, otherwise let model default handle it
+    if (coverImage) {
+      adminData.cover_img_url = await uploadToCloudinary(
+        coverImage.path,
+        'admins/covers'
+      );
+    }
+
+    const newAdmin = new Admin(adminData);
+
+    // In createAdmin method, replace the loop with:
+    if (branches_managed.length > 0) {
+      // Validate branches exist
+      const branchCount = await Branch.countDocuments({
+        _id: { $in: branches_managed },
+      });
+      if (branchCount !== branches_managed.length) {
+        throw new Error('INVALID_BRANCH_IDS');
       }
+
+      // Update branches with new admin using bulk operation
+      await Branch.updateMany(
+        { _id: { $in: branches_managed } },
+        { $addToSet: { under_administration_of: newAdmin._id } }
+      );
     }
 
     // Create addresses
     const addressIds = [];
     for (let address of addresses) {
-      address.id = newAdmin._id;
+      address.address_of_persons_id = newAdmin._id;
       const addressId = await seedAddress(address);
       addressIds.push(addressId);
     }
@@ -194,7 +225,7 @@ class UserManagementService {
   /**
    * Get all admins with pagination and filters
    */
-  async getAllAdmins(query) {
+  async getAllAdmins(query, req) {
     const { page = 1, limit = 10, search, status, branch } = query;
 
     const filter = { category: 'branch-admin' };
@@ -232,6 +263,18 @@ class UserManagementService {
       '-password'
     );
 
+    // Log activity
+    if (req) {
+      await logAdminActivity(
+        req,
+        'view_all_admins',
+        `Viewed all admins list (${result.total} admins, page ${result.currentPage})`,
+        'admins',
+        null,
+        { query_params: { search, status, branch, page, limit } }
+      );
+    }
+
     return {
       admins: result.list,
       pagination: {
@@ -246,7 +289,7 @@ class UserManagementService {
   /**
    * Get all salespersons with pagination and filters
    */
-  async getAllSalespersons(query) {
+  async getAllSalespersons(query, req) {
     const { page = 1, limit = 10, search, status, branch } = query;
 
     const filter = {};
@@ -284,6 +327,18 @@ class UserManagementService {
       '-passwordHash'
     );
 
+    // Log activity
+    if (req) {
+      await logAdminActivity(
+        req,
+        'view_all_salespersons',
+        `Viewed all salespersons list (${result.total} salespersons, page ${result.currentPage})`,
+        'salespersons',
+        null,
+        { query_params: { search, status, branch, page, limit } }
+      );
+    }
+
     return {
       salespersons: result.list,
       pagination: {
@@ -298,7 +353,7 @@ class UserManagementService {
   /**
    * Get single admin by ID
    */
-  async getAdminById(adminId) {
+  async getAdminById(adminId, req) {
     const admin = await Admin.findById(adminId)
       .populate({
         path: 'branches_managed',
@@ -312,13 +367,24 @@ class UserManagementService {
       throw new Error('ADMIN_NOT_FOUND');
     }
 
+    // Log activity
+    if (req) {
+      await logAdminActivity(
+        req,
+        'view_admin_details',
+        `Viewed admin details: ${admin.name} (${admin.email})`,
+        'admins',
+        admin._id
+      );
+    }
+
     return admin;
   }
 
   /**
    * Get single salesperson by ID
    */
-  async getSalespersonById(salespersonId) {
+  async getSalespersonById(salespersonId, req) {
     const salesperson = await Salesperson.findById(salespersonId)
       .populate({
         path: 'branches_to_be_managed',
@@ -331,13 +397,24 @@ class UserManagementService {
       throw new Error('SALESPERSON_NOT_FOUND');
     }
 
+    // Log activity
+    if (req) {
+      await logAdminActivity(
+        req,
+        'view_salesperson_details',
+        `Viewed salesperson details: ${salesperson.fullName} (${salesperson.email})`,
+        'salespersons',
+        salesperson._id
+      );
+    }
+
     return salesperson;
   }
 
   /**
    * Search admin
    */
-  async searchAdmin(searchParams) {
+  async searchAdmin(searchParams, req) {
     const { id, email, name } = searchParams;
 
     let query = { category: 'branch-admin' };
@@ -354,13 +431,25 @@ class UserManagementService {
       throw new Error('ADMIN_NOT_FOUND');
     }
 
+    // Log activity
+    if (req) {
+      await logAdminActivity(
+        req,
+        'search_admin',
+        `Searched for admin: ${admin.name} (${admin.email})`,
+        'admins',
+        admin._id,
+        { search_params: searchParams }
+      );
+    }
+
     return admin;
   }
 
   /**
    * Search salesperson
    */
-  async searchSalesperson(searchParams) {
+  async searchSalesperson(searchParams, req) {
     const { id, email, fullName } = searchParams;
 
     let query = {};
@@ -376,15 +465,36 @@ class UserManagementService {
       throw new Error('SALESPERSON_NOT_FOUND');
     }
 
+    // Log activity
+    if (req) {
+      await logAdminActivity(
+        req,
+        'search_salesperson',
+        `Searched for salesperson: ${salesperson.fullName} (${salesperson.email})`,
+        'salespersons',
+        salesperson._id,
+        { search_params: searchParams }
+      );
+    }
+
     return salesperson;
   }
 
   /**
    * Update admin
    */
-  async updateAdmin(adminId, updateData, req) {
-    const { name, email, phone_number, password, branches_managed, addresses } =
-      updateData;
+  async updateAdmin(adminId, updateData, profileImage, coverImage, req) {
+    const {
+      name,
+      email,
+      phone_number,
+      branches_managed,
+      addresses,
+      category,
+      status,
+      roleId,
+      isTwoFactorEnabled,
+    } = updateData;
 
     const admin = await Admin.findById(adminId);
     if (!admin || admin.category !== 'branch-admin') {
@@ -393,29 +503,82 @@ class UserManagementService {
 
     const oldAdmin = admin.toObject();
 
-    // Update fields
+    // Update basic fields
     if (name) admin.name = name;
     if (email) admin.email = email.toLowerCase();
-    if (phone_number) admin.phone_number = phone_number;
+    if (phone_number !== undefined) admin.phone_number = phone_number;
+    if (category) admin.category = category;
+    if (status) admin.status = status;
+    if (roleId) admin.roleId = roleId;
+    if (isTwoFactorEnabled !== undefined)
+      admin.isTwoFactorEnabled = isTwoFactorEnabled;
 
-    if (password) {
-      const salt = await bcrypt.genSalt(10);
-      admin.password = await bcrypt.hash(password, salt);
+    // Upload and update profile image only if provided
+    if (profileImage) {
+      admin.profile_img_url = await uploadToCloudinary(
+        profileImage.path,
+        'admins/profiles'
+      );
     }
 
-    if (branches_managed) admin.branches_managed = branches_managed;
+    // Upload and update cover image only if provided
+    if (coverImage) {
+      admin.cover_img_url = await uploadToCloudinary(
+        coverImage.path,
+        'admins/covers'
+      );
+    }
 
     // Update addresses
     if (addresses && addresses.length > 0) {
       const addressIds = [];
       for (let address of addresses) {
-        address.id = adminId;
+        address.address_of_persons_id = adminId;
         const addressId = await seedAddress(address);
         addressIds.push(addressId);
       }
       admin.addresses = addressIds;
     }
+    // In updateAdmin method, add this before saving:
+    if (branches_managed) {
+      // Validate new branches
+      const branchCount = await Branch.countDocuments({
+        _id: { $in: branches_managed },
+      });
+      if (branchCount !== branches_managed.length) {
+        throw new Error('INVALID_BRANCH_IDS');
+      }
 
+      // Get old and new branch lists
+      const oldBranches = admin.branches_managed.map(id => id.toString());
+      const newBranches = branches_managed.map(id => id.toString());
+
+      // Find branches to remove (in old but not in new)
+      const branchesToRemove = oldBranches.filter(
+        id => !newBranches.includes(id)
+      );
+
+      // Find branches to add (in new but not in old)
+      const branchesToAdd = newBranches.filter(id => !oldBranches.includes(id));
+
+      // Remove admin from branches that are no longer assigned
+      if (branchesToRemove.length > 0) {
+        await Branch.updateMany(
+          { _id: { $in: branchesToRemove } },
+          { $pull: { under_administration_of: adminId } }
+        );
+      }
+
+      // Add admin to newly assigned branches
+      if (branchesToAdd.length > 0) {
+        await Branch.updateMany(
+          { _id: { $in: branchesToAdd } },
+          { $addToSet: { under_administration_of: adminId } }
+        );
+      }
+
+      admin.branches_managed = branches_managed;
+    }
     await admin.save();
 
     // Log activity

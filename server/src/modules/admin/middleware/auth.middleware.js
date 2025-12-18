@@ -15,6 +15,20 @@ export async function authenticate(req, res, next) {
       return sendResponse(res, 401, 'Admin not found');
     }
 
+    // Security Check: Block if account is suspended or blocked
+    // (Super-admins don't have status field, so only check for branch-admins)
+    if (
+      admin.status &&
+      (admin.status === 'blocked' || admin.status === 'suspended')
+    ) {
+      req.session.destroy();
+      return sendResponse(
+        res,
+        403,
+        'Your account has been blocked or suspended.'
+      );
+    }
+
     // Attach admin to request with roleId for RBAC
     req.admin = {
       _id: admin._id,

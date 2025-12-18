@@ -42,7 +42,10 @@ router.use(roleMiddleware('super_admin'));
 // 🟩 CREATE Admin (with optional profile image)
 router.post(
   '/admin',
-  upload.single('profile_img'),
+  upload.fields([
+    { name: 'profile_img', maxCount: 1 },
+    { name: 'cover_img', maxCount: 1 },
+  ]),
   validate(createBranchAdminSchema),
   createAdmin
 );
@@ -57,7 +60,15 @@ router.get('/admin/:id', getAdminById);
 router.get('/admin/search', searchAdmin);
 
 // 🟧 UPDATE Admin
-router.put('/admin/:id', validate(updateBranchAdminSchema), updateAdmin);
+router.put(
+  '/admin/:id',
+  upload.fields([
+    { name: 'profile_img', maxCount: 1 },
+    { name: 'cover_img', maxCount: 1 },
+  ]),
+  validate(updateBranchAdminSchema),
+  updateAdmin
+);
 
 // 🔴 DELETE Admin
 router.delete('/admin/:id', deleteAdmin);

@@ -6,13 +6,13 @@
 
 Based on what you want to test, select from:
 
-- **Admin Login** → `ADMIN_AUTH_API_TESTING.md`
-- **Create Admin/Salesperson** → `USER_MANAGEMENT_API_TESTING.md`
-- **Manage Branches** → `BRANCH_MANAGEMENT_API_TESTING.md`
-- **Manage Roles/Permissions** → `PERMISSIONS_MANAGEMENT_API_TESTING.md`
-- **Customer Registration** → `CUSTOMER_AUTH_API_TESTING.md`
-- **Doctor Onboarding** → `DOCTOR_AUTH_API_TESTING.md`
-- **Salesperson Login** → `SALESPERSON_AUTH_API_TESTING.md`
+- **Admin Operations** → `ADMIN_API_COMPLETE_GUIDE.md`
+- **Create Admin/Salesperson** → `USER_MANAGEMENT_API_GUIDE.md`
+- **Manage Roles/Permissions** → `PERMISSIONS_RBAC_API_GUIDE.md`
+- **Customer Authentication** → `CUSTOMER_AUTH_API_GUIDE.md`
+- **Doctor Onboarding** → `DOCTOR_AUTH_API_GUIDE.md`
+- **Salesperson Authentication** → `SALESPERSON_AUTH_API_GUIDE.md`
+- **Complete Reference** → `README_COMPLETE.md`
 
 ### Step 2: Open Postman
 
@@ -36,24 +36,25 @@ Based on what you want to test, select from:
 ### Authentication Endpoints
 
 ```
-POST   /api/admin/auth/login
-POST   /api/admin/auth/verify-otp
-POST   /api/admin/auth/logout
+POST   /api/super-admin/auth/login
+POST   /api/super-admin/auth/verify-otp
+PATCH  /api/super-admin/auth/2fa-settings
 POST   /api/customer/auth/register
 POST   /api/customer/auth/login
 POST   /api/doctor/auth/register
 POST   /api/doctor/auth/login
 POST   /api/salesperson/auth/login
+POST   /api/salesperson/auth/verify-otp
 ```
 
 ### User Management
 
 ```
-POST   /api/super-admin/users/admin                    # Create admin
-GET    /api/super-admin/users/admin                    # List admins
-GET    /api/super-admin/users/admin/:id                # Get admin
-POST   /api/super-admin/users/salesperson              # Create salesperson
-GET    /api/super-admin/users/salesperson              # List salespersons
+POST   /api/super-admin/users/admins                   # Create admin
+GET    /api/super-admin/users/admins                   # List admins
+GET    /api/super-admin/users/admins/:id               # Get admin
+POST   /api/super-admin/users/salespersons             # Create salesperson
+GET    /api/super-admin/users/salespersons             # List salespersons
 ```
 
 ### Branch Management
@@ -64,15 +65,16 @@ GET    /api/super-admin/branches                       # List branches
 GET    /api/super-admin/branches/:id                   # Get branch
 PUT    /api/super-admin/branches/:id                   # Update branch
 DELETE /api/super-admin/branches/:id                   # Delete branch
+GET    /api/super-admin/branches/:id/performance       # Branch metrics
 ```
 
 ### Permissions Management
 
 ```
-GET    /api/super-admin/permissions/roles              # Get all roles
-GET    /api/super-admin/permissions/permissions        # Get all permissions
-POST   /api/super-admin/permissions/permissions        # Create permission
-PUT    /api/super-admin/permissions/roles/:roleId      # Update role
+GET    /api/super-admin/roles                          # Get all roles
+GET    /api/super-admin/permissions                    # Get all permissions
+POST   /api/super-admin/permissions                    # Create permission
+PUT    /api/super-admin/roles/:roleId                  # Update role
 ```
 
 ---
@@ -254,16 +256,15 @@ Cookie is automatically stored by browser/client and sent with all requests to s
 ### Test 1: Admin Login + Verify OTP
 
 ```
-POST /api/admin/auth/login
+POST /api/super-admin/auth/login
 {
   "email": "admin@example.com",
   "password": "SecurePassword123!"
 }
-Expected: 200 with OTP sent
+Expected: 200 with OTP sent (if 2FA enabled)
 
-POST /api/admin/auth/verify-otp
+POST /api/super-admin/auth/verify-otp
 {
-  "email": "admin@example.com",
   "otp": "123456"
 }
 Expected: 200 with session created (Set-Cookie header)
@@ -352,13 +353,13 @@ Expected: 200 with branch list
 For complete details, refer to specific guides:
 
 - **README.md** - Complete API map and overview
-- **ADMIN_AUTH_API_TESTING.md** - Admin authentication
-- **USER_MANAGEMENT_API_TESTING.md** - User CRUD operations
-- **BRANCH_MANAGEMENT_API_TESTING.md** - Branch operations
-- **PERMISSIONS_MANAGEMENT_API_TESTING.md** - RBAC system
-- **CUSTOMER_AUTH_API_TESTING.md** - Customer operations
-- **DOCTOR_AUTH_API_TESTING.md** - Doctor operations
-- **SALESPERSON_AUTH_API_TESTING.md** - Salesperson operations
+- **README_COMPLETE.md** - Complete API reference with frontend integration
+- **ADMIN_API_COMPLETE_GUIDE.md** - Admin authentication and branch management
+- **USER_MANAGEMENT_API_GUIDE.md** - User CRUD operations
+- **PERMISSIONS_RBAC_API_GUIDE.md** - RBAC system
+- **CUSTOMER_AUTH_API_GUIDE.md** - Customer authentication
+- **DOCTOR_AUTH_API_GUIDE.md** - Doctor onboarding and authentication
+- **SALESPERSON_AUTH_API_GUIDE.md** - Salesperson authentication with 2FA
 
 ---
 

@@ -6,11 +6,14 @@ import UserManagementService from '../services/user.service.js';
  */
 export const createAdmin = async (req, res) => {
   try {
-    const profileImage = req.file;
+    // Handle multiple file uploads (profile_img and cover_img)
+    const profileImage = req.files?.profile_img?.[0] || req.file;
+    const coverImage = req.files?.cover_img?.[0];
 
     const admin = await UserManagementService.createAdmin(
       req.body,
       profileImage,
+      coverImage,
       req
     );
 
@@ -20,6 +23,10 @@ export const createAdmin = async (req, res) => {
 
     if (err.message === 'EMAIL_EXISTS') {
       return sendResponse(res, 400, 'Email already exists');
+    }
+
+    if (err.message === 'INVALID_BRANCH_IDS') {
+      return sendResponse(res, 400, 'Invalid branch IDs provided');
     }
 
     return sendResponse(res, 500, 'Server Error', null, err);
@@ -62,7 +69,7 @@ export const createSalesperson = async (req, res) => {
  */
 export const getAllAdmins = async (req, res) => {
   try {
-    const result = await UserManagementService.getAllAdmins(req.query);
+    const result = await UserManagementService.getAllAdmins(req.query, req);
 
     return sendResponse(res, 200, 'Admins fetched successfully', result);
   } catch (err) {
@@ -76,7 +83,10 @@ export const getAllAdmins = async (req, res) => {
  */
 export const getAllSalespersons = async (req, res) => {
   try {
-    const result = await UserManagementService.getAllSalespersons(req.query);
+    const result = await UserManagementService.getAllSalespersons(
+      req.query,
+      req
+    );
 
     return sendResponse(res, 200, 'Salespersons fetched successfully', result);
   } catch (err) {
@@ -92,7 +102,7 @@ export const getAdminById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const admin = await UserManagementService.getAdminById(id);
+    const admin = await UserManagementService.getAdminById(id, req);
 
     return sendResponse(res, 200, 'Admin details fetched successfully', admin);
   } catch (err) {
@@ -113,7 +123,7 @@ export const getSalespersonById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const salesperson = await UserManagementService.getSalespersonById(id);
+    const salesperson = await UserManagementService.getSalespersonById(id, req);
 
     return sendResponse(
       res,
@@ -137,7 +147,7 @@ export const getSalespersonById = async (req, res) => {
  */
 export const searchAdmin = async (req, res) => {
   try {
-    const admin = await UserManagementService.searchAdmin(req.query);
+    const admin = await UserManagementService.searchAdmin(req.query, req);
 
     return sendResponse(res, 200, 'Admin found successfully', admin);
   } catch (err) {
@@ -157,7 +167,8 @@ export const searchAdmin = async (req, res) => {
 export const searchSalesperson = async (req, res) => {
   try {
     const salesperson = await UserManagementService.searchSalesperson(
-      req.query
+      req.query,
+      req
     );
 
     return sendResponse(
@@ -184,7 +195,17 @@ export const updateAdmin = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const admin = await UserManagementService.updateAdmin(id, req.body, req);
+    // Handle multiple file uploads (profile_img and cover_img)
+    const profileImage = req.files?.profile_img?.[0] || req.file;
+    const coverImage = req.files?.cover_img?.[0];
+
+    const admin = await UserManagementService.updateAdmin(
+      id,
+      req.body,
+      profileImage,
+      coverImage,
+      req
+    );
 
     return sendResponse(res, 200, 'Admin updated successfully', admin);
   } catch (err) {
@@ -192,6 +213,10 @@ export const updateAdmin = async (req, res) => {
 
     if (err.message === 'ADMIN_NOT_FOUND') {
       return sendResponse(res, 404, 'Admin not found');
+    }
+
+    if (err.message === 'INVALID_BRANCH_IDS') {
+      return sendResponse(res, 400, 'Invalid branch IDs provided');
     }
 
     return sendResponse(res, 500, 'Server Error', null, err);

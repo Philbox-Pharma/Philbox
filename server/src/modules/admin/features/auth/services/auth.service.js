@@ -24,20 +24,48 @@ class AdminAuthService {
       throw new Error('INVALID_CREDENTIALS');
     }
 
-    // Generate and send OTP
-    const { otp, expiresIn } = generateOTPAndExpiryDate();
-    admin.otpCode = otp;
-    admin.otpExpiresAt = expiresIn;
-    await admin.save();
+    // Check if 2FA is enabled for this admin
+    if (admin.isTwoFactorEnabled) {
+      // Generate and send OTP
+      const { otp, expiresIn } = generateOTPAndExpiryDate();
+      admin.otpCode = otp;
+      admin.otpExpiresAt = expiresIn;
+      await admin.save();
 
-    await sendOTP(admin.email, otp, 'Admin');
+      await sendOTP(admin.email, otp, admin.fullName, 'Admin');
 
-    // Return admin ID to store in session
-    return {
-      adminId: admin._id.toString(),
-      email: admin.email,
-      nextStep: 'verify-otp', // <--- Added Next Step
-    };
+      // Return admin ID to store in session for OTP verification
+      return {
+        adminId: admin._id.toString(),
+        email: admin.email,
+        isTwoFactorEnabled: true,
+        nextStep: 'verify-otp',
+      };
+    } else {
+      // Direct login without OTP
+      req.admin = admin;
+
+      // Log activity
+      await logAdminActivity(
+        req,
+        'login',
+        `Admin (${admin.email}) logged in without 2FA`,
+        'admins',
+        admin._id
+      );
+
+      // Return session data without password
+      const { password: pwd, ...safeAdmin } = admin.toObject();
+
+      return {
+        adminId: admin._id.toString(),
+        adminCategory: admin.category,
+        adminEmail: admin.email,
+        admin: safeAdmin,
+        isTwoFactorEnabled: false,
+        nextStep: 'dashboard',
+      };
+    }
   }
 
   /**
@@ -197,6 +225,34 @@ class AdminAuthService {
       email: admin.email,
       name: admin.name,
       nextStep: 'login', // <--- Added Next Step
+    };
+  }
+
+  /**
+   * Update Two-Factor Authentication Setting
+   */
+  async update2FASettings(adminId, isTwoFactorEnabled, req) {
+    const admin = await Admin.findById(adminId);
+
+    if (!admin) {
+      throw new Error('ADMIN_NOT_FOUND');
+    }
+
+    admin.isTwoFactorEnabled = isTwoFactorEnabled;
+    await admin.save();
+
+    // Log activity
+    await logAdminActivity(
+      req,
+      'update_2fa_settings',
+      `Admin (${admin.email}) ${isTwoFactorEnabled ? 'enabled' : 'disabled'} two-factor authentication`,
+      'admins',
+      admin._id
+    );
+
+    return {
+      isTwoFactorEnabled: admin.isTwoFactorEnabled,
+      message: `Two-factor authentication ${isTwoFactorEnabled ? 'enabled' : 'disabled'} successfully`,
     };
   }
 }

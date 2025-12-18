@@ -4,34 +4,67 @@ import Admin from '../../../../../models/Admin.js';
 import Customer from '../../../../../models/Customer.js';
 import Doctor from '../../../../../models/Doctor.js';
 import Salesperson from '../../../../../models/Salesperson.js';
+import { logAdminActivity } from '../../../utils/logAdminActivities.js';
 
 /**
  * Get all available roles with their permissions
  */
-export const getAllRolesService = async () => {
+export const getAllRolesService = async req => {
   const roles = await Role.find().populate('permissions');
+
+  if (req) {
+    await logAdminActivity(
+      req,
+      'view_all_roles',
+      'Viewed all roles with permissions',
+      'roles',
+      null
+    );
+  }
+
   return roles;
 };
 
 /**
  * Get all available permissions
  */
-export const getAllPermissionsService = async () => {
+export const getAllPermissionsService = async req => {
   const permissions = await Permission.find().sort({
     resource: 1,
     action: 1,
   });
+
+  if (req) {
+    await logAdminActivity(
+      req,
+      'view_all_permissions',
+      'Viewed all available permissions',
+      'permissions',
+      null
+    );
+  }
+
   return permissions;
 };
 
 /**
  * Get single role by ID with permissions
  */
-export const getRoleByIdService = async roleId => {
+export const getRoleByIdService = async (roleId, req) => {
   const role = await Role.findById(roleId).populate('permissions');
 
   if (!role) {
     throw new Error('Role not found');
+  }
+
+  if (req) {
+    await logAdminActivity(
+      req,
+      'view_role',
+      `Viewed role: ${role.name}`,
+      'roles',
+      role._id
+    );
   }
 
   return role;
@@ -40,7 +73,11 @@ export const getRoleByIdService = async roleId => {
 /**
  * Update role permissions
  */
-export const updateRolePermissionsService = async (roleId, permissionIds) => {
+export const updateRolePermissionsService = async (
+  roleId,
+  permissionIds,
+  req
+) => {
   if (!permissionIds || !Array.isArray(permissionIds)) {
     throw new Error('permissionIds must be an array');
   }
@@ -50,6 +87,8 @@ export const updateRolePermissionsService = async (roleId, permissionIds) => {
   if (!role) {
     throw new Error('Role not found');
   }
+
+  const oldPermissions = role.permissions.map(p => p.toString());
 
   // Verify all permissions exist
   const permissions = await Permission.find({ _id: { $in: permissionIds } });
@@ -61,6 +100,17 @@ export const updateRolePermissionsService = async (roleId, permissionIds) => {
   role.permissions = permissionIds;
   await role.save();
 
+  if (req) {
+    await logAdminActivity(
+      req,
+      'update_role_permissions',
+      `Updated permissions for role: ${role.name}`,
+      'roles',
+      role._id,
+      { old_permissions: oldPermissions, new_permissions: permissionIds }
+    );
+  }
+
   const updatedRole = await Role.findById(roleId).populate('permissions');
   return updatedRole;
 };
@@ -68,7 +118,12 @@ export const updateRolePermissionsService = async (roleId, permissionIds) => {
 /**
  * Assign role to user by type
  */
-export const assignRoleToUserService = async (userId, userType, roleId) => {
+export const assignRoleToUserService = async (
+  userId,
+  userType,
+  roleId,
+  req
+) => {
   if (!userId || !userType || !roleId) {
     throw new Error('userId, userType, and roleId are required');
   }
@@ -114,6 +169,17 @@ export const assignRoleToUserService = async (userId, userType, roleId) => {
     throw new Error(`${userType} user not found`);
   }
 
+  if (req) {
+    await logAdminActivity(
+      req,
+      'assign_role_to_user',
+      `Assigned role '${role.name}' to ${userType}: ${user.email || user.fullName || user.name}`,
+      `${normalizedUserType}s`,
+      userId,
+      { role_id: roleId, role_name: role.name, user_type: normalizedUserType }
+    );
+  }
+
   return user;
 };
 
@@ -123,7 +189,8 @@ export const assignRoleToUserService = async (userId, userType, roleId) => {
 export const getUserRoleAndPermissionsService = async (
   authenticatedUser,
   userId,
-  userType
+  userType,
+  req
 ) => {
   // 🔐 Validate: Either both userId AND userType provided, or NEITHER (use authenticated user)
   const hasBothParams = userId && userType;
@@ -227,6 +294,16 @@ export const getUserRoleAndPermissionsService = async (
     throw new Error('User or user role not found');
   }
 
+  if (req) {
+    await logAdminActivity(
+      req,
+      'view_user_role_permissions',
+      `Viewed role and permissions for ${currentUserType}: ${user.email || user.fullName || user.name}`,
+      `${currentUserType}s`,
+      user._id
+    );
+  }
+
   return {
     userId: user._id,
     userType: currentUserType,
@@ -242,7 +319,8 @@ export const getUserRoleAndPermissionsService = async (
 export const createPermissionService = async (
   resource,
   action,
-  description
+  description,
+  req
 ) => {
   if (!resource || !action) {
     throw new Error('resource and action are required');
@@ -273,13 +351,25 @@ export const createPermissionService = async (
   });
 
   await permission.save();
+
+  if (req) {
+    await logAdminActivity(
+      req,
+      'create_permission',
+      `Created new permission: ${permission.name}`,
+      'permissions',
+      permission._id,
+      { permission_data: { resource, action, description } }
+    );
+  }
+
   return permission;
 };
 
 /**
  * Add permission to role
  */
-export const addPermissionToRoleService = async (roleId, permissionId) => {
+export const addPermissionToRoleService = async (roleId, permissionId, req) => {
   if (!roleId || !permissionId) {
     throw new Error('roleId and permissionId are required');
   }
@@ -302,6 +392,17 @@ export const addPermissionToRoleService = async (roleId, permissionId) => {
   role.permissions.push(permissionId);
   await role.save();
 
+  if (req) {
+    await logAdminActivity(
+      req,
+      'add_permission_to_role',
+      `Added permission '${permission.name}' to role '${role.name}'`,
+      'roles',
+      role._id,
+      { permission_id: permissionId, permission_name: permission.name }
+    );
+  }
+
   const updatedRole = await Role.findById(roleId).populate('permissions');
   return updatedRole;
 };
@@ -309,7 +410,11 @@ export const addPermissionToRoleService = async (roleId, permissionId) => {
 /**
  * Remove permission from role
  */
-export const removePermissionFromRoleService = async (roleId, permissionId) => {
+export const removePermissionFromRoleService = async (
+  roleId,
+  permissionId,
+  req
+) => {
   if (!roleId || !permissionId) {
     throw new Error('roleId and permissionId are required');
   }
@@ -319,11 +424,25 @@ export const removePermissionFromRoleService = async (roleId, permissionId) => {
     throw new Error('Role not found');
   }
 
+  const permission = await Permission.findById(permissionId);
+  const permissionName = permission ? permission.name : permissionId;
+
   // Remove permission
   role.permissions = role.permissions.filter(
     perm => perm.toString() !== permissionId.toString()
   );
   await role.save();
+
+  if (req) {
+    await logAdminActivity(
+      req,
+      'remove_permission_from_role',
+      `Removed permission '${permissionName}' from role '${role.name}'`,
+      'roles',
+      role._id,
+      { permission_id: permissionId, permission_name: permissionName }
+    );
+  }
 
   const updatedRole = await Role.findById(roleId).populate('permissions');
   return updatedRole;

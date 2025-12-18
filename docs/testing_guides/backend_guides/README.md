@@ -8,95 +8,120 @@ This folder contains comprehensive testing guides for all backend API endpoints 
 
 ---
 
+## 🚀 Quick Start
+
+For a complete overview of all APIs, authentication setup, and frontend integration examples, see:
+
+**[Backend API Complete Reference](./README_COMPLETE.md)**
+
+---
+
 ## 📚 Available Guides
 
-### 1. **ADMIN_AUTH_API_TESTING.md**
+### 1. **ADMIN_API_COMPLETE_GUIDE.md**
 
-**Status:** ✅ Corrected (Session-Based)
-**Endpoints:** 5
-**Coverage:** Admin authentication with 2-step OTP verification
-
-**Endpoints Covered:**
-
-- `POST /api/admin/auth/login` - Step 1: Email/password → OTP sent
-- `POST /api/admin/auth/verify-otp` - Step 2: OTP verification → Session created
-- `POST /api/admin/auth/forget-password` - Request password reset
-- `POST /api/admin/auth/reset-password` - Reset password with token
-- `POST /api/admin/auth/logout` - Logout and destroy session
+**Coverage:** Complete admin operations including authentication, branch management, and admin statistics
 
 **Key Features:**
 
-- SESSION-BASED authentication (NOT JWT)
-- Rate limiting on all auth endpoints
-- OTP verification for 2-factor login
-- Email-based password reset
-- Session stored in MongoDB via connect-mongo
-- Cookie: connect.sid (HttpOnly, Secure)
+- Admin authentication with conditional 2FA
+- Branch CRUD operations with permissions
+- Branch assignment management
+- Branch performance metrics
+- Password reset functionality
+- Session-based authentication (connect.sid)
 
 ---
 
-### 2. **USER_MANAGEMENT_API_TESTING.md**
+### 2. **USER_MANAGEMENT_API_GUIDE.md**
 
-**Status:** ✅ Complete
-**Endpoints:** 13
-**Coverage:** Admin and Salesperson management (CRUD operations)
-
-**Endpoints Covered:**
-
-**Admin Management (6 endpoints):**
-
-- `POST /api/super-admin/users/admin` - Create new branch admin
-- `GET /api/super-admin/users/admin` - List all admins with pagination
-- `GET /api/super-admin/users/admin/:id` - Get single admin by ID
-- `GET /api/super-admin/users/admin/search` - Search admin by name/email
-- `PUT /api/super-admin/users/admin/:id` - Update admin details
-- `DELETE /api/super-admin/users/admin/:id` - Delete admin
-
-**Salesperson Management (7 endpoints):**
-
-- `POST /api/super-admin/users/salesperson` - Create new salesperson
-- `GET /api/super-admin/users/salesperson` - List all salespersons
-- `GET /api/super-admin/users/salesperson/:id` - Get single salesperson
-- `GET /api/super-admin/users/salesperson/search` - Search salesperson
-- `PUT /api/super-admin/users/salesperson/:id` - Update salesperson
-- `PATCH /api/super-admin/users/salesperson/:id/status` - Change status
-- `DELETE /api/super-admin/users/salesperson/:id` - Delete salesperson
+**Coverage:** Complete user management for admins and salespersons
 
 **Key Features:**
 
-- Type-specific user creation with model-specific attributes
-- Pagination and search functionality
-- Profile image upload to Cloudinary
-- Activity logging for all operations
-- Super admin authorization required
+- Admin CRUD operations (7 endpoints)
+- Salesperson CRUD operations (7 endpoints)
+- User activation/deactivation
+- Role assignment
+- User statistics
+- Profile image uploads
 
 ---
 
-### 3. **BRANCH_MANAGEMENT_API_TESTING.md**
+### 3. **PERMISSIONS_RBAC_API_GUIDE.md**
 
-**Status:** ✅ Complete
-**Endpoints:** 5
-**Coverage:** Branch CRUD operations with permission-based access
-
-**Endpoints Covered:**
-
-- `POST /api/super-admin/branches` - Create new branch
-- `GET /api/super-admin/branches` - List branches with pagination/filtering
-- `GET /api/super-admin/branches/:id` - Get single branch details
-- `PUT /api/super-admin/branches/:id` - Update branch information
-- `DELETE /api/super-admin/branches/:id` - Delete branch
+**Coverage:** Role-Based Access Control system
 
 **Key Features:**
 
-- Permission-based access control (RBAC)
-- Pagination with filtering (by status, city)
-- Manager assignment and staff counting
-- Cannot delete branch with active staff
-- Timestamp tracking (createdAt, updatedAt)
+- Role management (get all, get by ID, update permissions)
+- Permission management (get all, create new)
+- User role assignment
+- Add/remove permissions from roles
+- Permission checking
+- Available permissions reference
 
 ---
 
-### 4. **PERMISSIONS_MANAGEMENT_API_TESTING.md**
+### 4. **CUSTOMER_AUTH_API_GUIDE.md**
+
+**Coverage:** Customer authentication and profile management
+
+**Key Features:**
+
+- Customer registration with email verification
+- Login (email/password + Google OAuth)
+- Profile management with image uploads
+- Address management
+- Password reset functionality
+- Session management
+- Frontend integration examples
+
+---
+
+### 5. **DOCTOR_AUTH_API_GUIDE.md**
+
+**Coverage:** Doctor onboarding, authentication, and verification process
+
+**Key Features:**
+
+- Doctor registration with email verification
+- Multi-step onboarding process
+- Document submission for admin verification
+- Profile completion (education, experience, specialization)
+- Google OAuth authentication
+- Onboarding state management
+- Frontend integration examples
+
+---
+
+### 6. **SALESPERSON_AUTH_API_GUIDE.md**
+
+**Coverage:** Salesperson authentication with conditional 2FA
+
+**Key Features:**
+
+- Login with conditional 2FA
+- OTP verification flow
+- 2FA settings management (enable/disable)
+- Password reset functionality
+- Session management
+- Frontend integration examples
+
+**Coverage:** Complete user management for admins and salespersons
+
+**Key Features:**
+
+- Admin CRUD operations (7 endpoints)
+- Salesperson CRUD operations (7 endpoints)
+- User activation/deactivation
+- Role assignment
+- User statistics
+- Profile image uploads
+
+---
+
+### 3. **PERMISSIONS_RBAC_API_GUIDE.md**
 
 **Status:** ✅ Complete
 **Endpoints:** 9
@@ -223,14 +248,15 @@ Registered → Email Verified → App Submitted (Pending Review)
 ```
 http://localhost:5000/api/
 
-├── admin/auth/                          [ADMIN_AUTH_API_TESTING.md]
+├── super-admin/auth/                    [ADMIN_API_COMPLETE_GUIDE.md]
 │   ├── POST /login
 │   ├── POST /verify-otp
 │   ├── POST /forget-password
 │   ├── POST /reset-password
-│   └── POST /logout
+│   ├── POST /logout
+│   └── PATCH /2fa-settings
 │
-├── customer/auth/                       [CUSTOMER_AUTH_API_TESTING.md]
+├── customer/auth/                       [CUSTOMER_AUTH_API_GUIDE.md]
 │   ├── POST /register
 │   ├── POST /verify-email
 │   ├── POST /login
@@ -242,7 +268,7 @@ http://localhost:5000/api/
 │   ├── GET /me
 │   └── PUT /profile
 │
-├── doctor/auth/                         [DOCTOR_AUTH_API_TESTING.md]
+├── doctor/auth/                         [DOCTOR_AUTH_API_GUIDE.md]
 │   ├── POST /register
 │   ├── POST /verify-email
 │   ├── POST /login
@@ -253,43 +279,52 @@ http://localhost:5000/api/
 │   ├── POST /logout
 │   └── GET /google
 │
-├── salesperson/auth/                    [SALESPERSON_AUTH_API_TESTING.md]
+├── salesperson/auth/                    [SALESPERSON_AUTH_API_GUIDE.md]
 │   ├── POST /login
+│   ├── POST /verify-otp
 │   ├── POST /forget-password
 │   ├── POST /reset-password
-│   └── POST /logout
+│   ├── POST /logout
+│   └── PATCH /2fa-settings
 │
 └── super-admin/
-    ├── users/                           [USER_MANAGEMENT_API_TESTING.md]
-    │   ├── POST /admin
-    │   ├── GET /admin
-    │   ├── GET /admin/:id
-    │   ├── GET /admin/search
-    │   ├── PUT /admin/:id
-    │   ├── DELETE /admin/:id
-    │   ├── POST /salesperson
-    │   ├── GET /salesperson
-    │   ├── GET /salesperson/:id
-    │   ├── GET /salesperson/search
-    │   ├── PUT /salesperson/:id
-    │   ├── PATCH /salesperson/:id/status
-    │   └── DELETE /salesperson/:id
+    ├── users/                           [USER_MANAGEMENT_API_GUIDE.md]
+    │   ├── POST /admins
+    │   ├── GET /admins
+    │   ├── GET /admins/:id
+    │   ├── PUT /admins/:id
+    │   ├── DELETE /admins/:id
+    │   ├── PATCH /admins/:id/status
+    │   ├── GET /admins/stats
+    │   ├── POST /salespersons
+    │   ├── GET /salespersons
+    │   ├── GET /salespersons/:id
+    │   ├── PUT /salespersons/:id
+    │   ├── DELETE /salespersons/:id
+    │   ├── PATCH /salespersons/:id/status
+    │   └── GET /salespersons/stats
     │
-    ├── branches/                        [BRANCH_MANAGEMENT_API_TESTING.md]
+    ├── branches/                        [ADMIN_API_COMPLETE_GUIDE.md]
     │   ├── POST /branches
     │   ├── GET /branches
     │   ├── GET /branches/:id
     │   ├── PUT /branches/:id
-    │   └── DELETE /branches/:id
+    │   ├── DELETE /branches/:id
+    │   ├── POST /branches/:id/assign-admin
+    │   ├── POST /branches/:id/assign-salesperson
+    │   ├── DELETE /branches/:id/remove-admin
+    │   ├── DELETE /branches/:id/remove-salesperson
+    │   ├── GET /branches/stats
+    │   └── GET /branches/:id/performance
     │
-    └── permissions/                     [PERMISSIONS_MANAGEMENT_API_TESTING.md]
+    └── permissions/                     [PERMISSIONS_RBAC_API_GUIDE.md]
         ├── GET /roles
         ├── GET /roles/:roleId
-        ├── GET /permissions
-        ├── POST /permissions
         ├── PUT /roles/:roleId
         ├── POST /roles/:roleId/permissions
         ├── DELETE /roles/:roleId/permissions
+        ├── GET /permissions
+        ├── POST /permissions
         ├── POST /users/assign-role
         └── GET /user-role
 ```
@@ -300,16 +335,14 @@ http://localhost:5000/api/
 
 | Metric                               | Count |
 | ------------------------------------ | ----- |
-| **Total Guides**                     | 7     |
-| **Total Endpoints**                  | 45+   |
-| **Admin Auth Endpoints**             | 5     |
+| **Total Guides**                     | 6     |
+| **Total Endpoints**                  | 50+   |
+| **Admin Endpoints**                  | 20+   |
 | **Customer Auth Endpoints**          | 10    |
 | **Doctor Auth Endpoints**            | 9     |
-| **Salesperson Auth Endpoints**       | 4     |
-| **User Management Endpoints**        | 13    |
-| **Branch Management Endpoints**      | 5     |
+| **Salesperson Auth Endpoints**       | 6     |
+| **User Management Endpoints**        | 14    |
 | **Permissions Management Endpoints** | 9     |
-| **Total Test Cases**                 | 200+  |
 
 ---
 
@@ -472,6 +505,6 @@ For issues or questions regarding specific endpoints:
 
 ---
 
-**Last Updated:** December 12, 2025
-**Version:** 1.0
+**Last Updated:** December 18, 2025
+**Version:** 2.0
 **Status:** Complete & Production Ready

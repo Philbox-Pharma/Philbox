@@ -16,7 +16,7 @@ import {
  */
 export const getAllRoles = async (req, res) => {
   try {
-    const roles = await getAllRolesService();
+    const roles = await getAllRolesService(req);
     return sendResponse(res, 200, 'Roles fetched successfully', roles);
   } catch (error) {
     console.error('Error fetching roles:', error);
@@ -29,7 +29,7 @@ export const getAllRoles = async (req, res) => {
  */
 export const getAllPermissions = async (req, res) => {
   try {
-    const permissions = await getAllPermissionsService();
+    const permissions = await getAllPermissionsService(req);
     return sendResponse(
       res,
       200,
@@ -48,7 +48,7 @@ export const getAllPermissions = async (req, res) => {
 export const getRoleById = async (req, res) => {
   try {
     const { roleId } = req.params;
-    const role = await getRoleByIdService(roleId);
+    const role = await getRoleByIdService(roleId, req);
     return sendResponse(res, 200, 'Role fetched successfully', role);
   } catch (error) {
     if (error.message === 'Role not found') {
@@ -69,7 +69,8 @@ export const updateRolePermissions = async (req, res) => {
 
     const updatedRole = await updateRolePermissionsService(
       roleId,
-      permissionIds
+      permissionIds,
+      req
     );
     return sendResponse(
       res,
@@ -99,7 +100,7 @@ export const assignRoleToUser = async (req, res) => {
   try {
     const { userId, userType, roleId } = req.body;
 
-    const user = await assignRoleToUserService(userId, userType, roleId);
+    const user = await assignRoleToUserService(userId, userType, roleId, req);
     return sendResponse(
       res,
       200,
@@ -144,7 +145,8 @@ export const getUserRoleAndPermissions = async (req, res) => {
     const result = await getUserRoleAndPermissionsService(
       req,
       userId,
-      userType
+      userType,
+      req
     );
 
     return sendResponse(
@@ -191,7 +193,8 @@ export const createPermission = async (req, res) => {
     const permission = await createPermissionService(
       resource,
       action,
-      description
+      description,
+      req
     );
     return sendResponse(
       res,
@@ -221,7 +224,11 @@ export const addPermissionToRole = async (req, res) => {
   try {
     const { roleId, permissionId } = req.body;
 
-    const updatedRole = await addPermissionToRoleService(roleId, permissionId);
+    const updatedRole = await addPermissionToRoleService(
+      roleId,
+      permissionId,
+      req
+    );
     return sendResponse(
       res,
       200,
@@ -265,7 +272,8 @@ export const removePermissionFromRole = async (req, res) => {
 
     const updatedRole = await removePermissionFromRoleService(
       roleId,
-      permissionId
+      permissionId,
+      req
     );
     return sendResponse(
       res,
