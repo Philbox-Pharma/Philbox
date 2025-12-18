@@ -47,11 +47,15 @@ const salespersonSchema = new mongoose.Schema(
     },
     profile_img_url: {
       type: String,
-      default: '',
+      default: function () {
+        return `https://avatar.iran.liara.run/username?username=${this.name}`;
+      },
     },
     cover_img_url: {
       type: String,
-      default: '',
+      default: function () {
+        return `https://placehold.co/1920x480/EAEAEA/000000?text=${this.name}`;
+      },
     },
     // Fields for Password Reset Flow
     resetPasswordToken: {
@@ -59,6 +63,18 @@ const salespersonSchema = new mongoose.Schema(
     },
     resetPasswordExpires: {
       type: Date,
+    },
+
+    // 🔐 Two-Factor Authentication Fields
+    isTwoFactorEnabled: { type: Boolean, default: false },
+    otpCode: { type: String },
+    otpExpiresAt: { type: Date },
+
+    // 🔐 RBAC - Role-Based Access Control
+    roleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Role',
+      required: true,
     },
   },
   {

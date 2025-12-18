@@ -1,4 +1,5 @@
 import Admin from '../../../../../models/Admin.js';
+import Role from '../../../../../models/Role.js';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 
@@ -21,6 +22,16 @@ async function seedSuperAdmin() {
     );
     return;
   }
+
+  // Get super_admin role
+  let superAdminRole = await Role.findOne({ name: 'super_admin' });
+  if (!superAdminRole) {
+    console.error(
+      '❌ super_admin role not found. Please run "npm run seed:roles" first'
+    );
+    return;
+  }
+
   const salt = await bcrypt.genSalt(10);
   const hashed = await bcrypt.hash(rawPassword, salt);
   const ADMIN_DATA = {
@@ -28,6 +39,7 @@ async function seedSuperAdmin() {
     email,
     password: hashed,
     category: 'super-admin',
+    roleId: superAdminRole._id, // 🔐 Assign super_admin role
   };
   const admin = new Admin(ADMIN_DATA);
   await admin.save();

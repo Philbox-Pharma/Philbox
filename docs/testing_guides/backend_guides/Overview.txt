@@ -1,0 +1,11 @@
+Current structure (all files are needed):
+
+README.md - Index/directory of all guides with overview
+README_COMPLETE.md - Complete API reference with frontend integration, testing tools, environment setup
+QUICK_START.md - Quick reference for testing
+ADMIN_API_COMPLETE_GUIDE.md - Admin + Branch management endpoints
+USER_MANAGEMENT_API_GUIDE.md - User management endpoints
+PERMISSIONS_RBAC_API_GUIDE.md - RBAC endpoints
+CUSTOMER_AUTH_API_GUIDE.md - Customer auth endpoints
+DOCTOR_AUTH_API_GUIDE.md - Doctor auth + onboarding endpoints
+SALESPERSON_AUTH_API_GUIDE.md - Salesperson auth endpoints

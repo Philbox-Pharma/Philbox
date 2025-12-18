@@ -18,3 +18,7 @@ export const resetPasswordDTO = Joi.object({
   token: Joi.string().required(),
   newPassword: Joi.string().min(8).required(),
 });
+
+export const update2FADTO = Joi.object({
+  isTwoFactorEnabled: Joi.boolean().required(),
+});

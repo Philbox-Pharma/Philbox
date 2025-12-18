@@ -22,13 +22,16 @@ export async function authenticate(req, res, next) {
       return sendResponse(res, 401, 'Doctor account not found');
     }
 
-    // 3. Security Check: Immediately block access if account is banned/removed
-    if (doctor['account-_status'] === 'blocked/removed') {
+    // 3. Security Check: Block if account is suspended or blocked
+    if (
+      doctor.account_status === 'blocked/removed' ||
+      doctor.account_status === 'suspended/freezed'
+    ) {
       req.session.destroy();
       return sendResponse(
         res,
         403,
-        'Your account has been blocked or removed.'
+        'Your account has been blocked or suspended.'
       );
     }
 
@@ -38,10 +41,13 @@ export async function authenticate(req, res, next) {
       id: doctor._id,
       email: doctor.email,
       fullName: doctor.fullName,
-      status: doctor['account-_status'], // 'active', 'suspended/freezed', 'blocked/removed'
+      status: doctor.account_status, // 'active', 'suspended/freezed', 'blocked/removed'
       isVerified: doctor.is_Verified,
       onboardingStatus: doctor.onboarding_status,
+      roleId: doctor.roleId, // 🔐 RBAC - Include roleId for middleware
     };
+    // Also set req.user for RBAC middleware compatibility
+    req.user = req.doctor;
 
     next();
   } catch (err) {

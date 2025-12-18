@@ -104,6 +104,13 @@ const Schema = {
     default: 'local',
   },
   oauth_id: { type: String },
+
+  // 🔐 RBAC - Role-Based Access Control
+  roleId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Role',
+    required: true,
+  },
 };
 
 const Timestamp = {
