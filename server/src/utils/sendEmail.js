@@ -93,23 +93,31 @@ export const sendResetEmail = async (email, resetLink, name, role = 'User') => {
 };
 
 /**
- * Send OTP Email
+ * Send OTP Email (2FA)
+ * @param {string} email - Recipient email
+ * @param {string} otp - One-time password code
+ * @param {string} name - User's full name
+ * @param {string} role - 'Admin' | 'Salesperson' | 'Doctor' | 'Customer'
  */
-export const sendOTP = async (email, otp) => {
-  const message = OTP_TEMPLATE.replace('{{OTP}}', otp);
+export const sendOTP = async (email, otp, name = 'User', role = 'User') => {
+  const greetingName = getGreetingName(name, role);
+
+  const message = OTP_TEMPLATE.replace('{{OTP}}', otp)
+    .replace('{{NAME}}', greetingName)
+    .replace('{{ROLE}}', role);
 
   const emailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
-    subject: 'Philbox - Login OTP',
+    subject: `Philbox - ${role} Login Verification`,
     html: message,
   };
 
   transporter.sendMail(emailOptions, (error, info) => {
     if (error) {
-      return console.error('Error sending OTP email:', error);
+      return console.error(`Error sending ${role} OTP email:`, error);
     }
-    console.log(`OTP email sent: ${info.response}`);
+    console.log(`${role} OTP email sent: ${info.response}`);
   });
 };
 

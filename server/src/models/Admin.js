@@ -36,6 +36,13 @@ const Schema = {
   addresses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Address' }],
   branches_managed: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Branch' }],
 
+  // 🔐 RBAC - Role-Based Access Control
+  roleId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Role',
+    required: true,
+  },
+
   // 🔐 Two-Factor Authentication Fields
   isTwoFactorEnabled: { type: Boolean, default: false },
   otpCode: { type: String },

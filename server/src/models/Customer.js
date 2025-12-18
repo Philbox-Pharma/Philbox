@@ -64,6 +64,13 @@ const customerSchema = new mongoose.Schema(
     verificationToken: { type: String },
     verificationTokenExpiresAt: { type: Date },
 
+    // 🔐 RBAC - Role-Based Access Control
+    roleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Role',
+      required: true,
+    },
+
     // Password Reset Flags
     resetPasswordToken: { type: String },
     resetPasswordExpiresAt: { type: Date },

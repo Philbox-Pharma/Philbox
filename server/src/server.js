@@ -10,9 +10,9 @@ import connectDB from './config/db.config.js';
 import seedSuperAdmin from './modules/admin/features/auth/utils/seedSuperAdmin.js';
 
 import adminAuthRoutes from './modules/admin/features/auth/routes/auth.routes.js';
-import adminAdminManagementRoutes from './modules/admin/features/staff_management/admin_management/routes/admin.routes.js';
+import adminUserManagementRoutes from './modules/admin/features/user_management/routes/user.routes.js';
 import adminBranchManagementRoutes from './modules/admin/features/branch_management/routes/branch.routes.js';
-import adminSalespersonManagementRoutes from './modules/admin/features/staff_management/salesperson_management/routes/salesperson.routes.js';
+import permissionsManagementRoutes from './modules/admin/features/permissions_management/routes/permissions.routes.js';
 
 import doctorAuthRoutes from './modules/doctor/features/auth/routes/auth.routes.js';
 import passport from './modules/doctor/features/auth/config/passport.js';
@@ -57,33 +57,19 @@ app.use(
     credentials: true,
   })
 );
-app.use(session(SESSION));
-
-app.use((req, res, next) => {
-  console.log('=== SESSION DEBUG ===');
-  console.log('Path:', req.path);
-  console.log('Method:', req.method);
-  console.log('Session ID:', req.sessionID);
-  console.log('Session Data:', req.session);
-  console.log('Cookie Header:', req.headers.cookie);
-  console.log('===================\n');
-  next();
-});
-
 app.use(helmet());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
+app.use(session(SESSION));
 
 app.use(passport.initialize());
 app.use(passport.session());
 app.use('/api', healthRouter);
 app.use(`/api/${ROUTES.ADMIN_AUTH}`, adminAuthRoutes);
-app.use(`/api/${ROUTES.SUPER_ADMIN}`, adminAdminManagementRoutes);
+app.use(`/api/${ROUTES.SUPER_ADMIN}/users`, adminUserManagementRoutes);
 app.use(`/api/${ROUTES.SUPER_ADMIN}`, adminBranchManagementRoutes);
-app.use(
-  `/api/${ROUTES.SUPER_ADMIN_SALESPERSON_MANAGEMENT}`,
-  adminSalespersonManagementRoutes
-);
+app.use(`/api/${ROUTES.SUPER_ADMIN}/permissions`, permissionsManagementRoutes);
 
 app.use(`/api/${ROUTES.DOCTOR_AUTH}`, doctorAuthRoutes);
 app.use(`/api/${ROUTES.CUSTOMER_AUTH}`, customerAuthRoutes);

@@ -4,5 +4,4 @@ export const ROUTES = {
   CUSTOMER_AUTH: 'customer/auth',
   SALESPERSON_AUTH: 'salesperson/auth',
   SUPER_ADMIN: 'super-admin',
-  SUPER_ADMIN_SALESPERSON_MANAGEMENT: 'super-admin/salesperson',
 };

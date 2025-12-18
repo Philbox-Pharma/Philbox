@@ -1,6 +1,7 @@
 import Doctor from '../../../../../models/Doctor.js';
 import DoctorDocuments from '../../../../../models/DoctorDocuments.js';
 import DoctorApplication from '../../../../../models/DoctorApplication.js';
+import Role from '../../../../../models/Role.js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import {
@@ -73,6 +74,12 @@ class DoctorAuthService {
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const verificationTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000;
 
+    // 🔐 RBAC - Fetch doctor role and assign to new user
+    const doctorRole = await Role.findOne({ name: 'doctor' });
+    if (!doctorRole) {
+      throw new Error('DOCTOR_ROLE_NOT_FOUND');
+    }
+
     const newDoctor = new Doctor({
       fullName,
       email: email.toLowerCase(),
@@ -85,6 +92,7 @@ class DoctorAuthService {
       is_Verified: false,
       account_status: 'suspended/freezed',
       onboarding_status: 'pending',
+      roleId: doctorRole._id, // 🔐 RBAC - Assign doctor role
     });
 
     await newDoctor.save();
