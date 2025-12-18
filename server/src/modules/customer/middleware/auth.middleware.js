@@ -34,8 +34,16 @@ export async function authenticate(req, res, next) {
       );
     }
 
-    // 4. Attach customer to req
-    req.customer = customer;
+    // 4. Attach customer to req with roleId for RBAC
+    req.customer = {
+      _id: customer._id,
+      id: customer._id,
+      email: customer.email,
+      fullName: customer.fullName,
+      roleId: customer.roleId, // 🔐 RBAC - Include roleId for middleware
+    };
+    // Also set req.user for RBAC middleware compatibility
+    req.user = req.customer;
     next();
   } catch (err) {
     console.error('Authentication error:', err);

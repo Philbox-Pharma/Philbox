@@ -5,6 +5,7 @@ import {
   verifyOtpDTO,
   forgetPasswordDTO,
   resetPasswordDTO,
+  update2FADTO,
 } from '../../../../../dto/admin/auth.dto.js';
 import {
   login,
@@ -12,6 +13,7 @@ import {
   forgetPassword,
   resetPassword,
   logout,
+  update2FASettings,
 } from '../controller/auth.controller.js';
 import { authRoutesLimiter } from '../../../../../utils/authRoutesLimiter.js';
 import { authenticate } from '../../../middleware/auth.middleware.js';
@@ -33,4 +35,13 @@ router.post(`/reset-password`, validate(resetPasswordDTO), resetPassword);
 
 // ✅ Logout
 router.post(`/logout`, authenticate, logout);
+
+// ✅ Update 2FA Settings
+router.patch(
+  `/2fa-settings`,
+  authenticate,
+  validate(update2FADTO),
+  update2FASettings
+);
+
 export default router;

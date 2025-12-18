@@ -1,6 +1,6 @@
 const CURRENT_YEAR = new Date().getFullYear();
 
-// 1. Generic OTP Template
+// 1. Generic OTP Template (2FA Login)
 export const OTP_TEMPLATE = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,12 +26,13 @@ export const OTP_TEMPLATE = `<!DOCTYPE html>
     <table class="container" cellpadding="0" cellspacing="0" border="0">
         <tr>
             <td class="header">
-                <h1 style="margin: 0; font-size: 24px;">Your OTP Code</h1>
+                <h1 style="margin: 0; font-size: 24px;">Two-Factor Authentication</h1>
             </td>
         </tr>
         <tr>
             <td class="content">
-                <p style="font-size: 16px; color: #333333; margin-bottom: 20px;">Use this one-time password to verify your identity.</p>
+                <p style="font-size: 16px; color: #333333; margin-bottom: 10px;">Hello {{NAME}},</p>
+                <p style="font-size: 14px; color: #666666; margin-bottom: 20px;">You are logging in to your Philbox <strong>{{ROLE}}</strong> account. Please use the following code to complete your login:</p>
                 <div class="otp-code">
                     {{OTP}}
                 </div>
@@ -40,7 +41,7 @@ export const OTP_TEMPLATE = `<!DOCTYPE html>
         </tr>
         <tr>
             <td class="footer">
-                <p>If you didn't request this code, please ignore this email.</p>
+                <p>If you didn't attempt to login, please secure your account immediately.</p>
                 <p>&copy; ${CURRENT_YEAR} Philbox. All rights reserved.</p>
             </td>
         </tr>

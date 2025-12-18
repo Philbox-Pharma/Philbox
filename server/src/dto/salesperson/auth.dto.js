@@ -5,6 +5,11 @@ export const loginDTO = Joi.object({
   password: Joi.string().required(),
 });
 
+export const verifyOTPDTO = Joi.object({
+  email: Joi.string().email().required(),
+  otp: Joi.string().length(6).required(),
+});
+
 export const forgetPasswordDTO = Joi.object({
   email: Joi.string().email().required(),
 });
@@ -12,4 +17,8 @@ export const forgetPasswordDTO = Joi.object({
 export const resetPasswordDTO = Joi.object({
   token: Joi.string().required(),
   newPassword: Joi.string().min(8).required(),
+});
+
+export const update2FADTO = Joi.object({
+  isTwoFactorEnabled: Joi.boolean().required(),
 });

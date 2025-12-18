@@ -1,6 +1,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import Customer from '../../../../../models/Customer.js';
+import Role from '../../../../../models/Role.js';
 
 passport.use(
   'customer-google',
@@ -30,6 +31,12 @@ passport.use(
         }
 
         // Create new Customer
+        // 🔐 RBAC - Fetch customer role for new OAuth user
+        const customerRole = await Role.findOne({ name: 'customer' });
+        if (!customerRole) {
+          throw new Error('CUSTOMER_ROLE_NOT_FOUND');
+        }
+
         customer = new Customer({
           fullName,
           email: email.toLowerCase(),
@@ -37,6 +44,7 @@ passport.use(
           is_Verified: true, // Google trusted
           account_status: 'active',
           oauthId: profile.id,
+          roleId: customerRole._id, // 🔐 RBAC - Assign customer role
           created_at: Date.now(),
           updated_at: Date.now(),
         });

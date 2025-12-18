@@ -2,9 +2,13 @@ import mongoose from 'mongoose';
 
 const Schema = {
   name: { type: String, required: true },
-  code: { type: String },
+  code: { type: String, unique: true, required: true },
+  phone: { type: String, default: '' },
   under_administration_of: [
     { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },
+  ],
+  salespersons_assigned: [
+    { type: mongoose.Schema.Types.ObjectId, ref: 'Salesperson' },
   ],
   address_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Address' },
   status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
