@@ -74,7 +74,7 @@ class CustomerAuthService {
 
     await newCustomer.save();
 
-    const verifyLink = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+    const verifyLink = `${process.env.FRONTEND_URL}/customer/auth/verify-email/${verificationToken}`;
     // Using the reusable email function with role 'Customer'
     await sendVerificationEmail(
       newCustomer.email,
