@@ -37,6 +37,7 @@ export async function authenticate(req, res, next) {
       email: admin.email,
       name: admin.name,
       roleId: admin.roleId, // 🔐 RBAC - Include roleId for middleware
+      branches_managed: admin.branches_managed || [], // Include branches for branch admin
     };
 
     next();

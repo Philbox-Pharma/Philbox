@@ -45,8 +45,19 @@ const customerSchema = new mongoose.Schema(
       ref: 'Address',
     },
 
-    profile_img_url: { type: String },
-    cover_img_url: { type: String },
+    profile_img_url: {
+      type: String,
+      default: function () {
+        // Using fullName for the avatar generation
+        return `https://avatar.iran.liara.run/username?username=${this.fullName}`;
+      },
+    },
+    cover_img_url: {
+      type: String,
+      default: function () {
+        return `https://placehold.co/1920x480/EAEAEA/000000?text=${this.fullName}`;
+      },
+    },
 
     account_status: {
       type: String,
