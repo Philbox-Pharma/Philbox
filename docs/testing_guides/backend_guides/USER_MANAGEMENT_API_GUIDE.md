@@ -707,3 +707,375 @@ GET /api/super-admin/users/salesperson-tasks/performance?page=2&limit=20
 - `404` - Not Found
 - `409` - Conflict (email already exists)
 - `500` - Server Error
+
+---
+
+## 4. Doctor Application Management APIs
+
+### 4.1 Get All Doctor Applications
+
+**Endpoint:** `GET /api/super-admin/doctors/applications`
+**Authentication:** Required (Super Admin & Branch Admin)
+
+**Query Parameters:**
+
+| Parameter | Type   | Required | Default   | Description                                   |
+| --------- | ------ | -------- | --------- | --------------------------------------------- |
+| `page`    | Number | No       | `1`       | Page number for pagination                    |
+| `limit`   | Number | No       | `10`      | Number of applications per page (max: 100)    |
+| `search`  | String | No       | -         | Search by doctor name or email                |
+| `status`  | String | No       | `pending` | Filter by status: pending, approved, rejected |
+
+**Example Request:**
+
+```bash
+GET /api/super-admin/doctors/applications?status=pending&page=1&limit=10
+```
+
+**Success Response:**
+
+```json
+{
+  "success": true,
+  "message": "Doctor applications fetched successfully",
+  "data": {
+    "data": [
+      {
+        "_id": "64abc123...",
+        "doctor_id": {
+          "_id": "64def456...",
+          "fullName": "Dr. Jane Smith",
+          "email": "jane.smith@example.com",
+          "contactNumber": "+92-301-1234567",
+          "profile_img_url": "https://...",
+          "account_status": "suspended/freezed",
+          "created_at": "2024-01-15T10:30:00.000Z"
+        },
+        "applications_documents_id": {
+          "_id": "64ghi789...",
+          "CNIC": "https://cloudinary.com/.../cnic.jpg",
+          "medical_license": "https://cloudinary.com/.../license.pdf",
+          "specialist_license": "https://cloudinary.com/.../specialist.pdf",
+          "mbbs_md_degree": "https://cloudinary.com/.../degree.pdf",
+          "experience_letters": "https://cloudinary.com/.../experience.pdf"
+        },
+        "status": "pending",
+        "created_at": "2024-01-15T11:00:00.000Z",
+        "updated_at": "2024-01-15T11:00:00.000Z"
+      }
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "totalPages": 3,
+      "totalItems": 25,
+      "itemsPerPage": 10,
+      "hasNextPage": true,
+      "hasPrevPage": false
+    }
+  }
+}
+```
+
+---
+
+### 4.2 Get Single Doctor Application
+
+**Endpoint:** `GET /api/super-admin/doctors/applications/:id`
+**Authentication:** Required (Super Admin & Branch Admin)
+
+**Example Request:**
+
+```bash
+GET /api/super-admin/doctors/applications/64abc123...
+```
+
+**Success Response:**
+
+```json
+{
+  "success": true,
+  "message": "Doctor application fetched successfully",
+  "data": {
+    "_id": "64abc123...",
+    "doctor_id": {
+      "_id": "64def456...",
+      "fullName": "Dr. Jane Smith",
+      "email": "jane.smith@example.com",
+      "contactNumber": "+92-301-1234567",
+      "gender": "Female",
+      "dateOfBirth": "1985-05-15T00:00:00.000Z",
+      "profile_img_url": "https://...",
+      "account_status": "suspended/freezed",
+      "license_number": "PMC-12345",
+      "created_at": "2024-01-15T10:30:00.000Z"
+    },
+    "applications_documents_id": {
+      "_id": "64ghi789...",
+      "CNIC": "https://cloudinary.com/.../cnic.jpg",
+      "medical_license": "https://cloudinary.com/.../license.pdf",
+      "specialist_license": "https://cloudinary.com/.../specialist.pdf",
+      "mbbs_md_degree": "https://cloudinary.com/.../degree.pdf",
+      "experience_letters": "https://cloudinary.com/.../experience.pdf",
+      "created_at": "2024-01-15T10:45:00.000Z"
+    },
+    "status": "pending",
+    "reviewed_by_admin_id": null,
+    "admin_comment": null,
+    "reviewed_at": null,
+    "created_at": "2024-01-15T11:00:00.000Z",
+    "updated_at": "2024-01-15T11:00:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+
+```json
+{
+  "success": false,
+  "message": "Application not found"
+}
+```
+
+---
+
+### 4.3 Approve Doctor Application
+
+**Endpoint:** `PATCH /api/super-admin/doctors/applications/:id/approve`
+**Authentication:** Required (Super Admin & Branch Admin)
+
+**Request Body:**
+
+```json
+{
+  "comment": "All credentials verified. Welcome to Philbox!"
+}
+```
+
+| Field     | Type   | Required | Description                             |
+| --------- | ------ | -------- | --------------------------------------- |
+| `comment` | String | No       | Admin's approval notes (max: 500 chars) |
+
+**Example Request:**
+
+```bash
+PATCH /api/super-admin/doctors/applications/64abc123.../approve
+Content-Type: application/json
+
+{
+  "comment": "All credentials verified. Welcome to Philbox!"
+}
+```
+
+**Success Response:**
+
+```json
+{
+  "success": true,
+  "message": "Application approved successfully",
+  "data": {
+    "application": {
+      "_id": "64abc123...",
+      "doctor_id": "64def456...",
+      "status": "approved",
+      "admin_comment": "All credentials verified. Welcome to Philbox!",
+      "reviewed_by_admin_id": "64admin789...",
+      "reviewed_at": "2024-01-16T09:30:00.000Z",
+      "updated_at": "2024-01-16T09:30:00.000Z"
+    },
+    "doctor": {
+      "_id": "64def456...",
+      "fullName": "Dr. Jane Smith",
+      "email": "jane.smith@example.com",
+      "account_status": "active",
+      "onboarding_status": "approved"
+    },
+    "message": "Application approved successfully"
+  }
+}
+```
+
+**What Happens:**
+
+1. Application status changed to `approved`
+2. Doctor account status changed to `active`
+3. Doctor onboarding status changed to `approved`
+4. Email notification sent to doctor with approval message
+5. Admin activity logged
+
+**Error Responses:**
+
+```json
+// Application not found
+{
+  "success": false,
+  "message": "Application not found"
+}
+
+// Already approved
+{
+  "success": false,
+  "message": "Application already approved"
+}
+```
+
+---
+
+### 4.4 Reject Doctor Application
+
+**Endpoint:** `PATCH /api/super-admin/doctors/applications/:id/reject`
+**Authentication:** Required (Super Admin & Branch Admin)
+
+**Request Body:**
+
+```json
+{
+  "reason": "Medical license verification failed. Please upload a valid PMC license."
+}
+```
+
+| Field    | Type   | Required | Description                                    |
+| -------- | ------ | -------- | ---------------------------------------------- |
+| `reason` | String | Yes      | Reason for rejection (min: 10, max: 500 chars) |
+
+**Example Request:**
+
+```bash
+PATCH /api/super-admin/doctors/applications/64abc123.../reject
+Content-Type: application/json
+
+{
+  "reason": "Medical license verification failed. Please upload a valid PMC license."
+}
+```
+
+**Success Response:**
+
+```json
+{
+  "success": true,
+  "message": "Application rejected",
+  "data": {
+    "application": {
+      "_id": "64abc123...",
+      "doctor_id": "64def456...",
+      "status": "rejected",
+      "admin_comment": "Medical license verification failed. Please upload a valid PMC license.",
+      "reviewed_by_admin_id": "64admin789...",
+      "reviewed_at": "2024-01-16T09:30:00.000Z",
+      "updated_at": "2024-01-16T09:30:00.000Z"
+    },
+    "doctor": {
+      "_id": "64def456...",
+      "fullName": "Dr. Jane Smith",
+      "email": "jane.smith@example.com",
+      "account_status": "suspended/freezed",
+      "onboarding_status": "rejected"
+    },
+    "message": "Application rejected"
+  }
+}
+```
+
+**What Happens:**
+
+1. Application status changed to `rejected`
+2. Doctor account status remains `suspended/freezed`
+3. Doctor onboarding status changed to `rejected`
+4. Email notification sent to doctor with rejection reason
+5. Admin activity logged
+
+**Error Responses:**
+
+```json
+// Application not found
+{
+  "success": false,
+  "message": "Application not found"
+}
+
+// Missing reason
+{
+  "success": false,
+  "message": "Reason for rejection is required"
+}
+
+// Cannot reject approved application
+{
+  "success": false,
+  "message": "Cannot reject an already approved application"
+}
+```
+
+---
+
+### 4.5 Doctor Application Workflow
+
+```
+Doctor Registers → Email Verification → Submits Documents
+                                              ↓
+                                    Application Created (pending)
+                                              ↓
+                                    Admin Reviews Application
+                                         ↙         ↘
+                                  APPROVE          REJECT
+                                     ↓               ↓
+                        Status: approved    Status: rejected
+                        Account: active     Account: suspended
+                        Email: Approved     Email: Rejected
+                        Can Login ✅        Cannot Login ❌
+```
+
+---
+
+### 4.6 Use Cases
+
+**1. Super Admin views all pending applications:**
+
+```bash
+GET /api/super-admin/doctors/applications?status=pending
+```
+
+**2. Search for specific doctor application:**
+
+```bash
+GET /api/super-admin/doctors/applications?search=jane.smith
+```
+
+**3. View application details and documents:**
+
+```bash
+GET /api/super-admin/doctors/applications/64abc123...
+```
+
+**4. Approve application with comment:**
+
+```bash
+PATCH /api/super-admin/doctors/applications/64abc123.../approve
+{
+  "comment": "Verified credentials. Welcome aboard!"
+}
+```
+
+**5. Reject application with specific reason:**
+
+```bash
+PATCH /api/super-admin/doctors/applications/64abc123.../reject
+{
+  "reason": "Invalid medical license. Please provide PMC-registered license."
+}
+```
+
+**6. View all approved applications:**
+
+```bash
+GET /api/super-admin/doctors/applications?status=approved
+```
+
+**7. View all rejected applications:**
+
+```bash
+GET /api/super-admin/doctors/applications?status=rejected
+```
+
+---
