@@ -191,3 +191,105 @@ export const WELCOME_EMAIL_TEMPLATE = `<!DOCTYPE html>
   </table>
 </body>
 </html>`;
+
+// 5. Doctor Application Approved Template
+export const DOCTOR_APPLICATION_APPROVED_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application Approved</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .header { background-color: #28a745; color: #ffffff; padding: 20px; text-align: center; }
+    .content { padding: 30px 20px; text-align: center; }
+    .success-icon { font-size: 48px; color: #28a745; margin-bottom: 20px; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff !important; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+    .instructions { color: #666666; line-height: 1.5; margin-bottom: 20px; }
+    .comment-box { background-color: #f8f9fa; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0; text-align: left; }
+    .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #999999; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <table class="container" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td class="header">
+        <h1>🎉 Application Approved!</h1>
+      </td>
+    </tr>
+    <tr>
+      <td class="content">
+        <div class="success-icon">✅</div>
+        <p style="font-size:16px; color:#333;">Dear {{NAME}},</p>
+        <p class="instructions">Congratulations! Your application to join Philbox as a doctor has been <strong>approved</strong>.</p>
+
+        <div class="comment-box">
+          <p style="margin: 0; color: #333;"><strong>Review Notes:</strong></p>
+          <p style="margin: 10px 0 0 0; color: #666;">{{COMMENT}}</p>
+        </div>
+
+        <p class="instructions">Your account has been activated. You can now log in and complete your profile to start providing consultations.</p>
+        <a href="{{LINK}}" class="btn">Login to Dashboard</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="footer">
+        <p>Welcome to the Philbox medical team!</p>
+        <p>&copy; ${CURRENT_YEAR} Philbox. All rights reserved.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+// 6. Doctor Application Rejected Template
+export const DOCTOR_APPLICATION_REJECTED_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application Status Update</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .header { background-color: #dc3545; color: #ffffff; padding: 20px; text-align: center; }
+    .content { padding: 30px 20px; text-align: center; }
+    .warning-icon { font-size: 48px; color: #dc3545; margin-bottom: 20px; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff !important; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+    .instructions { color: #666666; line-height: 1.5; margin-bottom: 20px; }
+    .comment-box { background-color: #f8f9fa; border-left: 4px solid #dc3545; padding: 15px; margin: 20px 0; text-align: left; }
+    .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #999999; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <table class="container" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td class="header">
+        <h1>Application Status Update</h1>
+      </td>
+    </tr>
+    <tr>
+      <td class="content">
+        <div class="warning-icon">ℹ️</div>
+        <p style="font-size:16px; color:#333;">Dear {{NAME}},</p>
+        <p class="instructions">Thank you for your interest in joining Philbox. After careful review, we regret to inform you that your application cannot be approved at this time.</p>
+
+        <div class="comment-box">
+          <p style="margin: 0; color: #333;"><strong>Reason:</strong></p>
+          <p style="margin: 10px 0 0 0; color: #666;">{{COMMENT}}</p>
+        </div>
+
+        <p class="instructions">If you believe this was in error or would like to reapply with updated documentation, please contact our support team.</p>
+        <a href="{{LINK}}" class="btn">Contact Support</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="footer">
+        <p>If you have any questions, feel free to reach out to us.</p>
+        <p>&copy; ${CURRENT_YEAR} Philbox. All rights reserved.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;

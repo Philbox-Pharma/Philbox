@@ -46,6 +46,7 @@ For a complete overview of all APIs, authentication setup, and frontend integrat
 - User statistics
 - Profile image uploads
 - Salesperson task performance tracking
+- Doctor application review and approval (4 endpoints)
 
 ---
 
@@ -305,6 +306,12 @@ http://localhost:5000/api/
     │   ├── PATCH /salespersons/:id/status
     │   ├── GET /salespersons/stats
     │   └── GET /salesperson-tasks/performance
+    │
+    ├── doctors/                         [USER_MANAGEMENT_API_GUIDE.md - Section 4]
+    │   ├── GET /applications
+    │   ├── GET /applications/:id
+    │   ├── PATCH /applications/:id/approve
+    │   └── PATCH /applications/:id/reject
     │
     ├── branches/                        [ADMIN_API_COMPLETE_GUIDE.md]
     │   ├── POST /branches
