@@ -45,6 +45,7 @@ For a complete overview of all APIs, authentication setup, and frontend integrat
 - Role assignment
 - User statistics
 - Profile image uploads
+- Salesperson task performance tracking
 
 ---
 
@@ -302,7 +303,8 @@ http://localhost:5000/api/
     │   ├── PUT /salespersons/:id
     │   ├── DELETE /salespersons/:id
     │   ├── PATCH /salespersons/:id/status
-    │   └── GET /salespersons/stats
+    │   ├── GET /salespersons/stats
+    │   └── GET /salesperson-tasks/performance
     │
     ├── branches/                        [ADMIN_API_COMPLETE_GUIDE.md]
     │   ├── POST /branches
