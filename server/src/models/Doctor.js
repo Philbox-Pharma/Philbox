@@ -59,14 +59,7 @@ const Schema = {
   account_status: {
     type: String,
     enum: ['active', 'suspended/freezed', 'blocked/removed'],
-    default: 'suspended/freezed', // Default to suspended until approved
-  },
-
-  // Note: Providing both based on your JSON, though they seem redundant
-  isVerified: {
-    type: String,
-    enum: ['yes', 'no'],
-    default: 'no',
+    default: 'active', // Default to suspended until approved
   },
 
   averageRating: { type: Number, default: 0 },
