@@ -97,7 +97,7 @@ class DoctorAuthService {
 
     await newDoctor.save();
 
-    const verifyLink = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+    const verifyLink = `${process.env.FRONTEND_URL}/doctor/auth/verify-email/${verificationToken}`;
     await sendVerificationEmail(
       newDoctor.email,
       verifyLink,
@@ -314,6 +314,7 @@ class DoctorAuthService {
         { applications_documents_id: docs._id },
         {
           applications_documents_id: docs._id,
+          doctor_id: doctorId,
           status: 'pending',
         },
         { upsert: true, new: true }

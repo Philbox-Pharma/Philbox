@@ -13,6 +13,7 @@ import adminAuthRoutes from './modules/admin/features/auth/routes/auth.routes.js
 import adminUserManagementRoutes from './modules/admin/features/user_management/routes/user.routes.js';
 import adminBranchManagementRoutes from './modules/admin/features/branch_management/routes/branch.routes.js';
 import permissionsManagementRoutes from './modules/admin/features/permissions_management/routes/permissions.routes.js';
+import adminDoctorManagementRoutes from './modules/admin/features/doctor_management/routes/doctor.routes.js';
 
 import doctorAuthRoutes from './modules/doctor/features/auth/routes/auth.routes.js';
 import passport from './modules/doctor/features/auth/config/passport.js';
@@ -70,6 +71,7 @@ app.use(`/api/${ROUTES.ADMIN_AUTH}`, adminAuthRoutes);
 app.use(`/api/${ROUTES.SUPER_ADMIN}/users`, adminUserManagementRoutes);
 app.use(`/api/${ROUTES.SUPER_ADMIN}`, adminBranchManagementRoutes);
 app.use(`/api/${ROUTES.SUPER_ADMIN}/permissions`, permissionsManagementRoutes);
+app.use(`/api/${ROUTES.SUPER_ADMIN}/doctors`, adminDoctorManagementRoutes);
 
 app.use(`/api/${ROUTES.DOCTOR_AUTH}`, doctorAuthRoutes);
 app.use(`/api/${ROUTES.CUSTOMER_AUTH}`, customerAuthRoutes);

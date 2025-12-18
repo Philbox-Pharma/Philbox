@@ -4,6 +4,8 @@ import {
   PASSWORD_RESET_TEMPLATE,
   OTP_TEMPLATE,
   WELCOME_EMAIL_TEMPLATE,
+  DOCTOR_APPLICATION_APPROVED_TEMPLATE,
+  DOCTOR_APPLICATION_REJECTED_TEMPLATE,
 } from '../constants/global.mail.constants.js';
 
 /**
@@ -157,5 +159,82 @@ export const sendWelcomeEmail = async (
       return console.error(`Error sending ${role} welcome email:`, error);
     }
     console.log(`${role} welcome email sent: ${info.response}`);
+  });
+};
+
+/**
+ * Send Doctor Application Approved Email
+ * @param {string} email - Doctor's email
+ * @param {string} name - Doctor's full name
+ * @param {string} comment - Admin's approval comment/notes
+ * @param {string} loginLink - Link to doctor login page
+ */
+export const sendApplicationApprovedEmail = async (
+  email,
+  name,
+  comment,
+  loginLink
+) => {
+  const greetingName = getGreetingName(name, 'Doctor');
+
+  const message = DOCTOR_APPLICATION_APPROVED_TEMPLATE.replace(
+    '{{NAME}}',
+    greetingName
+  )
+    .replace('{{COMMENT}}', comment || 'Your credentials have been verified.')
+    .replace('{{LINK}}', loginLink);
+
+  const emailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: 'Philbox - Your Doctor Application Has Been Approved',
+    html: message,
+  };
+
+  transporter.sendMail(emailOptions, (error, info) => {
+    if (error) {
+      return console.error('Error sending application approved email:', error);
+    }
+    console.log('Application approved email sent: ' + info.response);
+  });
+};
+
+/**
+ * Send Doctor Application Rejected Email
+ * @param {string} email - Doctor's email
+ * @param {string} name - Doctor's full name
+ * @param {string} reason - Reason for rejection
+ * @param {string} supportLink - Link to contact support
+ */
+export const sendApplicationRejectedEmail = async (
+  email,
+  name,
+  reason,
+  supportLink
+) => {
+  const greetingName = getGreetingName(name, 'Doctor');
+
+  const message = DOCTOR_APPLICATION_REJECTED_TEMPLATE.replace(
+    '{{NAME}}',
+    greetingName
+  )
+    .replace(
+      '{{COMMENT}}',
+      reason || 'Please review the submitted documents and try again.'
+    )
+    .replace('{{LINK}}', supportLink);
+
+  const emailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: 'Philbox - Application Status Update',
+    html: message,
+  };
+
+  transporter.sendMail(emailOptions, (error, info) => {
+    if (error) {
+      return console.error('Error sending application rejected email:', error);
+    }
+    console.log('Application rejected email sent: ' + info.response);
   });
 };
