@@ -238,3 +238,77 @@ export const sendApplicationRejectedEmail = async (
     console.log('Application rejected email sent: ' + info.response);
   });
 };
+
+/**
+ * Send Doctor Status Update Email (for suspension/activation)
+ * @param {string} email - Doctor's email
+ * @param {string} name - Doctor's full name
+ * @param {string} status - New account status
+ * @param {string} message - Status update message
+ */
+export const sendDoctorStatusUpdateEmail = async (
+  email,
+  name,
+  status,
+  message
+) => {
+  const greetingName = getGreetingName(name, 'Doctor');
+  const subject =
+    status === 'active'
+      ? 'Philbox - Your Account Has Been Activated'
+      : 'Philbox - Account Status Update';
+
+  const emailTemplate = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <style>
+      body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
+      .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+      .header { text-align: center; padding-bottom: 20px; border-bottom: 2px solid #007bff; }
+      .content { padding: 20px 0; line-height: 1.6; color: #333; }
+      .button { display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+      .footer { text-align: center; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #888; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Philbox</h1>
+        <h2>Account Status Update</h2>
+      </div>
+      <div class="content">
+        <p>Dear ${greetingName},</p>
+        <p>${message}</p>
+        ${
+          status === 'active'
+            ? '<a href="' +
+              process.env.FRONTEND_URL +
+              '/doctor/auth/login" class="button">Login to Your Account</a>'
+            : ''
+        }
+        <p>If you have any questions or concerns, please contact our support team.</p>
+        <p>Best regards,<br>The Philbox Team</p>
+      </div>
+      <div class="footer">
+        <p>&copy; ${new Date().getFullYear()} Philbox. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+
+  const emailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: subject,
+    html: emailTemplate,
+  };
+
+  transporter.sendMail(emailOptions, (error, info) => {
+    if (error) {
+      return console.error('Error sending status update email:', error);
+    }
+    console.log('Status update email sent: ' + info.response);
+  });
+};
