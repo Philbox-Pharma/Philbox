@@ -5,6 +5,11 @@ import {
   getDoctorApplicationById,
   approveDoctorApplication,
   rejectDoctorApplication,
+  getAllDoctors,
+  getDoctorById,
+  updateDoctorProfile,
+  updateDoctorStatus,
+  getDoctorPerformanceMetrics,
 } from '../controller/doctor.controller.js';
 import { validate } from '../../../../../validator/joiValidate.middleware.js';
 import {
@@ -12,6 +17,11 @@ import {
   approveDoctorApplicationDTO,
   rejectDoctorApplicationDTO,
 } from '../../../../../dto/admin/doctorApplication.dto.js';
+import {
+  getDoctorsDTO,
+  updateDoctorProfileDTO,
+  updateDoctorStatusDTO,
+} from '../../../../../dto/admin/doctor.dto.js';
 
 const router = express.Router();
 
@@ -45,6 +55,29 @@ router.patch(
   '/applications/:id/reject',
   validate(rejectDoctorApplicationDTO),
   rejectDoctorApplication
+);
+
+/**
+ * ===== DOCTOR PROFILE MANAGEMENT =====
+ */
+
+// 🩺 GET All Doctors (with filters & search)
+router.get('/', validate(getDoctorsDTO, 'query'), getAllDoctors);
+
+// 📊 GET Doctor Performance Metrics (must come before /:id to avoid conflicts)
+router.get('/:id/metrics', getDoctorPerformanceMetrics);
+
+// 🩺 GET Single Doctor by ID (with details & metrics)
+router.get('/:id', getDoctorById);
+
+// ✏️ UPDATE Doctor Profile
+router.put('/:id', validate(updateDoctorProfileDTO), updateDoctorProfile);
+
+// 🔄 UPDATE Doctor Account Status (Suspend/Activate/Block)
+router.patch(
+  '/:id/status',
+  validate(updateDoctorStatusDTO),
+  updateDoctorStatus
 );
 
 export default router;

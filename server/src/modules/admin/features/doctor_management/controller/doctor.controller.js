@@ -119,3 +119,120 @@ export const rejectDoctorApplication = async (req, res) => {
     return sendResponse(res, 500, 'Server Error', null, err);
   }
 };
+
+/**
+ * Get all doctors (for management)
+ */
+export const getAllDoctors = async (req, res) => {
+  try {
+    const result = await DoctorManagementService.getAllDoctors(req.query, req);
+
+    return sendResponse(res, 200, 'Doctors fetched successfully', result);
+  } catch (err) {
+    console.error(err);
+    return sendResponse(res, 500, 'Server Error', null, err);
+  }
+};
+
+/**
+ * Get single doctor by ID
+ */
+export const getDoctorById = async (req, res) => {
+  try {
+    const result = await DoctorManagementService.getDoctorById(
+      req.params.id,
+      req
+    );
+
+    return sendResponse(
+      res,
+      200,
+      'Doctor details fetched successfully',
+      result
+    );
+  } catch (err) {
+    console.error(err);
+
+    if (err.message === 'DOCTOR_NOT_FOUND') {
+      return sendResponse(res, 404, 'Doctor not found');
+    }
+
+    return sendResponse(res, 500, 'Server Error', null, err);
+  }
+};
+
+/**
+ * Update doctor profile
+ */
+export const updateDoctorProfile = async (req, res) => {
+  try {
+    const doctor = await DoctorManagementService.updateDoctorProfile(
+      req.params.id,
+      req.body,
+      req
+    );
+
+    return sendResponse(res, 200, 'Doctor profile updated successfully', {
+      doctor,
+    });
+  } catch (err) {
+    console.error(err);
+
+    if (err.message === 'DOCTOR_NOT_FOUND') {
+      return sendResponse(res, 404, 'Doctor not found');
+    }
+
+    return sendResponse(res, 500, 'Server Error', null, err);
+  }
+};
+
+/**
+ * Update doctor account status (suspend/activate)
+ */
+export const updateDoctorStatus = async (req, res) => {
+  try {
+    const adminId = req.admin._id;
+    const result = await DoctorManagementService.updateDoctorStatus(
+      req.params.id,
+      req.body,
+      adminId,
+      req
+    );
+
+    return sendResponse(res, 200, result.message, result);
+  } catch (err) {
+    console.error(err);
+
+    if (err.message === 'DOCTOR_NOT_FOUND') {
+      return sendResponse(res, 404, 'Doctor not found');
+    }
+
+    return sendResponse(res, 500, 'Server Error', null, err);
+  }
+};
+
+/**
+ * Get doctor performance metrics
+ */
+export const getDoctorPerformanceMetrics = async (req, res) => {
+  try {
+    const metrics = await DoctorManagementService.getDoctorPerformanceMetrics(
+      req.params.id
+    );
+
+    return sendResponse(
+      res,
+      200,
+      'Doctor performance metrics fetched successfully',
+      metrics
+    );
+  } catch (err) {
+    console.error(err);
+
+    if (err.message === 'DOCTOR_NOT_FOUND') {
+      return sendResponse(res, 404, 'Doctor not found');
+    }
+
+    return sendResponse(res, 500, 'Server Error', null, err);
+  }
+};
