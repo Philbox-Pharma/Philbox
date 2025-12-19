@@ -1,5 +1,4 @@
 import { useState } from 'react';
-// Assuming you have the logo in assets
 import logo from '../../../../../public/vite.svg';
 import CredentialsForm from './components/CredentialsForm';
 import OtpForm from './components/OtpForm';
@@ -8,14 +7,9 @@ export default function AdminLogin() {
   const [step, setStep] = useState('credentials'); // 'credentials' | 'otp'
   const [email, setEmail] = useState('');
 
-  const handleOtpSent = userEmail => {
+  const handleOtpSent = (userEmail) => {
     setEmail(userEmail);
     setStep('otp');
-  };
-
-  const handleForgotPassword = () => {
-    // You can implement the forgot password view here or navigate to a route
-    alert('Forgot Password flow triggered');
   };
 
   return (
@@ -36,10 +30,7 @@ export default function AdminLogin() {
         )}
 
         {step === 'credentials' ? (
-          <CredentialsForm
-            onOtpSent={handleOtpSent}
-            onForgotPassword={handleForgotPassword}
-          />
+          <CredentialsForm onOtpSent={handleOtpSent} />
         ) : (
           <OtpForm email={email} onBack={() => setStep('credentials')} />
         )}

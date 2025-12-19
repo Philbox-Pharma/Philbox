@@ -1,25 +1,25 @@
-import AdminLogin from '../../../portals/admin/modules/login/AdminLogin';
-import AdminLayout from '../../../portals/admin/layouts/AdminLayout';
+// src/core/routing/routes/admin.routes.jsx
+import { lazy } from 'react';
 
-// Placeholder for Dashboard
-const Dashboard = () => (
-  <h1 className="text-2xl font-bold p-4">Admin Dashboard</h1>
-);
+// Lazy load components
+const AdminLogin = lazy(() => import('../../../portals/admin/modules/login/Login'));
+const ForgotPassword = lazy(() => import('../../../portals/admin/modules/forgot-password/ForgotPassword'));
+const ResetPassword = lazy(() => import('../../../portals/admin/modules/reset-password/ResetPassword'));
 
-export const adminRoutes = [
+// Export routes array (not a constant, just default export)
+const adminRoutes = [
   {
     path: '/admin/login',
     element: <AdminLogin />,
   },
   {
-    path: '/admin',
-    element: <AdminLayout />, // Layout typically contains Sidebar/Header
-    children: [
-      {
-        path: 'dashboard',
-        element: <Dashboard />,
-      },
-      // Add other admin sub-routes here
-    ],
+    path: '/admin/forgot-password',
+    element: <ForgotPassword />,
+  },
+  {
+    path: '/admin/reset-password/:token',
+    element: <ResetPassword />,
   },
 ];
+
+export default adminRoutes;
