@@ -1,7 +1,7 @@
-import Appointment from '../../../../../models/Appointment.js';
-import Doctor from '../../../../../models/Doctor.js';
-import DailyAppointmentsAnalytics from '../../../../../models/DailyAppointmentsAnalytics.js';
-import { logAdminActivity } from '../../../utils/logAdminActivities.js';
+import Appointment from '../../../../../../models/Appointment.js';
+import Doctor from '../../../../../../models/Doctor.js';
+import DailyAppointmentsAnalytics from '../../../../../../models/DailyAppointmentsAnalytics.js';
+import { logAdminActivity } from '../../../../utils/logAdminActivities.js';
 
 class AppointmentAnalyticsService {
   /**
