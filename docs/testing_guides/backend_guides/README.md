@@ -131,15 +131,15 @@ For a complete overview of all APIs, authentication setup, and frontend integrat
 
 **Endpoints Covered:**
 
-- `GET /api/super-admin/permissions/roles` - Get all roles with permissions
-- `GET /api/super-admin/permissions/roles/:roleId` - Get specific role
-- `GET /api/super-admin/permissions/permissions` - Get all available permissions
-- `POST /api/super-admin/permissions/permissions` - Create new permission
-- `PUT /api/super-admin/permissions/roles/:roleId` - Update role permissions (bulk)
-- `POST /api/super-admin/permissions/roles/:roleId/permissions` - Add single permission
-- `DELETE /api/super-admin/permissions/roles/:roleId/permissions` - Remove permission
-- `POST /api/super-admin/permissions/users/assign-role` - Assign role to user
-- `GET /api/super-admin/permissions/user-role` - Get current user's role & permissions
+- `GET /api/admin/permissions/roles` - Get all roles with permissions
+- `GET /api/admin/permissions/roles/:roleId` - Get specific role
+- `GET /api/admin/permissions/permissions` - Get all available permissions
+- `POST /api/admin/permissions/permissions` - Create new permission
+- `PUT /api/admin/permissions/roles/:roleId` - Update role permissions (bulk)
+- `POST /api/admin/permissions/roles/:roleId/permissions` - Add single permission
+- `DELETE /api/admin/permissions/roles/:roleId/permissions` - Remove permission
+- `POST /api/admin/permissions/users/assign-role` - Assign role to user
+- `GET /api/admin/permissions/user-role` - Get current user's role & permissions
 
 **Key Features:**
 
@@ -480,7 +480,7 @@ http://localhost:5000/api/
 ### Admin Account Creation Flow
 
 1. Admin logs in via `POST /api/admin/auth/login`
-2. Super admin creates branch admin via `POST /api/super-admin/users/admin`
+2. Super admin creates branch admin via `POST /api/admin/users/admin`
 3. New admin receives credentials via email
 4. New admin logs in via `POST /api/admin/auth/login`
 
@@ -496,10 +496,10 @@ http://localhost:5000/api/
 
 ### Salesperson Account Flow
 
-1. Super admin creates salesperson via `POST /api/super-admin/users/salesperson`
+1. Super admin creates salesperson via `POST /api/admin/users/salesperson`
 2. Salesperson receives credentials via email
 3. Salesperson logs in via `POST /api/salesperson/auth/login`
-4. Super admin manages salesperson via `/api/super-admin/users/salesperson` endpoints
+4. Super admin manages salesperson via `/api/admin/users/salesperson` endpoints
 
 ---
 

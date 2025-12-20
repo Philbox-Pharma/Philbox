@@ -3,7 +3,7 @@
 ## Base URL
 
 ```
-http://localhost:5000/api/super-admin/customers
+http://localhost:5000/api/admin/customers
 ```
 
 ## Authentication
@@ -33,7 +33,7 @@ All routes require:
 
 ## 1. Get All Customers
 
-**Endpoint:** `GET /api/super-admin/customers`
+**Endpoint:** `GET /api/admin/customers`
 **Authentication:** Required (Super Admin / Branch Admin)
 
 ### Query Parameters
@@ -54,31 +54,31 @@ All routes require:
 #### Get first page of customers
 
 ```bash
-GET /api/super-admin/customers?page=1&limit=10
+GET /api/admin/customers?page=1&limit=10
 ```
 
 #### Search for customer by email
 
 ```bash
-GET /api/super-admin/customers?search=john@example.com
+GET /api/admin/customers?search=john@example.com
 ```
 
 #### Filter by status and verification
 
 ```bash
-GET /api/super-admin/customers?account_status=active&is_Verified=true
+GET /api/admin/customers?account_status=active&is_Verified=true
 ```
 
 #### Filter by date range
 
 ```bash
-GET /api/super-admin/customers?startDate=2025-01-01&endDate=2025-12-31
+GET /api/admin/customers?startDate=2025-01-01&endDate=2025-12-31
 ```
 
 #### Filter by branch (Super Admin only)
 
 ```bash
-GET /api/super-admin/customers?branchId=64abc123def456789012abcd
+GET /api/admin/customers?branchId=64abc123def456789012abcd
 ```
 
 ### Success Response
@@ -148,7 +148,7 @@ GET /api/super-admin/customers?branchId=64abc123def456789012abcd
 
 ## 2. Get Customer Details
 
-**Endpoint:** `GET /api/super-admin/customers/:id`
+**Endpoint:** `GET /api/admin/customers/:id`
 **Authentication:** Required (Super Admin / Branch Admin)
 
 ### URL Parameters
@@ -160,7 +160,7 @@ GET /api/super-admin/customers?branchId=64abc123def456789012abcd
 ### Example Request
 
 ```bash
-GET /api/super-admin/customers/64customer123def456789012abcd
+GET /api/admin/customers/64customer123def456789012abcd
 ```
 
 ### Success Response
@@ -367,7 +367,7 @@ GET /api/super-admin/customers/64customer123def456789012abcd
 
 ## 3. Toggle Customer Status
 
-**Endpoint:** `PATCH /api/super-admin/customers/:id/status`
+**Endpoint:** `PATCH /api/admin/customers/:id/status`
 **Authentication:** Required (Super Admin / Branch Admin)
 
 ### URL Parameters
@@ -386,7 +386,7 @@ GET /api/super-admin/customers/64customer123def456789012abcd
 ### Example Request
 
 ```bash
-PATCH /api/super-admin/customers/64customer123def456789012abcd
+PATCH /api/admin/customers/64customer123def456789012abcd
 Content-Type: application/json
 
 {
@@ -451,7 +451,7 @@ Content-Type: application/json
 
 ## 4. Get Customer Metrics
 
-**Endpoint:** `GET /api/super-admin/customers/metrics/analytics`
+**Endpoint:** `GET /api/admin/customers/metrics/analytics`
 **Authentication:** Required (Super Admin / Branch Admin)
 
 ### Query Parameters
@@ -465,13 +465,13 @@ Content-Type: application/json
 #### Get overall metrics (Super Admin)
 
 ```bash
-GET /api/super-admin/customers/metrics/analytics
+GET /api/admin/customers/metrics/analytics
 ```
 
 #### Get metrics for specific branch
 
 ```bash
-GET /api/super-admin/customers/metrics/analytics?branchId=64branch123def456789012abcd
+GET /api/admin/customers/metrics/analytics?branchId=64branch123def456789012abcd
 ```
 
 ### Success Response
@@ -673,7 +673,7 @@ The API uses Joi for request validation. Validation errors return:
 ### 1. Login as Super Admin
 
 ```bash
-POST /api/super-admin/login
+POST /api/admin/login
 Content-Type: application/json
 
 {
@@ -685,21 +685,21 @@ Content-Type: application/json
 ### 2. Get All Customers
 
 ```bash
-GET /api/super-admin/customers?page=1&limit=10
+GET /api/admin/customers?page=1&limit=10
 Cookie: connect.sid=<session-cookie>
 ```
 
 ### 3. Get Specific Customer Details
 
 ```bash
-GET /api/super-admin/customers/64customer123def456789012abcd
+GET /api/admin/customers/64customer123def456789012abcd
 Cookie: connect.sid=<session-cookie>
 ```
 
 ### 4. Update Customer Status
 
 ```bash
-PATCH /api/super-admin/customers/64customer123def456789012abcd/status
+PATCH /api/admin/customers/64customer123def456789012abcd/status
 Content-Type: application/json
 Cookie: connect.sid=<session-cookie>
 
@@ -712,7 +712,7 @@ Cookie: connect.sid=<session-cookie>
 ### 5. Get Metrics
 
 ```bash
-GET /api/super-admin/customers/metrics/analytics
+GET /api/admin/customers/metrics/analytics
 Cookie: connect.sid=<session-cookie>
 ```
 
@@ -745,7 +745,7 @@ Cookie: connect.sid=<session-cookie>
 Excel export functionality should be implemented on the frontend using libraries like:
 
 - `xlsx` or `exceljs` for browser-based Excel generation
-- Use the GET /api/super-admin/customers endpoint to fetch data
+- Use the GET /api/admin/customers endpoint to fetch data
 - Apply client-side formatting and styling as needed
 - Generate and download Excel file directly in the browser
 

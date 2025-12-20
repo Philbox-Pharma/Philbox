@@ -3,5 +3,6 @@ export const ROUTES = {
   DOCTOR_AUTH: 'doctor/auth',
   CUSTOMER_AUTH: 'customer/auth',
   SALESPERSON_AUTH: 'salesperson/auth',
+  ADMIN: 'admin',
   SUPER_ADMIN: 'super-admin',
 };
