@@ -16,6 +16,7 @@ import permissionsManagementRoutes from './modules/admin/features/permissions_ma
 import adminDoctorManagementRoutes from './modules/admin/features/doctor_management/routes/doctor.routes.js';
 import adminCustomerManagementRoutes from './modules/admin/features/customer_management/routes/customer.routes.js';
 import appointmentAnalyticsRoutes from './modules/admin/features/dashboard_management/appointment_analytics/routes/appointmentAnalytics.routes.js';
+import revenueAnalyticsRoutes from './modules/admin/features/dashboard_management/revenue_analytics/routes/revenueAnalytics.routes.js';
 
 import doctorAuthRoutes from './modules/doctor/features/auth/routes/auth.routes.js';
 import passport from './modules/doctor/features/auth/config/passport.js';
@@ -79,6 +80,7 @@ app.use(
   `/api/${ROUTES.ADMIN}/appointment-analytics`,
   appointmentAnalyticsRoutes
 );
+app.use(`/api/${ROUTES.ADMIN}/revenue-analytics`, revenueAnalyticsRoutes);
 
 app.use(`/api/${ROUTES.DOCTOR_AUTH}`, doctorAuthRoutes);
 app.use(`/api/${ROUTES.CUSTOMER_AUTH}`, customerAuthRoutes);
