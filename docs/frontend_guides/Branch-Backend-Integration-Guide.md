@@ -104,7 +104,7 @@ rbacMiddleware("delete_branches"); // Delete endpoint
 ### Base URL
 
 ```
-/api/super-admin/branches
+/api/admin/branches
 ```
 
 ---
@@ -591,7 +591,7 @@ Delete a branch permanently.
 
 ```javascript
 // services/branchService.js
-const BASE_URL = "/api/super-admin/branches";
+const BASE_URL = "/api/admin/branches";
 
 export const branchService = {
   // Create branch

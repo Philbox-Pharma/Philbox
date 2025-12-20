@@ -10,4 +10,5 @@ CUSTOMER_AUTH_API_GUIDE.md - Customer auth endpoints
 CUSTOMER_MANAGEMENT_API_GUIDE.md - Customer management endpoints
 DOCTOR_AUTH_API_GUIDE.md - Doctor auth + onboarding endpoints
 DOCTOR_MANAGEMENT_API_GUIDE.md - Doctor profile management, suspend/activate, metrics (NEW)
+APPOINTMENT_ANALYTICS_API_GUIDE.md - Appointment analytics dashboard endpoints (NEW)
 SALESPERSON_AUTH_API_GUIDE.md - Salesperson auth endpoints

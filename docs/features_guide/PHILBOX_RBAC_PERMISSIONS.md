@@ -295,14 +295,14 @@ Legend: C = Create, R = Read, U = Update, D = Delete, - = No Access, (own) = Own
 ### Super Admin Routes
 
 ```
-✅ GET/POST /api/super-admin/branches
-✅ GET/POST /api/super-admin/users
-✅ GET/POST /api/super-admin/doctors
-✅ GET/POST /api/super-admin/customers
-✅ GET/POST /api/super-admin/salespersons
-✅ GET/POST /api/super-admin/appointments
-✅ GET/POST /api/super-admin/permissions
-✅ GET/POST /api/super-admin/reports
+✅ GET/POST /api/admin/branches
+✅ GET/POST /api/admin/users
+✅ GET/POST /api/admin/doctors
+✅ GET/POST /api/admin/customers
+✅ GET/POST /api/admin/salespersons
+✅ GET/POST /api/admin/appointments
+✅ GET/POST /api/admin/permissions
+✅ GET/POST /api/admin/reports
 ```
 
 ### Branch Admin Routes
@@ -407,7 +407,7 @@ router.post(
 
 ```bash
 # Get user's current role and permissions
-GET /api/super-admin/permissions/user-role
+GET /api/admin/permissions/user-role
 
 # Example response:
 {
