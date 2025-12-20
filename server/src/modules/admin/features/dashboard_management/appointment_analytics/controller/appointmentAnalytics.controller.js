@@ -1,4 +1,4 @@
-import sendResponse from '../../../../../utils/sendResponse.js';
+import sendResponse from '../../../../../../utils/sendResponse.js';
 import AppointmentAnalyticsService from '../services/appointmentAnalytics.service.js';
 
 /**

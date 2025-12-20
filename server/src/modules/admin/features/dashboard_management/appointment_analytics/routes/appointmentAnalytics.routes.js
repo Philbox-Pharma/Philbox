@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate } from '../../../middleware/auth.middleware.js';
+import { authenticate } from '../../../../middleware/auth.middleware.js';
 import {
   getAppointmentTrends,
   getCompletionMissedRate,
@@ -10,11 +10,11 @@ import {
   getDashboardOverview,
   aggregateAppointmentData,
 } from '../controller/appointmentAnalytics.controller.js';
-import { validate } from '../../../../../validator/joiValidate.middleware.js';
+import { validate } from '../../../../../../validator/joiValidate.middleware.js';
 import {
   getAppointmentAnalyticsDTO,
   aggregateAppointmentsDTO,
-} from '../../../../../dto/admin/appointmentAnalytics.dto.js';
+} from '../../../../../../dto/admin/appointmentAnalytics.dto.js';
 
 const router = express.Router();
 
