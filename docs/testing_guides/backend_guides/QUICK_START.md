@@ -36,9 +36,9 @@ Based on what you want to test, select from:
 ### Authentication Endpoints
 
 ```
-POST   /api/super-admin/auth/login
-POST   /api/super-admin/auth/verify-otp
-PATCH  /api/super-admin/auth/2fa-settings
+POST   /api/admin/auth/login
+POST   /api/admin/auth/verify-otp
+PATCH  /api/admin/auth/2fa-settings
 POST   /api/customer/auth/register
 POST   /api/customer/auth/login
 POST   /api/doctor/auth/register
@@ -50,31 +50,31 @@ POST   /api/salesperson/auth/verify-otp
 ### User Management
 
 ```
-POST   /api/super-admin/users/admins                   # Create admin
-GET    /api/super-admin/users/admins                   # List admins
-GET    /api/super-admin/users/admins/:id               # Get admin
-POST   /api/super-admin/users/salespersons             # Create salesperson
-GET    /api/super-admin/users/salespersons             # List salespersons
+POST   /api/admin/users/admins                   # Create admin
+GET    /api/admin/users/admins                   # List admins
+GET    /api/admin/users/admins/:id               # Get admin
+POST   /api/admin/users/salespersons             # Create salesperson
+GET    /api/admin/users/salespersons             # List salespersons
 ```
 
 ### Branch Management
 
 ```
-POST   /api/super-admin/branches                       # Create branch
-GET    /api/super-admin/branches                       # List branches
-GET    /api/super-admin/branches/:id                   # Get branch
-PUT    /api/super-admin/branches/:id                   # Update branch
-DELETE /api/super-admin/branches/:id                   # Delete branch
-GET    /api/super-admin/branches/:id/performance       # Branch metrics
+POST   /api/admin/branches                       # Create branch
+GET    /api/admin/branches                       # List branches
+GET    /api/admin/branches/:id                   # Get branch
+PUT    /api/admin/branches/:id                   # Update branch
+DELETE /api/admin/branches/:id                   # Delete branch
+GET    /api/admin/branches/:id/performance       # Branch metrics
 ```
 
 ### Permissions Management
 
 ```
-GET    /api/super-admin/roles                          # Get all roles
-GET    /api/super-admin/permissions                    # Get all permissions
-POST   /api/super-admin/permissions                    # Create permission
-PUT    /api/super-admin/roles/:roleId                  # Update role
+GET    /api/admin/roles                          # Get all roles
+GET    /api/admin/permissions                    # Get all permissions
+POST   /api/admin/permissions                    # Create permission
+PUT    /api/admin/roles/:roleId                  # Update role
 ```
 
 ---
@@ -256,14 +256,14 @@ Cookie is automatically stored by browser/client and sent with all requests to s
 ### Test 1: Admin Login + Verify OTP
 
 ```
-POST /api/super-admin/auth/login
+POST /api/admin/auth/login
 {
   "email": "admin@example.com",
   "password": "SecurePassword123!"
 }
 Expected: 200 with OTP sent (if 2FA enabled)
 
-POST /api/super-admin/auth/verify-otp
+POST /api/admin/auth/verify-otp
 {
   "otp": "123456"
 }
@@ -273,7 +273,7 @@ Expected: 200 with session created (Set-Cookie header)
 ### Test 2: Create Branch (Session Auto-Sent)
 
 ```
-POST /api/super-admin/branches
+POST /api/admin/branches
 {
   "name": "Test Branch",
   "city": "Karachi",
@@ -288,7 +288,7 @@ Expected: 201 with branch data
 ### Test 3: Get All Branches (Session Auto-Sent)
 
 ```
-GET /api/super-admin/branches?page=1&limit=10
+GET /api/admin/branches?page=1&limit=10
 Expected: 200 with branch list
 (Session cookie sent automatically)
 ```

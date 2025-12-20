@@ -5,7 +5,7 @@ Complete guide for managing doctor profiles, including viewing, editing, suspend
 ## Base URL
 
 ```
-http://localhost:5000/api/super-admin/doctors
+http://localhost:5000/api/admin/doctors
 ```
 
 ## Authentication
@@ -29,7 +29,7 @@ All routes require admin authentication. Include session cookie in requests afte
 
 Fetch all doctor applications with filtering options.
 
-**Endpoint:** `GET /api/super-admin/doctors/applications`
+**Endpoint:** `GET /api/admin/doctors/applications`
 
 **Query Parameters:**
 
@@ -43,7 +43,7 @@ Fetch all doctor applications with filtering options.
 **Request Example:**
 
 ```bash
-curl --location 'http://localhost:5000/api/super-admin/doctors/applications?page=1&limit=10&status=pending' \
+curl --location 'http://localhost:5000/api/admin/doctors/applications?page=1&limit=10&status=pending' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE'
 ```
 
@@ -90,7 +90,7 @@ curl --location 'http://localhost:5000/api/super-admin/doctors/applications?page
 
 Fetch detailed information about a specific doctor application.
 
-**Endpoint:** `GET /api/super-admin/doctors/applications/:id`
+**Endpoint:** `GET /api/admin/doctors/applications/:id`
 
 **Path Parameters:**
 
@@ -101,7 +101,7 @@ Fetch detailed information about a specific doctor application.
 **Request Example:**
 
 ```bash
-curl --location 'http://localhost:5000/api/super-admin/doctors/applications/67890abc123def456' \
+curl --location 'http://localhost:5000/api/admin/doctors/applications/67890abc123def456' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE'
 ```
 
@@ -143,7 +143,7 @@ curl --location 'http://localhost:5000/api/super-admin/doctors/applications/6789
 
 Approve a pending doctor application and activate the account.
 
-**Endpoint:** `PATCH /api/super-admin/doctors/applications/:id/approve`
+**Endpoint:** `PATCH /api/admin/doctors/applications/:id/approve`
 
 **Request Body:**
 
@@ -156,7 +156,7 @@ Approve a pending doctor application and activate the account.
 **Request Example:**
 
 ```bash
-curl --location --request PATCH 'http://localhost:5000/api/super-admin/doctors/applications/67890abc123def456/approve' \
+curl --location --request PATCH 'http://localhost:5000/api/admin/doctors/applications/67890abc123def456/approve' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE' \
 --data '{
@@ -193,7 +193,7 @@ curl --location --request PATCH 'http://localhost:5000/api/super-admin/doctors/a
 
 Reject a pending doctor application.
 
-**Endpoint:** `PATCH /api/super-admin/doctors/applications/:id/reject`
+**Endpoint:** `PATCH /api/admin/doctors/applications/:id/reject`
 
 **Request Body:**
 
@@ -206,7 +206,7 @@ Reject a pending doctor application.
 **Request Example:**
 
 ```bash
-curl --location --request PATCH 'http://localhost:5000/api/super-admin/doctors/applications/67890abc123def456/reject' \
+curl --location --request PATCH 'http://localhost:5000/api/admin/doctors/applications/67890abc123def456/reject' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE' \
 --data '{
@@ -238,7 +238,7 @@ curl --location --request PATCH 'http://localhost:5000/api/super-admin/doctors/a
 
 Fetch all doctors with advanced filtering and search capabilities.
 
-**Endpoint:** `GET /api/super-admin/doctors`
+**Endpoint:** `GET /api/admin/doctors`
 
 **Query Parameters:**
 
@@ -255,7 +255,7 @@ Fetch all doctors with advanced filtering and search capabilities.
 **Request Example:**
 
 ```bash
-curl --location 'http://localhost:5000/api/super-admin/doctors?page=1&limit=20&account_status=active&specialization=Cardiology&sortBy=averageRating&sortOrder=desc' \
+curl --location 'http://localhost:5000/api/admin/doctors?page=1&limit=20&account_status=active&specialization=Cardiology&sortBy=averageRating&sortOrder=desc' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE'
 ```
 
@@ -317,7 +317,7 @@ curl --location 'http://localhost:5000/api/super-admin/doctors?page=1&limit=20&a
 
 Fetch detailed information about a specific doctor including performance metrics.
 
-**Endpoint:** `GET /api/super-admin/doctors/:id`
+**Endpoint:** `GET /api/admin/doctors/:id`
 
 **Path Parameters:**
 
@@ -328,7 +328,7 @@ Fetch detailed information about a specific doctor including performance metrics
 **Request Example:**
 
 ```bash
-curl --location 'http://localhost:5000/api/super-admin/doctors/12345abc678def901' \
+curl --location 'http://localhost:5000/api/admin/doctors/12345abc678def901' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE'
 ```
 
@@ -422,7 +422,7 @@ curl --location 'http://localhost:5000/api/super-admin/doctors/12345abc678def901
 
 Update specific fields of a doctor's profile.
 
-**Endpoint:** `PUT /api/super-admin/doctors/:id`
+**Endpoint:** `PUT /api/admin/doctors/:id`
 
 **Path Parameters:**
 
@@ -453,7 +453,7 @@ Update specific fields of a doctor's profile.
 **Request Example:**
 
 ```bash
-curl --location --request PUT 'http://localhost:5000/api/super-admin/doctors/12345abc678def901' \
+curl --location --request PUT 'http://localhost:5000/api/admin/doctors/12345abc678def901' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE' \
 --data '{
@@ -505,7 +505,7 @@ curl --location --request PUT 'http://localhost:5000/api/super-admin/doctors/123
 
 Suspend, activate, or block a doctor's account.
 
-**Endpoint:** `PATCH /api/super-admin/doctors/:id/status`
+**Endpoint:** `PATCH /api/admin/doctors/:id/status`
 
 **Path Parameters:**
 
@@ -534,7 +534,7 @@ Suspend, activate, or block a doctor's account.
 **Request Example (Suspend):**
 
 ```bash
-curl --location --request PATCH 'http://localhost:5000/api/super-admin/doctors/12345abc678def901/status' \
+curl --location --request PATCH 'http://localhost:5000/api/admin/doctors/12345abc678def901/status' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE' \
 --data '{
@@ -565,7 +565,7 @@ curl --location --request PATCH 'http://localhost:5000/api/super-admin/doctors/1
 **Request Example (Activate):**
 
 ```bash
-curl --location --request PATCH 'http://localhost:5000/api/super-admin/doctors/12345abc678def901/status' \
+curl --location --request PATCH 'http://localhost:5000/api/admin/doctors/12345abc678def901/status' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE' \
 --data '{
@@ -595,7 +595,7 @@ curl --location --request PATCH 'http://localhost:5000/api/super-admin/doctors/1
 **Request Example (Block/Remove):**
 
 ```bash
-curl --location --request PATCH 'http://localhost:5000/api/super-admin/doctors/12345abc678def901/status' \
+curl --location --request PATCH 'http://localhost:5000/api/admin/doctors/12345abc678def901/status' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE' \
 --data '{
@@ -631,7 +631,7 @@ curl --location --request PATCH 'http://localhost:5000/api/super-admin/doctors/1
 
 Fetch performance metrics for a specific doctor.
 
-**Endpoint:** `GET /api/super-admin/doctors/:id/metrics`
+**Endpoint:** `GET /api/admin/doctors/:id/metrics`
 
 **Path Parameters:**
 
@@ -642,7 +642,7 @@ Fetch performance metrics for a specific doctor.
 **Request Example:**
 
 ```bash
-curl --location 'http://localhost:5000/api/super-admin/doctors/12345abc678def901/metrics' \
+curl --location 'http://localhost:5000/api/admin/doctors/12345abc678def901/metrics' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE'
 ```
 
@@ -750,50 +750,50 @@ Each log entry includes:
 
 ```bash
 # Step 1: Get pending applications
-GET /api/super-admin/doctors/applications?status=pending
+GET /api/admin/doctors/applications?status=pending
 
 # Step 2: View specific application details
-GET /api/super-admin/doctors/applications/{applicationId}
+GET /api/admin/doctors/applications/{applicationId}
 
 # Step 3: Approve or reject
-PATCH /api/super-admin/doctors/applications/{applicationId}/approve
+PATCH /api/admin/doctors/applications/{applicationId}/approve
 # OR
-PATCH /api/super-admin/doctors/applications/{applicationId}/reject
+PATCH /api/admin/doctors/applications/{applicationId}/reject
 ```
 
 ### 2. Test Doctor Management Flow
 
 ```bash
 # Step 1: Get all active doctors
-GET /api/super-admin/doctors?account_status=active
+GET /api/admin/doctors?account_status=active
 
 # Step 2: View specific doctor details
-GET /api/super-admin/doctors/{doctorId}
+GET /api/admin/doctors/{doctorId}
 
 # Step 3: Update doctor profile
-PUT /api/super-admin/doctors/{doctorId}
+PUT /api/admin/doctors/{doctorId}
 
 # Step 4: View performance metrics
-GET /api/super-admin/doctors/{doctorId}/metrics
+GET /api/admin/doctors/{doctorId}/metrics
 
 # Step 5: Suspend doctor account
-PATCH /api/super-admin/doctors/{doctorId}/status
+PATCH /api/admin/doctors/{doctorId}/status
 ```
 
 ### 3. Test Search and Filter
 
 ```bash
 # Search by name
-GET /api/super-admin/doctors?search=sarah
+GET /api/admin/doctors?search=sarah
 
 # Filter by specialization
-GET /api/super-admin/doctors?specialization=Cardiology
+GET /api/admin/doctors?specialization=Cardiology
 
 # Filter by status
-GET /api/super-admin/doctors?account_status=suspended/freezed
+GET /api/admin/doctors?account_status=suspended/freezed
 
 # Combined filters with sorting
-GET /api/super-admin/doctors?specialization=Cardiology&account_status=active&sortBy=averageRating&sortOrder=desc
+GET /api/admin/doctors?specialization=Cardiology&account_status=active&sortBy=averageRating&sortOrder=desc
 ```
 
 ---

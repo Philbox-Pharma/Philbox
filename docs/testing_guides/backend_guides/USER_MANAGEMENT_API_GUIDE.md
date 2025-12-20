@@ -3,7 +3,7 @@
 ## Base URL
 
 ```
-http://localhost:5000/api/super-admin
+http://localhost:5000/api/admin
 ```
 
 ## Authentication
@@ -19,7 +19,7 @@ All routes require:
 
 ### 1.1 Create Admin
 
-**Endpoint:** `POST /api/super-admin/admin`
+**Endpoint:** `POST /api/admin/admin`
 **Authentication:** Required (Super Admin only)
 
 **Request Body (multipart/form-data):**
@@ -58,7 +58,7 @@ cover_img: [File] (optional)
 
 ### 1.2 Get All Admins
 
-**Endpoint:** `GET /api/super-admin/admin`
+**Endpoint:** `GET /api/admin/admin`
 **Authentication:** Required (Super Admin only)
 
 **Query Parameters:**
@@ -70,7 +70,7 @@ cover_img: [File] (optional)
 **Example Request:**
 
 ```
-GET /api/super-admin/admin?page=1&limit=10&search=john
+GET /api/admin/admin?page=1&limit=10&search=john
 ```
 
 **Success Response:**
@@ -116,7 +116,7 @@ GET /api/super-admin/admin?page=1&limit=10&search=john
 
 ### 1.3 Get Admin by ID
 
-**Endpoint:** `GET /api/super-admin/admin/:id`
+**Endpoint:** `GET /api/admin/admin/:id`
 **Authentication:** Required (Super Admin only)
 
 **Success Response:**
@@ -157,7 +157,7 @@ GET /api/super-admin/admin?page=1&limit=10&search=john
 
 ### 1.4 Update Admin
 
-**Endpoint:** `PUT /api/super-admin/admin/:id`
+**Endpoint:** `PUT /api/admin/admin/:id`
 **Authentication:** Required (Super Admin only)
 
 **Request Body (multipart/form-data):**
@@ -190,7 +190,7 @@ cover_img: [File] (optional)
 
 ### 1.5 Delete Admin
 
-**Endpoint:** `DELETE /api/super-admin/admin/:id`
+**Endpoint:** `DELETE /api/admin/admin/:id`
 **Authentication:** Required (Super Admin only)
 
 **Success Response:**
@@ -215,7 +215,7 @@ cover_img: [File] (optional)
 
 ### 1.6 Search Admin
 
-**Endpoint:** `GET /api/super-admin/admin/search`
+**Endpoint:** `GET /api/admin/admin/search`
 **Authentication:** Required (Super Admin only)
 
 **Query Parameters:**
@@ -225,7 +225,7 @@ cover_img: [File] (optional)
 **Example Request:**
 
 ```
-GET /api/super-admin/admin/search?q=john
+GET /api/admin/admin/search?q=john
 ```
 
 **Success Response:**
@@ -252,7 +252,7 @@ GET /api/super-admin/admin/search?q=john
 
 ### 2.1 Create Salesperson
 
-**Endpoint:** `POST /api/super-admin/salesperson`
+**Endpoint:** `POST /api/admin/salesperson`
 **Authentication:** Required (Super Admin only)
 
 **Request Body:**
@@ -300,7 +300,7 @@ GET /api/super-admin/admin/search?q=john
 
 ### 2.2 Get All Salespersons
 
-**Endpoint:** `GET /api/super-admin/salesperson`
+**Endpoint:** `GET /api/admin/salesperson`
 **Authentication:** Required (Super Admin only)
 
 **Query Parameters:**
@@ -312,7 +312,7 @@ GET /api/super-admin/admin/search?q=john
 **Example Request:**
 
 ```
-GET /api/super-admin/salesperson?page=1&limit=10&search=jane
+GET /api/admin/salesperson?page=1&limit=10&search=jane
 ```
 
 **Success Response:**
@@ -358,7 +358,7 @@ GET /api/super-admin/salesperson?page=1&limit=10&search=jane
 
 ### 2.3 Get Salesperson by ID
 
-**Endpoint:** `GET /api/super-admin/salesperson/:id`
+**Endpoint:** `GET /api/admin/salesperson/:id`
 **Authentication:** Required (Super Admin only)
 
 **Success Response:**
@@ -399,7 +399,7 @@ GET /api/super-admin/salesperson?page=1&limit=10&search=jane
 
 ### 2.4 Update Salesperson
 
-**Endpoint:** `PUT /api/super-admin/salesperson/:id`
+**Endpoint:** `PUT /api/admin/salesperson/:id`
 **Authentication:** Required (Super Admin only)
 
 **Request Body:**
@@ -431,7 +431,7 @@ GET /api/super-admin/salesperson?page=1&limit=10&search=jane
 
 ### 2.5 Change Salesperson Status
 
-**Endpoint:** `PATCH /api/super-admin/salesperson/:id/status`
+**Endpoint:** `PATCH /api/admin/salesperson/:id/status`
 **Authentication:** Required (Super Admin only)
 
 **Request Body:**
@@ -465,7 +465,7 @@ GET /api/super-admin/salesperson?page=1&limit=10&search=jane
 
 ### 2.6 Delete Salesperson
 
-**Endpoint:** `DELETE /api/super-admin/salesperson/:id`
+**Endpoint:** `DELETE /api/admin/salesperson/:id`
 **Authentication:** Required (Super Admin only)
 
 **Success Response:**
@@ -481,7 +481,7 @@ GET /api/super-admin/salesperson?page=1&limit=10&search=jane
 
 ### 2.7 Search Salesperson
 
-**Endpoint:** `GET /api/super-admin/salesperson/search`
+**Endpoint:** `GET /api/admin/salesperson/search`
 **Authentication:** Required (Super Admin only)
 
 **Query Parameters:**
@@ -491,7 +491,7 @@ GET /api/super-admin/salesperson?page=1&limit=10&search=jane
 **Example Request:**
 
 ```
-GET /api/super-admin/salesperson/search?q=jane
+GET /api/admin/salesperson/search?q=jane
 ```
 
 **Success Response:**
@@ -517,7 +517,7 @@ GET /api/super-admin/salesperson/search?q=jane
 
 ### 3.1 Get Salesperson Task Performance
 
-**Endpoint:** `GET /api/super-admin/users/salesperson-tasks/performance`
+**Endpoint:** `GET /api/admin/users/salesperson-tasks/performance`
 **Authentication:** Required (Super Admin or Branch Admin)
 
 **Access Control:**
@@ -542,22 +542,22 @@ GET /api/super-admin/salesperson/search?q=jane
 
 ```
 # Get all tasks (Super Admin)
-GET /api/super-admin/users/salesperson-tasks/performance
+GET /api/admin/users/salesperson-tasks/performance
 
 # Get tasks for specific salesperson
-GET /api/super-admin/users/salesperson-tasks/performance?salesperson_id=64sales123
+GET /api/admin/users/salesperson-tasks/performance?salesperson_id=64sales123
 
 # Get pending tasks for a branch
-GET /api/super-admin/users/salesperson-tasks/performance?branch_id=64branch123&status=pending
+GET /api/admin/users/salesperson-tasks/performance?branch_id=64branch123&status=pending
 
 # Get high priority tasks
-GET /api/super-admin/users/salesperson-tasks/performance?priority=high
+GET /api/admin/users/salesperson-tasks/performance?priority=high
 
 # Get tasks within date range
-GET /api/super-admin/users/salesperson-tasks/performance?from_date=2025-01-01&to_date=2025-12-31
+GET /api/admin/users/salesperson-tasks/performance?from_date=2025-01-01&to_date=2025-12-31
 
 # Paginated results
-GET /api/super-admin/users/salesperson-tasks/performance?page=2&limit=20
+GET /api/admin/users/salesperson-tasks/performance?page=2&limit=20
 ```
 
 **Success Response:**
@@ -714,7 +714,7 @@ GET /api/super-admin/users/salesperson-tasks/performance?page=2&limit=20
 
 ### 4.1 Get All Doctor Applications
 
-**Endpoint:** `GET /api/super-admin/doctors/applications`
+**Endpoint:** `GET /api/admin/doctors/applications`
 **Authentication:** Required (Super Admin & Branch Admin)
 
 **Query Parameters:**
@@ -729,7 +729,7 @@ GET /api/super-admin/users/salesperson-tasks/performance?page=2&limit=20
 **Example Request:**
 
 ```bash
-GET /api/super-admin/doctors/applications?status=pending&page=1&limit=10
+GET /api/admin/doctors/applications?status=pending&page=1&limit=10
 ```
 
 **Success Response:**
@@ -780,13 +780,13 @@ GET /api/super-admin/doctors/applications?status=pending&page=1&limit=10
 
 ### 4.2 Get Single Doctor Application
 
-**Endpoint:** `GET /api/super-admin/doctors/applications/:id`
+**Endpoint:** `GET /api/admin/doctors/applications/:id`
 **Authentication:** Required (Super Admin & Branch Admin)
 
 **Example Request:**
 
 ```bash
-GET /api/super-admin/doctors/applications/64abc123...
+GET /api/admin/doctors/applications/64abc123...
 ```
 
 **Success Response:**
@@ -841,7 +841,7 @@ GET /api/super-admin/doctors/applications/64abc123...
 
 ### 4.3 Approve Doctor Application
 
-**Endpoint:** `PATCH /api/super-admin/doctors/applications/:id/approve`
+**Endpoint:** `PATCH /api/admin/doctors/applications/:id/approve`
 **Authentication:** Required (Super Admin & Branch Admin)
 
 **Request Body:**
@@ -859,7 +859,7 @@ GET /api/super-admin/doctors/applications/64abc123...
 **Example Request:**
 
 ```bash
-PATCH /api/super-admin/doctors/applications/64abc123.../approve
+PATCH /api/admin/doctors/applications/64abc123.../approve
 Content-Type: application/json
 
 {
@@ -923,7 +923,7 @@ Content-Type: application/json
 
 ### 4.4 Reject Doctor Application
 
-**Endpoint:** `PATCH /api/super-admin/doctors/applications/:id/reject`
+**Endpoint:** `PATCH /api/admin/doctors/applications/:id/reject`
 **Authentication:** Required (Super Admin & Branch Admin)
 
 **Request Body:**
@@ -941,7 +941,7 @@ Content-Type: application/json
 **Example Request:**
 
 ```bash
-PATCH /api/super-admin/doctors/applications/64abc123.../reject
+PATCH /api/admin/doctors/applications/64abc123.../reject
 Content-Type: application/json
 
 {
@@ -1033,25 +1033,25 @@ Doctor Registers → Email Verification → Submits Documents
 **1. Super Admin views all pending applications:**
 
 ```bash
-GET /api/super-admin/doctors/applications?status=pending
+GET /api/admin/doctors/applications?status=pending
 ```
 
 **2. Search for specific doctor application:**
 
 ```bash
-GET /api/super-admin/doctors/applications?search=jane.smith
+GET /api/admin/doctors/applications?search=jane.smith
 ```
 
 **3. View application details and documents:**
 
 ```bash
-GET /api/super-admin/doctors/applications/64abc123...
+GET /api/admin/doctors/applications/64abc123...
 ```
 
 **4. Approve application with comment:**
 
 ```bash
-PATCH /api/super-admin/doctors/applications/64abc123.../approve
+PATCH /api/admin/doctors/applications/64abc123.../approve
 {
   "comment": "Verified credentials. Welcome aboard!"
 }
@@ -1060,7 +1060,7 @@ PATCH /api/super-admin/doctors/applications/64abc123.../approve
 **5. Reject application with specific reason:**
 
 ```bash
-PATCH /api/super-admin/doctors/applications/64abc123.../reject
+PATCH /api/admin/doctors/applications/64abc123.../reject
 {
   "reason": "Invalid medical license. Please provide PMC-registered license."
 }
@@ -1069,13 +1069,13 @@ PATCH /api/super-admin/doctors/applications/64abc123.../reject
 **6. View all approved applications:**
 
 ```bash
-GET /api/super-admin/doctors/applications?status=approved
+GET /api/admin/doctors/applications?status=approved
 ```
 
 **7. View all rejected applications:**
 
 ```bash
-GET /api/super-admin/doctors/applications?status=rejected
+GET /api/admin/doctors/applications?status=rejected
 ```
 
 ---

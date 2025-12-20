@@ -12,42 +12,42 @@ Quick reference for testing doctor management endpoints.
 ### 1. List All Doctors
 
 ```bash
-curl --location 'http://localhost:5000/api/super-admin/doctors?page=1&limit=10' \
+curl --location 'http://localhost:5000/api/admin/doctors?page=1&limit=10' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE'
 ```
 
 ### 2. Search Doctors by Name
 
 ```bash
-curl --location 'http://localhost:5000/api/super-admin/doctors?search=sarah' \
+curl --location 'http://localhost:5000/api/admin/doctors?search=sarah' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE'
 ```
 
 ### 3. Filter by Specialization
 
 ```bash
-curl --location 'http://localhost:5000/api/super-admin/doctors?specialization=Cardiology' \
+curl --location 'http://localhost:5000/api/admin/doctors?specialization=Cardiology' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE'
 ```
 
 ### 4. Filter Active Doctors
 
 ```bash
-curl --location 'http://localhost:5000/api/super-admin/doctors?account_status=active' \
+curl --location 'http://localhost:5000/api/admin/doctors?account_status=active' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE'
 ```
 
 ### 5. Get Doctor Details
 
 ```bash
-curl --location 'http://localhost:5000/api/super-admin/doctors/DOCTOR_ID' \
+curl --location 'http://localhost:5000/api/admin/doctors/DOCTOR_ID' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE'
 ```
 
 ### 6. Update Doctor Profile
 
 ```bash
-curl --location --request PUT 'http://localhost:5000/api/super-admin/doctors/DOCTOR_ID' \
+curl --location --request PUT 'http://localhost:5000/api/admin/doctors/DOCTOR_ID' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE' \
 --data '{
@@ -59,7 +59,7 @@ curl --location --request PUT 'http://localhost:5000/api/super-admin/doctors/DOC
 ### 7. Suspend Doctor
 
 ```bash
-curl --location --request PATCH 'http://localhost:5000/api/super-admin/doctors/DOCTOR_ID/status' \
+curl --location --request PATCH 'http://localhost:5000/api/admin/doctors/DOCTOR_ID/status' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE' \
 --data '{
@@ -72,7 +72,7 @@ curl --location --request PATCH 'http://localhost:5000/api/super-admin/doctors/D
 ### 8. Activate Doctor
 
 ```bash
-curl --location --request PATCH 'http://localhost:5000/api/super-admin/doctors/DOCTOR_ID/status' \
+curl --location --request PATCH 'http://localhost:5000/api/admin/doctors/DOCTOR_ID/status' \
 --header 'Content-Type: application/json' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE' \
 --data '{
@@ -84,7 +84,7 @@ curl --location --request PATCH 'http://localhost:5000/api/super-admin/doctors/D
 ### 9. Get Performance Metrics
 
 ```bash
-curl --location 'http://localhost:5000/api/super-admin/doctors/DOCTOR_ID/metrics' \
+curl --location 'http://localhost:5000/api/admin/doctors/DOCTOR_ID/metrics' \
 --header 'Cookie: connect.sid=YOUR_SESSION_COOKIE'
 ```
 
@@ -102,21 +102,21 @@ curl --location 'http://localhost:5000/api/super-admin/doctors/DOCTOR_ID/metrics
 
 ```bash
 # 1. List all active doctors
-GET /api/super-admin/doctors?account_status=active
+GET /api/admin/doctors?account_status=active
 
 # 2. Get specific doctor details
-GET /api/super-admin/doctors/DOCTOR_ID
+GET /api/admin/doctors/DOCTOR_ID
 
 # 3. Update consultation fee
-PUT /api/super-admin/doctors/DOCTOR_ID
+PUT /api/admin/doctors/DOCTOR_ID
 Body: { "consultation_fee": 200 }
 
 # 4. Suspend doctor
-PATCH /api/super-admin/doctors/DOCTOR_ID/status
+PATCH /api/admin/doctors/DOCTOR_ID/status
 Body: { "status": "suspended/freezed", "reason": "Under investigation" }
 
 # 5. Reactivate doctor
-PATCH /api/super-admin/doctors/DOCTOR_ID/status
+PATCH /api/admin/doctors/DOCTOR_ID/status
 Body: { "status": "active" }
 ```
 
@@ -124,13 +124,13 @@ Body: { "status": "active" }
 
 ```bash
 # Search by name
-GET /api/super-admin/doctors?search=john
+GET /api/admin/doctors?search=john
 
 # Filter by specialization
-GET /api/super-admin/doctors?specialization=Pediatrics
+GET /api/admin/doctors?specialization=Pediatrics
 
 # Combined filters
-GET /api/super-admin/doctors?specialization=Cardiology&account_status=active&sortBy=averageRating&sortOrder=desc
+GET /api/admin/doctors?specialization=Cardiology&account_status=active&sortBy=averageRating&sortOrder=desc
 ```
 
 ## Expected Responses

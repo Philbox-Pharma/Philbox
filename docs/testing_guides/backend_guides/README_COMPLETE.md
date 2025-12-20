@@ -19,7 +19,7 @@ Production: https://api.philbox.com/api
 
 ### 1. Admin APIs
 
-**Base Path:** `/api/super-admin`
+**Base Path:** `/api/admin`
 
 Complete documentation for admin-related operations including authentication, branch management, and user management.
 
@@ -37,7 +37,7 @@ Complete documentation for admin-related operations including authentication, br
 
 ### 2. User Management APIs
 
-**Base Path:** `/api/super-admin`
+**Base Path:** `/api/admin`
 
 Complete documentation for managing admins and salespersons (creation, updates, deletion, activation).
 
@@ -55,7 +55,7 @@ Complete documentation for managing admins and salespersons (creation, updates, 
 
 ### 3. Permissions & RBAC APIs
 
-**Base Path:** `/api/super-admin`
+**Base Path:** `/api/admin`
 
 Complete documentation for role-based access control, permissions, and role management.
 
@@ -150,7 +150,7 @@ export default api;
 **Frontend Configuration (Fetch):**
 
 ```javascript
-fetch("http://localhost:5000/api/super-admin/auth/login", {
+fetch("http://localhost:5000/api/admin/auth/login", {
   method: "POST",
   credentials: "include", // CRITICAL: Enables session cookies
   headers: {
@@ -265,7 +265,7 @@ Permissions follow a resource-action pattern:
 Most list endpoints support pagination:
 
 ```
-GET /api/super-admin/branches?page=1&limit=10
+GET /api/admin/branches?page=1&limit=10
 ```
 
 **Parameters:**
@@ -276,7 +276,7 @@ GET /api/super-admin/branches?page=1&limit=10
 ### Search & Filtering
 
 ```
-GET /api/super-admin/admins?search=john&status=active&branch_id=64branch123
+GET /api/admin/admins?search=john&status=active&branch_id=64branch123
 ```
 
 **Common Filters:**
@@ -289,7 +289,7 @@ GET /api/super-admin/admins?search=john&status=active&branch_id=64branch123
 ### Sorting
 
 ```
-GET /api/super-admin/branches?sort=-created_at
+GET /api/admin/branches?sort=-created_at
 ```
 
 **Parameters:**
@@ -420,7 +420,7 @@ FRONTEND_URL=http://localhost:5173
 3. **Login First:**
 
    ```
-   POST /api/super-admin/auth/login
+   POST /api/admin/auth/login
    Body: { "email": "admin@philbox.com", "password": "password" }
    ```
 
@@ -432,13 +432,13 @@ FRONTEND_URL=http://localhost:5173
 
 ```bash
 # Login and save cookies
-curl -X POST http://localhost:5000/api/super-admin/auth/login \
+curl -X POST http://localhost:5000/api/admin/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@philbox.com","password":"password"}' \
   -c cookies.txt
 
 # Use session cookie for authenticated request
-curl -X GET http://localhost:5000/api/super-admin/branches \
+curl -X GET http://localhost:5000/api/admin/branches \
   -b cookies.txt
 ```
 
@@ -499,7 +499,7 @@ npm run seed
 ### 3. Login as Admin
 
 ```bash
-curl -X POST http://localhost:5000/api/super-admin/auth/login \
+curl -X POST http://localhost:5000/api/admin/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@philbox.com","password":"admin123"}' \
   -c cookies.txt
@@ -508,7 +508,7 @@ curl -X POST http://localhost:5000/api/super-admin/auth/login \
 ### 4. Test Protected Route
 
 ```bash
-curl -X GET http://localhost:5000/api/super-admin/branches \
+curl -X GET http://localhost:5000/api/admin/branches \
   -b cookies.txt
 ```
 
@@ -567,25 +567,25 @@ import api from "../api/axiosInstance";
 export const adminService = {
   // Auth
   login: (email, password) =>
-    api.post("/super-admin/auth/login", { email, password }),
+    api.post("/admin/auth/login", { email, password }),
 
-  verifyOTP: (otp) => api.post("/super-admin/auth/verify-otp", { otp }),
+  verifyOTP: (otp) => api.post("/admin/auth/verify-otp", { otp }),
 
-  logout: () => api.post("/super-admin/auth/logout"),
+  logout: () => api.post("/admin/auth/logout"),
 
   // Branches
-  getBranches: (params) => api.get("/super-admin/branches", { params }),
+  getBranches: (params) => api.get("/admin/branches", { params }),
 
-  createBranch: (data) => api.post("/super-admin/branches", data),
+  createBranch: (data) => api.post("/admin/branches", data),
 
-  updateBranch: (id, data) => api.put(`/super-admin/branches/${id}`, data),
+  updateBranch: (id, data) => api.put(`/admin/branches/${id}`, data),
 
-  deleteBranch: (id) => api.delete(`/super-admin/branches/${id}`),
+  deleteBranch: (id) => api.delete(`/admin/branches/${id}`),
 
   // Users
-  getAdmins: (params) => api.get("/super-admin/users/admins", { params }),
+  getAdmins: (params) => api.get("/admin/users/admins", { params }),
 
-  createAdmin: (data) => api.post("/super-admin/users/admins", data),
+  createAdmin: (data) => api.post("/admin/users/admins", data),
 };
 ```
 
