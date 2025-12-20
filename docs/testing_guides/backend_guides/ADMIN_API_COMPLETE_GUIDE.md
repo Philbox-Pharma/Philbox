@@ -3,7 +3,7 @@
 ## Base URL
 
 ```
-http://localhost:5000/api/super-admin
+http://localhost:5000/api/admin
 ```
 
 ## Authentication
@@ -202,7 +202,7 @@ All routes except login require session-based authentication. Include session co
 
 ### 2.1 Create Branch
 
-**Endpoint:** `POST /api/super-admin/branches`
+**Endpoint:** `POST /api/admin/branches`
 **Authentication:** Required
 **Permission:** `create_branches`
 
@@ -248,7 +248,7 @@ All routes except login require session-based authentication. Include session co
 
 ### 2.2 Get All Branches
 
-**Endpoint:** `GET /api/super-admin/branches`
+**Endpoint:** `GET /api/admin/branches`
 **Authentication:** Required
 **Permission:** `read_branches`
 
@@ -262,7 +262,7 @@ All routes except login require session-based authentication. Include session co
 **Example Request:**
 
 ```
-GET /api/super-admin/branches?page=1&limit=10&status=Active&search=karachi
+GET /api/admin/branches?page=1&limit=10&status=Active&search=karachi
 ```
 
 **Success Response:**
@@ -306,7 +306,7 @@ GET /api/super-admin/branches?page=1&limit=10&status=Active&search=karachi
 
 ### 2.3 Get Branch by ID
 
-**Endpoint:** `GET /api/super-admin/branches/:id`
+**Endpoint:** `GET /api/admin/branches/:id`
 **Authentication:** Required
 **Permission:** `read_branches`
 
@@ -356,7 +356,7 @@ GET /api/super-admin/branches?page=1&limit=10&status=Active&search=karachi
 
 ### 2.4 Update Branch
 
-**Endpoint:** `PUT /api/super-admin/branches/:id`
+**Endpoint:** `PUT /api/admin/branches/:id`
 **Authentication:** Required
 **Permission:** `update_branches`
 
@@ -390,7 +390,7 @@ GET /api/super-admin/branches?page=1&limit=10&status=Active&search=karachi
 
 ### 2.5 Toggle Branch Status
 
-**Endpoint:** `PATCH /api/super-admin/branches/:id/toggle-status`
+**Endpoint:** `PATCH /api/admin/branches/:id/toggle-status`
 **Authentication:** Required
 **Permission:** `update_branches`
 
@@ -411,7 +411,7 @@ GET /api/super-admin/branches?page=1&limit=10&status=Active&search=karachi
 
 ### 2.6 Assign Admins to Branch
 
-**Endpoint:** `PATCH /api/super-admin/branches/:id/assign-admins`
+**Endpoint:** `PATCH /api/admin/branches/:id/assign-admins`
 **Authentication:** Required
 **Permission:** `update_branches`
 
@@ -452,7 +452,7 @@ GET /api/super-admin/branches?page=1&limit=10&status=Active&search=karachi
 
 ### 2.7 Assign Salespersons to Branch
 
-**Endpoint:** `PATCH /api/super-admin/branches/:id/assign-salespersons`
+**Endpoint:** `PATCH /api/admin/branches/:id/assign-salespersons`
 **Authentication:** Required
 **Permission:** `update_branches`
 
@@ -488,7 +488,7 @@ GET /api/super-admin/branches?page=1&limit=10&status=Active&search=karachi
 
 ### 2.8 Delete Branch
 
-**Endpoint:** `DELETE /api/super-admin/branches/:id`
+**Endpoint:** `DELETE /api/admin/branches/:id`
 **Authentication:** Required
 **Permission:** `delete_branches`
 
@@ -505,7 +505,7 @@ GET /api/super-admin/branches?page=1&limit=10&status=Active&search=karachi
 
 ### 2.9 Get Branch Statistics
 
-**Endpoint:** `GET /api/super-admin/branches/statistics/all`
+**Endpoint:** `GET /api/admin/branches/statistics/all`
 **Authentication:** Required
 **Permission:** `read_branches`
 
@@ -527,7 +527,7 @@ GET /api/super-admin/branches?page=1&limit=10&status=Active&search=karachi
 
 ### 2.10 Get Branch Performance Metrics
 
-**Endpoint:** `GET /api/super-admin/branches/:id/performance`
+**Endpoint:** `GET /api/admin/branches/:id/performance`
 **Authentication:** Required
 **Permission:** `read_branches`
 
@@ -540,7 +540,7 @@ GET /api/super-admin/branches?page=1&limit=10&status=Active&search=karachi
 **Example Request:**
 
 ```
-GET /api/super-admin/branches/64xyz123.../performance?startDate=2025-11-01&endDate=2025-12-18
+GET /api/admin/branches/64xyz123.../performance?startDate=2025-11-01&endDate=2025-12-18
 ```
 
 **Success Response:**

@@ -3,7 +3,7 @@
 ## Base URL
 
 ```
-http://localhost:5000/api/super-admin
+http://localhost:5000/api/admin
 ```
 
 ## Authentication
@@ -19,7 +19,7 @@ All routes require:
 
 ### 1.1 Get All Roles
 
-**Endpoint:** `GET /api/super-admin/roles`
+**Endpoint:** `GET /api/admin/roles`
 **Authentication:** Required (Super Admin only)
 
 **Success Response:**
@@ -73,7 +73,7 @@ All routes require:
 
 ### 1.2 Get Role by ID
 
-**Endpoint:** `GET /api/super-admin/roles/:roleId`
+**Endpoint:** `GET /api/admin/roles/:roleId`
 **Authentication:** Required (Super Admin only)
 
 **Success Response:**
@@ -111,7 +111,7 @@ All routes require:
 
 ### 1.3 Update Role Permissions
 
-**Endpoint:** `PUT /api/super-admin/roles/:roleId`
+**Endpoint:** `PUT /api/admin/roles/:roleId`
 **Authentication:** Required (Super Admin only)
 
 **Request Body:**
@@ -154,7 +154,7 @@ All routes require:
 
 ### 1.4 Add Permission to Role
 
-**Endpoint:** `POST /api/super-admin/roles/:roleId/permissions`
+**Endpoint:** `POST /api/admin/roles/:roleId/permissions`
 **Authentication:** Required (Super Admin only)
 
 **Request Body:**
@@ -188,7 +188,7 @@ All routes require:
 
 ### 1.5 Remove Permission from Role
 
-**Endpoint:** `DELETE /api/super-admin/roles/:roleId/permissions`
+**Endpoint:** `DELETE /api/admin/roles/:roleId/permissions`
 **Authentication:** Required (Super Admin only)
 
 **Request Body:**
@@ -219,7 +219,7 @@ All routes require:
 
 ### 2.1 Get All Permissions
 
-**Endpoint:** `GET /api/super-admin/permissions`
+**Endpoint:** `GET /api/admin/permissions`
 **Authentication:** Required (Super Admin only)
 
 **Success Response:**
@@ -269,7 +269,7 @@ All routes require:
 
 ### 2.2 Create Permission
 
-**Endpoint:** `POST /api/super-admin/permissions`
+**Endpoint:** `POST /api/admin/permissions`
 **Authentication:** Required (Super Admin only)
 
 **Request Body:**
@@ -306,7 +306,7 @@ All routes require:
 
 ### 3.1 Assign Role to User
 
-**Endpoint:** `POST /api/super-admin/users/assign-role`
+**Endpoint:** `POST /api/admin/users/assign-role`
 **Authentication:** Required (Super Admin only)
 
 **Request Body:**
@@ -348,7 +348,7 @@ All routes require:
 
 ### 3.2 Get User Role and Permissions
 
-**Endpoint:** `GET /api/super-admin/user-role`
+**Endpoint:** `GET /api/admin/user-role`
 **Authentication:** Required (Super Admin only)
 
 **Query Parameters:**
@@ -359,7 +359,7 @@ All routes require:
 **Example Request:**
 
 ```
-GET /api/super-admin/user-role?userId=64user123...&userType=admin
+GET /api/admin/user-role?userId=64user123...&userType=admin
 ```
 
 **Success Response:**
@@ -454,7 +454,7 @@ When making API calls to protected endpoints, ensure the user has the required p
 
 ```javascript
 // This endpoint requires 'read_branches' permission
-GET /api/super-admin/branches
+GET / api / admin / branches;
 ```
 
 **If user lacks permission, response will be:**

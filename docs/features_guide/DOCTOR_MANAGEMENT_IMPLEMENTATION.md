@@ -49,11 +49,11 @@ December 19, 2025
 
 - **Path**: `server/src/modules/admin/features/doctor_management/routes/doctor.routes.js`
 - **New Endpoints**:
-  - `GET /api/super-admin/doctors` - List all doctors
-  - `GET /api/super-admin/doctors/:id` - Get doctor details
-  - `GET /api/super-admin/doctors/:id/metrics` - Get performance metrics
-  - `PUT /api/super-admin/doctors/:id` - Update doctor profile
-  - `PATCH /api/super-admin/doctors/:id/status` - Update account status
+  - `GET /api/admin/doctors` - List all doctors
+  - `GET /api/admin/doctors/:id` - Get doctor details
+  - `GET /api/admin/doctors/:id/metrics` - Get performance metrics
+  - `PUT /api/admin/doctors/:id` - Update doctor profile
+  - `PATCH /api/admin/doctors/:id/status` - Update account status
 
 #### Email Utility
 
@@ -73,7 +73,7 @@ December 19, 2025
 ### ✅ Acceptance Criteria Met
 
 1. **View list of all active doctors**
-   - ✅ Endpoint: `GET /api/super-admin/doctors`
+   - ✅ Endpoint: `GET /api/admin/doctors`
    - ✅ Supports pagination, search, and filtering
    - ✅ Sort by name, rating, fee, or creation date
 
@@ -83,17 +83,17 @@ December 19, 2025
    - ✅ Filter by account status
 
 3. **View doctor profile details**
-   - ✅ Endpoint: `GET /api/super-admin/doctors/:id`
+   - ✅ Endpoint: `GET /api/admin/doctors/:id`
    - ✅ Returns complete profile information
    - ✅ Includes performance metrics
 
 4. **Edit doctor profile (specialization, fee, etc.)**
-   - ✅ Endpoint: `PUT /api/super-admin/doctors/:id`
+   - ✅ Endpoint: `PUT /api/admin/doctors/:id`
    - ✅ Update: specialization, consultation_fee, consultation_type, affiliated_hospital, contactNumber
    - ✅ Validation via DTO
 
 5. **Suspend doctor account (prevents login and appointments)**
-   - ✅ Endpoint: `PATCH /api/super-admin/doctors/:id/status`
+   - ✅ Endpoint: `PATCH /api/admin/doctors/:id/status`
    - ✅ Status: `suspended/freezed`
    - ✅ Requires reason for suspension
    - ✅ Email notification sent
@@ -104,7 +104,7 @@ December 19, 2025
    - ✅ Optional reason field
 
 7. **View doctor performance metrics**
-   - ✅ Endpoint: `GET /api/super-admin/doctors/:id/metrics`
+   - ✅ Endpoint: `GET /api/admin/doctors/:id/metrics`
    - ✅ Returns: reviews, ratings, appointments (placeholder), consultations (placeholder)
    - ✅ Response rate and availability (placeholders for future)
 
@@ -112,13 +112,13 @@ December 19, 2025
 
 ## API Endpoints Summary
 
-| Method | Endpoint                               | Description                   | Auth Required |
-| ------ | -------------------------------------- | ----------------------------- | ------------- |
-| GET    | `/api/super-admin/doctors`             | List all doctors with filters | Yes           |
-| GET    | `/api/super-admin/doctors/:id`         | Get doctor details            | Yes           |
-| GET    | `/api/super-admin/doctors/:id/metrics` | Get performance metrics       | Yes           |
-| PUT    | `/api/super-admin/doctors/:id`         | Update doctor profile         | Yes           |
-| PATCH  | `/api/super-admin/doctors/:id/status`  | Update account status         | Yes           |
+| Method | Endpoint                         | Description                   | Auth Required |
+| ------ | -------------------------------- | ----------------------------- | ------------- |
+| GET    | `/api/admin/doctors`             | List all doctors with filters | Yes           |
+| GET    | `/api/admin/doctors/:id`         | Get doctor details            | Yes           |
+| GET    | `/api/admin/doctors/:id/metrics` | Get performance metrics       | Yes           |
+| PUT    | `/api/admin/doctors/:id`         | Update doctor profile         | Yes           |
+| PATCH  | `/api/admin/doctors/:id/status`  | Update account status         | Yes           |
 
 ---
 
@@ -127,19 +127,19 @@ December 19, 2025
 ### Example 1: Get All Active Doctors
 
 ```bash
-GET /api/super-admin/doctors?account_status=active&page=1&limit=10
+GET /api/admin/doctors?account_status=active&page=1&limit=10
 ```
 
 ### Example 2: Search Doctors by Specialization
 
 ```bash
-GET /api/super-admin/doctors?specialization=Cardiology&sortBy=averageRating&sortOrder=desc
+GET /api/admin/doctors?specialization=Cardiology&sortBy=averageRating&sortOrder=desc
 ```
 
 ### Example 3: Update Doctor Profile
 
 ```bash
-PUT /api/super-admin/doctors/{doctorId}
+PUT /api/admin/doctors/{doctorId}
 Content-Type: application/json
 
 {
@@ -151,7 +151,7 @@ Content-Type: application/json
 ### Example 4: Suspend Doctor Account
 
 ```bash
-PATCH /api/super-admin/doctors/{doctorId}/status
+PATCH /api/admin/doctors/{doctorId}/status
 Content-Type: application/json
 
 {
@@ -164,7 +164,7 @@ Content-Type: application/json
 ### Example 5: Activate Doctor Account
 
 ```bash
-PATCH /api/super-admin/doctors/{doctorId}/status
+PATCH /api/admin/doctors/{doctorId}/status
 Content-Type: application/json
 
 {

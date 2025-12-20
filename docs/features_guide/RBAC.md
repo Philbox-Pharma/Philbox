@@ -95,40 +95,40 @@ Permissions follow pattern: `{action}_{resource}`
 
 ## API Endpoints (Super Admin Only)
 
-All endpoints require authentication and super_admin role.
+All endpoints require authentication and admin role.
 
 ### Get All Roles
 
 ```bash
-GET /api/super_admin/permissions/roles
+GET /api/admin/permissions/roles
 Authorization: Bearer {token}
 ```
 
 ### Get Specific Role
 
 ```bash
-GET /api/super_admin/permissions/roles/{roleId}
+GET /api/admin/permissions/roles/{roleId}
 Authorization: Bearer {token}
 ```
 
 ### Get All Permissions
 
 ```bash
-GET /api/super_admin/permissions/permissions
+GET /api/admin/permissions/permissions
 Authorization: Bearer {token}
 ```
 
 ### Get User's Role & Permissions
 
 ```bash
-GET /api/super_admin/permissions/user-role?userId={userId}&userType=admin
+GET /api/admin/permissions/user-role?userId={userId}&userType=admin
 Authorization: Bearer {token}
 ```
 
 ### Assign Role to User
 
 ```bash
-POST /api/super_admin/permissions/users/assign-role
+POST /api/admin/permissions/users/assign-role
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -142,7 +142,7 @@ Content-Type: application/json
 ### Create New Permission
 
 ```bash
-POST /api/super_admin/permissions/permissions
+POST /api/admin/permissions/permissions
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -156,7 +156,7 @@ Content-Type: application/json
 ### Update Role Permissions (Bulk)
 
 ```bash
-PUT /api/super_admin/permissions/roles/{roleId}
+PUT /api/admin/permissions/roles/{roleId}
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -168,7 +168,7 @@ Content-Type: application/json
 ### Add Permission to Role
 
 ```bash
-POST /api/super_admin/permissions/roles/{roleId}/permissions
+POST /api/admin/permissions/roles/{roleId}/permissions
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -180,7 +180,7 @@ Content-Type: application/json
 ### Remove Permission from Role
 
 ```bash
-DELETE /api/super_admin/permissions/roles/{roleId}/permissions
+DELETE /api/admin/permissions/roles/{roleId}/permissions
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -435,7 +435,7 @@ router.get(
 ```javascript
 import { roleMiddleware } from "../../../../../middlewares/rbac.middleware.js";
 
-// All admin routes require super_admin role
+// All admin routes require admin role
 router.post(
   "/branch-admin",
   authenticate,
@@ -470,7 +470,7 @@ export const createBranch = async (req, res) => {
 ### Task: Assign Role to User
 
 ```bash
-curl -X POST http://localhost:5000/api/super_admin/permissions/users/assign-role \
+curl -X POST http://localhost:5000/api/admin/permissions/users/assign-role \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -484,7 +484,7 @@ curl -X POST http://localhost:5000/api/super_admin/permissions/users/assign-role
 
 ```bash
 # Step 1: Create permission
-curl -X POST http://localhost:5000/api/super_admin/permissions/permissions \
+curl -X POST http://localhost:5000/api/admin/permissions/permissions \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -494,7 +494,7 @@ curl -X POST http://localhost:5000/api/super_admin/permissions/permissions \
   }'
 
 # Step 2: Add to role (copy permission ID from response)
-curl -X POST http://localhost:5000/api/super_admin/permissions/roles/{roleId}/permissions \
+curl -X POST http://localhost:5000/api/admin/permissions/roles/{roleId}/permissions \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
   -d '{"permissionId": "permission_id"}'
@@ -503,7 +503,7 @@ curl -X POST http://localhost:5000/api/super_admin/permissions/roles/{roleId}/pe
 ### Task: Check User Permissions
 
 ```bash
-curl -X GET "http://localhost:5000/api/super_admin/permissions/user-role?userId={userId}&userType=admin" \
+curl -X GET "http://localhost:5000/api/admin/permissions/user-role?userId={userId}&userType=admin" \
   -H "Authorization: Bearer {token}"
 ```
 

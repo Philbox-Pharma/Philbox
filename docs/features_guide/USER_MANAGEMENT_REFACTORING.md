@@ -73,45 +73,45 @@ user_management/
 ### Admin Management
 
 ```
-POST   /api/super-admin/users/admin              → Create Admin
-GET    /api/super-admin/users/admin              → List Admins (with pagination)
-GET    /api/super-admin/users/admin/:id          → Get Admin Details
-GET    /api/super-admin/users/admin/search       → Search Admin
-PUT    /api/super-admin/users/admin/:id          → Update Admin
-DELETE /api/super-admin/users/admin/:id          → Delete Admin
+POST   /api/admin/users/admin              → Create Admin
+GET    /api/admin/users/admin              → List Admins (with pagination)
+GET    /api/admin/users/admin/:id          → Get Admin Details
+GET    /api/admin/users/admin/search       → Search Admin
+PUT    /api/admin/users/admin/:id          → Update Admin
+DELETE /api/admin/users/admin/:id          → Delete Admin
 ```
 
 ### Salesperson Management
 
 ```
-POST   /api/super-admin/users/salesperson              → Create Salesperson
-GET    /api/super-admin/users/salesperson              → List Salespersons (with pagination)
-GET    /api/super-admin/users/salesperson/:id          → Get Salesperson Details
-GET    /api/super-admin/users/salesperson/search       → Search Salesperson
-PUT    /api/super-admin/users/salesperson/:id          → Update Salesperson
-PATCH  /api/super-admin/users/salesperson/:id/status   → Change Salesperson Status
-DELETE /api/super-admin/users/salesperson/:id          → Delete Salesperson
-PUT    /api/super-admin/branch-admin/:id          → Update Branch Admin
-DELETE /api/super-admin/branch-admin/:id          → Delete Branch Admin
+POST   /api/admin/users/salesperson              → Create Salesperson
+GET    /api/admin/users/salesperson              → List Salespersons (with pagination)
+GET    /api/admin/users/salesperson/:id          → Get Salesperson Details
+GET    /api/admin/users/salesperson/search       → Search Salesperson
+PUT    /api/admin/users/salesperson/:id          → Update Salesperson
+PATCH  /api/admin/users/salesperson/:id/status   → Change Salesperson Status
+DELETE /api/admin/users/salesperson/:id          → Delete Salesperson
+PUT    /api/admin/branch-admin/:id          → Update Branch Admin
+DELETE /api/admin/branch-admin/:id          → Delete Branch Admin
 
-POST   /api/super-admin/salesperson               → Create Salesperson
-GET    /api/super-admin/salesperson               → List Salespersons
-GET    /api/super-admin/salesperson/:id           → Get Salesperson
-PUT    /api/super-admin/salesperson/:id           → Update Salesperson
-DELETE /api/super-admin/salesperson/:id           → Delete Salesperson
-PATCH  /api/super-admin/salesperson/:id/status    → Change Status
+POST   /api/admin/salesperson               → Create Salesperson
+GET    /api/admin/salesperson               → List Salespersons
+GET    /api/admin/salesperson/:id           → Get Salesperson
+PUT    /api/admin/salesperson/:id           → Update Salesperson
+DELETE /api/admin/salesperson/:id           → Delete Salesperson
+PATCH  /api/admin/salesperson/:id/status    → Change Status
 ```
 
 ### New Routes (Unified)
 
 ```
-POST   /api/super-admin/users/:userType                    → Create User
-GET    /api/super-admin/users/:userType                    → List Users
-GET    /api/super-admin/users/:userType/:id                → Get User
-GET    /api/super-admin/users/:userType/search             → Search User
-PUT    /api/super-admin/users/:userType/:id                → Update User
-DELETE /api/super-admin/users/:userType/:id                → Delete User
-PATCH  /api/super-admin/users/:userType/:id/status         → Change Status
+POST   /api/admin/users/:userType                    → Create User
+GET    /api/admin/users/:userType                    → List Users
+GET    /api/admin/users/:userType/:id                → Get User
+GET    /api/admin/users/:userType/search             → Search User
+PUT    /api/admin/users/:userType/:id                → Update User
+DELETE /api/admin/users/:userType/:id                → Delete User
+PATCH  /api/admin/users/:userType/:id/status         → Change Status
 ```
 
 **Where `userType` can be**: `admin`, `salesperson`, `customer`, or `doctor`
@@ -120,29 +120,29 @@ PATCH  /api/super-admin/users/:userType/:id/status         → Change Status
 
 ```
 # Create a new admin
-POST /api/super-admin/users/admin
+POST /api/admin/users/admin
 Body: { name, email, password, phone_number, branches_managed }
 
 # Create a new salesperson
-POST /api/super-admin/users/salesperson
+POST /api/admin/users/salesperson
 Body: { fullName, email, password, branches_to_be_managed }
 
 # List all salespersons
-GET /api/super-admin/users/salesperson?page=1&limit=10
+GET /api/admin/users/salesperson?page=1&limit=10
 
 # Get specific customer details
-GET /api/super-admin/users/customer/64abc123def456
+GET /api/admin/users/customer/64abc123def456
 
 # Update doctor
-PUT /api/super-admin/users/doctor/64abc123def456
+PUT /api/admin/users/doctor/64abc123def456
 Body: { name, email, phone_number }
 
 # Change salesperson status
-PATCH /api/super-admin/users/salesperson/64abc123def456/status
+PATCH /api/admin/users/salesperson/64abc123def456/status
 Body: { status: "suspended" }
 
 # Delete admin
-DELETE /api/super-admin/users/admin/64abc123def456
+DELETE /api/admin/users/admin/64abc123def456
 ```
 
 ## Service Layer Methods
@@ -197,7 +197,7 @@ DELETE /api/super-admin/users/admin/64abc123def456
 - **Admin users** automatically assigned `branch_admin` role
 - **Salesperson users** automatically assigned `salesperson` role
 - All endpoints require `super_admin` role and authentication
-- Roles carry specific permissions managed via `/api/super-admin/permissions`
+- Roles carry specific permissions managed via `/api/admin/permissions`
 
 ## Error Handling
 
