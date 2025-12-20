@@ -15,7 +15,7 @@ import adminBranchManagementRoutes from './modules/admin/features/branch_managem
 import permissionsManagementRoutes from './modules/admin/features/permissions_management/routes/permissions.routes.js';
 import adminDoctorManagementRoutes from './modules/admin/features/doctor_management/routes/doctor.routes.js';
 import adminCustomerManagementRoutes from './modules/admin/features/customer_management/routes/customer.routes.js';
-import appointmentAnalyticsRoutes from './modules/admin/features/appointment_analytics/routes/appointmentAnalytics.routes.js';
+import appointmentAnalyticsRoutes from './modules/admin/features/dashboard_management/appointment_analytics/routes/appointmentAnalytics.routes.js';
 
 import doctorAuthRoutes from './modules/doctor/features/auth/routes/auth.routes.js';
 import passport from './modules/doctor/features/auth/config/passport.js';
