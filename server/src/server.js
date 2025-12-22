@@ -19,6 +19,7 @@ import appointmentAnalyticsRoutes from './modules/admin/features/dashboard_manag
 import revenueAnalyticsRoutes from './modules/admin/features/dashboard_management/revenue_analytics/routes/revenueAnalytics.routes.js';
 import ordersAnalyticsRoutes from './modules/admin/features/dashboard_management/orders_analytics/routes/ordersAnalytics.routes.js';
 import userEngagementAnalyticsRoutes from './modules/admin/features/dashboard_management/user_engagement_analytics/routes/userEngagementAnalytics.routes.js';
+import feedbackComplaintsAnalyticsRoutes from './modules/admin/features/dashboard_management/feedback_complaints_analytics/routes/feedbackComplaintsAnalytics.routes.js';
 
 import doctorAuthRoutes from './modules/doctor/features/auth/routes/auth.routes.js';
 import passport from './modules/doctor/features/auth/config/passport.js';
@@ -87,6 +88,10 @@ app.use(`/api/${ROUTES.ADMIN}/orders-analytics`, ordersAnalyticsRoutes);
 app.use(
   `/api/${ROUTES.ADMIN}/user-engagement-analytics`,
   userEngagementAnalyticsRoutes
+);
+app.use(
+  `/api/${ROUTES.ADMIN}/feedback-complaints-analytics`,
+  feedbackComplaintsAnalyticsRoutes
 );
 
 app.use(`/api/${ROUTES.DOCTOR_AUTH}`, doctorAuthRoutes);
