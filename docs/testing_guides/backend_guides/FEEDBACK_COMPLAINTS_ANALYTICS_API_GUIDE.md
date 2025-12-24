@@ -72,7 +72,7 @@ curl -X GET "http://localhost:5000/api/admin/feedback-complaints-analytics/summa
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "statusCode": 200,
   "message": "Overall feedback and complaints summary retrieved successfully",
   "data": {
@@ -111,7 +111,7 @@ curl -X GET "http://localhost:5000/api/admin/feedback-complaints-analytics/senti
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "statusCode": 200,
   "message": "Review sentiment analysis retrieved successfully",
   "data": {
@@ -161,7 +161,7 @@ curl -X GET "http://localhost:5000/api/admin/feedback-complaints-analytics/resol
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "statusCode": 200,
   "message": "Complaint resolution time retrieved successfully",
   "data": {
@@ -197,7 +197,7 @@ curl -X GET "http://localhost:5000/api/admin/feedback-complaints-analytics/compl
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "statusCode": 200,
   "message": "Complaints by category retrieved successfully",
   "data": {
@@ -257,7 +257,7 @@ curl -X GET "http://localhost:5000/api/admin/feedback-complaints-analytics/feedb
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "statusCode": 200,
   "message": "Feedback by category retrieved successfully",
   "data": {
@@ -317,7 +317,7 @@ curl -X GET "http://localhost:5000/api/admin/feedback-complaints-analytics/resol
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "statusCode": 200,
   "message": "Complaint resolution status retrieved successfully",
   "data": {
@@ -373,7 +373,7 @@ curl -X GET "http://localhost:5000/api/admin/feedback-complaints-analytics/feedb
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "statusCode": 200,
   "message": "Feedback trends retrieved successfully",
   "data": {
@@ -429,7 +429,7 @@ curl -X GET "http://localhost:5000/api/admin/feedback-complaints-analytics/compl
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "statusCode": 200,
   "message": "Complaint trends retrieved successfully",
   "data": {
@@ -481,7 +481,7 @@ curl -X GET "http://localhost:5000/api/admin/feedback-complaints-analytics/expor
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "statusCode": 200,
   "message": "Report data exported successfully",
   "data": {
@@ -553,7 +553,7 @@ curl -X GET "http://localhost:5000/api/admin/feedback-complaints-analytics/expor
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "statusCode": 200,
   "message": "Description of the operation",
   "data": {
@@ -566,12 +566,9 @@ curl -X GET "http://localhost:5000/api/admin/feedback-complaints-analytics/expor
 
 ```json
 {
-  "success": false,
-  "statusCode": 400,
+  "status": 400,
   "message": "Error description",
-  "errors": [
-    /* Validation errors if applicable */
-  ]
+  "error": "Detailed error message"
 }
 ```
 
@@ -739,15 +736,8 @@ curl -X GET "http://localhost:5000/api/admin/feedback-complaints-analytics/expor
 
 ```json
 {
-  "success": false,
-  "statusCode": 400,
-  "message": "Validation failed",
-  "errors": [
-    {
-      "field": "endDate",
-      "message": "\"endDate\" must be greater than \"ref:startDate\""
-    }
-  ]
+  "status": 400,
+  "message": "\"endDate\" must be greater than \"ref:startDate\""
 }
 ```
 
