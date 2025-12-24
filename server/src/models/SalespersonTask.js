@@ -10,7 +10,7 @@ const salespersonTaskSchema = new mongoose.Schema(
     },
     assigned_by_role: {
       type: String,
-      enum: ['super_admin', 'branch_admin'],
+      enum: ['super-admin', 'branch-admin'],
       required: true,
     },
 
@@ -40,17 +40,18 @@ const salespersonTaskSchema = new mongoose.Schema(
     },
     priority: {
       type: String,
-      enum: ['low', 'medium', 'high'],
+      enum: ['low', 'medium', 'high', 'urgent'],
       default: 'medium',
     },
     deadline: {
       type: Date,
+      required: true,
     },
 
     // 5. Status tracking
     status: {
       type: String,
-      enum: ['pending', 'in_progress', 'completed', 'cancelled'],
+      enum: ['pending', 'in-progress', 'completed', 'cancelled'],
       default: 'pending',
     },
 

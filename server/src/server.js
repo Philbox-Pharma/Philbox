@@ -21,6 +21,8 @@ import ordersAnalyticsRoutes from './modules/admin/features/dashboard_management
 import userEngagementAnalyticsRoutes from './modules/admin/features/dashboard_management/user_engagement_analytics/routes/userEngagementAnalytics.routes.js';
 import feedbackComplaintsAnalyticsRoutes from './modules/admin/features/dashboard_management/feedback_complaints_analytics/routes/feedbackComplaintsAnalytics.routes.js';
 import activityLogsAnalyticsRoutes from './modules/admin/features/dashboard_management/activity_logs_analytics/routes/activityLogsAnalytics.routes.js';
+import salespersonTaskRoutes from './modules/admin/features/salesperson_task_management/routes/salespersonTask.routes.js';
+import salespersonPerformanceRoutes from './modules/admin/features/dashboard_management/salesperson_performance/routes/salespersonPerformance.routes.js';
 
 import doctorAuthRoutes from './modules/doctor/features/auth/routes/auth.routes.js';
 import passport from './modules/doctor/features/auth/config/passport.js';
@@ -97,6 +99,11 @@ app.use(
 app.use(
   `/api/${ROUTES.ADMIN}/activity-logs-analytics`,
   activityLogsAnalyticsRoutes
+);
+app.use(`/api/${ROUTES.ADMIN}/salesperson-tasks`, salespersonTaskRoutes);
+app.use(
+  `/api/${ROUTES.ADMIN}/salesperson-performance`,
+  salespersonPerformanceRoutes
 );
 
 app.use(`/api/${ROUTES.DOCTOR_AUTH}`, doctorAuthRoutes);
