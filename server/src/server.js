@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import express from 'express';
+import { createServer } from 'http';
 import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
@@ -7,6 +8,7 @@ import session from 'express-session';
 import MongoStore from 'connect-mongo';
 
 import connectDB from './config/db.config.js';
+import { initializeSocket } from './config/socket.config.js';
 import seedSuperAdmin from './modules/admin/features/auth/utils/seedSuperAdmin.js';
 
 import adminAuthRoutes from './modules/admin/features/auth/routes/auth.routes.js';
@@ -30,6 +32,7 @@ import passport from './modules/doctor/features/auth/config/passport.js';
 import customerAuthRoutes from './modules/customer/features/auth/routes/auth.routes.js';
 
 import salespersonAuthRoutes from './modules/salesperson/features/auth/routes/auth.routes.js';
+import salespersonTaskManagementRoutes from './modules/salesperson/features/task_management/routes/task.routes.js';
 
 import healthRouter from './shared/routes/health.route.js';
 
@@ -109,13 +112,24 @@ app.use(
 app.use(`/api/${ROUTES.DOCTOR_AUTH}`, doctorAuthRoutes);
 app.use(`/api/${ROUTES.CUSTOMER_AUTH}`, customerAuthRoutes);
 app.use(`/api/${ROUTES.SALESPERSON_AUTH}`, salespersonAuthRoutes);
+app.use(`/api/salesperson/tasks`, salespersonTaskManagementRoutes);
 
 const start_server = async () => {
   try {
     await connectDB(process.env.MONGO_URI);
     await seedSuperAdmin();
     const port = process.env.PORT || 5000;
-    app.listen(port, () => console.log(`Server running on the port ${port}`));
+
+    // Create HTTP server
+    const httpServer = createServer(app);
+
+    // Initialize Socket.IO
+    initializeSocket(httpServer);
+    console.log('✅ Socket.IO initialized');
+
+    httpServer.listen(port, () =>
+      console.log(`Server running on the port ${port}`)
+    );
   } catch (err) {
     console.error('Failed to start app:', err);
     process.exit(1);

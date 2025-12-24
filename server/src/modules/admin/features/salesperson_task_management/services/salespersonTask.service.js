@@ -2,6 +2,10 @@ import SalespersonTask from '../../../../../models/SalespersonTask.js';
 import Salesperson from '../../../../../models/Salesperson.js';
 import Branch from '../../../../../models/Branch.js';
 import { logAdminActivity } from '../../../utils/logAdminActivities.js';
+import {
+  emitToSalesperson,
+  emitToBranch,
+} from '../../../../../config/socket.config.js';
 
 class SalespersonTaskService {
   /**
@@ -76,6 +80,27 @@ class SalespersonTaskService {
         task._id,
         { task_details: { title, priority, deadline } }
       );
+
+      // Emit socket event to salesperson
+      emitToSalesperson(salesperson_id.toString(), 'task:created', {
+        taskId: task._id,
+        title: task.title,
+        priority: task.priority,
+        deadline: task.deadline,
+        assignedBy: {
+          _id: req.admin._id,
+          name: req.admin.name,
+          category: req.admin.category,
+        },
+        timestamp: new Date(),
+      });
+
+      // Emit to branch room
+      emitToBranch(branch_id.toString(), 'task:created', {
+        taskId: task._id,
+        salespersonId: salesperson_id,
+        branchId: branch_id,
+      });
 
       return task;
     } catch (error) {
@@ -258,6 +283,25 @@ class SalespersonTaskService {
         { changes: data }
       );
 
+      // Emit socket event to salesperson
+      emitToSalesperson(task.salesperson_id._id.toString(), 'task:updated', {
+        taskId: task._id,
+        title: task.title,
+        changes: data,
+        updatedBy: {
+          _id: req.admin._id,
+          name: req.admin.name,
+          category: req.admin.category,
+        },
+        timestamp: new Date(),
+      });
+
+      // Emit to branch room
+      emitToBranch(task.branch_id._id.toString(), 'task:updated', {
+        taskId: task._id,
+        salespersonId: task.salesperson_id._id,
+      });
+
       return task;
     } catch (error) {
       throw error;
@@ -315,6 +359,28 @@ class SalespersonTaskService {
         { update: updateData.message }
       );
 
+      // Emit socket event to salesperson
+      emitToSalesperson(
+        task.salesperson_id._id.toString(),
+        'task:comment_added',
+        {
+          taskId: task._id,
+          message: updateData.message,
+          addedBy: {
+            _id: req.admin._id,
+            name: req.admin.name,
+            category: req.admin.category,
+          },
+          timestamp: new Date(),
+        }
+      );
+
+      // Emit to branch room
+      emitToBranch(task.branch_id._id.toString(), 'task:comment_added', {
+        taskId: task._id,
+        addedBy: 'admin',
+      });
+
       return task;
     } catch (error) {
       throw error;
@@ -355,6 +421,23 @@ class SalespersonTaskService {
         'salesperson_tasks',
         taskId
       );
+
+      // Emit socket event to salesperson
+      emitToSalesperson(task.salesperson_id.toString(), 'task:deleted', {
+        taskId: task._id,
+        title: task.title,
+        deletedBy: {
+          _id: req.admin._id,
+          name: req.admin.name,
+          category: req.admin.category,
+        },
+        timestamp: new Date(),
+      });
+
+      // Emit to branch room
+      emitToBranch(task.branch_id._id.toString(), 'task:deleted', {
+        taskId: task._id,
+      });
 
       return { message: 'Task deleted successfully' };
     } catch (error) {
