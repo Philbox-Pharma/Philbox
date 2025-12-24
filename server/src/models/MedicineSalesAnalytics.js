@@ -37,7 +37,6 @@ const medicineSalesAnalyticsSchema = new mongoose.Schema(
 // Indexes for better query performance
 medicineSalesAnalyticsSchema.index({ date: -1 });
 medicineSalesAnalyticsSchema.index({ branch_id: 1, date: -1 });
-medicineSalesAnalyticsSchema.index({ medicine_id: 1 });
 
 const MedicineSalesAnalytics = mongoose.model(
   'MedicineSalesAnalytics',
