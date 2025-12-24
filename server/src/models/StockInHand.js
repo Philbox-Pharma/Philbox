@@ -18,9 +18,6 @@ const stockInHandSchema = new mongoose.Schema(
   }
 );
 
-// Index for better query performance
-stockInHandSchema.index({ medicine_id: 1 });
-
 const StockInHand = mongoose.model('StockInHand', stockInHandSchema);
 
 export default StockInHand;

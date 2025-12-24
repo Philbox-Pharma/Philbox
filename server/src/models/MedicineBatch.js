@@ -22,7 +22,6 @@ const medicineBatchSchema = new mongoose.Schema(
 );
 
 // Indexes for better query performance
-medicineBatchSchema.index({ medicine_id: 1 });
 medicineBatchSchema.index({ expiry: 1 });
 
 const MedicineBatch = mongoose.model('MedicineBatch', medicineBatchSchema);

@@ -58,12 +58,26 @@ class BranchService {
       throw new Error('BRANCH_NAME_REQUIRED');
     }
 
+    // Get all super-admins to auto-assign
+    const superAdmins = await Admin.find({ category: 'super-admin' }).select(
+      '_id'
+    );
+    const superAdminIds = superAdmins.map(admin => admin._id);
+
+    // Merge super-admins with provided admins (avoid duplicates)
+    const allAdminIds = [
+      ...new Set([
+        ...superAdminIds.map(id => id.toString()),
+        ...under_administration_of,
+      ]),
+    ];
+
     // Validate admins if provided
-    if (under_administration_of.length > 0) {
+    if (allAdminIds.length > 0) {
       const adminCount = await Admin.countDocuments({
-        _id: { $in: under_administration_of },
+        _id: { $in: allAdminIds },
       });
-      if (adminCount !== under_administration_of.length) {
+      if (adminCount !== allAdminIds.length) {
         throw new Error('INVALID_ADMIN_IDS');
       }
     }
@@ -96,7 +110,7 @@ class BranchService {
     const branch = new Branch({
       name,
       address_id,
-      under_administration_of,
+      under_administration_of: allAdminIds,
       salespersons_assigned,
       code,
     });
@@ -104,9 +118,9 @@ class BranchService {
     await branch.save();
 
     // Update admins' branches_managed field
-    if (under_administration_of.length > 0) {
+    if (allAdminIds.length > 0) {
       await Admin.updateMany(
-        { _id: { $in: under_administration_of } },
+        { _id: { $in: allAdminIds } },
         { $addToSet: { branches_managed: branch._id } }
       );
     }
@@ -131,8 +145,9 @@ class BranchService {
           branch_data: {
             name,
             code,
-            under_administration_of,
+            under_administration_of: allAdminIds,
             salespersons_assigned,
+            auto_assigned_super_admins: superAdminIds.length,
           },
         }
       );
