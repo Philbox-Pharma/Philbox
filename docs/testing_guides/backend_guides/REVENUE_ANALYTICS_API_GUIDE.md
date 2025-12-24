@@ -61,7 +61,7 @@ curl --location 'http://localhost:5000/api/admin/revenue-analytics/overview?star
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Dashboard overview fetched successfully",
   "data": {
     "trends": {
@@ -124,7 +124,7 @@ curl --location 'http://localhost:5000/api/admin/revenue-analytics/trends?period
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Revenue trends fetched successfully",
   "data": {
     "trends": [
@@ -179,7 +179,7 @@ curl --location 'http://localhost:5000/api/admin/revenue-analytics/split?startDa
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Revenue split fetched successfully",
   "data": {
     "appointment": {
@@ -231,7 +231,7 @@ curl --location 'http://localhost:5000/api/admin/revenue-analytics/top-branches?
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Top branches by revenue fetched successfully",
   "data": [
     {
@@ -256,7 +256,7 @@ curl --location 'http://localhost:5000/api/admin/revenue-analytics/top-branches?
 
 ```json
 {
-  "success": false,
+  "status": 403,
   "message": "Access denied. Super admin only."
 }
 ```
@@ -284,7 +284,7 @@ curl --location 'http://localhost:5000/api/admin/revenue-analytics/refunds' \
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Refund statistics fetched successfully",
   "data": {
     "appointment": {
@@ -326,7 +326,7 @@ curl --location 'http://localhost:5000/api/admin/revenue-analytics/average-per-c
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Average revenue per customer fetched successfully",
   "data": {
     "totalRevenue": 330000,
@@ -359,7 +359,7 @@ curl --location 'http://localhost:5000/api/admin/revenue-analytics/payment-metho
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Payment method breakdown fetched successfully",
   "data": {
     "Stripe-Card": {

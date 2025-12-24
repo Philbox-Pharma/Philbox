@@ -60,7 +60,7 @@ curl --location 'http://localhost:5000/api/admin/appointment-analytics/overview?
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Dashboard overview fetched successfully",
   "data": {
     "trends": {
@@ -123,7 +123,7 @@ curl --location 'http://localhost:5000/api/admin/appointment-analytics/trends?pe
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Appointment trends fetched successfully",
   "data": {
     "trends": [
@@ -211,7 +211,7 @@ curl --location 'http://localhost:5000/api/admin/appointment-analytics/completio
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Completion rate fetched successfully",
   "data": {
     "completed": 220,
@@ -258,7 +258,7 @@ curl --location 'http://localhost:5000/api/admin/appointment-analytics/top-docto
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Top doctors by appointments fetched successfully",
   "data": [
     {
@@ -300,7 +300,7 @@ curl --location 'http://localhost:5000/api/admin/appointment-analytics/top-docto
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Top doctors by revenue fetched successfully",
   "data": [
     {
@@ -352,7 +352,7 @@ curl --location 'http://localhost:5000/api/admin/appointment-analytics/appointme
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Appointment types distribution fetched successfully",
   "data": {
     "in-person": 145,
@@ -385,7 +385,7 @@ curl --location 'http://localhost:5000/api/admin/appointment-analytics/average-r
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Average revenue fetched successfully",
   "data": {
     "totalRevenue": 33000,
@@ -436,7 +436,7 @@ curl --location --request POST 'http://localhost:5000/api/admin/appointment-anal
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Data aggregated successfully",
   "data": {
     "date": "2025-01-15T00:00:00.000Z",
