@@ -51,7 +51,7 @@ Cookie: connect.sid=...
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Orders trends retrieved successfully",
   "data": {
     "trends": [
@@ -134,7 +134,7 @@ Cookie: connect.sid=...
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Order status breakdown retrieved successfully",
   "data": {
     "pending": 45,
@@ -216,7 +216,7 @@ Cookie: connect.sid=...
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Top selling medicines retrieved successfully",
   "data": [
     {
@@ -293,7 +293,7 @@ Cookie: connect.sid=...
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Stock alerts retrieved successfully",
   "data": {
     "lowStock": [
@@ -391,7 +391,7 @@ Cookie: connect.sid=...
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Revenue by medicine category retrieved successfully",
   "data": {
     "Narcotics": {
@@ -473,7 +473,7 @@ Cookie: connect.sid=...
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Order refund rate retrieved successfully",
   "data": {
     "totalOrders": 450,
@@ -540,7 +540,7 @@ Cookie: connect.sid=...
 
 ```json
 {
-  "success": true,
+  "status": 200,
   "message": "Dashboard overview retrieved successfully",
   "data": {
     "trends": {
@@ -618,9 +618,9 @@ All endpoints return consistent error responses:
 
 ```json
 {
-  "success": false,
+  "status": 500,
   "message": "Failed to retrieve orders trends",
-  "data": null
+  "error": "Detailed error message"
 }
 ```
 
