@@ -43,6 +43,7 @@ class BranchService {
 
     const {
       name,
+      phone = '',
       street = '',
       town = '',
       city = '',
@@ -109,6 +110,7 @@ class BranchService {
     // Create and save branch
     const branch = new Branch({
       name,
+      phone,
       address_id,
       under_administration_of: allAdminIds,
       salespersons_assigned,
@@ -144,6 +146,7 @@ class BranchService {
         {
           branch_data: {
             name,
+            phone,
             code,
             under_administration_of: allAdminIds,
             salespersons_assigned,
@@ -239,6 +242,7 @@ class BranchService {
   async updateBranch(branchId, updateData, req) {
     const {
       name,
+      phone,
       status,
       under_administration_of,
       salespersons_assigned,
@@ -259,6 +263,7 @@ class BranchService {
     // Store old values for logging
     const oldValues = {
       name: branch.name,
+      phone: branch.phone,
       status: branch.status,
       under_administration_of: branch.under_administration_of,
       salespersons_assigned: branch.salespersons_assigned,
@@ -377,6 +382,7 @@ class BranchService {
 
     // Update branch details
     if (name) branch.name = name;
+    if (phone !== undefined) branch.phone = phone;
     if (status) branch.status = status;
 
     await branch.save();
@@ -385,6 +391,7 @@ class BranchService {
     if (req) {
       const newValues = {
         name: branch.name,
+        phone: branch.phone,
         status: branch.status,
         under_administration_of: branch.under_administration_of,
         salespersons_assigned: branch.salespersons_assigned,
