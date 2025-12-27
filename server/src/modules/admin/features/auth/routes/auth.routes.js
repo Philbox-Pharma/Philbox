@@ -14,6 +14,7 @@ import {
   resetPassword,
   logout,
   update2FASettings,
+  getMe,
 } from '../controller/auth.controller.js';
 import { authRoutesLimiter } from '../../../../../utils/authRoutesLimiter.js';
 import { authenticate } from '../../../middleware/auth.middleware.js';
@@ -35,6 +36,9 @@ router.post(`/reset-password`, validate(resetPasswordDTO), resetPassword);
 
 // ✅ Logout
 router.post(`/logout`, authenticate, logout);
+
+// ✅ Get Current Admin (Session check)
+router.get(`/me`, authenticate, getMe);
 
 // ✅ Update 2FA Settings
 router.patch(
