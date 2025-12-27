@@ -19,6 +19,7 @@ import {
   logout,
   googleAuth, // <--- Add this
   googleAuthCallback, // <--- Add this
+  getMe,
 } from '../controllers/auth.controller.js';
 import { authRoutesLimiter } from '../../../../../utils/authRoutesLimiter.js';
 import { authenticate } from '../../../middleware/auth.middleware.js';
@@ -73,6 +74,9 @@ router.post(`/forget-password`, validate(forgetPasswordDTO), forgetPassword);
 
 // ✅ Reset Password
 router.post(`/reset-password`, validate(resetPasswordDTO), resetPassword);
+
+// ✅ Get Current Doctor (Session check)
+router.get(`/me`, authenticate, getMe);
 
 // ✅ Logout
 router.post(`/logout`, authenticate, logout);

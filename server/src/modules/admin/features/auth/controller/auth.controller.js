@@ -145,6 +145,11 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+// ------------------------- GET ME --------------------------
+export const getMe = async (req, res) => {
+  return sendResponse(res, 200, 'Current admin fetched', req.admin);
+};
+
 // ------------------------- UPDATE 2FA SETTINGS --------------------------
 export const update2FASettings = async (req, res) => {
   try {
