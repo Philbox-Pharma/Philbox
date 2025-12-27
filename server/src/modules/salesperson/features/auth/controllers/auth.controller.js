@@ -135,6 +135,11 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+// ------------------------- GET ME --------------------------
+export const getMe = async (req, res) => {
+  return sendResponse(res, 200, 'Current salesperson fetched', req.salesperson);
+};
+
 // ------------------------- LOGOUT --------------------------
 export const logout = async (req, res) => {
   try {

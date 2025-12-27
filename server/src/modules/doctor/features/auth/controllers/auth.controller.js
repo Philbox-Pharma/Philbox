@@ -75,6 +75,11 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+// ------------------------- GET ME --------------------------
+export const getMe = async (req, res) => {
+  return sendResponse(res, 200, 'Current doctor fetched', req.doctor);
+};
+
 // ------------------------- LOGOUT --------------------------
 export const logout = async (req, res) => {
   try {
