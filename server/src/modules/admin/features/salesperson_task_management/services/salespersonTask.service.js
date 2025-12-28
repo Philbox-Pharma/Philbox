@@ -68,7 +68,7 @@ class SalespersonTaskService {
       // Populate references
       await task.populate([
         { path: 'assigned_by_admin_id', select: 'name email category' },
-        { path: 'salesperson_id', select: 'fullName email phone' },
+        { path: 'salesperson_id', select: 'fullName email contactNumber' },
         { path: 'branch_id', select: 'name code' },
       ]);
 
@@ -160,7 +160,7 @@ class SalespersonTaskService {
       const [tasks, total] = await Promise.all([
         SalespersonTask.find(filter)
           .populate('assigned_by_admin_id', 'name email category')
-          .populate('salesperson_id', 'fullName email phone')
+          .populate('salesperson_id', 'fullName email contactNumber')
           .populate('branch_id', 'name code')
           .sort({ created_at: -1 })
           .skip(skip)
@@ -198,7 +198,7 @@ class SalespersonTaskService {
     try {
       const task = await SalespersonTask.findById(taskId)
         .populate('assigned_by_admin_id', 'name email category')
-        .populate('salesperson_id', 'fullName email phone branch_id')
+        .populate('salesperson_id', 'fullName email contactNumber branch_id')
         .populate('branch_id', 'name code under_administration_of')
         .lean();
 
@@ -270,7 +270,7 @@ class SalespersonTaskService {
       // Populate for response
       await task.populate([
         { path: 'assigned_by_admin_id', select: 'name email category' },
-        { path: 'salesperson_id', select: 'fullName email phone' },
+        { path: 'salesperson_id', select: 'fullName email contactNumber' },
         { path: 'branch_id', select: 'name code' },
       ]);
 
@@ -346,7 +346,7 @@ class SalespersonTaskService {
       // Populate for response
       await task.populate([
         { path: 'assigned_by_admin_id', select: 'name email category' },
-        { path: 'salesperson_id', select: 'fullName email phone' },
+        { path: 'salesperson_id', select: 'fullName email contactNumber' },
         { path: 'branch_id', select: 'name code' },
       ]);
 

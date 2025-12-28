@@ -20,6 +20,13 @@ export const initializeSocket = httpServer => {
   io.on('connection', socket => {
     console.log(`✅ Socket connected: ${socket.id}`);
 
+    // Generic join event (for test client)
+    socket.on('join', ({ room }) => {
+      socket.join(room);
+      console.log(`User joined room: ${room}`);
+      socket.emit('joined', { room, socketId: socket.id });
+    });
+
     // Join salesperson room
     socket.on('join:salesperson', salespersonId => {
       socket.join(`salesperson:${salespersonId}`);

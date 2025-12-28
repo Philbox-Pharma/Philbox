@@ -364,20 +364,21 @@
 ```json
 {
   "success": true,
-  "message": "Task statistics fetched successfully",
+  "message": "Task statistics retrieved successfully",
   "data": {
     "totalTasks": 25,
-    "completedTasks": 18,
-    "inProgressTasks": 5,
-    "pendingTasks": 2,
-    "completionRate": 72,
+    "overdueTasks": 1,
+    "byStatus": {
+      "pending": 2,
+      "in-progress": 5,
+      "completed": 18
+    },
     "byPriority": {
       "low": 5,
       "medium": 10,
       "high": 8,
       "urgent": 2
-    },
-    "overdueTasks": 1
+    }
   }
 }
 ```
@@ -408,7 +409,7 @@
       "deadline": "2025-12-30T23:59:59.999Z",
       "assigned_by_admin_id": {
         "_id": "64admin123...",
-        "fullName": "Admin Name",
+        "name": "Admin Name",
         "email": "admin@philbox.com",
         "category": "super-admin"
       },
@@ -476,7 +477,7 @@ _Valid status values: `pending`, `in-progress`, `completed`, `cancelled`_
       "deadline": "2025-12-30T23:59:59.999Z",
       "assigned_by_admin_id": {
         "_id": "64admin123...",
-        "fullName": "Admin Name",
+        "name": "Admin Name",
         "email": "admin@philbox.com",
         "category": "super-admin"
       },
