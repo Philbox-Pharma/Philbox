@@ -6,10 +6,10 @@
 
 Based on what you want to test, select from:
 
-- **Admin Operations** → `ADMIN_API_COMPLETE_GUIDE.md`
+- **Admin Operations** → `ADMIN_API_COMPLETE_GUIDE.md` (includes Socket.IO events)
 - **Customer Authentication** → `CUSTOMER_AUTH_API_GUIDE.md`
 - **Doctor Authentication** → `DOCTOR_AUTH_API_GUIDE.md`
-- **Salesperson Authentication** → `SALESPERSON_AUTH_API_GUIDE.md`
+- **Salesperson Operations** → `SALESPERSON_COMPLETE_API_GUIDE.md` (includes task management & Socket.IO events)
 
 ### Step 2: Open Postman
 
@@ -30,48 +30,157 @@ Based on what you want to test, select from:
 
 ## 🔗 Quick Endpoint Reference
 
-### Authentication Endpoints
+### Admin Authentication
 
 ```
-POST   /api/admin/auth/login
-POST   /api/admin/auth/verify-otp
-PATCH  /api/admin/auth/2fa-settings
-POST   /api/customer/auth/register
-POST   /api/customer/auth/login
-POST   /api/doctor/auth/register
-POST   /api/doctor/auth/login
-POST   /api/salesperson/auth/login
-POST   /api/salesperson/auth/verify-otp
+POST   /api/admin/auth/login                    # Login with email/password
+POST   /api/admin/auth/verify-otp               # Verify OTP (if 2FA enabled)
+POST   /api/admin/auth/forget-password          # Request password reset
+POST   /api/admin/auth/reset-password           # Reset password with token
+POST   /api/admin/auth/logout                   # Logout and destroy session
+PATCH  /api/admin/auth/2fa-settings             # Enable/disable 2FA
+GET    /api/admin/auth/me                       # Get current admin profile
 ```
 
-### User Management
+### Customer Authentication
 
 ```
-POST   /api/admin/users/admins                   # Create admin
-GET    /api/admin/users/admins                   # List admins
-GET    /api/admin/users/admins/:id               # Get admin
-POST   /api/admin/users/salespersons             # Create salesperson
-GET    /api/admin/users/salespersons             # List salespersons
+POST   /api/customer/auth/register              # Register new customer
+POST   /api/customer/auth/verify-email          # Verify email with token
+POST   /api/customer/auth/login                 # Login with email/password
+GET    /api/customer/auth/google                # Google OAuth login
+GET    /api/customer/auth/google/callback       # Google OAuth callback
+POST   /api/customer/auth/forget-password       # Request password reset
+POST   /api/customer/auth/reset-password        # Reset password with token
+POST   /api/customer/auth/logout                # Logout and destroy session
+GET    /api/customer/auth/me                    # Get current customer profile
+PUT    /api/customer/auth/profile               # Update customer profile
+```
+
+### Doctor Authentication & Onboarding
+
+```
+POST   /api/doctor/auth/register                # Register new doctor
+POST   /api/doctor/auth/verify-email            # Verify email with token
+POST   /api/doctor/auth/login                   # Login with email/password
+GET    /api/doctor/auth/google                  # Google OAuth login
+GET    /api/doctor/auth/google/callback         # Google OAuth callback
+POST   /api/doctor/auth/submit-application      # Submit documents for verification
+POST   /api/doctor/auth/complete-profile        # Complete profile after approval
+POST   /api/doctor/auth/forget-password         # Request password reset
+POST   /api/doctor/auth/reset-password          # Reset password with token
+POST   /api/doctor/auth/logout                  # Logout and destroy session
+GET    /api/doctor/auth/me                      # Get current doctor profile
+```
+
+### Salesperson Authentication
+
+```
+POST   /api/salesperson/auth/login              # Login with email/password
+POST   /api/salesperson/auth/verify-otp         # Verify OTP (if 2FA enabled)
+POST   /api/salesperson/auth/forget-password    # Request password reset
+POST   /api/salesperson/auth/reset-password     # Reset password with token
+POST   /api/salesperson/auth/logout             # Logout and destroy session
+PATCH  /api/salesperson/auth/2fa-settings       # Enable/disable 2FA
+GET    /api/salesperson/auth/me                 # Get current salesperson profile
+```
+
+### Salesperson Task Management
+
+```
+GET    /api/salesperson/tasks                   # Get my assigned tasks
+GET    /api/salesperson/tasks/statistics        # Get my task statistics
+GET    /api/salesperson/tasks/:id               # Get task details by ID
+PUT    /api/salesperson/tasks/:id/status        # Update task status
+POST   /api/salesperson/tasks/:id/updates       # Add comment to task
+```
+
+### Admin Task Management
+
+```
+POST   /api/admin/salesperson-tasks             # Create new task for salesperson
+GET    /api/admin/salesperson-tasks             # Get all tasks with filters
+GET    /api/admin/salesperson-tasks/statistics  # Get task statistics
+GET    /api/admin/salesperson-tasks/:id         # Get task details by ID
+PUT    /api/admin/salesperson-tasks/:id         # Update task details
+DELETE /api/admin/salesperson-tasks/:id         # Delete task
+POST   /api/admin/salesperson-tasks/:id/updates # Add comment to task
+```
+
+### Admin User Management
+
+```
+POST   /api/admin/users/admins                  # Create new admin
+GET    /api/admin/users/admins                  # List all admins with pagination
+GET    /api/admin/users/admins/:id              # Get admin details by ID
+PUT    /api/admin/users/admins/:id              # Update admin details
+DELETE /api/admin/users/admins/:id              # Delete admin
+PATCH  /api/admin/users/admins/:id/status       # Activate/suspend admin
+GET    /api/admin/users/admins/stats            # Get admin statistics
+POST   /api/admin/users/salespersons            # Create new salesperson
+GET    /api/admin/users/salespersons            # List all salespersons
+GET    /api/admin/users/salespersons/:id        # Get salesperson details by ID
+PUT    /api/admin/users/salespersons/:id        # Update salesperson details
+DELETE /api/admin/users/salespersons/:id        # Delete salesperson
+PATCH  /api/admin/users/salespersons/:id/status # Activate/suspend salesperson
+GET    /api/admin/users/salespersons/stats      # Get salesperson statistics
+GET    /api/admin/users/salesperson-tasks/performance # Salesperson task performance
+```
+
+### Admin Customer Management
+
+```
+GET    /api/admin/customers                     # List all customers with filters
+GET    /api/admin/customers/:id                 # Get customer details by ID
+PUT    /api/admin/customers/:id                 # Update customer details
+DELETE /api/admin/customers/:id                 # Delete customer
+PATCH  /api/admin/customers/:id/status          # Activate/suspend customer
+GET    /api/admin/customers/stats               # Get customer statistics
+```
+
+### Admin Doctor Management
+
+```
+GET    /api/admin/doctors/applications          # List doctor applications
+GET    /api/admin/doctors/applications/:id      # Get application details
+PATCH  /api/admin/doctors/applications/:id/approve # Approve doctor application
+PATCH  /api/admin/doctors/applications/:id/reject  # Reject doctor application
+GET    /api/admin/doctors                       # List all doctors
+GET    /api/admin/doctors/:id                   # Get doctor details by ID
+PUT    /api/admin/doctors/:id                   # Update doctor details
+DELETE /api/admin/doctors/:id                   # Delete doctor
+PATCH  /api/admin/doctors/:id/status            # Activate/suspend doctor
+GET    /api/admin/doctors/stats                 # Get doctor statistics
 ```
 
 ### Branch Management
 
 ```
-POST   /api/admin/branches                       # Create branch
-GET    /api/admin/branches                       # List branches
-GET    /api/admin/branches/:id                   # Get branch
-PUT    /api/admin/branches/:id                   # Update branch
-DELETE /api/admin/branches/:id                   # Delete branch
-GET    /api/admin/branches/:id/performance       # Branch metrics
+POST   /api/admin/branches                      # Create new branch
+GET    /api/admin/branches                      # List all branches with pagination
+GET    /api/admin/branches/:id                  # Get branch details by ID
+PUT    /api/admin/branches/:id                  # Update branch details
+DELETE /api/admin/branches/:id                  # Delete branch
+POST   /api/admin/branches/:id/assign-admin     # Assign admin to branch
+POST   /api/admin/branches/:id/assign-salesperson # Assign salesperson to branch
+DELETE /api/admin/branches/:id/remove-admin     # Remove admin from branch
+DELETE /api/admin/branches/:id/remove-salesperson # Remove salesperson from branch
+GET    /api/admin/branches/stats                # Get branch statistics
+GET    /api/admin/branches/:id/performance      # Get branch performance metrics
 ```
 
-### Permissions Management
+### Permissions & RBAC Management
 
 ```
-GET    /api/admin/roles                          # Get all roles
-GET    /api/admin/permissions                    # Get all permissions
-POST   /api/admin/permissions                    # Create permission
-PUT    /api/admin/roles/:roleId                  # Update role
+GET    /api/admin/roles                         # Get all roles
+GET    /api/admin/roles/:roleId                 # Get role details by ID
+PUT    /api/admin/roles/:roleId                 # Update role details
+POST   /api/admin/roles/:roleId/permissions     # Add permissions to role
+DELETE /api/admin/roles/:roleId/permissions     # Remove permissions from role
+GET    /api/admin/permissions                   # Get all permissions
+POST   /api/admin/permissions                   # Create new permission
+POST   /api/admin/users/assign-role             # Assign role to user
+GET    /api/admin/users/:userId/role            # Get user's role
 ```
 
 ---
@@ -349,26 +458,31 @@ Expected: 200 with branch list
 
 For complete details, refer to specific guides:
 
-- **README.md** - Complete API map and overview
-- **README_COMPLETE.md** - Complete API reference with frontend integration
-- **ADMIN_API_COMPLETE_GUIDE.md** - Admin authentication and branch management
-- **USER_MANAGEMENT_API_GUIDE.md** - User CRUD operations
-- **PERMISSIONS_RBAC_API_GUIDE.md** - RBAC system
-- **CUSTOMER_AUTH_API_GUIDE.md** - Customer authentication
-- **DOCTOR_AUTH_API_GUIDE.md** - Doctor onboarding and authentication
-- **SALESPERSON_AUTH_API_GUIDE.md** - Salesperson authentication with 2FA
+### Core API Guides
+
+- **README.md** - Complete API map and overview of all guides
+- **ADMIN_API_COMPLETE_GUIDE.md** - Admin auth, user management, branch management, permissions & RBAC, task management, Socket.IO events (49 endpoints)
+- **CUSTOMER_AUTH_API_GUIDE.md** - Customer registration, authentication, profile management (10 endpoints)
+- **DOCTOR_AUTH_API_GUIDE.md** - Doctor registration, onboarding, document submission, authentication (9 endpoints)
+- **SALESPERSON_COMPLETE_API_GUIDE.md** - Salesperson auth with 2FA, task management, Socket.IO events (12 endpoints)
+
+### Additional Resources
+
+- **IMPLEMENTATION_NEXT_STEPS.md** - Next steps for backend implementation and feature development
+- **Overview.txt** - High-level overview of backend architecture and features
+- **socket-test-client.html** - HTML test client for Socket.IO real-time events testing
 
 ---
 
 ## 💡 Pro Tips
 
-1. **Save your token** in Postman environment variable for reuse
-2. **Use Postman collections** provided in each guide
-3. **Test auth first** - get token before testing protected endpoints
+1. **Save your session** - In Postman, cookies are saved automatically for reuse
+2. **Use Postman collections** - Organize your tests by guide/feature
+3. **Test auth first** - Login and establish session before testing protected endpoints
 4. **Follow the order** - auth → create → read → update → delete
-5. **Check error cases** - test with invalid data
-6. **Monitor response times** - ensure they meet benchmarks
-7. **Save test results** - document what you tested and results
+5. **Check error cases** - Test with invalid data to verify validation
+6. **Monitor response times** - Ensure they meet benchmarks above
+7. **Save test results** - Document what you tested and results for regression testing
 
 ---
 
@@ -389,6 +503,23 @@ For complete details, refer to specific guides:
 🟢 **Green:** Testing complete, all tests pass
 🟡 **Yellow:** Testing in progress, some tests fail
 🔴 **Red:** Testing blocked, critical failure
+
+---
+
+## 📅 Version History
+
+**Version 2.1** (December 28, 2025)
+
+- ✅ Verified all request bodies against DTO validation schemas
+- ✅ Verified all response structures against mongoose models
+- ✅ Fixed service populate() bugs to match model field names
+- ✅ All guides now 100% accurate to actual codebase
+
+**Version 2.0** (December 18, 2025)
+
+- Initial comprehensive guide consolidation
+- Unified admin and salesperson guides
+- Removed redundant sections
 
 ---
 

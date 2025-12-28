@@ -358,7 +358,7 @@ class UserManagementService {
     const admin = await Admin.findById(adminId)
       .populate({
         path: 'branches_managed',
-        select: 'branch_name city code',
+        select: 'name city code',
       })
       .populate({ path: 'addresses' })
       .populate({ path: 'roleId', select: 'name description permissions' })
@@ -425,7 +425,7 @@ class UserManagementService {
 
     const admin = await Admin.findOne(query)
       .select('-password')
-      .populate('branches_managed', 'branch_name city')
+      .populate('branches_managed', 'name city')
       .populate('addresses');
 
     if (!admin) {
