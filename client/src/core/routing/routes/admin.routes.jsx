@@ -7,6 +7,7 @@ const ForgotPassword = lazy(() => import('../../../portals/admin/modules/forgot-
 const ResetPassword = lazy(() => import('../../../portals/admin/modules/reset-password/ResetPassword'));
 const AdminLayout = lazy(() => import('../../../portals/admin/layouts/AdminLayout'));
 const AdminDashboard = lazy(() => import('../../../portals/admin/modules/dashboard/AdminDashboard'));
+const AdminProfile = lazy(() => import('../../../portals/admin/modules/profile/AdminProfile'));
 
 // Branch Management
 const BranchList = lazy(() => import('../../../portals/admin/modules/branches/BranchList'));
@@ -17,9 +18,14 @@ const BranchStatistics = lazy(() => import('../../../portals/admin/modules/branc
 
 // Staff Management
 const AdminList = lazy(() => import('../../../portals/admin/modules/staff/admins/AdminList'));
+const AddAdmin = lazy(() => import('../../../portals/admin/modules/staff/admins/AddAdmin'));
+const AdminDetails = lazy(() => import('../../../portals/admin/modules/staff/admins/AdminDetails'));
+const EditAdmin = lazy(() => import('../../../portals/admin/modules/staff/admins/EditAdmin'));
+
 const SalespersonList = lazy(() => import('../../../portals/admin/modules/staff/salespersons/SalespersonList'));
 const AddSalesperson = lazy(() => import('../../../portals/admin/modules/staff/salespersons/AddSalesperson'));
 const EditSalesperson = lazy(() => import('../../../portals/admin/modules/staff/salespersons/EditSalesperson'));
+const SalespersonDetails = lazy(() => import('../../../portals/admin/modules/staff/salespersons/SalespersonDetails'));
 
 const adminRoutes = [
     // ---------------- PUBLIC ROUTES ----------------
@@ -47,9 +53,14 @@ const adminRoutes = [
         element: <AdminLayout />,
         children: [
             {
+    path: 'profile',
+    element: <AdminProfile />,
+},
+            {
                 path: 'dashboard',
                 element: <AdminDashboard />,
             },
+
 
             // --- Branch Management ---
             {
@@ -74,10 +85,23 @@ const adminRoutes = [
             },
 
             // --- Staff Management ---
-            {
-                path: 'staff/admins',
-                element: <AdminList />,
-            },
+// Staff - Admins
+{
+    path: 'staff/admins',
+    element: <AdminList />,
+},
+{
+    path: 'staff/admins/add',
+    element: <AddAdmin />,
+},
+{
+    path: 'staff/admins/:id',
+    element: <AdminDetails />,
+},
+{
+    path: 'staff/admins/:id/edit',
+    element: <EditAdmin />,
+},
             {
                 path: 'staff/salespersons',
                 element: <SalespersonList />,
@@ -90,6 +114,10 @@ const adminRoutes = [
                 path: 'staff/salespersons/:id/edit',
                 element: <EditSalesperson />,
             },
+            {
+    path: 'staff/salespersons/:id',
+    element: <SalespersonDetails />,
+},
         ],
     },
 ];

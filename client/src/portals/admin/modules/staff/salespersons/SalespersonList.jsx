@@ -1,92 +1,110 @@
 // src/portals/admin/modules/staff/salespersons/SalespersonList.jsx
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-    FaPlus,
-    FaSearch,
-    FaFilter,
-    FaUserTie,
-    FaEye,
-    FaEdit,
-    FaTrash,
-    FaToggleOn,
-    FaToggleOff,
-    FaDownload,
-    FaPhone
+    FaSearch, FaFilter, FaUserTie, FaPlus, FaEye, FaEdit,
+    FaTrash, FaDownload, FaSpinner, FaCheckCircle, FaBan,
+    FaPhone, FaEnvelope, FaMapMarkerAlt, FaCodeBranch, FaCalendar,
+    FaExclamationTriangle
 } from 'react-icons/fa';
 import DataTable from '../../../../../shared/components/DataTable/DataTable';
 import ConfirmModal from '../../../../../shared/components/Modal/ConfirmModal';
-import { staffApi, branchApi } from '../../../../../core/api/admin/adminApi';
+import { staffApi } from '../../../../../core/api/admin/adminApi';
 
 export default function SalespersonList() {
     const navigate = useNavigate();
-
+    const location = useLocation();
     const [salespersons, setSalespersons] = useState([]);
-    const [branches, setBranches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [usingMockData, setUsingMockData] = useState(false); // NEW: Track mock data
     const [pagination, setPagination] = useState(null);
+    const [successMessage, setSuccessMessage] = useState(location.state?.message || '');
 
     // Filters
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
-    const [branchFilter, setBranchFilter] = useState('');
     const [page, setPage] = useState(1);
     const [limit] = useState(10);
 
-    // Modals
-    const [deleteModal, setDeleteModal] = useState({ open: false, salesperson: null });
-    const [actionLoading, setActionLoading] = useState(false);
+    // Delete Modal
+    const [deleteModal, setDeleteModal] = useState(false);
+    const [selectedPerson, setSelectedPerson] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
+
+    // Clear success message after 5 seconds
+    useEffect(() => {
+        if (successMessage) {
+            const timer = setTimeout(() => setSuccessMessage(''), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [successMessage]);
+
+    // Clear location state
+    useEffect(() => {
+        if (location.state?.message) {
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
 
     // Fetch salespersons
     const fetchSalespersons = async () => {
         setLoading(true);
         setError(null);
+        setUsingMockData(false);
 
         try {
             const filters = {};
             if (search) filters.search = search;
             if (statusFilter) filters.status = statusFilter;
-            if (branchFilter) filters.branch_id = branchFilter;
 
             const response = await staffApi.getSalespersons(page, limit, filters);
-            setSalespersons(response.data?.salespersons || []);
-            setPagination(response.data?.pagination || null);
+
+            if (response.status === 200 || response.data) {
+                setSalespersons(response.data?.salespersons || []);
+                setPagination(response.data?.pagination || null);
+            } else {
+                throw new Error(response.message || 'Failed to fetch salespersons');
+            }
         } catch (err) {
             console.error('Failed to fetch salespersons:', err);
             setError(err.message || 'Failed to load salespersons');
+            setUsingMockData(true);
 
-            // Mock data
+            // Mock data - Only used when API fails
             setSalespersons([
                 {
                     _id: '1',
-                    fullName: 'Ali Hassan',
-                    email: 'ali@philbox.com',
-                    contactNumber: '+92-300-1234567',
-                    account_status: 'active',
-                    is_Verified: true,
-                    branch_id: { _id: '1', name: 'Lahore Branch' },
+                    fullName: 'Ali Raza',
+                    email: 'ali.raza@philbox.com',
+                    contactNumber: '+92-300-1111111',
+                    gender: 'Male',
+                    status: 'active',
+                    branches_to_be_managed: [{ _id: '1', name: 'Lahore Branch' }],
+                    address: { city: 'Lahore', province: 'Punjab' },
                     created_at: '2025-01-01'
                 },
                 {
                     _id: '2',
                     fullName: 'Fatima Khan',
-                    email: 'fatima@philbox.com',
-                    contactNumber: '+92-301-2345678',
-                    account_status: 'active',
-                    is_Verified: true,
-                    branch_id: { _id: '2', name: 'Karachi Branch' },
+                    email: 'fatima.khan@philbox.com',
+                    contactNumber: '+92-300-2222222',
+                    gender: 'Female',
+                    status: 'active',
+                    branches_to_be_managed: [{ _id: '2', name: 'Karachi Branch' }],
+                    address: { city: 'Karachi', province: 'Sindh' },
                     created_at: '2025-01-05'
                 },
                 {
                     _id: '3',
-                    fullName: 'Imran Ahmed',
-                    email: 'imran@philbox.com',
-                    contactNumber: '+92-302-3456789',
-                    account_status: 'inactive',
-                    is_Verified: false,
-                    branch_id: { _id: '1', name: 'Lahore Branch' },
+                    fullName: 'Hassan Ali',
+                    email: 'hassan.ali@philbox.com',
+                    contactNumber: '+92-300-3333333',
+                    gender: 'Male',
+                    status: 'suspended',
+                    branches_to_be_managed: [],
+                    address: { city: 'Islamabad', province: 'Islamabad' },
                     created_at: '2025-01-10'
                 },
             ]);
@@ -96,27 +114,9 @@ export default function SalespersonList() {
         }
     };
 
-    // Fetch branches for filter
-    const fetchBranches = async () => {
-        try {
-            const response = await branchApi.getAll(1, 100);
-            setBranches(response.data?.branches || []);
-        } catch (err) {
-            console.error('Failed to fetch branches:', err);
-            setBranches([
-                { _id: '1', name: 'Lahore Branch' },
-                { _id: '2', name: 'Karachi Branch' },
-            ]);
-        }
-    };
-
-    useEffect(() => {
-        fetchBranches();
-    }, []);
-
     useEffect(() => {
         fetchSalespersons();
-    }, [page, statusFilter, branchFilter]);
+    }, [page, statusFilter]);
 
     // Search debounce
     useEffect(() => {
@@ -130,21 +130,41 @@ export default function SalespersonList() {
         return () => clearTimeout(timer);
     }, [search]);
 
-    // Delete salesperson
-    const handleDelete = async () => {
-        if (!deleteModal.salesperson) return;
+    // Handle Delete
+    const handleDeleteClick = (person) => {
+        setSelectedPerson(person);
+        setDeleteModal(true);
+    };
 
-        setActionLoading(true);
+    const handleDeleteConfirm = async () => {
+        if (!selectedPerson) return;
+
+        setDeleteLoading(true);
         try {
-            await staffApi.deleteSalesperson(deleteModal.salesperson._id);
-            setDeleteModal({ open: false, salesperson: null });
-            fetchSalespersons();
+            const response = await staffApi.deleteSalesperson(selectedPerson._id);
+            if (response.status === 200 || response.data) {
+                setSuccessMessage('Salesperson deleted successfully!');
+                fetchSalespersons();
+            } else {
+                throw new Error(response.message);
+            }
         } catch (err) {
-            console.error('Delete failed:', err);
-            alert(err.message || 'Failed to delete salesperson');
+            setError(err.message || 'Failed to delete salesperson');
         } finally {
-            setActionLoading(false);
+            setDeleteLoading(false);
+            setDeleteModal(false);
+            setSelectedPerson(null);
         }
+    };
+
+    // Get status badge styles
+    const getStatusBadge = (status) => {
+        const styles = {
+            active: 'bg-green-100 text-green-700',
+            suspended: 'bg-yellow-100 text-yellow-700',
+            blocked: 'bg-red-100 text-red-700'
+        };
+        return styles[status] || 'bg-gray-100 text-gray-600';
     };
 
     // Table columns
@@ -155,8 +175,8 @@ export default function SalespersonList() {
             sortable: true,
             render: (value, row) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#d69e2e]/20 flex items-center justify-center">
-                        <FaUserTie className="text-[#d69e2e]" />
+                    <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                        <FaUserTie className="text-orange-600" />
                     </div>
                     <div>
                         <p className="font-medium text-gray-800">{value}</p>
@@ -168,32 +188,45 @@ export default function SalespersonList() {
         {
             key: 'contactNumber',
             label: 'Phone',
-            render: (value) => (
-                <div className="flex items-center gap-2 text-gray-600">
-                    <FaPhone className="text-xs" />
-                    {value || <span className="text-gray-400">Not set</span>}
-                </div>
-            )
+            render: (value) => value || <span className="text-gray-400">Not set</span>
         },
         {
-            key: 'branch_id',
+            key: 'branches_to_be_managed',
             label: 'Branch',
-            render: (value) => (
-                <span className="px-2 py-1 bg-gray-100 rounded text-sm text-gray-700">
-                    {value?.name || 'Unassigned'}
-                </span>
-            )
+            render: (value) => {
+                if (!value || value.length === 0) {
+                    return <span className="text-gray-400">Unassigned</span>;
+                }
+                return (
+                    <div className="flex flex-wrap gap-1">
+                        {value.slice(0, 2).map(branch => (
+                            <span key={branch._id} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">
+                                {branch.name}
+                            </span>
+                        ))}
+                        {value.length > 2 && (
+                            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                                +{value.length - 2} more
+                            </span>
+                        )}
+                    </div>
+                );
+            }
         },
         {
-            key: 'account_status',
+            key: 'address',
+            label: 'Location',
+            render: (value) => {
+                if (!value) return <span className="text-gray-400">-</span>;
+                return `${value.city || ''}, ${value.province || ''}`.replace(/^, |, $/g, '') || '-';
+            }
+        },
+        {
+            key: 'status',
             label: 'Status',
             render: (value) => (
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    value === 'active'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-600'
-                }`}>
-                    {value === 'active' ? 'Active' : 'Inactive'}
+                <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${getStatusBadge(value)}`}>
+                    {value}
                 </span>
             )
         },
@@ -209,30 +242,132 @@ export default function SalespersonList() {
         }
     ];
 
-    // Actions
+    // Desktop Actions
     const renderActions = (row) => (
-        <div className="flex items-center justify-end gap-2">
-            <button
-                onClick={() => navigate(`/admin/staff/salespersons/${row._id}`)}
+        <div className="flex items-center justify-end gap-1">
+            <Link
+                to={`/admin/staff/salespersons/${row._id}`}
                 className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                 title="View Details"
             >
                 <FaEye />
-            </button>
-            <button
-                onClick={() => navigate(`/admin/staff/salespersons/${row._id}/edit`)}
-                className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
+            </Link>
+            <Link
+                to={`/admin/staff/salespersons/${row._id}/edit`}
+                className="p-2 text-[#d69e2e] hover:bg-yellow-50 rounded-lg transition-colors"
                 title="Edit"
             >
                 <FaEdit />
-            </button>
+            </Link>
             <button
-                onClick={() => setDeleteModal({ open: true, salesperson: row })}
+                onClick={() => handleDeleteClick(row)}
                 className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                 title="Delete"
             >
                 <FaTrash />
             </button>
+        </div>
+    );
+
+    // Mobile Card Render
+    const mobileCardRender = (row, actions) => (
+        <div className="p-4">
+            {/* Header: Avatar + Name + Status */}
+            <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+                        <FaUserTie className="text-orange-600 text-xl" />
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-gray-800">{row.fullName}</h3>
+                        <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusBadge(row.status)}`}>
+                            {row.status}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Info Grid */}
+            <div className="space-y-2 text-sm">
+                {/* Email */}
+                <div className="flex items-center gap-2 text-gray-600">
+                    <FaEnvelope className="text-gray-400 w-4 flex-shrink-0" />
+                    <span className="truncate">{row.email}</span>
+                </div>
+
+                {/* Phone */}
+                {row.contactNumber && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                        <FaPhone className="text-gray-400 w-4 flex-shrink-0" />
+                        <span>{row.contactNumber}</span>
+                    </div>
+                )}
+
+                {/* Location */}
+                {row.address && (row.address.city || row.address.province) && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                        <FaMapMarkerAlt className="text-gray-400 w-4 flex-shrink-0" />
+                        <span>{`${row.address.city || ''}, ${row.address.province || ''}`.replace(/^, |, $/g, '')}</span>
+                    </div>
+                )}
+
+                {/* Branch */}
+                <div className="flex items-center gap-2 text-gray-600">
+                    <FaCodeBranch className="text-gray-400 w-4 flex-shrink-0" />
+                    {row.branches_to_be_managed && row.branches_to_be_managed.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                            {row.branches_to_be_managed.slice(0, 2).map(branch => (
+                                <span key={branch._id} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">
+                                    {branch.name}
+                                </span>
+                            ))}
+                            {row.branches_to_be_managed.length > 2 && (
+                                <span className="text-gray-500 text-xs">+{row.branches_to_be_managed.length - 2} more</span>
+                            )}
+                        </div>
+                    ) : (
+                        <span className="text-gray-400">Unassigned</span>
+                    )}
+                </div>
+
+                {/* Joined Date */}
+                <div className="flex items-center gap-2 text-gray-600">
+                    <FaCalendar className="text-gray-400 w-4 flex-shrink-0" />
+                    <span>Joined {new Date(row.created_at).toLocaleDateString('en-PK', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    })}</span>
+                </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-gray-100">
+                <Link
+                    to={`/admin/staff/salespersons/${row._id}`}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                >
+                    <FaEye className="text-xs" />
+                    <span>View</span>
+                </Link>
+                <Link
+                    to={`/admin/staff/salespersons/${row._id}/edit`}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#d69e2e] bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors"
+                >
+                    <FaEdit className="text-xs" />
+                    <span>Edit</span>
+                </Link>
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteClick(row);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                >
+                    <FaTrash className="text-xs" />
+                    <span>Delete</span>
+                </button>
+            </div>
         </div>
     );
 
@@ -242,20 +377,50 @@ export default function SalespersonList() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800">Salespersons</h1>
-                    <p className="text-gray-600 mt-1">Manage all salespersons</p>
+                    <p className="text-gray-600 mt-1">Manage all salesperson accounts</p>
                 </div>
                 <Link
                     to="/admin/staff/salespersons/add"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#1a365d] text-white rounded-lg hover:bg-[#2c5282] transition-colors shadow-lg"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#1a365d] text-white rounded-lg hover:bg-[#2c5282] transition-colors"
                 >
-                    <FaPlus />
-                    <span>Add Salesperson</span>
+                    <FaPlus /> Add Salesperson
                 </Link>
             </div>
 
+            {/* Success Message */}
+            {successMessage && (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-green-50 border border-green-200 rounded-xl p-4 text-green-700 flex items-center gap-2"
+                >
+                    <FaCheckCircle />
+                    {successMessage}
+                </motion.div>
+            )}
+
+            {/* Error/Warning Banner */}
+            {error && (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`rounded-xl p-4 flex items-center gap-2 ${
+                        usingMockData
+                            ? 'bg-yellow-50 border border-yellow-200 text-yellow-700'
+                            : 'bg-red-50 border border-red-200 text-red-700'
+                    }`}
+                >
+                    <FaExclamationTriangle />
+                    <span>
+                        {error}
+                        {usingMockData && ' - Showing demo data'}
+                    </span>
+                </motion.div>
+            )}
+
             {/* Filters */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4">
-                <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex flex-col sm:flex-row gap-3">
                     {/* Search */}
                     <div className="flex-1 relative">
                         <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -263,52 +428,63 @@ export default function SalespersonList() {
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Search by name, email or phone..."
+                            placeholder="Search by name or email..."
                             className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1a365d] focus:border-transparent"
                         />
                     </div>
 
-                    {/* Branch Filter */}
-                    <select
-                        value={branchFilter}
-                        onChange={(e) => setBranchFilter(e.target.value)}
-                        className="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1a365d] focus:border-transparent"
-                    >
-                        <option value="">All Branches</option>
-                        {branches.map(branch => (
-                            <option key={branch._id} value={branch._id}>
-                                {branch.name}
-                            </option>
-                        ))}
-                    </select>
-
                     {/* Status Filter */}
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1a365d] focus:border-transparent"
-                    >
-                        <option value="">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
+                    <div className="flex items-center gap-2">
+                        <FaFilter className="text-gray-400 hidden sm:block" />
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="w-full sm:w-auto px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1a365d] focus:border-transparent"
+                        >
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="suspended">Suspended</option>
+                            <option value="blocked">Blocked</option>
+                        </select>
+                    </div>
 
-                    {/* Export */}
-                    <button className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    {/* Export - Hidden on mobile */}
+                    <button className="hidden sm:inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                         <FaDownload />
                         <span>Export</span>
                     </button>
                 </div>
             </div>
 
-            {/* Error */}
-            {error && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
-                    {error} - Showing mock data
-                </div>
-            )}
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                <StatsCard
+                    icon={FaUserTie}
+                    label="Total"
+                    value={pagination?.total || salespersons.length}
+                    color="orange"
+                />
+                <StatsCard
+                    icon={FaCheckCircle}
+                    label="Active"
+                    value={salespersons.filter(s => s.status === 'active').length}
+                    color="green"
+                />
+                <StatsCard
+                    icon={FaBan}
+                    label="Suspended"
+                    value={salespersons.filter(s => s.status === 'suspended').length}
+                    color="yellow"
+                />
+                <StatsCard
+                    icon={FaBan}
+                    label="Blocked"
+                    value={salespersons.filter(s => s.status === 'blocked').length}
+                    color="red"
+                />
+            </div>
 
-            {/* Data Table */}
+            {/* Data Table with Mobile Cards */}
             <DataTable
                 columns={columns}
                 data={salespersons}
@@ -316,21 +492,53 @@ export default function SalespersonList() {
                 pagination={pagination}
                 onPageChange={setPage}
                 actions={renderActions}
-                emptyMessage="No salespersons found. Add your first salesperson!"
-                onRowClick={(row) => navigate(`/admin/staff/salespersons/${row._id}`)}
+                emptyMessage="No salespersons found."
+                mobileCardRender={mobileCardRender}
             />
 
             {/* Delete Modal */}
             <ConfirmModal
-                isOpen={deleteModal.open}
-                onClose={() => setDeleteModal({ open: false, salesperson: null })}
-                onConfirm={handleDelete}
+                isOpen={deleteModal}
+                onClose={() => {
+                    setDeleteModal(false);
+                    setSelectedPerson(null);
+                }}
+                onConfirm={handleDeleteConfirm}
                 title="Delete Salesperson"
-                message={`Are you sure you want to delete "${deleteModal.salesperson?.fullName}"? This action cannot be undone.`}
+                message={`Are you sure you want to delete "${selectedPerson?.fullName}"? This action cannot be undone.`}
                 confirmText="Delete"
                 type="danger"
-                loading={actionLoading}
+                loading={deleteLoading}
             />
         </div>
     );
 }
+
+// Stats Card Component
+const StatsCard = ({ icon: Icon, label, value, color }) => {
+    const colorMap = {
+        orange: { bg: 'bg-orange-100', text: 'text-orange-600' },
+        green: { bg: 'bg-green-100', text: 'text-green-600' },
+        yellow: { bg: 'bg-yellow-100', text: 'text-yellow-600' },
+        red: { bg: 'bg-red-100', text: 'text-red-600' }
+    };
+    const c = colorMap[color] || colorMap.orange;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-xl shadow-lg border border-gray-100 p-3 sm:p-4"
+        >
+            <div className="flex items-center gap-3 sm:gap-4">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${c.bg} flex items-center justify-center`}>
+                    <Icon className={`text-lg sm:text-xl ${c.text}`} />
+                </div>
+                <div>
+                    <p className="text-gray-500 text-xs sm:text-sm">{label}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-800">{value}</p>
+                </div>
+            </div>
+        </motion.div>
+    );
+};

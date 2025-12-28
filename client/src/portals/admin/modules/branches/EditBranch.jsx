@@ -89,19 +89,22 @@ export default function EditBranch() {
 
                 // 2. Fetch Staff Options
                 const adminsRes = await staffApi.getAdmins(1, 100);
-                if (adminsRes.success) {
-                    setAdminOptions(adminsRes.data?.admins?.map(a => ({
+                if (adminsRes.success || adminsRes.status === 200) {
+                    const admins = adminsRes.data?.admins || [];
+                    setAdminOptions(admins.map(a => ({
                         value: a._id,
                         label: `${a.fullName || a.name} (${a.email})`
-                    })) || []);
+                    })));
                 }
 
+                // Fetch Salespersons
                 const spRes = await staffApi.getSalespersons(1, 100);
-                if (spRes.success) {
-                    setSalespersonOptions(spRes.data?.salespersons?.map(s => ({
+                if (spRes.success || spRes.status === 200) {
+                    const salespersons = spRes.data?.salespersons || [];
+                    setSalespersonOptions(salespersons.map(s => ({
                         value: s._id,
                         label: `${s.fullName || s.name} (${s.email})`
-                    })) || []);
+                    })));
                 }
 
             } catch (err) {
