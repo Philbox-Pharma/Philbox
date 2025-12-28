@@ -27,19 +27,27 @@ import { upload } from '../../../../../middlewares/multer.middleware.js';
 import passport from '../config/passport.js';
 
 const router = express.Router();
-router.use(authRoutesLimiter);
 
-// ✅ 1. Registration (Basic Info: name, email, password, gender, DOB, contact)
-router.post(`/register`, validate(doctorRegisterDTO), register);
+// ✅ 1. Registration (rate limited)
+router.post(
+  `/register`,
+  authRoutesLimiter,
+  validate(doctorRegisterDTO),
+  register
+);
 
-// ✅ 2. Verify Email
-router.post(`/verify-email`, validate(verifyEmailDTO), verifyEmail);
+// ✅ 2. Verify Email (rate limited)
+router.post(
+  `/verify-email`,
+  authRoutesLimiter,
+  validate(verifyEmailDTO),
+  verifyEmail
+);
 
-// ✅ 3. Login
-router.post(`/login`, validate(loginDTO), login);
+// ✅ 3. Login (rate limited)
+router.post(`/login`, authRoutesLimiter, validate(loginDTO), login);
 
-// ✅ 4. Application Submission (Document Upload) - Step 1 of Onboarding
-// This submits documents for admin verification
+// ✅ 4. Application Submission (NOT rate limited - authenticated users only)
 router.post(
   `/submit-application`,
   authenticate,
@@ -53,15 +61,14 @@ router.post(
   submitApplication
 );
 
-// ✅ 5. Complete Profile (Education, Experience, Specialization) - Step 2 of Onboarding
-// This is done AFTER admin approves the documents
+// ✅ 5. Complete Profile (NOT rate limited - authenticated users only)
 router.post(
   `/complete-profile`,
   authenticate,
   validate(completeProfileDTO),
   upload.fields([
-    { name: 'education_files', maxCount: 5 }, // Multiple degree certificates
-    { name: 'experience_files', maxCount: 10 }, // Multiple institution images
+    { name: 'education_files', maxCount: 5 },
+    { name: 'experience_files', maxCount: 10 },
     { name: 'digital_signature', maxCount: 1 },
     { name: 'profile_img', maxCount: 1 },
     { name: 'cover_img', maxCount: 1 },
@@ -69,20 +76,30 @@ router.post(
   completeProfile
 );
 
-// ✅ Forget Password
-router.post(`/forget-password`, validate(forgetPasswordDTO), forgetPassword);
+// ✅ Forget Password (rate limited)
+router.post(
+  `/forget-password`,
+  authRoutesLimiter,
+  validate(forgetPasswordDTO),
+  forgetPassword
+);
 
-// ✅ Reset Password
-router.post(`/reset-password`, validate(resetPasswordDTO), resetPassword);
+// ✅ Reset Password (rate limited)
+router.post(
+  `/reset-password`,
+  authRoutesLimiter,
+  validate(resetPasswordDTO),
+  resetPassword
+);
 
-// ✅ Get Current Doctor (Session check)
+// ✅ Get Current Doctor (NOT rate limited)
 router.get(`/me`, authenticate, getMe);
 
-// ✅ Logout
+// ✅ Logout (NOT rate limited)
 router.post(`/logout`, authenticate, logout);
 
-// ✅ 4. Google OAuth
-router.get(`/google`, googleAuth);
+// ✅ Google OAuth (rate limited)
+router.get(`/google`, authRoutesLimiter, googleAuth);
 router.get(
   `/google/callback`,
   passport.authenticate('doctor-google', {
