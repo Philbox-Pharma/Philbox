@@ -7,12 +7,9 @@
 Based on what you want to test, select from:
 
 - **Admin Operations** → `ADMIN_API_COMPLETE_GUIDE.md`
-- **Create Admin/Salesperson** → `USER_MANAGEMENT_API_GUIDE.md`
-- **Manage Roles/Permissions** → `PERMISSIONS_RBAC_API_GUIDE.md`
 - **Customer Authentication** → `CUSTOMER_AUTH_API_GUIDE.md`
-- **Doctor Onboarding** → `DOCTOR_AUTH_API_GUIDE.md`
+- **Doctor Authentication** → `DOCTOR_AUTH_API_GUIDE.md`
 - **Salesperson Authentication** → `SALESPERSON_AUTH_API_GUIDE.md`
-- **Complete Reference** → `README_COMPLETE.md`
 
 ### Step 2: Open Postman
 
