@@ -129,6 +129,7 @@ export default function AdminList() {
 
   useEffect(() => {
     fetchAdmins();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, statusFilter]);
 
   // Search debounce
@@ -141,6 +142,7 @@ export default function AdminList() {
       }
     }, 500);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   // Helper: Get admin name (handles different field names)

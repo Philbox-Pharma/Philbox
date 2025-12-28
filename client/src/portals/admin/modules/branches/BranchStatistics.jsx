@@ -85,6 +85,7 @@ export default function BranchStatistics() {
   useEffect(() => {
     fetchBranchData();
     fetchRevenueData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchBranchData = async () => {

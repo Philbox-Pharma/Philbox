@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -582,7 +583,7 @@ export default function CustomerLanding() {
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1 }}
                   >
-                    <div className="w-6 h-6 rounded-full bg-[#4FA64F] flex items-center justify-center flex-shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-[#4FA64F] flex items-center justify-center shrink-0">
                       <FaCheck className="text-white text-xs" />
                     </div>
                     <span className="text-gray-700">{feature}</span>
@@ -653,7 +654,7 @@ export default function CustomerLanding() {
       {/* ============ FOR PATIENTS SECTION ============ */}
       <section
         id="for-patients"
-        className="py-24 bg-gradient-to-br from-gray-50 to-green-50 overflow-hidden"
+        className="py-24 bg-linear-to-br from-gray-50 to-green-50 overflow-hidden"
       >
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -723,7 +724,7 @@ export default function CustomerLanding() {
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1 }}
                   >
-                    <div className="w-6 h-6 rounded-full bg-[#4FA64F] flex items-center justify-center flex-shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-[#4FA64F] flex items-center justify-center shrink-0">
                       <FaCheck className="text-white text-xs" />
                     </div>
                     <span className="text-gray-700">{feature}</span>
@@ -783,7 +784,7 @@ export default function CustomerLanding() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -50 }}
                 transition={{ duration: 0.5 }}
-                className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-3xl p-8 md:p-12 shadow-xl border border-gray-100"
+                className="bg-linear-to-br from-gray-50 to-blue-50 rounded-3xl p-8 md:p-12 shadow-xl border border-gray-100"
               >
                 <FaQuoteLeft className="text-4xl text-[#003399]/20 mb-6" />
                 <p className="text-xl md:text-2xl text-gray-700 mb-8 leading-relaxed italic">
@@ -995,19 +996,19 @@ export default function CustomerLanding() {
               <h4 className="text-lg font-semibold mb-6">Contact Us</h4>
               <ul className="space-y-4">
                 <li className="flex items-center gap-3 text-gray-400">
-                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center shrink-0">
                     <FaPhone className="text-[#4FA64F]" />
                   </div>
                   <span>+92 300 1234567</span>
                 </li>
                 <li className="flex items-center gap-3 text-gray-400">
-                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center shrink-0">
                     <FaEnvelope className="text-[#4FA64F]" />
                   </div>
                   <span>support@philbox.com</span>
                 </li>
                 <li className="flex items-center gap-3 text-gray-400">
-                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center shrink-0">
                     <FaMapMarkerAlt className="text-[#4FA64F]" />
                   </div>
                   <span>Lahore, Pakistan</span>

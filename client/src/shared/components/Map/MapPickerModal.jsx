@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 // src/shared/components/Map/MapPickerModal.jsx
 import { useEffect, useState, useCallback } from 'react';
 import { motion as _motion, AnimatePresence } from 'framer-motion';
@@ -127,7 +128,7 @@ export default function MapPickerModal({
             className="relative bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[85vh]"
           >
             {/* Header */}
-            <div className="px-6 py-4 bg-[#1a365d] text-white flex justify-between items-center flex-shrink-0">
+            <div className="px-6 py-4 bg-[#1a365d] text-white flex justify-between items-center shrink-0">
               <h3 className="font-semibold text-lg flex items-center gap-2">
                 <FaMapMarkerAlt /> Select Location
               </h3>
@@ -140,7 +141,7 @@ export default function MapPickerModal({
             </div>
 
             {/* Search */}
-            <div className="p-4 border-b relative z-[500] bg-white flex-shrink-0">
+            <div className="p-4 border-b relative z-500 bg-white shrink-0">
               <div className="relative">
                 <FaSearch className="absolute left-4 top-3.5 text-gray-400" />
                 <input
@@ -160,7 +161,7 @@ export default function MapPickerModal({
                 )}
 
                 {showSuggestions && suggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 max-h-60 overflow-y-auto z-[600]">
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 max-h-60 overflow-y-auto z-600">
                     {' '}
                     {suggestions.map((s, i) => (
                       <div
@@ -204,7 +205,7 @@ export default function MapPickerModal({
               </MapContainer>
 
               {/* Bottom Confirm Panel */}
-              <div className="absolute bottom-6 left-6 right-6 z-[1000]">
+              <div className="absolute bottom-6 left-6 right-6 z-1000">
                 <div className="bg-white p-4 rounded-xl shadow-lg border flex flex-col sm:flex-row justify-between items-center gap-4">
                   <div className="text-sm text-gray-600">
                     <span className="font-bold block text-xs text-gray-400 uppercase">

@@ -52,6 +52,7 @@ export default function EditSalesperson() {
   // Fetch salesperson and branches
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchData = async () => {

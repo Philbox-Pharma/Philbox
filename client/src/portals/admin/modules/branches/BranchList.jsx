@@ -87,6 +87,7 @@ export default function BranchList() {
 
   useEffect(() => {
     fetchBranches();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, statusFilter]);
 
   useEffect(() => {
@@ -95,6 +96,7 @@ export default function BranchList() {
       else setPage(1);
     }, 500);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   // Toggle Status
@@ -207,7 +209,7 @@ export default function BranchList() {
             className="flex items-center gap-2 text-gray-600 max-w-xs"
             title={fullAddress}
           >
-            <FaMapMarkerAlt className="text-xs text-gray-400 flex-shrink-0" />
+            <FaMapMarkerAlt className="text-xs text-gray-400 shrink-0" />
             <span className="truncate">{fullAddress}</span>
           </div>
         );

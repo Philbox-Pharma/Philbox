@@ -67,6 +67,7 @@ export default function SalespersonDetails() {
   useEffect(() => {
     fetchSalespersonDetails();
     fetchTaskPerformance();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchSalespersonDetails = async () => {
@@ -303,13 +304,13 @@ export default function SalespersonDetails() {
             <>
               <button
                 onClick={() => openStatusModal('suspended')}
-                className="flex-shrink-0 px-3 py-2 bg-yellow-100 text-yellow-700 rounded-lg flex items-center gap-2 hover:bg-yellow-200 text-sm"
+                className="shrink-0 px-3 py-2 bg-yellow-100 text-yellow-700 rounded-lg flex items-center gap-2 hover:bg-yellow-200 text-sm"
               >
                 <FaToggleOff /> Suspend
               </button>
               <button
                 onClick={() => openStatusModal('blocked')}
-                className="flex-shrink-0 px-3 py-2 bg-red-100 text-red-700 rounded-lg flex items-center gap-2 hover:bg-red-200 text-sm"
+                className="shrink-0 px-3 py-2 bg-red-100 text-red-700 rounded-lg flex items-center gap-2 hover:bg-red-200 text-sm"
               >
                 <FaBan /> Block
               </button>
@@ -319,13 +320,13 @@ export default function SalespersonDetails() {
             <>
               <button
                 onClick={() => openStatusModal('active')}
-                className="flex-shrink-0 px-3 py-2 bg-green-100 text-green-700 rounded-lg flex items-center gap-2 hover:bg-green-200 text-sm"
+                className="shrink-0 px-3 py-2 bg-green-100 text-green-700 rounded-lg flex items-center gap-2 hover:bg-green-200 text-sm"
               >
                 <FaToggleOn /> Activate
               </button>
               <button
                 onClick={() => openStatusModal('blocked')}
-                className="flex-shrink-0 px-3 py-2 bg-red-100 text-red-700 rounded-lg flex items-center gap-2 hover:bg-red-200 text-sm"
+                className="shrink-0 px-3 py-2 bg-red-100 text-red-700 rounded-lg flex items-center gap-2 hover:bg-red-200 text-sm"
               >
                 <FaBan /> Block
               </button>
@@ -334,7 +335,7 @@ export default function SalespersonDetails() {
           {person?.status === 'blocked' && (
             <button
               onClick={() => openStatusModal('active')}
-              className="flex-shrink-0 px-3 py-2 bg-green-100 text-green-700 rounded-lg flex items-center gap-2 hover:bg-green-200 text-sm"
+              className="shrink-0 px-3 py-2 bg-green-100 text-green-700 rounded-lg flex items-center gap-2 hover:bg-green-200 text-sm"
             >
               <FaToggleOn /> Activate
             </button>
@@ -342,13 +343,13 @@ export default function SalespersonDetails() {
 
           <button
             onClick={() => navigate(`/admin/staff/salespersons/${id}/edit`)}
-            className="flex-shrink-0 px-3 py-2 bg-[#d69e2e] text-white rounded-lg flex items-center gap-2 hover:bg-[#b8860b] text-sm"
+            className="shrink-0 px-3 py-2 bg-[#d69e2e] text-white rounded-lg flex items-center gap-2 hover:bg-[#b8860b] text-sm"
           >
             <FaEdit /> Edit
           </button>
           <button
             onClick={() => setDeleteModal(true)}
-            className="flex-shrink-0 px-3 py-2 bg-red-600 text-white rounded-lg flex items-center gap-2 hover:bg-red-700 text-sm"
+            className="shrink-0 px-3 py-2 bg-red-600 text-white rounded-lg flex items-center gap-2 hover:bg-red-700 text-sm"
           >
             <FaTrash /> Delete
           </button>
@@ -362,7 +363,7 @@ export default function SalespersonDetails() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-green-50 border border-green-200 rounded-xl p-4 text-green-700 flex items-center gap-2"
         >
-          <FaCheckCircle className="flex-shrink-0" />
+          <FaCheckCircle className="shrink-0" />
           <span>{successMessage}</span>
         </motion.div>
       )}
@@ -374,7 +375,7 @@ export default function SalespersonDetails() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-yellow-700 flex items-center gap-2"
         >
-          <FaExclamationTriangle className="flex-shrink-0" />
+          <FaExclamationTriangle className="shrink-0" />
           <span>{error} - Showing demo data</span>
         </motion.div>
       )}
@@ -382,7 +383,7 @@ export default function SalespersonDetails() {
       {/* Profile Card */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
         {/* Header Banner */}
-        <div className="h-5=10 sm:h-13 bg-gradient-to-r from-orange-500 to-orange-600 relative">
+        <div className="h-5=10 sm:h-13 bg-linear-to-r from-orange-500 to-orange-600 relative">
           <div className="absolute top-3 right-3">
             <span
               className={`px-3 py-1 rounded-full text-xs font-bold uppercase shadow-sm ${getStatusBadge(person?.status)}`}
@@ -397,7 +398,7 @@ export default function SalespersonDetails() {
           {/* Avatar + Name Section - Fixed overlap */}
           <div className="flex items-end sm:items-center gap-4 -mt-0.1">
             {/* Avatar */}
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-orange-100 border-4 border-white shadow-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-orange-100 border-4 border-white shadow-lg flex items-center justify-center shrink-0">
               <FaUserTie className="text-2xl sm:text-3xl text-orange-600" />
             </div>
 
@@ -474,7 +475,7 @@ export default function SalespersonDetails() {
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-lg bg-[#1a365d]/10 flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-[#1a365d]/10 flex items-center justify-center shrink-0">
                       <FaCodeBranch className="text-[#1a365d]" />
                     </div>
                     <div className="min-w-0">
@@ -485,7 +486,7 @@ export default function SalespersonDetails() {
                     </div>
                   </div>
                   <span
-                    className={`flex-shrink-0 px-2 py-1 rounded text-xs font-medium ${
+                    className={`shrink-0 px-2 py-1 rounded text-xs font-medium ${
                       branch.status === 'Active'
                         ? 'bg-green-100 text-green-700'
                         : 'bg-gray-100 text-gray-600'
@@ -606,7 +607,7 @@ export default function SalespersonDetails() {
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                    className={`w-2 h-2 rounded-full shrink-0 ${
                       task.priority === 'high'
                         ? 'bg-red-500'
                         : task.priority === 'medium'
@@ -645,7 +646,7 @@ export default function SalespersonDetails() {
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
                     <div
-                      className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      className={`w-2 h-2 rounded-full shrink-0 ${
                         task.priority === 'high'
                           ? 'bg-red-500'
                           : task.priority === 'medium'
@@ -726,7 +727,7 @@ const InfoCard = ({ icon, label, value, valueClass = '', className = '' }) => {
   const Icon = icon;
   return (
     <div className={`flex items-center gap-3 ${className}`}>
-      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 flex-shrink-0">
+      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 shrink-0">
         <Icon />
       </div>
       <div className="min-w-0 flex-1">

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 // src/portals/admin/modules/staff/salespersons/SalespersonList.jsx
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -326,14 +327,14 @@ export default function SalespersonList() {
       <div className="space-y-2 text-sm">
         {/* Email */}
         <div className="flex items-center gap-2 text-gray-600">
-          <FaEnvelope className="text-gray-400 w-4 flex-shrink-0" />
+          <FaEnvelope className="text-gray-400 w-4 shrink-0" />
           <span className="truncate">{row.email}</span>
         </div>
 
         {/* Phone */}
         {row.contactNumber && (
           <div className="flex items-center gap-2 text-gray-600">
-            <FaPhone className="text-gray-400 w-4 flex-shrink-0" />
+            <FaPhone className="text-gray-400 w-4 shrink-0" />
             <span>{row.contactNumber}</span>
           </div>
         )}
@@ -341,7 +342,7 @@ export default function SalespersonList() {
         {/* Location */}
         {row.address && (row.address.city || row.address.province) && (
           <div className="flex items-center gap-2 text-gray-600">
-            <FaMapMarkerAlt className="text-gray-400 w-4 flex-shrink-0" />
+            <FaMapMarkerAlt className="text-gray-400 w-4 shrink-0" />
             <span>
               {`${row.address.city || ''}, ${row.address.province || ''}`.replace(
                 /^, |, $/g,
@@ -353,7 +354,7 @@ export default function SalespersonList() {
 
         {/* Branch */}
         <div className="flex items-center gap-2 text-gray-600">
-          <FaCodeBranch className="text-gray-400 w-4 flex-shrink-0" />
+          <FaCodeBranch className="text-gray-400 w-4 shrink-0" />
           {row.branches_to_be_managed &&
           row.branches_to_be_managed.length > 0 ? (
             <div className="flex flex-wrap gap-1">
@@ -378,7 +379,7 @@ export default function SalespersonList() {
 
         {/* Joined Date */}
         <div className="flex items-center gap-2 text-gray-600">
-          <FaCalendar className="text-gray-400 w-4 flex-shrink-0" />
+          <FaCalendar className="text-gray-400 w-4 shrink-0" />
           <span>
             Joined{' '}
             {new Date(row.created_at).toLocaleDateString('en-PK', {
