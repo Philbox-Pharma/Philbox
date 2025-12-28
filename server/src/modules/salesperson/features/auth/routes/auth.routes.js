@@ -20,27 +20,41 @@ import { authRoutesLimiter } from '../../../../../utils/authRoutesLimiter.js';
 import { authenticate } from '../../../middleware/auth.middleware.js'; // Ensure this middleware checks req.session.role === 'salesperson'
 
 const router = express.Router();
-router.use(authRoutesLimiter);
 
-// ✅ Login
-router.post(`/login`, validate(loginDTO), login);
+// ✅ Login (rate limited)
+router.post(`/login`, authRoutesLimiter, validate(loginDTO), login);
 
-// ✅ Verify OTP (for 2FA)
-router.post(`/verify-otp`, validate(verifyOTPDTO), verifyOTP);
+// ✅ Verify OTP (rate limited)
+router.post(
+  `/verify-otp`,
+  authRoutesLimiter,
+  validate(verifyOTPDTO),
+  verifyOTP
+);
 
-// ✅ Forget Password
-router.post(`/forget-password`, validate(forgetPasswordDTO), forgetPassword);
+// ✅ Forget Password (rate limited)
+router.post(
+  `/forget-password`,
+  authRoutesLimiter,
+  validate(forgetPasswordDTO),
+  forgetPassword
+);
 
-// ✅ Reset Password
-router.post(`/reset-password`, validate(resetPasswordDTO), resetPassword);
+// ✅ Reset Password (rate limited)
+router.post(
+  `/reset-password`,
+  authRoutesLimiter,
+  validate(resetPasswordDTO),
+  resetPassword
+);
 
-// ✅ Logout
+// ✅ Logout (NOT rate limited)
 router.post(`/logout`, authenticate, logout);
 
-// ✅ Get Current Salesperson (Session check)
+// ✅ Get Current Salesperson (NOT rate limited)
 router.get(`/me`, authenticate, getMe);
 
-// ✅ Update 2FA Settings
+// ✅ Update 2FA Settings (NOT rate limited)
 router.patch(
   `/2fa-settings`,
   authenticate,
