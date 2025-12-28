@@ -1,7 +1,6 @@
 import express from 'express';
 import { validate } from '../../../../../validator/joiValidate.middleware.js';
 
-
 import {
   loginDTO,
   verifyOtpDTO,
@@ -22,27 +21,41 @@ import { authRoutesLimiter } from '../../../../../utils/authRoutesLimiter.js';
 import { authenticate } from '../../../middleware/auth.middleware.js';
 
 const router = express.Router();
-router.use(authRoutesLimiter);
 
-// ✅ Login
-router.post(`/login`, validate(loginDTO), login);
+// ✅ Login (rate limited)
+router.post(`/login`, authRoutesLimiter, validate(loginDTO), login);
 
-// ✅ Verify OTP
-router.post(`/verify-otp`, validate(verifyOtpDTO), verifyOTP);
+// ✅ Verify OTP (rate limited)
+router.post(
+  `/verify-otp`,
+  authRoutesLimiter,
+  validate(verifyOtpDTO),
+  verifyOTP
+);
 
-// ✅ Forget Password
-router.post(`/forget-password`, validate(forgetPasswordDTO), forgetPassword);
+// ✅ Forget Password (rate limited)
+router.post(
+  `/forget-password`,
+  authRoutesLimiter,
+  validate(forgetPasswordDTO),
+  forgetPassword
+);
 
-// ✅ Reset Password
-router.post(`/reset-password`, validate(resetPasswordDTO), resetPassword);
+// ✅ Reset Password (rate limited)
+router.post(
+  `/reset-password`,
+  authRoutesLimiter,
+  validate(resetPasswordDTO),
+  resetPassword
+);
 
-// ✅ Logout
+// ✅ Logout (NOT rate limited)
 router.post(`/logout`, authenticate, logout);
 
-// ✅ Get Current Admin (Session check)
+// ✅ Get Current Admin (NOT rate limited)
 router.get(`/me`, authenticate, getMe);
 
-// ✅ Update 2FA Settings
+// ✅ Update 2FA Settings (NOT rate limited)
 router.patch(
   `/2fa-settings`,
   authenticate,

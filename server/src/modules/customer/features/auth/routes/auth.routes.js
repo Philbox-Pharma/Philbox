@@ -26,19 +26,28 @@ import { upload } from '../../../../../middlewares/multer.middleware.js';
 import passport from '../config/passport.config.js';
 
 const router = express.Router();
-router.use(authRoutesLimiter);
 
-// ✅ 1. Registration
-router.post(`/register`, validate(customerRegisterDTO), register);
+// ✅ 1. Registration (rate limited)
+router.post(
+  `/register`,
+  authRoutesLimiter,
+  validate(customerRegisterDTO),
+  register
+);
 
-// ✅ 2. Verify Email
-router.post(`/verify-email`, validate(verifyEmailDTO), verifyEmail);
+// ✅ 2. Verify Email (rate limited)
+router.post(
+  `/verify-email`,
+  authRoutesLimiter,
+  validate(verifyEmailDTO),
+  verifyEmail
+);
 
-// ✅ 3. Login
-router.post(`/login`, validate(loginDTO), login);
+// ✅ 3. Login (rate limited)
+router.post(`/login`, authRoutesLimiter, validate(loginDTO), login);
 
-// ✅ 4. Google OAuth
-router.get(`/google`, googleAuth);
+// ✅ 4. Google OAuth (rate limited)
+router.get(`/google`, authRoutesLimiter, googleAuth);
 router.get(
   `/google/callback`,
   passport.authenticate('customer-google', {
@@ -47,17 +56,27 @@ router.get(
   googleAuthCallback
 );
 
-// ✅ 5. Forget & Reset Password
-router.post(`/forget-password`, validate(forgetPasswordDTO), forgetPassword);
-router.post(`/reset-password`, validate(resetPasswordDTO), resetPassword);
+// ✅ 5. Forget & Reset Password (rate limited)
+router.post(
+  `/forget-password`,
+  authRoutesLimiter,
+  validate(forgetPasswordDTO),
+  forgetPassword
+);
+router.post(
+  `/reset-password`,
+  authRoutesLimiter,
+  validate(resetPasswordDTO),
+  resetPassword
+);
 
-// ✅ 6. Logout
+// ✅ 6. Logout (NOT rate limited)
 router.post(`/logout`, authenticate, logout);
 
-// ✅ 7. Get Current User (Session check)
+// ✅ 7. Get Current User (NOT rate limited)
 router.get(`/me`, authenticate, getMe);
 
-// ✅ 8. Update Profile (including Address & Images)
+// ✅ 8. Update Profile (NOT rate limited)
 router.put(
   `/profile`,
   authenticate,
