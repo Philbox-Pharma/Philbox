@@ -1,5 +1,6 @@
+/* eslint-disable no-unused-vars */
 // src/shared/components/Landing/LandingServices.jsx
-import { motion as _motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export default function LandingServices({
   id = 'services',

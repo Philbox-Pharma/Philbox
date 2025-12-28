@@ -1,6 +1,7 @@
+/* eslint-disable no-unused-vars */
 // src/shared/components/Landing/LandingTestimonials.jsx
 import { useState, useEffect } from 'react';
-import { motion as _motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FaQuoteLeft, FaStar } from 'react-icons/fa';
 
 export default function LandingTestimonials({
@@ -65,7 +66,7 @@ export default function LandingTestimonials({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -50 }}
               transition={{ duration: 0.5 }}
-              className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-3xl p-8 md:p-12 shadow-xl border border-gray-100"
+              className="bg-linear-to-br from-gray-50 to-blue-50 rounded-3xl p-8 md:p-12 shadow-xl border border-gray-100"
             >
               <FaQuoteLeft
                 className="text-4xl mb-6"
