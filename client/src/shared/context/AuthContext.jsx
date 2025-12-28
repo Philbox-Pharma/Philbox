@@ -1,39 +1,42 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import { adminAuthApi } from "../../core/api/admin/auth";
+import { createContext, useContext, useState } from 'react';
+import { adminAuthApi } from '../../core/api/admin/auth';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   // Initialize user from localStorage if available (to persist on refresh)
   const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem("adminUser");
+    const savedUser = localStorage.getItem('adminUser');
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
   const [loading, setLoading] = useState(false);
 
   // Function to save user data after successful OTP verification
-  const loginSuccess = (userData) => {
+  const loginSuccess = userData => {
     setUser(userData);
-    localStorage.setItem("adminUser", JSON.stringify(userData));
+    localStorage.setItem('adminUser', JSON.stringify(userData));
   };
 
   const logout = async () => {
     try {
       await adminAuthApi.logout();
     } catch (error) {
-      console.error("Logout failed on server", error);
+      console.error('Logout failed on server', error);
     } finally {
       setUser(null);
-      localStorage.removeItem("adminUser");
+      localStorage.removeItem('adminUser');
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loginSuccess, logout, loading, setLoading }}>
+    <AuthContext.Provider
+      value={{ user, loginSuccess, logout, loading, setLoading }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);
