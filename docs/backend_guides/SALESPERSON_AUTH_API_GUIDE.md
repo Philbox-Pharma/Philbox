@@ -49,12 +49,22 @@ Salesperson accounts are created by Super Admins or Branch Admins. Salespersons 
   "data": {
     "salesperson": {
       "_id": "64sales123...",
-      "name": "John Sales",
+      "fullName": "John Sales",
       "email": "salesperson@philbox.com",
-      "branch_id": "64branch123...",
-      "is_active": true,
+      "contactNumber": "+923001234567",
+      "gender": "Male",
+      "dateOfBirth": "1990-01-15T00:00:00.000Z",
+      "branches_to_be_managed": [
+        {
+          "_id": "64branch123...",
+          "name": "Karachi Branch"
+        }
+      ],
+      "status": "active",
       "isTwoFactorEnabled": false,
-      "role": {
+      "profile_img_url": "https://avatar.iran.liara.run/username?username=John Sales",
+      "cover_img_url": "https://placehold.co/1920x480/EAEAEA/000000?text=John Sales",
+      "roleId": {
         "_id": "64role1...",
         "name": "Salesperson"
       }
@@ -96,6 +106,7 @@ Full session access is granted only after OTP verification.
 
 ```json
 {
+  "email": "salesperson@philbox.com",
   "otp": "123456"
 }
 ```
@@ -109,25 +120,47 @@ Full session access is granted only after OTP verification.
   "data": {
     "salesperson": {
       "_id": "64sales123...",
-      "name": "John Sales",
+      "fullName": "John Sales",
       "email": "salesperson@philbox.com",
-      "branch_id": {
-        "_id": "64branch123...",
-        "name": "Karachi Branch",
-        "city": "Karachi"
-      },
-      "is_active": true,
+      "contactNumber": "+923001234567",
+      "gender": "Male",
+      "dateOfBirth": "1990-01-15T00:00:00.000Z",
+      "branches_to_be_managed": [
+        {
+          "_id": "64branch123...",
+          "name": "Karachi Branch",
+          "code": "KHI-001",
+          "phone": "+922134567890",
+          "address_id": {
+            "_id": "64addr123...",
+            "street": "Main Boulevard",
+            "city": "Karachi",
+            "province": "Sindh"
+          }
+        }
+      ],
+      "status": "active",
       "isTwoFactorEnabled": true,
-      "role": {
+      "profile_img_url": "https://avatar.iran.liara.run/username?username=John Sales",
+      "cover_img_url": "https://placehold.co/1920x480/EAEAEA/000000?text=John Sales",
+      "address_id": {
+        "_id": "64addr456...",
+        "street": "456 Street",
+        "city": "Karachi",
+        "province": "Sindh"
+      },
+      "roleId": {
         "_id": "64role1...",
         "name": "Salesperson",
         "permissions": [
           {
+            "_id": "64perm1...",
             "name": "read_orders",
             "resource": "orders",
             "action": "read"
           },
           {
+            "_id": "64perm2...",
             "name": "create_orders",
             "resource": "orders",
             "action": "create"
@@ -184,10 +217,8 @@ After OTP verification:
 
 ```json
 {
-  "email": "salesperson@philbox.com",
-  "otp": "123456",
-  "new_password": "NewSecurePass123!",
-  "confirm_password": "NewSecurePass123!"
+  "token": "reset-token-from-email",
+  "newPassword": "NewSecurePass123!"
 }
 ```
 
@@ -226,7 +257,7 @@ After OTP verification:
   "data": {
     "salesperson": {
       "_id": "64sales123...",
-      "name": "John Sales",
+      "fullName": "John Sales",
       "email": "salesperson@philbox.com",
       "isTwoFactorEnabled": true,
       "updated_at": "2025-12-18T12:00:00.000Z"
