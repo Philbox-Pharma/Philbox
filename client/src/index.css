@@ -1,1 +1,263 @@
-@import 'tailwindcss';
+/* src/index.css */
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+@layer base {
+  :root {
+    --color-primary-blue: #003399;
+    --color-primary-green: #4FA64F;
+    --color-secondary-green: #2E8B57;
+    --color-accent-green: #7AC143;
+  }
+}
+
+@layer utilities {
+  .text-primary-blue {
+    color: #003399;
+  }
+  .text-primary-green {
+    color: #4FA64F;
+  }
+  .text-secondary-green {
+    color: #2E8B57;
+  }
+
+  .bg-primary-blue {
+    background-color: #003399;
+  }
+  .bg-primary-green {
+    background-color: #4FA64F;
+  }
+  .bg-secondary-green {
+    background-color: #2E8B57;
+  }
+
+  .border-primary-blue {
+    border-color: #003399;
+  }
+  .border-primary-green {
+    border-color: #4FA64F;
+  }
+
+  .from-primary-blue {
+    --tw-gradient-from: #003399;
+  }
+  .to-primary-blue {
+    --tw-gradient-to: #003399;
+  }
+  .via-secondary-green {
+    --tw-gradient-via: #2E8B57;
+  }
+  .from-primary-green {
+    --tw-gradient-from: #4FA64F;
+  }
+  .to-primary-green {
+    --tw-gradient-to: #4FA64F;
+  }
+}
+
+
+@layer components {
+  /* ============================================
+     INPUT FIELDS
+  ============================================ */
+  .input-field {
+    @apply mt-1 w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all;
+  }
+
+  .input-label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+
+  .input-error {
+    @apply text-red-500 text-xs mt-1;
+  }
+
+  /* ============================================
+     BUTTONS
+  ============================================ */
+  .btn-primary {
+    @apply w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-medium transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg font-medium transition-colors;
+  }
+
+  .btn-link {
+    @apply text-blue-500 hover:text-blue-600 text-sm hover:underline cursor-pointer;
+  }
+
+  /* ============================================
+     CARD & CONTAINERS - 3D EFFECTS
+  ============================================ */
+
+  /* Basic Card */
+  .card {
+    @apply bg-white rounded-xl border border-gray-100;
+  }
+
+  /* 3D Card - Subtle lift on hover */
+  .card-3d {
+    @apply bg-white rounded-xl border border-gray-100 shadow-md
+           hover:shadow-xl hover:-translate-y-1
+           transition-all duration-300;
+  }
+
+  /* 3D Card - Strong effect */
+  .card-3d-strong {
+    @apply bg-white rounded-xl border border-gray-100 shadow-lg
+           hover:shadow-2xl hover:-translate-y-2
+           transition-all duration-300;
+  }
+
+  /* 3D Card - With colored shadow */
+  .card-3d-blue {
+    @apply bg-white rounded-xl border border-gray-100
+           shadow-lg shadow-blue-500/10
+           hover:shadow-xl hover:shadow-blue-500/20 hover:-translate-y-1
+           transition-all duration-300;
+  }
+
+  .card-3d-green {
+    @apply bg-white rounded-xl border border-gray-100
+           shadow-lg shadow-green-500/10
+           hover:shadow-xl hover:shadow-green-500/20 hover:-translate-y-1
+           transition-all duration-300;
+  }
+
+  .card-3d-purple {
+    @apply bg-white rounded-xl border border-gray-100
+           shadow-lg shadow-purple-500/10
+           hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-1
+           transition-all duration-300;
+  }
+
+  .card-3d-orange {
+    @apply bg-white rounded-xl border border-gray-100
+           shadow-lg shadow-orange-500/10
+           hover:shadow-xl hover:shadow-orange-500/20 hover:-translate-y-1
+           transition-all duration-300;
+  }
+
+  /* Inner Card Item (for lists inside cards) */
+  .card-item {
+    @apply p-4 bg-gray-50 rounded-xl
+           hover:bg-gray-100 hover:shadow-sm
+           transition-all duration-200;
+  }
+
+  /* Icon Container with depth */
+  .icon-circle {
+    @apply w-12 h-12 rounded-full flex items-center justify-center shadow-inner;
+  }
+
+  .icon-circle-sm {
+    @apply w-10 h-10 rounded-full flex items-center justify-center shadow-inner;
+  }
+
+  .icon-circle-lg {
+    @apply w-14 h-14 rounded-full flex items-center justify-center shadow-inner;
+  }
+
+  /* Quick Action Button */
+  .quick-action-btn {
+    @apply flex flex-col items-center p-4 rounded-xl
+           hover:shadow-md hover:-translate-y-1
+           transition-all duration-300 border;
+  }
+
+  /* Stat Card */
+  .stat-card {
+    @apply bg-white p-6 rounded-xl border border-gray-100 shadow-md
+           hover:shadow-xl hover:-translate-y-1
+           transition-all duration-300;
+  }
+
+  /* Old card-container (keeping for backward compatibility) */
+  .card-container {
+    @apply bg-white p-10 rounded-2xl shadow-xl w-96;
+  }
+
+  .auth-wrapper {
+    @apply min-h-screen flex items-center justify-center bg-gray-100;
+  }
+
+  /* ============================================
+     TYPOGRAPHY - AUTH PAGES
+  ============================================ */
+  .auth-title {
+    @apply text-2xl font-bold text-center text-gray-800 mb-1;
+  }
+
+  .auth-subtitle {
+    @apply text-center text-gray-500 mb-6;
+  }
+
+  /* ============================================
+     ALERTS & MESSAGES
+  ============================================ */
+  .alert-success {
+    @apply bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4;
+  }
+
+  .alert-error {
+    @apply bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4;
+  }
+
+  .alert-info {
+    @apply bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-4;
+  }
+
+  .alert-warning {
+    @apply bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg mb-4;
+  }
+
+  /* ============================================
+     LINKS
+  ============================================ */
+  .link-text {
+    @apply text-blue-500 text-sm hover:underline cursor-pointer;
+  }
+
+  /* ============================================
+     LOGO
+  ============================================ */
+  .auth-logo {
+    @apply w-16 h-16 mx-auto mb-4;
+  }
+
+  /* ============================================
+     BADGES
+  ============================================ */
+  .badge {
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply bg-green-100 text-green-700;
+  }
+
+  .badge-error {
+    @apply bg-red-100 text-red-700;
+  }
+
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-700;
+  }
+
+  .badge-info {
+    @apply bg-blue-100 text-blue-700;
+  }
+
+  .badge-purple {
+    @apply bg-purple-100 text-purple-700;
+  }
+
+  .badge-orange {
+    @apply bg-orange-100 text-orange-700;
+  }
+
+  .badge-gray {
+    @apply bg-gray-100 text-gray-700;
+  }
+}
