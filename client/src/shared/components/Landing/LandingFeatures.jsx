@@ -1,5 +1,6 @@
+/* eslint-disable no-unused-vars */
 // src/shared/components/Landing/LandingFeatures.jsx
-import { motion as _motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FaCheck } from 'react-icons/fa';
 
 export default function LandingFeatures({
@@ -58,7 +59,7 @@ export default function LandingFeatures({
             transition={{ delay: i * 0.1 }}
           >
             <div
-              className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+              className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
               style={{ backgroundColor: secondaryColor }}
             >
               <FaCheck className="text-white text-xs" />
@@ -140,7 +141,7 @@ export default function LandingFeatures({
   return (
     <section
       id={id}
-      className={`py-24 overflow-hidden ${bgGradient ? `bg-gradient-to-br ${bgGradient}` : 'bg-white'}`}
+      className={`py-24 overflow-hidden ${bgGradient ? `bg-linear-to-br ${bgGradient}` : 'bg-white'}`}
     >
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid lg:grid-cols-2 gap-16 items-center">

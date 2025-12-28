@@ -1,5 +1,6 @@
+/* eslint-disable no-unused-vars */
 // src/shared/components/Landing/LandingFooter.jsx
-import { motion as _motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   FaPhone,
   FaEnvelope,
@@ -98,7 +99,7 @@ export default function LandingFooter({
                   <li key={link.name}>
                     <a
                       href={link.href}
-                      className="text-gray-400 hover:text-[var(--secondary)] transition-colors"
+                      className="text-gray-400 hover:text-(--secondary) transition-colors"
                       style={{ '--secondary': secondaryColor }}
                     >
                       {link.name}
@@ -118,7 +119,7 @@ export default function LandingFooter({
                   <li key={link.name}>
                     <a
                       href={link.href}
-                      className="text-gray-400 hover:text-[var(--secondary)] transition-colors"
+                      className="text-gray-400 hover:text-(--secondary) transition-colors"
                       style={{ '--secondary': secondaryColor }}
                     >
                       {link.name}
@@ -135,7 +136,7 @@ export default function LandingFooter({
             <ul className="space-y-4">
               {contactInfo.phone && (
                 <li className="flex items-center gap-3 text-gray-400">
-                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center shrink-0">
                     <FaPhone style={{ color: secondaryColor }} />
                   </div>
                   <a
@@ -148,7 +149,7 @@ export default function LandingFooter({
               )}
               {contactInfo.email && (
                 <li className="flex items-center gap-3 text-gray-400">
-                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hrink-0">
                     <FaEnvelope style={{ color: secondaryColor }} />
                   </div>
                   <a
@@ -161,7 +162,7 @@ export default function LandingFooter({
               )}
               {contactInfo.address && (
                 <li className="flex items-center gap-3 text-gray-400">
-                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center shrink-0">
                     <FaMapMarkerAlt style={{ color: secondaryColor }} />
                   </div>
                   <span>{contactInfo.address}</span>
@@ -193,7 +194,7 @@ export default function LandingFooter({
                   <a
                     key={link.name}
                     href={link.href}
-                    className="hover:text-[var(--secondary)] transition-colors"
+                    className="hover:text-(--secondary) transition-colors"
                     style={{ '--secondary': secondaryColor }}
                   >
                     {link.name}
