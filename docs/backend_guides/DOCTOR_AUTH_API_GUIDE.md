@@ -1,14 +1,6 @@
 # Doctor Authentication & Onboarding API Guide
 
-## Base URL
-
-```
-http://localhost:5000/api/doctor/auth
-```
-
-## Rate Limiting
-
-All authentication routes are rate-limited to prevent abuse.
+**Base URL:** `http://localhost:5000/api/doctor/auth`
 
 ---
 
@@ -36,25 +28,23 @@ The doctor onboarding process involves multiple steps:
 
 ```json
 {
-  "name": "Dr. Ahmed Hassan",
+  "fullName": "Dr. Ahmed Hassan",
   "email": "ahmed.hassan@doctormail.com",
   "password": "SecurePass123!",
-  "password_confirmation": "SecurePass123!",
-  "gender": "male",
-  "date_of_birth": "1985-03-20",
-  "contact_number": "+923001234567"
+  "contactNumber": "+923001234567",
+  "gender": "Male",
+  "dateOfBirth": "1985-03-20"
 }
 ```
 
 **Validation Rules:**
 
-- `name`: Required, 3-50 characters
+- `fullName`: Required, 3-50 characters
 - `email`: Required, valid email format
-- `password`: Required, min 8 characters, must include uppercase, lowercase, number, special character
-- `password_confirmation`: Must match password
-- `gender`: Required, must be "male", "female", or "other"
-- `date_of_birth`: Required, must be 23+ years old (minimum age for medical professionals)
-- `contact_number`: Required, valid phone format
+- `password`: Required, min 8 characters
+- `contactNumber`: Required, valid Pakistani phone format (+92...)
+- `gender`: Required, must be "Male", "Female", or "Other"
+- `dateOfBirth`: Required, must be valid ISO date in the past
 
 **Success Response:**
 
@@ -65,29 +55,20 @@ The doctor onboarding process involves multiple steps:
   "data": {
     "doctor": {
       "_id": "64doctor123...",
-      "name": "Dr. Ahmed Hassan",
+      "fullName": "Dr. Ahmed Hassan",
       "email": "ahmed.hassan@doctormail.com",
-      "gender": "male",
-      "date_of_birth": "1985-03-20T00:00:00.000Z",
-      "contact_number": "+923001234567",
-      "email_verified": false,
-      "is_active": false,
-      "verification_status": "pending",
-      "profile_completed": false,
-      "onboarding_step": 1,
+      "gender": "Male",
+      "dateOfBirth": "1985-03-20T00:00:00.000Z",
+      "contactNumber": "+923001234567",
+      "is_Verified": false,
+      "status": "active",
+      "profile_img_url": "https://avatar.iran.liara.run/username?username=Dr. Ahmed Hassan",
+      "cover_img_url": "https://placehold.co/1920x480/EAEAEA/000000?text=Dr. Ahmed Hassan",
       "created_at": "2025-12-18T10:00:00.000Z"
     }
   }
 }
 ```
-
-**Onboarding Steps:**
-
-- `1`: Email verification pending
-- `2`: Document submission pending
-- `3`: Admin verification pending
-- `4`: Profile completion pending
-- `5`: Fully onboarded
 
 ---
 
@@ -100,8 +81,7 @@ The doctor onboarding process involves multiple steps:
 
 ```json
 {
-  "email": "ahmed.hassan@doctormail.com",
-  "otp": "123456"
+  "token": "verification-token-from-email"
 }
 ```
 
@@ -114,10 +94,9 @@ The doctor onboarding process involves multiple steps:
   "data": {
     "doctor": {
       "_id": "64doctor123...",
-      "name": "Dr. Ahmed Hassan",
+      "fullName": "Dr. Ahmed Hassan",
       "email": "ahmed.hassan@doctormail.com",
-      "email_verified": true,
-      "onboarding_step": 2
+      "is_Verified": true
     }
   }
 }
@@ -150,18 +129,19 @@ The doctor onboarding process involves multiple steps:
   "data": {
     "doctor": {
       "_id": "64doctor123...",
-      "name": "Dr. Ahmed Hassan",
+      "fullName": "Dr. Ahmed Hassan",
       "email": "ahmed.hassan@doctormail.com",
-      "email_verified": true,
-      "is_active": true,
-      "verification_status": "pending",
-      "profile_completed": false,
-      "onboarding_step": 2,
-      "profile_img": null,
-      "cover_img": null,
-      "gender": "male",
-      "date_of_birth": "1985-03-20T00:00:00.000Z",
-      "contact_number": "+923001234567"
+      "is_Verified": true,
+      "status": "active",
+      "profile_img_url": "https://avatar.iran.liara.run/username?username=Dr. Ahmed Hassan",
+      "cover_img_url": "https://placehold.co/1920x480/EAEAEA/000000?text=Dr. Ahmed Hassan",
+      "gender": "Male",
+      "dateOfBirth": "1985-03-20T00:00:00.000Z",
+      "contactNumber": "+923001234567",
+      "roleId": {
+        "_id": "64role123...",
+        "name": "Doctor"
+      }
     }
   }
 }
@@ -221,24 +201,18 @@ experience_letters: [File]
   "data": {
     "doctor": {
       "_id": "64doctor123...",
-      "name": "Dr. Ahmed Hassan",
+      "fullName": "Dr. Ahmed Hassan",
       "email": "ahmed.hassan@doctormail.com",
-      "verification_status": "pending",
-      "onboarding_step": 3,
-      "application": {
-        "_id": "64app123...",
-        "doctor_id": "64doctor123...",
-        "status": "pending",
-        "submission_date": "2025-12-18T10:30:00.000Z"
-      },
-      "documents": {
-        "_id": "64doc123...",
-        "cnic": "https://cloudinary.com/.../cnic.pdf",
-        "medical_license": "https://cloudinary.com/.../license.pdf",
-        "specialist_license": "https://cloudinary.com/.../specialist.pdf",
-        "mbbs_md_degree": "https://cloudinary.com/.../degree.pdf",
-        "experience_letters": "https://cloudinary.com/.../experience.pdf"
-      }
+      "status": "active"
+    },
+    "documents": {
+      "_id": "64doc123...",
+      "doctor_id": "64doctor123...",
+      "cnic": "https://cloudinary.com/.../cnic.pdf",
+      "medical_license": "https://cloudinary.com/.../license.pdf",
+      "specialist_license": "https://cloudinary.com/.../specialist.pdf",
+      "mbbs_md_degree": "https://cloudinary.com/.../degree.pdf",
+      "experience_letters": "https://cloudinary.com/.../experience.pdf"
     }
   }
 }
@@ -273,24 +247,20 @@ After submission, an admin will:
 **Request Body (Form Data):**
 
 ```
-education[0][degree]: MBBS
-education[0][institution]: Aga Khan University
-education[0][year]: 2010
-education[1][degree]: MD (Cardiology)
-education[1][institution]: Dow University
-education[1][year]: 2015
+educational_details: [{"degree":"MBBS","institution":"Aga Khan University","yearOfCompletion":2010,"specialization":"General Medicine"},{"degree":"MD (Cardiology)","institution":"Dow University","yearOfCompletion":2015,"specialization":"Cardiology"}]
 
-experience[0][institution]: Aga Khan University Hospital
-experience[0][designation]: Cardiologist
-experience[0][years]: 5
+experience_details: [{"institution":"Aga Khan University Hospital","starting_date":"2015-01-01","ending_date":"2020-12-31","is_going_on":false},{"institution":"Liaquat National Hospital","starting_date":"2021-01-01","is_going_on":true}]
 
-specialization[0]: Cardiology
-specialization[1]: Interventional Cardiology
+specialization: ["Cardiology","Interventional Cardiology"]
 
-biography: Experienced cardiologist with 8 years of practice...
+license_number: PMC-12345
+affiliated_hospital: Aga Khan University Hospital
+consultation_type: both
+consultation_fee: 3000
+onlineProfileURL: https://doctor-profile.com/ahmed
 
-education_files: [File, File, ...]
-experience_files: [File, File, ...]
+education_files: [File, File]
+experience_files: [File, File]
 digital_signature: [File]
 profile_img: [File]
 cover_img: [File]
@@ -305,40 +275,51 @@ cover_img: [File]
   "data": {
     "doctor": {
       "_id": "64doctor123...",
-      "name": "Dr. Ahmed Hassan",
+      "fullName": "Dr. Ahmed Hassan",
       "email": "ahmed.hassan@doctormail.com",
-      "email_verified": true,
-      "is_active": true,
-      "verification_status": "approved",
-      "profile_completed": true,
-      "onboarding_step": 5,
-      "profile_img": "https://cloudinary.com/.../profile.jpg",
-      "cover_img": "https://cloudinary.com/.../cover.jpg",
+      "is_Verified": true,
+      "status": "active",
+      "profile_img_url": "https://cloudinary.com/.../profile.jpg",
+      "cover_img_url": "https://cloudinary.com/.../cover.jpg",
       "digital_signature": "https://cloudinary.com/.../signature.png",
-      "biography": "Experienced cardiologist with 8 years of practice...",
-      "education": [
+      "educational_details": [
         {
           "degree": "MBBS",
           "institution": "Aga Khan University",
-          "year": 2010,
-          "certificate_url": "https://cloudinary.com/.../degree1.pdf"
+          "yearOfCompletion": 2010,
+          "specialization": "General Medicine",
+          "fileUrl": "https://cloudinary.com/.../degree1.pdf"
         },
         {
           "degree": "MD (Cardiology)",
           "institution": "Dow University",
-          "year": 2015,
-          "certificate_url": "https://cloudinary.com/.../degree2.pdf"
+          "yearOfCompletion": 2015,
+          "specialization": "Cardiology",
+          "fileUrl": "https://cloudinary.com/.../degree2.pdf"
         }
       ],
-      "experience": [
+      "experience_details": [
         {
           "institution": "Aga Khan University Hospital",
-          "designation": "Cardiologist",
-          "years": 5,
-          "institution_image_url": "https://cloudinary.com/.../hospital.jpg"
+          "starting_date": "2015-01-01T00:00:00.000Z",
+          "ending_date": "2020-12-31T00:00:00.000Z",
+          "is_going_on": false,
+          "institution_img_url": "https://cloudinary.com/.../hospital1.jpg"
+        },
+        {
+          "institution": "Liaquat National Hospital",
+          "starting_date": "2021-01-01T00:00:00.000Z",
+          "is_going_on": true,
+          "institution_img_url": "https://cloudinary.com/.../hospital2.jpg"
         }
       ],
-      "specialization": ["Cardiology", "Interventional Cardiology"]
+      "specialization": ["Cardiology", "Interventional Cardiology"],
+      "license_number": "PMC-12345",
+      "affiliated_hospital": "Aga Khan University Hospital",
+      "consultation_type": "both",
+      "consultation_fee": 3000,
+      "onlineProfileURL": "https://doctor-profile.com/ahmed",
+      "averageRating": 0
     }
   }
 }
@@ -381,10 +362,8 @@ cover_img: [File]
 
 ```json
 {
-  "email": "ahmed.hassan@doctormail.com",
-  "otp": "123456",
-  "new_password": "NewSecurePass123!",
-  "confirm_password": "NewSecurePass123!"
+  "token": "reset-token-from-email",
+  "newPassword": "NewSecurePass123!"
 }
 ```
 
@@ -417,23 +396,17 @@ cover_img: [File]
 
 ---
 
-## Doctor Onboarding States
+## Doctor Account Status
 
-### Verification Status
+### Account Status
 
-- `pending`: Application submitted, awaiting admin review
-- `approved`: Documents verified by admin
-- `rejected`: Application rejected by admin
+- `active`: Doctor account is active and can use the platform
+- `suspended/freezed`: Account temporarily suspended
+- `blocked/removed`: Account permanently blocked
 
-### Onboarding Steps
+### Verification Flag
 
-| Step | Description         | Status                                     |
-| ---- | ------------------- | ------------------------------------------ |
-| 1    | Email Verification  | `email_verified: false`                    |
-| 2    | Document Submission | `verification_status: null`                |
-| 3    | Admin Verification  | `verification_status: pending`             |
-| 4    | Profile Completion  | `profile_completed: false`                 |
-| 5    | Fully Onboarded     | `profile_completed: true, is_active: true` |
+- `is_Verified`: Email verification status (true/false)
 
 ---
 
@@ -461,15 +434,15 @@ cover_img: [File]
 
 ## Frontend Integration Notes
 
-### Onboarding Flow UI
+### Profile Status Check
 
 ```javascript
-const getOnboardingStep = (doctor) => {
-  if (!doctor.email_verified) return "verify-email";
-  if (doctor.onboarding_step === 2) return "submit-documents";
-  if (doctor.onboarding_step === 3) return "pending-verification";
-  if (doctor.onboarding_step === 4) return "complete-profile";
-  if (doctor.onboarding_step === 5) return "dashboard";
+const checkProfileStatus = (doctor) => {
+  if (!doctor.is_Verified) return "verify-email";
+  if (!doctor.educational_details || doctor.educational_details.length === 0)
+    return "complete-profile";
+  if (doctor.status !== "active") return "account-suspended";
+  return "dashboard";
 };
 ```
 
@@ -498,27 +471,33 @@ const submitApplication = async (files) => {
 const completeProfile = async (data) => {
   const formData = new FormData();
 
-  // Education
-  data.education.forEach((edu, idx) => {
-    formData.append(`education[${idx}][degree]`, edu.degree);
-    formData.append(`education[${idx}][institution]`, edu.institution);
-    formData.append(`education[${idx}][year]`, edu.year);
-  });
+  // Education (as JSON string)
+  const educationData = data.education.map((edu) => ({
+    degree: edu.degree,
+    institution: edu.institution,
+    yearOfCompletion: edu.year,
+    specialization: edu.specialization,
+  }));
+  formData.append("educational_details", JSON.stringify(educationData));
 
-  // Experience
-  data.experience.forEach((exp, idx) => {
-    formData.append(`experience[${idx}][institution]`, exp.institution);
-    formData.append(`experience[${idx}][designation]`, exp.designation);
-    formData.append(`experience[${idx}][years]`, exp.years);
-  });
+  // Experience (as JSON string)
+  const experienceData = data.experience.map((exp) => ({
+    institution: exp.institution,
+    starting_date: exp.startDate,
+    ending_date: exp.endDate,
+    is_going_on: exp.isOngoing,
+  }));
+  formData.append("experience_details", JSON.stringify(experienceData));
 
-  // Specializations
-  data.specializations.forEach((spec, idx) => {
-    formData.append(`specialization[${idx}]`, spec);
-  });
+  // Specializations (as JSON string)
+  formData.append("specialization", JSON.stringify(data.specializations));
 
-  // Biography
-  formData.append("biography", data.biography);
+  // Other fields
+  formData.append("license_number", data.licenseNumber);
+  formData.append("affiliated_hospital", data.affiliatedHospital);
+  formData.append("consultation_type", data.consultationType);
+  formData.append("consultation_fee", data.consultationFee);
+  formData.append("onlineProfileURL", data.onlineProfileURL);
 
   // Files
   data.educationFiles.forEach((file) =>

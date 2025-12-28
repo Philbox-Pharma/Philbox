@@ -10,9 +10,7 @@ This folder contains comprehensive testing guides for all backend API endpoints 
 
 ## 🚀 Quick Start
 
-For a complete overview of all APIs, authentication setup, and frontend integration examples, see:
-
-**[Backend API Complete Reference](./README_COMPLETE.md)**
+For quick testing commands and endpoint reference, see **[QUICK_START.md](./QUICK_START.md)**
 
 ---
 
@@ -20,52 +18,23 @@ For a complete overview of all APIs, authentication setup, and frontend integrat
 
 ### 1. **ADMIN_API_COMPLETE_GUIDE.md**
 
-**Coverage:** Complete admin operations including authentication, branch management, and admin statistics
+**Coverage:** Complete admin operations including authentication, branch management, user management, permissions, customers, and salesperson tasks
 
 **Key Features:**
 
 - Admin authentication with conditional 2FA
 - Branch CRUD operations with permissions
-- Branch assignment management
-- Branch performance metrics
+- Admin and Salesperson management
+- Role-Based Access Control (RBAC)
+- Customer management and analytics
+- Salesperson task management
+- Socket.IO real-time events for task updates
 - Password reset functionality
 - Session-based authentication (connect.sid)
 
 ---
 
-### 2. **USER_MANAGEMENT_API_GUIDE.md**
-
-**Coverage:** Complete user management for admins and salespersons
-
-**Key Features:**
-
-- Admin CRUD operations (7 endpoints)
-- Salesperson CRUD operations (7 endpoints)
-- User activation/deactivation
-- Role assignment
-- User statistics
-- Profile image uploads
-- Salesperson task performance tracking
-- Doctor application review and approval (4 endpoints)
-
----
-
-### 3. **PERMISSIONS_RBAC_API_GUIDE.md**
-
-**Coverage:** Role-Based Access Control system
-
-**Key Features:**
-
-- Role management (get all, get by ID, update permissions)
-- Permission management (get all, create new)
-- User role assignment
-- Add/remove permissions from roles
-- Permission checking
-- Available permissions reference
-
----
-
-### 4. **CUSTOMER_AUTH_API_GUIDE.md**
+### 2. **CUSTOMER_AUTH_API_GUIDE.md**
 
 **Coverage:** Customer authentication and profile management
 
@@ -81,7 +50,7 @@ For a complete overview of all APIs, authentication setup, and frontend integrat
 
 ---
 
-### 5. **DOCTOR_AUTH_API_GUIDE.md**
+### 3. **DOCTOR_AUTH_API_GUIDE.md**
 
 **Coverage:** Doctor onboarding, authentication, and verification process
 
@@ -97,151 +66,21 @@ For a complete overview of all APIs, authentication setup, and frontend integrat
 
 ---
 
-### 6. **SALESPERSON_AUTH_API_GUIDE.md**
+### 4. **SALESPERSON_COMPLETE_API_GUIDE.md**
 
-**Coverage:** Salesperson authentication with conditional 2FA
+**Coverage:** Complete salesperson operations including authentication and task management
 
 **Key Features:**
 
 - Login with conditional 2FA
 - OTP verification flow
 - 2FA settings management (enable/disable)
+- Task management (view, update status, add comments)
+- Task statistics and filtering
+- Socket.IO real-time events for task assignments and updates
 - Password reset functionality
 - Session management
-- Frontend integration examples
-
-**Coverage:** Complete user management for admins and salespersons
-
-**Key Features:**
-
-- Admin CRUD operations (7 endpoints)
-- Salesperson CRUD operations (7 endpoints)
-- User activation/deactivation
-- Role assignment
-- User statistics
-- Profile image uploads
-
----
-
-### 3. **PERMISSIONS_RBAC_API_GUIDE.md**
-
-**Status:** ✅ Complete
-**Endpoints:** 9
-**Coverage:** RBAC - Role and Permission management
-
-**Endpoints Covered:**
-
-- `GET /api/admin/permissions/roles` - Get all roles with permissions
-- `GET /api/admin/permissions/roles/:roleId` - Get specific role
-- `GET /api/admin/permissions/permissions` - Get all available permissions
-- `POST /api/admin/permissions/permissions` - Create new permission
-- `PUT /api/admin/permissions/roles/:roleId` - Update role permissions (bulk)
-- `POST /api/admin/permissions/roles/:roleId/permissions` - Add single permission
-- `DELETE /api/admin/permissions/roles/:roleId/permissions` - Remove permission
-- `POST /api/admin/permissions/users/assign-role` - Assign role to user
-- `GET /api/admin/permissions/user-role` - Get current user's role & permissions
-
-**Key Features:**
-
-- Complete RBAC system with 50+ permissions
-- Non-destructive permission addition
-- Bulk permission updates
-- Permission module organization
-- Permission matrix documentation
-
----
-
-### 5. **CUSTOMER_AUTH_API_TESTING.md**
-
-**Status:** ✅ Complete
-**Endpoints:** 9
-**Coverage:** Customer authentication, registration, and profile management
-
-**Endpoints Covered:**
-
-- `POST /api/customer/auth/register` - Customer registration
-- `POST /api/customer/auth/verify-email` - Email verification with OTP
-- `POST /api/customer/auth/login` - Customer login
-- `GET /api/customer/auth/google` - Google OAuth initiation
-- `GET /api/customer/auth/google/callback` - Google OAuth callback
-- `POST /api/customer/auth/forget-password` - Request password reset
-- `POST /api/customer/auth/reset-password` - Reset password
-- `POST /api/customer/auth/logout` - Logout
-- `GET /api/customer/auth/me` - Get current user profile
-- `PUT /api/customer/auth/profile` - Update profile with images
-
-**Key Features:**
-
-- Self-registration with email verification
-- Google OAuth integration
-- Profile management with image uploads
-- Address management
-- Email-based password reset
-
----
-
-### 6. **DOCTOR_AUTH_API_TESTING.md**
-
-**Status:** ✅ Complete
-**Endpoints:** 9
-**Coverage:** Doctor authentication and 2-step onboarding
-
-**Endpoints Covered:**
-
-- `POST /api/doctor/auth/register` - Doctor registration
-- `POST /api/doctor/auth/verify-email` - Email verification
-- `POST /api/doctor/auth/login` - Doctor login
-- `POST /api/doctor/auth/submit-application` - Submit documents (Step 1)
-- `POST /api/doctor/auth/complete-profile` - Complete profile (Step 2)
-- `POST /api/doctor/auth/forget-password` - Password reset request
-- `POST /api/doctor/auth/reset-password` - Reset password
-- `POST /api/doctor/auth/logout` - Logout
-- `GET /api/doctor/auth/google` - Google OAuth
-
-**Key Features:**
-
-- 2-step onboarding process
-  - Step 1: Submit medical documents
-  - Step 2: Complete profile after admin approval
-- Multi-file uploads to Cloudinary
-- Admin review workflow
-- Specialization and qualification tracking
-- Consultation fee management
-
-**Onboarding Status Flow:**
-
-```
-Registered → Email Verified → App Submitted (Pending Review)
-                                    ↓
-                            Admin Approval/Rejection
-                                    ↓
-                           Profile Completion Enabled
-                                    ↓
-                          Active & Ready for Appointments
-```
-
----
-
-### 7. **SALESPERSON_AUTH_API_TESTING.md**
-
-**Status:** ✅ Complete
-**Endpoints:** 4
-**Coverage:** Salesperson authentication (admin-created accounts only)
-
-**Endpoints Covered:**
-
-- `POST /api/salesperson/auth/login` - Salesperson login
-- `POST /api/salesperson/auth/forget-password` - Password reset request
-- `POST /api/salesperson/auth/reset-password` - Reset password
-- `POST /api/salesperson/auth/logout` - Logout
-
-**Key Features:**
-
-- Admin-created accounts only (no self-registration)
-- Credentials sent via email from admin
-- Account status checking (active/inactive)
-- Rate limiting on authentication
-- Session-based authentication with connect.sid cookie
+- Frontend integration examples with React hooks
 
 ---
 
@@ -250,7 +89,7 @@ Registered → Email Verified → App Submitted (Pending Review)
 ```
 http://localhost:5000/api/
 
-├── super-admin/auth/                    [ADMIN_API_COMPLETE_GUIDE.md]
+├── admin/auth/                          [ADMIN_API_COMPLETE_GUIDE.md]
 │   ├── POST /login
 │   ├── POST /verify-otp
 │   ├── POST /forget-password
@@ -281,16 +120,24 @@ http://localhost:5000/api/
 │   ├── POST /logout
 │   └── GET /google
 │
-├── salesperson/auth/                    [SALESPERSON_AUTH_API_GUIDE.md]
+├── salesperson/auth/                    [SALESPERSON_COMPLETE_API_GUIDE.md]
 │   ├── POST /login
 │   ├── POST /verify-otp
 │   ├── POST /forget-password
 │   ├── POST /reset-password
+│   ├── GET /me
 │   ├── POST /logout
 │   └── PATCH /2fa-settings
 │
-└── super-admin/
-    ├── users/                           [USER_MANAGEMENT_API_GUIDE.md]
+├── salesperson/tasks/                   [SALESPERSON_COMPLETE_API_GUIDE.md]
+│   ├── GET /
+│   ├── GET /statistics
+│   ├── GET /:id
+│   ├── PUT /:id/status
+│   └── POST /:id/updates
+│
+└── admin/
+    ├── users/                           [ADMIN_API_COMPLETE_GUIDE.md]
     │   ├── POST /admins
     │   ├── GET /admins
     │   ├── GET /admins/:id
@@ -307,7 +154,7 @@ http://localhost:5000/api/
     │   ├── GET /salespersons/stats
     │   └── GET /salesperson-tasks/performance
     │
-    ├── doctors/                         [USER_MANAGEMENT_API_GUIDE.md - Section 4]
+    ├── doctors/                         [ADMIN_API_COMPLETE_GUIDE.md]
     │   ├── GET /applications
     │   ├── GET /applications/:id
     │   ├── PATCH /applications/:id/approve
@@ -326,7 +173,7 @@ http://localhost:5000/api/
     │   ├── GET /branches/stats
     │   └── GET /branches/:id/performance
     │
-    └── permissions/                     [PERMISSIONS_RBAC_API_GUIDE.md]
+    └── permissions/                     [ADMIN_API_COMPLETE_GUIDE.md]
         ├── GET /roles
         ├── GET /roles/:roleId
         ├── PUT /roles/:roleId
@@ -342,30 +189,34 @@ http://localhost:5000/api/
 
 ## 📊 Statistics
 
-| Metric                               | Count |
-| ------------------------------------ | ----- |
-| **Total Guides**                     | 6     |
-| **Total Endpoints**                  | 50+   |
-| **Admin Endpoints**                  | 20+   |
-| **Customer Auth Endpoints**          | 10    |
-| **Doctor Auth Endpoints**            | 9     |
-| **Salesperson Auth Endpoints**       | 6     |
-| **User Management Endpoints**        | 14    |
-| **Permissions Management Endpoints** | 9     |
+| Metric                            | Count |
+| --------------------------------- | ----- |
+| **Total Guides**                  | 4     |
+| **Total Endpoints**               | 71    |
+| **Admin Endpoints**               | 49    |
+| **Customer Auth Endpoints**       | 10    |
+| **Doctor Auth Endpoints**         | 9     |
+| **Salesperson Endpoints (Total)** | 12    |
+| **Salesperson Auth Endpoints**    | 7     |
+| **Salesperson Task Endpoints**    | 5     |
 
 ---
 
 ## 🔐 Authentication & Authorization Summary
 
-| Endpoint Group         | Auth Required | Auth Method | Authorization                          |
+| Feature                | Auth Required | Auth Method | Authorization                          |
 | ---------------------- | ------------- | ----------- | -------------------------------------- |
 | Admin Auth             | ❌ No         | -           | -                                      |
-| Customer Auth          | ✅ Yes        | SESSION     | email verification + session           |
-| Doctor Auth            | ✅ Yes        | SESSION     | email verification + 2-step onboarding |
-| Salesperson Auth       | ✅ Yes        | SESSION     | admin-created accounts                 |
-| User Management        | ✅ Yes        | SESSION     | session-based authorization            |
-| Branch Management      | ✅ Yes        | SESSION     | session-based authorization            |
-| Permissions Management | ✅ Yes        | SESSION     | session-based authorization            |
+| Admin Operations       | ✅ Yes        | SESSION     | RBAC with roles and permissions        |
+| Customer Auth          | ❌ No         | -           | -                                      |
+| Customer Operations    | ✅ Yes        | SESSION     | email verification + session           |
+| Doctor Auth            | ❌ No         | -           | -                                      |
+| Doctor Operations      | ✅ Yes        | SESSION     | email verification + 2-step onboarding |
+| Salesperson Auth       | ❌ No         | -           | -                                      |
+| Salesperson Operations | ✅ Yes        | SESSION     | admin-created accounts + session       |
+| User Management        | ✅ Yes        | SESSION     | RBAC with roles and permissions        |
+| Branch Management      | ✅ Yes        | SESSION     | RBAC with roles and permissions        |
+| Permissions Management | ✅ Yes        | SESSION     | RBAC with roles and permissions        |
 
 ---
 
@@ -514,6 +365,6 @@ For issues or questions regarding specific endpoints:
 
 ---
 
-**Last Updated:** December 18, 2025
-**Version:** 2.0
+**Last Updated:** December 28, 2025
+**Version:** 2.1
 **Status:** Complete & Production Ready

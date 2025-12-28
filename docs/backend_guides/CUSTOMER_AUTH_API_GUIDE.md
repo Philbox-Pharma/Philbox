@@ -1,14 +1,6 @@
 # Customer Authentication API Guide
 
-## Base URL
-
-```
-http://localhost:5000/api/customer/auth
-```
-
-## Rate Limiting
-
-All authentication routes are rate-limited to prevent abuse.
+**Base URL:** `http://localhost:5000/api/customer/auth`
 
 ---
 
@@ -23,37 +15,23 @@ All authentication routes are rate-limited to prevent abuse.
 
 ```json
 {
-  "name": "Jane Smith",
+  "fullName": "Jane Smith",
   "email": "jane.smith@example.com",
   "password": "SecurePass123!",
-  "password_confirmation": "SecurePass123!",
-  "gender": "female",
-  "date_of_birth": "1995-05-15",
-  "contact_number": "+923001234567",
-  "address": {
-    "street": "123 Main Street",
-    "city": "Karachi",
-    "state": "Sindh",
-    "postal_code": "74200",
-    "country": "Pakistan"
-  }
+  "contactNumber": "+923001234567",
+  "gender": "Male",
+  "dateOfBirth": "1995-05-15"
 }
 ```
 
 **Validation Rules:**
 
-- `name`: Required, 3-50 characters
+- `fullName`: Required, 3-50 characters
 - `email`: Required, valid email format
-- `password`: Required, min 8 characters, must include uppercase, lowercase, number, special character
-- `password_confirmation`: Must match password
-- `gender`: Required, must be "male", "female", or "other"
-- `date_of_birth`: Required, must be 18+ years old
-- `contact_number`: Required, valid phone format
-- `address.street`: Required
-- `address.city`: Required
-- `address.state`: Required
-- `address.postal_code`: Required
-- `address.country`: Required
+- `password`: Required, alphanumeric 3-30 characters
+- `contactNumber`: Optional, 10-15 digits
+- `gender`: Optional, must be "Male" or "Female"
+- `dateOfBirth`: Optional, valid date
 
 **Success Response:**
 
@@ -64,22 +42,15 @@ All authentication routes are rate-limited to prevent abuse.
   "data": {
     "customer": {
       "_id": "64customer123...",
-      "name": "Jane Smith",
+      "fullName": "Jane Smith",
       "email": "jane.smith@example.com",
-      "gender": "female",
-      "date_of_birth": "1995-05-15T00:00:00.000Z",
-      "contact_number": "+923001234567",
-      "email_verified": false,
-      "is_active": true,
-      "profile_completed": false,
-      "address": {
-        "_id": "64addr123...",
-        "street": "123 Main Street",
-        "city": "Karachi",
-        "state": "Sindh",
-        "postal_code": "74200",
-        "country": "Pakistan"
-      },
+      "gender": "Male",
+      "dateOfBirth": "1995-05-15T00:00:00.000Z",
+      "contactNumber": "+923001234567",
+      "is_Verified": false,
+      "status": "active",
+      "profile_img_url": "https://avatar.iran.liara.run/username?username=Jane Smith",
+      "cover_img_url": "https://placehold.co/1920x480/EAEAEA/000000?text=Jane Smith",
       "created_at": "2025-12-18T10:00:00.000Z"
     }
   }
@@ -99,8 +70,7 @@ All authentication routes are rate-limited to prevent abuse.
 
 ```json
 {
-  "email": "jane.smith@example.com",
-  "otp": "123456"
+  "token": "verification-token-from-email"
 }
 ```
 
@@ -113,9 +83,9 @@ All authentication routes are rate-limited to prevent abuse.
   "data": {
     "customer": {
       "_id": "64customer123...",
-      "name": "Jane Smith",
+      "fullName": "Jane Smith",
       "email": "jane.smith@example.com",
-      "email_verified": true
+      "is_Verified": true
     }
   }
 }
@@ -148,22 +118,29 @@ All authentication routes are rate-limited to prevent abuse.
   "data": {
     "customer": {
       "_id": "64customer123...",
-      "name": "Jane Smith",
+      "fullName": "Jane Smith",
       "email": "jane.smith@example.com",
-      "email_verified": true,
-      "profile_img": "https://cloudinary.com/.../profile.jpg",
-      "cover_img": "https://cloudinary.com/.../cover.jpg",
-      "address": {
+      "is_Verified": true,
+      "profile_img_url": "https://avatar.iran.liara.run/username?username=Jane Smith",
+      "cover_img_url": "https://placehold.co/1920x480/EAEAEA/000000?text=Jane Smith",
+      "address_id": {
+        "_id": "64addr123...",
         "street": "123 Main Street",
+        "town": "DHA",
         "city": "Karachi",
-        "state": "Sindh",
-        "postal_code": "74200",
-        "country": "Pakistan"
+        "province": "Sindh",
+        "zip_code": "74200",
+        "country": "Pakistan",
+        "google_map_link": "https://maps.google.com/..."
       },
-      "gender": "female",
-      "date_of_birth": "1995-05-15T00:00:00.000Z",
-      "contact_number": "+923001234567",
-      "is_active": true
+      "gender": "Male",
+      "dateOfBirth": "1995-05-15T00:00:00.000Z",
+      "contactNumber": "+923001234567",
+      "status": "active",
+      "roleId": {
+        "_id": "64role123...",
+        "name": "Customer"
+      }
     }
   }
 }
@@ -226,10 +203,8 @@ After successful Google authentication, redirects to frontend with session creat
 
 ```json
 {
-  "email": "jane.smith@example.com",
-  "otp": "123456",
-  "new_password": "NewSecurePass123!",
-  "confirm_password": "NewSecurePass123!"
+  "token": "reset-token-from-email",
+  "newPassword": "NewSecurePass123!"
 }
 ```
 
@@ -260,22 +235,28 @@ After successful Google authentication, redirects to frontend with session creat
   "data": {
     "customer": {
       "_id": "64customer123...",
-      "name": "Jane Smith",
+      "fullName": "Jane Smith",
       "email": "jane.smith@example.com",
-      "email_verified": true,
-      "profile_img": "https://cloudinary.com/.../profile.jpg",
-      "cover_img": "https://cloudinary.com/.../cover.jpg",
-      "address": {
+      "is_Verified": true,
+      "profile_img_url": "https://avatar.iran.liara.run/username?username=Jane Smith",
+      "cover_img_url": "https://placehold.co/1920x480/EAEAEA/000000?text=Jane Smith",
+      "address_id": {
+        "_id": "64addr123...",
         "street": "123 Main Street",
+        "town": "DHA",
         "city": "Karachi",
-        "state": "Sindh",
-        "postal_code": "74200",
+        "province": "Sindh",
+        "zip_code": "74200",
         "country": "Pakistan"
       },
-      "gender": "female",
-      "date_of_birth": "1995-05-15T00:00:00.000Z",
-      "contact_number": "+923001234567",
-      "is_active": true
+      "gender": "Male",
+      "dateOfBirth": "1995-05-15T00:00:00.000Z",
+      "contactNumber": "+923001234567",
+      "status": "active",
+      "roleId": {
+        "_id": "64role123...",
+        "name": "Customer"
+      }
     }
   }
 }
@@ -315,26 +296,34 @@ After successful Google authentication, redirects to frontend with session creat
 **Request Body (Form Data):**
 
 ```
-name: Jane Smith Updated
-contact_number: +923009876543
-address[street]: 456 New Street
-address[city]: Lahore
-address[state]: Punjab
-address[postal_code]: 54000
-address[country]: Pakistan
+fullName: Jane Smith Updated
+contactNumber: +923009876543
+gender: Female
+dateOfBirth: 1995-05-15
+street: 456 New Street
+town: Gulberg
+city: Lahore
+province: Punjab
+zip_code: 54000
+country: Pakistan
+google_map_link: https://maps.google.com/...
 profile_img: [File]
 cover_img: [File]
 ```
 
 **Validation Rules:**
 
-- `name`: Optional, 3-50 characters if provided
-- `contact_number`: Optional, valid phone format if provided
-- `address.street`: Optional
-- `address.city`: Optional
-- `address.state`: Optional
-- `address.postal_code`: Optional
-- `address.country`: Optional
+- `fullName`: Optional, 3-50 characters if provided
+- `contactNumber`: Optional, valid phone format if provided
+- `gender`: Optional, "Male" or "Female"
+- `dateOfBirth`: Optional, valid date
+- `street`: Optional
+- `town`: Optional
+- `city`: Optional
+- `province`: Optional
+- `zip_code`: Optional
+- `country`: Optional
+- `google_map_link`: Optional
 - `profile_img`: Optional, image file (JPEG, PNG, GIF)
 - `cover_img`: Optional, image file (JPEG, PNG, GIF)
 
@@ -347,17 +336,22 @@ cover_img: [File]
   "data": {
     "customer": {
       "_id": "64customer123...",
-      "name": "Jane Smith Updated",
+      "fullName": "Jane Smith Updated",
       "email": "jane.smith@example.com",
-      "contact_number": "+923009876543",
-      "profile_img": "https://cloudinary.com/.../new-profile.jpg",
-      "cover_img": "https://cloudinary.com/.../new-cover.jpg",
-      "address": {
+      "contactNumber": "+923009876543",
+      "gender": "Female",
+      "dateOfBirth": "1995-05-15T00:00:00.000Z",
+      "profile_img_url": "https://cloudinary.com/.../new-profile.jpg",
+      "cover_img_url": "https://cloudinary.com/.../new-cover.jpg",
+      "address_id": {
+        "_id": "64addr123...",
         "street": "456 New Street",
+        "town": "Gulberg",
         "city": "Lahore",
-        "state": "Punjab",
-        "postal_code": "54000",
-        "country": "Pakistan"
+        "province": "Punjab",
+        "zip_code": "54000",
+        "country": "Pakistan",
+        "google_map_link": "https://maps.google.com/..."
       },
       "updated_at": "2025-12-18T12:00:00.000Z"
     }
@@ -439,9 +433,10 @@ const updateProfile = async (formData) => {
 
 // Usage
 const form = new FormData();
-form.append("name", "Jane Smith");
-form.append("contact_number", "+923001234567");
-form.append("address[city]", "Karachi");
+form.append("fullName", "Jane Smith");
+form.append("contactNumber", "+923001234567");
+form.append("city", "Karachi");
+form.append("province", "Sindh");
 form.append("profile_img", fileInput.files[0]);
 
 await updateProfile(form);

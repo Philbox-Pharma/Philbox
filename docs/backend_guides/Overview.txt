@@ -1,0 +1,8 @@
+Current structure (all files are needed):
+
+README.md - Index/directory of all guides with overview
+QUICK_START.md - Quick reference for testing
+ADMIN_API_COMPLETE_GUIDE.md - Complete admin operations including auth, branch management, user management, permissions, customers, tasks, and Socket.IO events
+CUSTOMER_AUTH_API_GUIDE.md - Customer authentication and profile management
+DOCTOR_AUTH_API_GUIDE.md - Doctor authentication and onboarding
+SALESPERSON_COMPLETE_API_GUIDE.md - Complete salesperson operations including auth, task management, and Socket.IO real-time events
