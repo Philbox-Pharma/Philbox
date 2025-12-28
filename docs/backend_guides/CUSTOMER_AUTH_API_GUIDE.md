@@ -1,14 +1,6 @@
 # Customer Authentication API Guide
 
-## Base URL
-
-```
-http://localhost:5000/api/customer/auth
-```
-
-## Rate Limiting
-
-All authentication routes are rate-limited to prevent abuse.
+**Base URL:** `http://localhost:5000/api/customer/auth`
 
 ---
 
@@ -56,7 +48,7 @@ All authentication routes are rate-limited to prevent abuse.
       "dateOfBirth": "1995-05-15T00:00:00.000Z",
       "contactNumber": "+923001234567",
       "is_Verified": false,
-      "account_status": "active",
+      "status": "active",
       "profile_img_url": "https://avatar.iran.liara.run/username?username=Jane Smith",
       "cover_img_url": "https://placehold.co/1920x480/EAEAEA/000000?text=Jane Smith",
       "created_at": "2025-12-18T10:00:00.000Z"
@@ -78,8 +70,7 @@ All authentication routes are rate-limited to prevent abuse.
 
 ```json
 {
-  "email": "jane.smith@example.com",
-  "otp": "123456"
+  "token": "verification-token-from-email"
 }
 ```
 
@@ -145,7 +136,7 @@ All authentication routes are rate-limited to prevent abuse.
       "gender": "Male",
       "dateOfBirth": "1995-05-15T00:00:00.000Z",
       "contactNumber": "+923001234567",
-      "account_status": "active",
+      "status": "active",
       "roleId": {
         "_id": "64role123...",
         "name": "Customer"
@@ -212,10 +203,8 @@ After successful Google authentication, redirects to frontend with session creat
 
 ```json
 {
-  "email": "jane.smith@example.com",
-  "otp": "123456",
-  "new_password": "NewSecurePass123!",
-  "confirm_password": "NewSecurePass123!"
+  "token": "reset-token-from-email",
+  "newPassword": "NewSecurePass123!"
 }
 ```
 
@@ -263,7 +252,7 @@ After successful Google authentication, redirects to frontend with session creat
       "gender": "Male",
       "dateOfBirth": "1995-05-15T00:00:00.000Z",
       "contactNumber": "+923001234567",
-      "account_status": "active",
+      "status": "active",
       "roleId": {
         "_id": "64role123...",
         "name": "Customer"

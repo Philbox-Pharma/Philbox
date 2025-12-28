@@ -28,6 +28,7 @@ For quick testing commands and endpoint reference, see **[QUICK_START.md](./QUIC
 - Role-Based Access Control (RBAC)
 - Customer management and analytics
 - Salesperson task management
+- Socket.IO real-time events for task updates
 - Password reset functionality
 - Session-based authentication (connect.sid)
 
@@ -65,18 +66,21 @@ For quick testing commands and endpoint reference, see **[QUICK_START.md](./QUIC
 
 ---
 
-### 4. **SALESPERSON_AUTH_API_GUIDE.md**
+### 4. **SALESPERSON_COMPLETE_API_GUIDE.md**
 
-**Coverage:** Salesperson authentication with conditional 2FA
+**Coverage:** Complete salesperson operations including authentication and task management
 
 **Key Features:**
 
 - Login with conditional 2FA
 - OTP verification flow
 - 2FA settings management (enable/disable)
+- Task management (view, update status, add comments)
+- Task statistics and filtering
+- Socket.IO real-time events for task assignments and updates
 - Password reset functionality
 - Session management
-- Frontend integration examples
+- Frontend integration examples with React hooks
 
 ---
 
@@ -116,16 +120,24 @@ http://localhost:5000/api/
 │   ├── POST /logout
 │   └── GET /google
 │
-├── salesperson/auth/                    [SALESPERSON_AUTH_API_GUIDE.md]
+├── salesperson/auth/                    [SALESPERSON_COMPLETE_API_GUIDE.md]
 │   ├── POST /login
 │   ├── POST /verify-otp
 │   ├── POST /forget-password
 │   ├── POST /reset-password
+│   ├── GET /me
 │   ├── POST /logout
 │   └── PATCH /2fa-settings
 │
+├── salesperson/tasks/                   [SALESPERSON_COMPLETE_API_GUIDE.md]
+│   ├── GET /
+│   ├── GET /statistics
+│   ├── GET /:id
+│   ├── PUT /:id/status
+│   └── POST /:id/updates
+│
 └── admin/
-    ├── users/                           [USER_MANAGEMENT_API_GUIDE.md]
+    ├── users/                           [ADMIN_API_COMPLETE_GUIDE.md]
     │   ├── POST /admins
     │   ├── GET /admins
     │   ├── GET /admins/:id
@@ -142,7 +154,7 @@ http://localhost:5000/api/
     │   ├── GET /salespersons/stats
     │   └── GET /salesperson-tasks/performance
     │
-    ├── doctors/                         [USER_MANAGEMENT_API_GUIDE.md - Section 4]
+    ├── doctors/                         [ADMIN_API_COMPLETE_GUIDE.md]
     │   ├── GET /applications
     │   ├── GET /applications/:id
     │   ├── PATCH /applications/:id/approve
@@ -161,7 +173,7 @@ http://localhost:5000/api/
     │   ├── GET /branches/stats
     │   └── GET /branches/:id/performance
     │
-    └── permissions/                     [PERMISSIONS_RBAC_API_GUIDE.md]
+    └── permissions/                     [ADMIN_API_COMPLETE_GUIDE.md]
         ├── GET /roles
         ├── GET /roles/:roleId
         ├── PUT /roles/:roleId
@@ -177,28 +189,34 @@ http://localhost:5000/api/
 
 ## 📊 Statistics
 
-| Metric                         | Count |
-| ------------------------------ | ----- |
-| **Total Guides**               | 4     |
-| **Total Endpoints**            | 60+   |
-| **Admin Endpoints**            | 40+   |
-| **Customer Auth Endpoints**    | 10    |
-| **Doctor Auth Endpoints**      | 9     |
-| **Salesperson Auth Endpoints** | 6     |
+| Metric                            | Count |
+| --------------------------------- | ----- |
+| **Total Guides**                  | 4     |
+| **Total Endpoints**               | 71    |
+| **Admin Endpoints**               | 49    |
+| **Customer Auth Endpoints**       | 10    |
+| **Doctor Auth Endpoints**         | 9     |
+| **Salesperson Endpoints (Total)** | 12    |
+| **Salesperson Auth Endpoints**    | 7     |
+| **Salesperson Task Endpoints**    | 5     |
 
 ---
 
 ## 🔐 Authentication & Authorization Summary
 
-| Endpoint Group         | Auth Required | Auth Method | Authorization                          |
+| Feature                | Auth Required | Auth Method | Authorization                          |
 | ---------------------- | ------------- | ----------- | -------------------------------------- |
 | Admin Auth             | ❌ No         | -           | -                                      |
-| Customer Auth          | ✅ Yes        | SESSION     | email verification + session           |
-| Doctor Auth            | ✅ Yes        | SESSION     | email verification + 2-step onboarding |
-| Salesperson Auth       | ✅ Yes        | SESSION     | admin-created accounts                 |
-| User Management        | ✅ Yes        | SESSION     | session-based authorization            |
-| Branch Management      | ✅ Yes        | SESSION     | session-based authorization            |
-| Permissions Management | ✅ Yes        | SESSION     | session-based authorization            |
+| Admin Operations       | ✅ Yes        | SESSION     | RBAC with roles and permissions        |
+| Customer Auth          | ❌ No         | -           | -                                      |
+| Customer Operations    | ✅ Yes        | SESSION     | email verification + session           |
+| Doctor Auth            | ❌ No         | -           | -                                      |
+| Doctor Operations      | ✅ Yes        | SESSION     | email verification + 2-step onboarding |
+| Salesperson Auth       | ❌ No         | -           | -                                      |
+| Salesperson Operations | ✅ Yes        | SESSION     | admin-created accounts + session       |
+| User Management        | ✅ Yes        | SESSION     | RBAC with roles and permissions        |
+| Branch Management      | ✅ Yes        | SESSION     | RBAC with roles and permissions        |
+| Permissions Management | ✅ Yes        | SESSION     | RBAC with roles and permissions        |
 
 ---
 
@@ -347,6 +365,6 @@ For issues or questions regarding specific endpoints:
 
 ---
 
-**Last Updated:** December 18, 2025
-**Version:** 2.0
+**Last Updated:** December 28, 2025
+**Version:** 2.1
 **Status:** Complete & Production Ready

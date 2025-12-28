@@ -97,7 +97,7 @@ class DoctorManagementService {
         })
         .populate({
           path: 'reviewed_by_admin_id',
-          select: 'name email profile_img',
+          select: 'name email profile_img_url',
         });
 
       if (!application) {
