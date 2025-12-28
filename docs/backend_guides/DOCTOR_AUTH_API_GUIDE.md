@@ -1,14 +1,6 @@
 # Doctor Authentication & Onboarding API Guide
 
-## Base URL
-
-```
-http://localhost:5000/api/doctor/auth
-```
-
-## Rate Limiting
-
-All authentication routes are rate-limited to prevent abuse.
+**Base URL:** `http://localhost:5000/api/doctor/auth`
 
 ---
 
@@ -69,7 +61,7 @@ The doctor onboarding process involves multiple steps:
       "dateOfBirth": "1985-03-20T00:00:00.000Z",
       "contactNumber": "+923001234567",
       "is_Verified": false,
-      "account_status": "active",
+      "status": "active",
       "profile_img_url": "https://avatar.iran.liara.run/username?username=Dr. Ahmed Hassan",
       "cover_img_url": "https://placehold.co/1920x480/EAEAEA/000000?text=Dr. Ahmed Hassan",
       "created_at": "2025-12-18T10:00:00.000Z"
@@ -89,8 +81,7 @@ The doctor onboarding process involves multiple steps:
 
 ```json
 {
-  "email": "ahmed.hassan@doctormail.com",
-  "otp": "123456"
+  "token": "verification-token-from-email"
 }
 ```
 
@@ -141,7 +132,7 @@ The doctor onboarding process involves multiple steps:
       "fullName": "Dr. Ahmed Hassan",
       "email": "ahmed.hassan@doctormail.com",
       "is_Verified": true,
-      "account_status": "active",
+      "status": "active",
       "profile_img_url": "https://avatar.iran.liara.run/username?username=Dr. Ahmed Hassan",
       "cover_img_url": "https://placehold.co/1920x480/EAEAEA/000000?text=Dr. Ahmed Hassan",
       "gender": "Male",
@@ -212,7 +203,7 @@ experience_letters: [File]
       "_id": "64doctor123...",
       "fullName": "Dr. Ahmed Hassan",
       "email": "ahmed.hassan@doctormail.com",
-      "account_status": "active"
+      "status": "active"
     },
     "documents": {
       "_id": "64doc123...",
@@ -287,7 +278,7 @@ cover_img: [File]
       "fullName": "Dr. Ahmed Hassan",
       "email": "ahmed.hassan@doctormail.com",
       "is_Verified": true,
-      "account_status": "active",
+      "status": "active",
       "profile_img_url": "https://cloudinary.com/.../profile.jpg",
       "cover_img_url": "https://cloudinary.com/.../cover.jpg",
       "digital_signature": "https://cloudinary.com/.../signature.png",
@@ -371,10 +362,8 @@ cover_img: [File]
 
 ```json
 {
-  "email": "ahmed.hassan@doctormail.com",
-  "otp": "123456",
-  "new_password": "NewSecurePass123!",
-  "confirm_password": "NewSecurePass123!"
+  "token": "reset-token-from-email",
+  "newPassword": "NewSecurePass123!"
 }
 ```
 
@@ -452,7 +441,7 @@ const checkProfileStatus = (doctor) => {
   if (!doctor.is_Verified) return "verify-email";
   if (!doctor.educational_details || doctor.educational_details.length === 0)
     return "complete-profile";
-  if (doctor.account_status !== "active") return "account-suspended";
+  if (doctor.status !== "active") return "account-suspended";
   return "dashboard";
 };
 ```

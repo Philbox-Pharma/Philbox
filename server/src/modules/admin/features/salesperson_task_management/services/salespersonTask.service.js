@@ -2,6 +2,10 @@ import SalespersonTask from '../../../../../models/SalespersonTask.js';
 import Salesperson from '../../../../../models/Salesperson.js';
 import Branch from '../../../../../models/Branch.js';
 import { logAdminActivity } from '../../../utils/logAdminActivities.js';
+import {
+  emitToSalesperson,
+  emitToBranch,
+} from '../../../../../config/socket.config.js';
 
 class SalespersonTaskService {
   /**
@@ -64,7 +68,7 @@ class SalespersonTaskService {
       // Populate references
       await task.populate([
         { path: 'assigned_by_admin_id', select: 'name email category' },
-        { path: 'salesperson_id', select: 'fullName email phone' },
+        { path: 'salesperson_id', select: 'fullName email contactNumber' },
         { path: 'branch_id', select: 'name code' },
       ]);
 
@@ -76,6 +80,27 @@ class SalespersonTaskService {
         task._id,
         { task_details: { title, priority, deadline } }
       );
+
+      // Emit socket event to salesperson
+      emitToSalesperson(salesperson_id.toString(), 'task:created', {
+        taskId: task._id,
+        title: task.title,
+        priority: task.priority,
+        deadline: task.deadline,
+        assignedBy: {
+          _id: req.admin._id,
+          name: req.admin.name,
+          category: req.admin.category,
+        },
+        timestamp: new Date(),
+      });
+
+      // Emit to branch room
+      emitToBranch(branch_id.toString(), 'task:created', {
+        taskId: task._id,
+        salespersonId: salesperson_id,
+        branchId: branch_id,
+      });
 
       return task;
     } catch (error) {
@@ -135,7 +160,7 @@ class SalespersonTaskService {
       const [tasks, total] = await Promise.all([
         SalespersonTask.find(filter)
           .populate('assigned_by_admin_id', 'name email category')
-          .populate('salesperson_id', 'fullName email phone')
+          .populate('salesperson_id', 'fullName email contactNumber')
           .populate('branch_id', 'name code')
           .sort({ created_at: -1 })
           .skip(skip)
@@ -173,7 +198,7 @@ class SalespersonTaskService {
     try {
       const task = await SalespersonTask.findById(taskId)
         .populate('assigned_by_admin_id', 'name email category')
-        .populate('salesperson_id', 'fullName email phone branch_id')
+        .populate('salesperson_id', 'fullName email contactNumber branch_id')
         .populate('branch_id', 'name code under_administration_of')
         .lean();
 
@@ -245,7 +270,7 @@ class SalespersonTaskService {
       // Populate for response
       await task.populate([
         { path: 'assigned_by_admin_id', select: 'name email category' },
-        { path: 'salesperson_id', select: 'fullName email phone' },
+        { path: 'salesperson_id', select: 'fullName email contactNumber' },
         { path: 'branch_id', select: 'name code' },
       ]);
 
@@ -257,6 +282,25 @@ class SalespersonTaskService {
         taskId,
         { changes: data }
       );
+
+      // Emit socket event to salesperson
+      emitToSalesperson(task.salesperson_id._id.toString(), 'task:updated', {
+        taskId: task._id,
+        title: task.title,
+        changes: data,
+        updatedBy: {
+          _id: req.admin._id,
+          name: req.admin.name,
+          category: req.admin.category,
+        },
+        timestamp: new Date(),
+      });
+
+      // Emit to branch room
+      emitToBranch(task.branch_id._id.toString(), 'task:updated', {
+        taskId: task._id,
+        salespersonId: task.salesperson_id._id,
+      });
 
       return task;
     } catch (error) {
@@ -302,7 +346,7 @@ class SalespersonTaskService {
       // Populate for response
       await task.populate([
         { path: 'assigned_by_admin_id', select: 'name email category' },
-        { path: 'salesperson_id', select: 'fullName email phone' },
+        { path: 'salesperson_id', select: 'fullName email contactNumber' },
         { path: 'branch_id', select: 'name code' },
       ]);
 
@@ -314,6 +358,28 @@ class SalespersonTaskService {
         taskId,
         { update: updateData.message }
       );
+
+      // Emit socket event to salesperson
+      emitToSalesperson(
+        task.salesperson_id._id.toString(),
+        'task:comment_added',
+        {
+          taskId: task._id,
+          message: updateData.message,
+          addedBy: {
+            _id: req.admin._id,
+            name: req.admin.name,
+            category: req.admin.category,
+          },
+          timestamp: new Date(),
+        }
+      );
+
+      // Emit to branch room
+      emitToBranch(task.branch_id._id.toString(), 'task:comment_added', {
+        taskId: task._id,
+        addedBy: 'admin',
+      });
 
       return task;
     } catch (error) {
@@ -355,6 +421,23 @@ class SalespersonTaskService {
         'salesperson_tasks',
         taskId
       );
+
+      // Emit socket event to salesperson
+      emitToSalesperson(task.salesperson_id.toString(), 'task:deleted', {
+        taskId: task._id,
+        title: task.title,
+        deletedBy: {
+          _id: req.admin._id,
+          name: req.admin.name,
+          category: req.admin.category,
+        },
+        timestamp: new Date(),
+      });
+
+      // Emit to branch room
+      emitToBranch(task.branch_id._id.toString(), 'task:deleted', {
+        taskId: task._id,
+      });
 
       return { message: 'Task deleted successfully' };
     } catch (error) {

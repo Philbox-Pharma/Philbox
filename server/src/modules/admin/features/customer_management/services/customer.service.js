@@ -74,7 +74,7 @@ class CustomerManagementService {
       const populate = [
         {
           path: 'address_id',
-          select: 'street city state country zipCode',
+          select: 'street city province country zip_code',
         },
         {
           path: 'roleId',
@@ -120,7 +120,7 @@ class CustomerManagementService {
         )
         .populate({
           path: 'address_id',
-          select: 'street city state country zipCode',
+          select: 'street city province country zip_code',
         })
         .populate({
           path: 'roleId',
