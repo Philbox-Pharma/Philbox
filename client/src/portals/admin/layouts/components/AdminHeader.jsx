@@ -1,4 +1,6 @@
+/* eslint-disable no-unused-vars */
 // src/portals/admin/layouts/components/AdminHeader.jsx
+import { motion } from 'framer-motion';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
@@ -25,7 +27,6 @@ import {
   activityLogsApi,
 } from '../../../../core/api/admin/adminApi';
 
-// eslint-disable-next-line no-unused-vars
 export default function AdminHeader({ toggleSidebar, sidebarOpen, admin }) {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
@@ -294,7 +295,7 @@ export default function AdminHeader({ toggleSidebar, sidebarOpen, admin }) {
                             notif.unread ? 'bg-blue-50/50' : ''
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
                             {getNotificationIcon(notif.type)}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -306,7 +307,7 @@ export default function AdminHeader({ toggleSidebar, sidebarOpen, admin }) {
                             </p>
                           </div>
                           {notif.unread && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
+                            <div className="w-2 h-2 bg-blue-500 rounded-full shrink-0 mt-2"></div>
                           )}
                         </div>
                       ))
@@ -377,7 +378,7 @@ export default function AdminHeader({ toggleSidebar, sidebarOpen, admin }) {
                   className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden"
                 >
                   {/* Profile Header */}
-                  <div className="p-4 bg-gradient-to-r from-[#1a365d] to-[#2c5282] text-white">
+                  <div className="p-4 bg-linear-to-r from-[#1a365d] to-[#2c5282] text-white">
                     <div className="flex items-center gap-3">
                       {admin?.profile_img_url ? (
                         <img
