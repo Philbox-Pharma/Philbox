@@ -123,7 +123,7 @@ This guide covers all Admin APIs for the Philbox healthcare platform. All endpoi
 ```json
 {
   "success": true,
-  "message": "OTP verified successfully",
+  "message": "2FA Verified",
   "data": {
     "admin": {
       "_id": "64abc123...",
@@ -131,16 +131,20 @@ This guide covers all Admin APIs for the Philbox healthcare platform. All endpoi
       "email": "admin@philbox.com",
       "phone_number": "+92-300-1234567",
       "category": "super-admin",
-      "status": "active",
       "profile_img_url": "https://avatar.iran.liara.run/username?username=John+Doe",
       "cover_img_url": "https://placehold.co/1920x480/EAEAEA/000000?text=John+Doe",
-      "branches_managed": [],
+      "status": "active",
       "addresses": [],
+      "branches_managed": [],
       "roleId": "64role123...",
       "isTwoFactorEnabled": true,
-      "created_at": "2025-01-15T10:00:00.000Z"
-    },
-    "nextStep": "dashboard"
+      "otpCode": null,
+      "otpExpiresAt": null,
+      "resetPasswordToken": null,
+      "resetPasswordExpires": null,
+      "created_at": "2025-01-15T10:00:00.000Z",
+      "updated_at": "2025-12-29T10:00:00.000Z"
+    }
   }
 }
 ```
@@ -169,7 +173,8 @@ This guide covers all Admin APIs for the Philbox healthcare platform. All endpoi
 ```json
 {
   "success": true,
-  "message": "Password reset link sent to your email"
+  "message": "Password reset link sent to your email",
+  "data": null
 }
 ```
 
@@ -193,7 +198,8 @@ This guide covers all Admin APIs for the Philbox healthcare platform. All endpoi
 ```json
 {
   "success": true,
-  "message": "Password reset successfully"
+  "message": "Password reset successfully",
+  "data": null
 }
 ```
 

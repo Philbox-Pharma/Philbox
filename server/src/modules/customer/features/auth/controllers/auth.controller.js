@@ -112,26 +112,9 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-// ------------------------- PROFILE MANAGEMENT --------------------------
+// ------------------------- CURRENT USER --------------------------
 export const getMe = async (req, res) => {
   return sendResponse(res, 200, 'Current user fetched', req.customer);
-};
-
-export const updateProfile = async (req, res) => {
-  try {
-    const customerId = req.session.customerId || req.customer?._id;
-    const files = req.files;
-
-    const result = await customerAuthService.updateProfile(
-      customerId,
-      req.body,
-      files,
-      req
-    );
-    return sendResponse(res, 200, 'Profile updated successfully', result);
-  } catch (err) {
-    return sendResponse(res, 500, 'Server Error', null, err.message);
-  }
 };
 
 // ------------------------- LOGOUT --------------------------

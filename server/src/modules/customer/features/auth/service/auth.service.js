@@ -1,5 +1,4 @@
 import Customer from '../../../../../models/Customer.js';
-import Address from '../../../../../models/Address.js';
 import Role from '../../../../../models/Role.js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
@@ -8,7 +7,6 @@ import {
   sendResetEmail,
 } from '../../../../../utils/sendEmail.js';
 import { logCustomerActivity } from '../../../utils/logCustomerActivities.js';
-import { uploadToCloudinary } from '../../../../../utils/uploadToCloudinary.js';
 import { ROUTES } from '../../../../../constants/global.routes.constants.js';
 
 class CustomerAuthService {
@@ -178,91 +176,6 @@ class CustomerAuthService {
       accountStatus: customer.account_status,
       customer: safeCustomer,
       nextStep,
-    };
-  }
-
-  /**
-   * Update Profile (Handles Text Data + Address + Images)
-   */
-  async updateProfile(customerId, data, files, req) {
-    const customer = await Customer.findById(customerId);
-    if (!customer) throw new Error('USER_NOT_FOUND');
-
-    // 1. Handle Images
-    if (files && files['profile_img'] && files['profile_img'][0]) {
-      customer.profile_img_url = await uploadToCloudinary(
-        files['profile_img'][0].path,
-        'customer_profiles'
-      );
-    }
-    if (files && files['cover_img'] && files['cover_img'][0]) {
-      customer.cover_img_url = await uploadToCloudinary(
-        files['cover_img'][0].path,
-        'customer_covers'
-      );
-    }
-
-    // 2. Handle Address (if provided)
-    if (data.street || data.city || data.province || data.zip_code) {
-      let address;
-      if (customer.address_id) {
-        // Update existing address
-        address = await Address.findByIdAndUpdate(
-          customer.address_id,
-          {
-            street: data.street,
-            city: data.city,
-            province: data.province,
-            zip_code: data.zip_code,
-            country: data.country,
-            google_map_link: data.google_map_link,
-            updated_at: Date.now(),
-          },
-          { new: true }
-        );
-      } else {
-        // Create new address
-        address = await Address.create({
-          street: data.street,
-          city: data.city,
-          province: data.province,
-          zip_code: data.zip_code,
-          country: data.country,
-          google_map_link: data.google_map_link,
-          customer_id: customer._id,
-          created_at: Date.now(),
-          updated_at: Date.now(),
-        });
-        customer.address_id = address._id;
-      }
-    }
-
-    // 3. Handle Basic Info
-    if (data.fullName) customer.fullName = data.fullName;
-    if (data.contactNumber) customer.contactNumber = data.contactNumber;
-    if (data.gender) customer.gender = data.gender;
-    if (data.dateOfBirth) customer.dateOfBirth = data.dateOfBirth;
-
-    customer.updated_at = Date.now();
-    await customer.save();
-
-    // Fetch populated data to return
-    const updatedCustomer = await Customer.findById(customerId)
-      .populate('address_id')
-      .select('-passwordHash');
-
-    await logCustomerActivity(
-      req,
-      'update_profile',
-      `Profile updated`,
-      'customers',
-      customer._id
-    );
-
-    return {
-      customer: updatedCustomer,
-      message: 'Profile updated successfully',
-      nextStep: 'dashboard',
     };
   }
 
