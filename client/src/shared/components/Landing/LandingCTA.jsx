@@ -1,5 +1,4 @@
 /* eslint-disable no-unused-vars */
-// src/shared/components/Landing/LandingCTA.jsx
 import { motion } from 'framer-motion';
 
 export default function LandingCTA({
