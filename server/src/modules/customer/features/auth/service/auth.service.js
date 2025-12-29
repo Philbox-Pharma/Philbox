@@ -1,5 +1,4 @@
 import Customer from '../../../../../models/Customer.js';
-import Address from '../../../../../models/Address.js';
 import Role from '../../../../../models/Role.js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
@@ -8,7 +7,6 @@ import {
   sendResetEmail,
 } from '../../../../../utils/sendEmail.js';
 import { logCustomerActivity } from '../../../utils/logCustomerActivities.js';
-import { uploadToCloudinary } from '../../../../../utils/uploadToCloudinary.js';
 import { ROUTES } from '../../../../../constants/global.routes.constants.js';
 
 class CustomerAuthService {

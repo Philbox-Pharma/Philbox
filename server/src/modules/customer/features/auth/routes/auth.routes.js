@@ -20,7 +20,7 @@ import {
 } from '../controllers/auth.controller.js';
 import { authRoutesLimiter } from '../../../../../utils/authRoutesLimiter.js';
 import { authenticate } from '../../../middleware/auth.middleware.js';
-import { upload } from '../../../../../middlewares/multer.middleware.js';
+
 import passport from '../config/passport.config.js';
 
 const router = express.Router();
