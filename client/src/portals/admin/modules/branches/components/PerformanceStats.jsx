@@ -1,4 +1,5 @@
-import { motion as _motion } from 'framer-motion';
+/* eslint-disable no-unused-vars */
+import { motion } from 'framer-motion';
 import {
   FaShoppingCart,
   FaMoneyBillWave,
@@ -6,7 +7,6 @@ import {
   FaExclamationTriangle,
 } from 'react-icons/fa';
 
-// eslint-disable-next-line no-unused-vars
 const StatCard = ({ label, value, subValue, icon: Icon, color }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}

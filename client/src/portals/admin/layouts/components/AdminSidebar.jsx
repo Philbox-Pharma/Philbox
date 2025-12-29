@@ -1,4 +1,6 @@
+/* eslint-disable no-unused-vars */
 // src/portals/admin/layouts/components/AdminSidebar.jsx
+import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
@@ -315,7 +317,7 @@ export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
                 `}
       >
         {/* Header - Gradient Blue-Green */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 bg-gradient-to-r from-[#2f855a] to-[#1a365d]">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 bg-linear-to-r from-[#2f855a] to-[#1a365d]">
           <div className="flex items-center justify-center w-full lg:w-auto">
             <img
               src="/Philbox.PNG"
@@ -349,7 +351,7 @@ export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
         </nav>
 
         {/* Footer - Gradient Blue-Green */}
-        <div className="p-4 border-t border-white/10 bg-gradient-to-r from-[#2f855a] to-[#1a365d]">
+        <div className="p-4 border-t border-white/10 bg-linear-to-r from-[#2f855a] to-[#1a365d]">
           <div className="flex items-center gap-3 text-white/80 text-sm">
             <FaQuestionCircle />
             <span>Need Help?</span>
