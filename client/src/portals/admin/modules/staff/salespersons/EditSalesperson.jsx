@@ -359,7 +359,7 @@ export default function EditSalesperson() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-yellow-700 flex items-center gap-2"
         >
-          <FaExclamationTriangle className="flex-shrink-0" />
+          <FaExclamationTriangle className="shrink-0" />
           <span>{error} - Showing demo data</span>
         </motion.div>
       )}
@@ -373,7 +373,7 @@ export default function EditSalesperson() {
       >
         {errors.submit && (
           <div className="bg-red-50 border-b border-red-200 p-4 text-red-700 flex items-center gap-2">
-            <FaExclamationTriangle className="flex-shrink-0" />
+            <FaExclamationTriangle className="shrink-0" />
             <span>{errors.submit}</span>
           </div>
         )}
