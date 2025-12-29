@@ -1,7 +1,8 @@
+/* eslint-disable no-unused-vars */
 // src/portals/admin/modules/staff/salespersons/AddSalesperson.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion as _motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   FaArrowLeft,
   FaSave,

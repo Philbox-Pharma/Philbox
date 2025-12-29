@@ -1,7 +1,8 @@
 /* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-unused-vars */
 // src/shared/components/Map/MapPickerModal.jsx
 import { useEffect, useState, useCallback } from 'react';
-import { motion as _motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   FaTimes,
   FaSearch,

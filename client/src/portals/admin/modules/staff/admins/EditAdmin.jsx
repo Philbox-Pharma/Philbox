@@ -1,8 +1,9 @@
+/* eslint-disable no-unused-vars */
 // src/portals/admin/modules/staff/admins/EditAdmin.jsx
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 
-import { motion as _motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   FaArrowLeft,
   FaSave,
@@ -474,7 +475,7 @@ export default function EditAdmin() {
         {/* Error Banner */}
         {errors.submit && (
           <div className="bg-red-50 p-4 text-red-700 border-b border-red-200 flex items-center gap-2">
-            <FaExclamationTriangle className="flex-shrink-0" />
+            <FaExclamationTriangle className="shrink-0" />
             <span>{errors.submit}</span>
           </div>
         )}
@@ -488,7 +489,7 @@ export default function EditAdmin() {
 
             {/* Cover Image */}
             <div className="relative mb-6">
-              <div className="h-32 sm:h-40 bg-gradient-to-r from-[#1a365d] to-[#2c5282] rounded-xl overflow-hidden">
+              <div className="h-32 sm:h-40 bg-linear-to-r from-[#1a365d] to-[#2c5282] rounded-xl overflow-hidden">
                 {coverPreview ? (
                   <img
                     src={coverPreview}
@@ -613,7 +614,7 @@ export default function EditAdmin() {
                 Email Address
               </label>
               <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 rounded-lg border border-gray-200 text-gray-600">
-                <FaEnvelope className="text-gray-400 flex-shrink-0" />
+                <FaEnvelope className="text-gray-400 shrink-0" />
                 <span className="truncate">{adminEmail}</span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
