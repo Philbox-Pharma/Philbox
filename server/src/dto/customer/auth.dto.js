@@ -36,18 +36,3 @@ export const resetPasswordDTO = Joi.object({
   token: Joi.string().required(),
   newPassword: Joi.string().min(6).required(),
 });
-
-// Customers don't have "onboarding", but they can update profile & address
-export const updateProfileDTO = Joi.object({
-  fullName: Joi.string().min(3).optional(),
-  contactNumber: Joi.string().optional(),
-  gender: Joi.string().valid('Male', 'Female').optional(),
-  dateOfBirth: Joi.date().optional(),
-  // Address fields (to create/update Address document)
-  street: Joi.string().optional(),
-  city: Joi.string().optional(),
-  province: Joi.string().optional(),
-  zip_code: Joi.string().optional(),
-  country: Joi.string().optional(),
-  google_map_link: Joi.string().optional(),
-});

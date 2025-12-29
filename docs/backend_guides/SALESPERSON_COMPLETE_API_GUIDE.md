@@ -160,7 +160,8 @@
 ```json
 {
   "success": true,
-  "message": "Password reset OTP sent to your email"
+  "message": "Password reset email sent successfully",
+  "data": null
 }
 ```
 
@@ -184,7 +185,8 @@
 ```json
 {
   "success": true,
-  "message": "Password reset successful. You can now log in with your new password."
+  "message": "Password reset successfully",
+  "data": null
 }
 ```
 

@@ -6,7 +6,6 @@ import {
   loginDTO,
   forgetPasswordDTO,
   resetPasswordDTO,
-  updateProfileDTO,
 } from '../../../../../dto/customer/auth.dto.js';
 import {
   register,
@@ -15,14 +14,13 @@ import {
   logout,
   forgetPassword,
   resetPassword,
-  updateProfile,
   googleAuth,
   googleAuthCallback,
   getMe,
 } from '../controllers/auth.controller.js';
 import { authRoutesLimiter } from '../../../../../utils/authRoutesLimiter.js';
 import { authenticate } from '../../../middleware/auth.middleware.js';
-import { upload } from '../../../../../middlewares/multer.middleware.js';
+
 import passport from '../config/passport.config.js';
 
 const router = express.Router();
@@ -75,17 +73,5 @@ router.post(`/logout`, authenticate, logout);
 
 // ✅ 7. Get Current User (NOT rate limited)
 router.get(`/me`, authenticate, getMe);
-
-// ✅ 8. Update Profile (NOT rate limited)
-router.put(
-  `/profile`,
-  authenticate,
-  validate(updateProfileDTO),
-  upload.fields([
-    { name: 'profile_img', maxCount: 1 },
-    { name: 'cover_img', maxCount: 1 },
-  ]),
-  updateProfile
-);
 
 export default router;
