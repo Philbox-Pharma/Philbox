@@ -1,5 +1,6 @@
+/* eslint-disable no-unused-vars */
 // src/shared/components/Landing/LandingCTA.jsx
-import { motion as _motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export default function LandingCTA({
   title = 'Ready to Get Started?',
@@ -82,7 +83,7 @@ export default function LandingCTA({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={secondaryCTA.onClick}
-              className="px-10 py-4 bg-white/10 backdrop-blur-sm border-2 border-white text-white rounded-full font-bold text-lg hover:bg-white hover:text-[var(--primary)] transition-all"
+              className="px-10 py-4 bg-white/10 backdrop-blur-sm border-2 border-white text-white rounded-full font-bold text-lg hover:bg-white hover:text-(--primary) transition-all"
               style={{ '--primary': primaryColor }}
             >
               {secondaryCTA.label}

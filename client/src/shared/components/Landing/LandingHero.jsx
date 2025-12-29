@@ -1,5 +1,6 @@
+/* eslint-disable no-unused-vars */
 // src/shared/components/Landing/LandingHero.jsx
-import { motion as _motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FaChevronDown } from 'react-icons/fa';
 
 export default function LandingHero({
@@ -139,7 +140,7 @@ export default function LandingHero({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={content.secondaryCTA.onClick}
-                className="px-8 py-4 bg-white/10 backdrop-blur-sm border-2 border-white text-white rounded-full font-bold text-lg hover:bg-white hover:text-[var(--primary)] transition-all flex items-center gap-2"
+                className="px-8 py-4 bg-white/10 backdrop-blur-sm border-2 border-white text-white rounded-full font-bold text-lg hover:bg-white hover:text-(--primary) transition-all flex items-center gap-2"
                 style={{ '--primary': theme.primary }}
               >
                 {content.secondaryCTA.icon && <content.secondaryCTA.icon />}

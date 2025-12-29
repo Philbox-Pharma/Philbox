@@ -1,6 +1,7 @@
+/* eslint-disable no-unused-vars */
 // src/shared/components/Landing/LandingHeader.jsx
 import { useState, useEffect } from 'react';
-import { motion as _motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FaBars, FaTimes } from 'react-icons/fa';
 
 export default function LandingHeader({
@@ -55,7 +56,7 @@ export default function LandingHeader({
                 href={link.href}
                 className={`font-medium transition-colors ${
                   scrolled
-                    ? 'text-gray-700 hover:text-[var(--primary)]'
+                    ? 'text-gray-700 hover:text-(--primary)'
                     : 'text-white/90 hover:text-white'
                 }`}
                 style={{ '--primary': primaryColor }}
@@ -130,7 +131,7 @@ export default function LandingHeader({
                 <a
                   key={link.name}
                   href={link.href}
-                  className="block text-gray-700 hover:text-[var(--primary)] font-medium py-2"
+                  className="block text-gray-700 hover:text-(--primary) font-medium py-2"
                   style={{ '--primary': primaryColor }}
                   onClick={() => setMobileMenuOpen(false)}
                 >
