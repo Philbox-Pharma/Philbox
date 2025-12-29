@@ -51,21 +51,9 @@ The doctor onboarding process involves multiple steps:
 ```json
 {
   "success": true,
-  "message": "Doctor registered successfully. Please check your email to verify your account.",
+  "message": "Registration successful. Please verify your email.",
   "data": {
-    "doctor": {
-      "_id": "64doctor123...",
-      "fullName": "Dr. Ahmed Hassan",
-      "email": "ahmed.hassan@doctormail.com",
-      "gender": "Male",
-      "dateOfBirth": "1985-03-20T00:00:00.000Z",
-      "contactNumber": "+923001234567",
-      "is_Verified": false,
-      "status": "active",
-      "profile_img_url": "https://avatar.iran.liara.run/username?username=Dr. Ahmed Hassan",
-      "cover_img_url": "https://placehold.co/1920x480/EAEAEA/000000?text=Dr. Ahmed Hassan",
-      "created_at": "2025-12-18T10:00:00.000Z"
-    }
+    "nextStep": "verify-email"
   }
 }
 ```
@@ -90,14 +78,9 @@ The doctor onboarding process involves multiple steps:
 ```json
 {
   "success": true,
-  "message": "Email verified successfully. You can now log in.",
+  "message": "Email verified successfully. You can now login.",
   "data": {
-    "doctor": {
-      "_id": "64doctor123...",
-      "fullName": "Dr. Ahmed Hassan",
-      "email": "ahmed.hassan@doctormail.com",
-      "is_Verified": true
-    }
+    "nextStep": "login"
   }
 }
 ```

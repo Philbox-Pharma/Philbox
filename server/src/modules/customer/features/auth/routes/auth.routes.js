@@ -6,7 +6,6 @@ import {
   loginDTO,
   forgetPasswordDTO,
   resetPasswordDTO,
-  updateProfileDTO,
 } from '../../../../../dto/customer/auth.dto.js';
 import {
   register,
@@ -15,7 +14,6 @@ import {
   logout,
   forgetPassword,
   resetPassword,
-  updateProfile,
   googleAuth,
   googleAuthCallback,
   getMe,
@@ -75,17 +73,5 @@ router.post(`/logout`, authenticate, logout);
 
 // ✅ 7. Get Current User (NOT rate limited)
 router.get(`/me`, authenticate, getMe);
-
-// ✅ 8. Update Profile (NOT rate limited)
-router.put(
-  `/profile`,
-  authenticate,
-  validate(updateProfileDTO),
-  upload.fields([
-    { name: 'profile_img', maxCount: 1 },
-    { name: 'cover_img', maxCount: 1 },
-  ]),
-  updateProfile
-);
 
 export default router;
