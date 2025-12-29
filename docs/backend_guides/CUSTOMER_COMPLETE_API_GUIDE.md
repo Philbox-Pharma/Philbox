@@ -451,7 +451,114 @@
 
 ---
 
-## 📋 VALIDATION RULES
+## � DASHBOARD ENDPOINTS
+
+### 14. Get Dashboard Data
+
+**Endpoint:** `GET /api/customer/dashboard`
+**Auth Required:** Yes
+
+**Description:** Get personalized dashboard data including quick stats, recent orders, upcoming appointments, and medicine recommendations.
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Dashboard data fetched successfully",
+  "data": {
+    "stats": {
+      "totalOrders": 15,
+      "upcomingAppointments": 2
+    },
+    "recentOrders": [
+      {
+        "_id": "order_id_1",
+        "total": 2500,
+        "status": "completed",
+        "created_at": "2025-12-28T10:00:00.000Z",
+        "delivery_charges": 150,
+        "branch": {
+          "_id": "branch_id",
+          "name": "Main Branch",
+          "address": "123 Medical Street"
+        },
+        "items": [
+          {
+            "medicine": {
+              "_id": "med_id_1",
+              "Name": "Paracetamol",
+              "img_url": "https://res.cloudinary.com/.../medicine.jpg",
+              "sale_price": 500
+            },
+            "quantity": 2,
+            "subtotal": 1000
+          }
+        ],
+        "itemCount": 3
+      }
+    ],
+    "upcomingAppointments": [
+      {
+        "_id": "appointment_id_1",
+        "doctor": {
+          "_id": "doctor_id",
+          "fullName": "Dr. Sarah Johnson",
+          "specialization": "Cardiologist",
+          "profile_img_url": "https://res.cloudinary.com/.../doctor.jpg"
+        },
+        "slot": {
+          "_id": "slot_id",
+          "date": "2025-12-30T00:00:00.000Z",
+          "start_time": "10:00 AM",
+          "end_time": "10:30 AM"
+        },
+        "status": "pending",
+        "appointment_type": "online",
+        "created_at": "2025-12-29T08:00:00.000Z"
+      }
+    ],
+    "medicineRecommendations": [
+      {
+        "_id": "med_id_1",
+        "Name": "Paracetamol 500mg",
+        "img_url": "https://res.cloudinary.com/.../medicine.jpg",
+        "sale_price": 500,
+        "description": "Pain reliever and fever reducer",
+        "mgs": "500mg"
+      }
+    ]
+  }
+}
+```
+
+**Response Details:**
+
+- **stats**: Quick overview statistics
+  - `totalOrders`: Total number of orders placed by the customer
+  - `upcomingAppointments`: Count of pending/in-progress appointments
+
+- **recentOrders**: Last 5 orders with complete details
+  - Includes order status, total amount, delivery charges
+  - Branch information
+  - Order items with medicine details
+  - Item count
+
+- **upcomingAppointments**: Next 3 upcoming appointments
+  - Only includes accepted appointments with pending/in-progress status
+  - Doctor information with specialization
+  - Slot details (date and time)
+  - Appointment type (online/in-person)
+
+- **medicineRecommendations**: Top 5 recommended medicines
+  - Based on frequently ordered medicines from past orders
+  - Falls back to recent medicines if no order history
+  - Includes medicine details, price, and description
+
+---
+
+## �📋 VALIDATION RULES
 
 ### Register
 
@@ -596,7 +703,10 @@ Form-data: cover_img = [file]
 PUT /api/customer/profile/password
 Body: { "currentPassword": "test123", "newPassword": "newpass456", "confirmPassword": "newpass456" }
 
-# 9. Logout
+# 9. Get Dashboard
+GET /api/customer/dashboard
+
+# 10. Logout
 POST /api/customer/auth/logout
 ```
 
