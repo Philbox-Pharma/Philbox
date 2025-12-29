@@ -1,8 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-unused-vars */
 // src/portals/admin/modules/staff/salespersons/SalespersonList.jsx
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { motion as _motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   FaSearch,
   FaFilter,
@@ -565,7 +566,7 @@ export default function SalespersonList() {
 }
 
 // Stats Card Component
-// eslint-disable-next-line no-unused-vars
+
 const StatsCard = ({ icon: IconComponent, label, value, color }) => {
   const colorMap = {
     orange: { bg: 'bg-orange-100', text: 'text-orange-600' },
