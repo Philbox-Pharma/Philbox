@@ -31,6 +31,7 @@ import passport from './modules/doctor/features/auth/config/passport.js';
 
 import customerAuthRoutes from './modules/customer/features/auth/routes/auth.routes.js';
 import customerProfileRoutes from './modules/customer/features/profile/routes/profile.routes.js';
+import customerDashboardRoutes from './modules/customer/features/dashboard/routes/dashboard.routes.js';
 
 import salespersonAuthRoutes from './modules/salesperson/features/auth/routes/auth.routes.js';
 import salespersonTaskManagementRoutes from './modules/salesperson/features/task_management/routes/task.routes.js';
@@ -113,6 +114,7 @@ app.use(
 app.use(`/api/${ROUTES.DOCTOR_AUTH}`, doctorAuthRoutes);
 app.use(`/api/${ROUTES.CUSTOMER_AUTH}`, customerAuthRoutes);
 app.use(`/api/customer/profile`, customerProfileRoutes);
+app.use(`/api/customer/dashboard`, customerDashboardRoutes);
 app.use(`/api/${ROUTES.SALESPERSON_AUTH}`, salespersonAuthRoutes);
 app.use(`/api/salesperson/tasks`, salespersonTaskManagementRoutes);
 
