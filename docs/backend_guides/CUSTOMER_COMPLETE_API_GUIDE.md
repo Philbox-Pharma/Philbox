@@ -558,6 +558,161 @@
 
 ---
 
+## 🔍 SEARCH HISTORY ENDPOINTS
+
+### 15. Save Search Query
+
+**Endpoint:** `POST /api/customer/search-history`
+**Auth Required:** Yes
+**Content-Type:** `application/json`
+
+**Description:** Save a search query to history. Prevents duplicate entries within 5 minutes.
+
+**Request Body:**
+
+```json
+{
+  "query": "Paracetamol",
+  "filters": {
+    "category": "Pain Relief",
+    "brand": "Brand Name",
+    "dosageForm": "Tablet",
+    "prescriptionRequired": false
+  }
+}
+```
+
+**Note:** Only `query` is required. `filters` object is optional.
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "status": 201,
+  "message": "Search saved to history",
+  "data": {
+    "_id": "search_id_123",
+    "customer_id": "customer_id_456",
+    "query": "Paracetamol",
+    "searched_at": "2025-12-29T12:00:00.000Z",
+    "filters": {
+      "category": "Pain Relief",
+      "brand": "Brand Name",
+      "dosageForm": "Tablet",
+      "prescriptionRequired": false
+    },
+    "created_at": "2025-12-29T12:00:00.000Z",
+    "updated_at": "2025-12-29T12:00:00.000Z"
+  }
+}
+```
+
+---
+
+### 16. Get Search History
+
+**Endpoint:** `GET /api/customer/search-history`
+**Auth Required:** Yes
+
+**Description:** Retrieve last 20 searches for the customer, sorted by most recent first.
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Search history fetched successfully",
+  "data": [
+    {
+      "_id": "search_id_123",
+      "customer_id": "customer_id_456",
+      "query": "Paracetamol",
+      "searched_at": "2025-12-29T12:00:00.000Z",
+      "filters": {
+        "category": "Pain Relief",
+        "brand": "Brand Name",
+        "dosageForm": "Tablet",
+        "prescriptionRequired": false
+      },
+      "created_at": "2025-12-29T12:00:00.000Z",
+      "updated_at": "2025-12-29T12:00:00.000Z"
+    },
+    {
+      "_id": "search_id_124",
+      "customer_id": "customer_id_456",
+      "query": "Amoxicillin",
+      "searched_at": "2025-12-29T11:30:00.000Z",
+      "filters": {},
+      "created_at": "2025-12-29T11:30:00.000Z",
+      "updated_at": "2025-12-29T11:30:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### 17. Delete Search History Item
+
+**Endpoint:** `DELETE /api/customer/search-history/:id`
+**Auth Required:** Yes
+
+**Description:** Delete a specific search history item.
+
+**URL Parameters:**
+
+- `id`: Search history item ID
+
+**Example:** `DELETE /api/customer/search-history/search_id_123`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Search history item deleted successfully",
+  "data": null
+}
+```
+
+**Error Response (404):**
+
+```json
+{
+  "success": false,
+  "status": 404,
+  "message": "Search history item not found",
+  "data": null
+}
+```
+
+---
+
+### 18. Clear All Search History
+
+**Endpoint:** `DELETE /api/customer/search-history/clear/all`
+**Auth Required:** Yes
+
+**Description:** Clear all search history for the customer.
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "All search history cleared successfully",
+  "data": {
+    "deletedCount": 15
+  }
+}
+```
+
+---
+
 ## �📋 VALIDATION RULES
 
 ### Register
@@ -588,6 +743,15 @@
 - `currentPassword`: Required
 - `newPassword`: Required, min 6 characters
 - `confirmPassword`: Required, must match newPassword
+
+### Save Search Query
+
+- `query`: Required, min 1 character, trimmed
+- `filters`: Optional object
+  - `category`: Optional, string
+  - `brand`: Optional, string
+  - `dosageForm`: Optional, string
+  - `prescriptionRequired`: Optional, boolean
 
 ### Image Upload
 
@@ -706,7 +870,20 @@ Body: { "currentPassword": "test123", "newPassword": "newpass456", "confirmPassw
 # 9. Get Dashboard
 GET /api/customer/dashboard
 
-# 10. Logout
+# 10. Save Search Query
+POST /api/customer/search-history
+Body: { "query": "Paracetamol", "filters": { "category": "Pain Relief" } }
+
+# 11. Get Search History
+GET /api/customer/search-history
+
+# 12. Delete Search History Item
+DELETE /api/customer/search-history/search_id_123
+
+# 13. Clear All Search History
+DELETE /api/customer/search-history/clear/all
+
+# 14. Logout
 POST /api/customer/auth/logout
 ```
 
@@ -742,17 +919,23 @@ The session is created automatically on login and destroyed on logout.
 
 4. **Activity Logging:**
    - All operations are logged for audit purposes
-   - Logs include: register, login, logout, update_profile, change_password, etc.
+   - Logs include: register, login, logout, update_profile, change_password, search_medicine, view_search_history, delete_search_history, clear_search_history, etc.
 
-5. **Account Status:**
+5. **Search History:**
+   - Stores last 20 searches per customer
+   - Prevents duplicate entries within 5 minutes (updates timestamp instead)
+   - Can be cleared individually or all at once
+   - Includes optional filters (category, brand, dosageForm, prescriptionRequired)
+
+6. **Account Status:**
    - Active accounts can access all features
    - Blocked/suspended accounts are denied access
 
-6. **Email Verification:**
+7. **Email Verification:**
    - Required before login
    - Token expires after 24 hours
 
-7. **Password Reset:**
+8. **Password Reset:**
    - Token expires after 10 minutes
    - One-time use only
 
