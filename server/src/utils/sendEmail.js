@@ -312,3 +312,82 @@ export const sendDoctorStatusUpdateEmail = async (
     console.log('Status update email sent: ' + info.response);
   });
 };
+
+/**
+ * Send Medicine Refill Reminder Email
+ * @param {string} email - Customer's email
+ * @param {string} name - Customer's full name
+ * @param {Array} medicines - Array of medicine objects with tradeName, genericName, strength
+ */
+export const sendRefillReminderEmail = async (email, name, medicines) => {
+  const greetingName = formatName(name);
+
+  const medicineList = medicines
+    .map(
+      med =>
+        `<li style="padding: 8px 0;"><strong>${med.tradeName || med.genericName}</strong> ${med.strength ? `- ${med.strength}` : ''}</li>`
+    )
+    .join('');
+
+  const emailTemplate = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <style>
+      body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
+      .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+      .header { text-align: center; padding-bottom: 20px; border-bottom: 2px solid #2563eb; }
+      .header h1 { color: #2563eb; margin: 0; }
+      .content { padding: 20px 0; line-height: 1.6; color: #333; }
+      .medicine-list { background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; }
+      .medicine-list ul { margin: 0; padding: 0 0 0 20px; }
+      .button { display: inline-block; padding: 12px 24px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+      .footer { text-align: center; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #888; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>💊 Philbox</h1>
+        <h2>Medicine Refill Reminder</h2>
+      </div>
+      <div class="content">
+        <p>Hello ${greetingName},</p>
+        <p>This is a friendly reminder to refill your medication(s):</p>
+        <div class="medicine-list">
+          <ul>${medicineList}</ul>
+        </div>
+        <p>Remember to take your medications as prescribed to maintain your health and well-being.</p>
+        <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/customer/medicines" class="button">Browse Medicines</a>
+        <p style="margin-top: 20px; font-size: 14px; color: #666;">
+          You can manage your medication reminders anytime from your account settings.
+        </p>
+      </div>
+      <div class="footer">
+        <p>This is an automated reminder from Philbox.</p>
+        <p>&copy; ${new Date().getFullYear()} Philbox. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+
+  const emailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: '💊 Medicine Refill Reminder - Philbox',
+    html: emailTemplate,
+  };
+
+  return new Promise((resolve, reject) => {
+    transporter.sendMail(emailOptions, (error, info) => {
+      if (error) {
+        console.error('Error sending refill reminder email:', error);
+        reject(error);
+      } else {
+        console.log('Refill reminder email sent: ' + info.response);
+        resolve(info);
+      }
+    });
+  });
+};
