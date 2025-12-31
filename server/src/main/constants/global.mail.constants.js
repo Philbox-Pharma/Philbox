@@ -293,3 +293,56 @@ export const DOCTOR_APPLICATION_REJECTED_TEMPLATE = `<!DOCTYPE html>
   </table>
 </body>
 </html>`;
+
+// 7. Test Refill Reminder Template
+export const TEST_REFILL_REMINDER_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Refill Reminder</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .header { background-color: #2563eb; color: #ffffff; padding: 20px; text-align: center; }
+    .content { padding: 30px 20px; }
+    .medicine-list { background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    .medicine-item { margin: 10px 0; padding: 10px; border-left: 4px solid #2563eb; }
+    .instructions { color: #666666; line-height: 1.5; margin-bottom: 20px; }
+    .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #999999; font-size: 12px; }
+    @media only screen and (max-width: 600px) {
+      .container { width: 100%; border-radius: 0; }
+      .content { padding: 20px 15px; }
+    }
+  </style>
+</head>
+<body>
+  <table class="container" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td class="header">
+        <h1 style="margin: 0;">💊 Test Medicine Refill Reminder</h1>
+      </td>
+    </tr>
+    <tr>
+      <td class="content">
+        <p style="font-size:16px; color:#333;">Hello Test User,</p>
+        <p class="instructions">This is a test reminder for your medication:</p>
+
+        <div class="medicine-list">
+          <div class="medicine-item">
+            <strong>Test Medicine</strong> - 500mg
+          </div>
+        </div>
+
+        <p class="instructions">This is a test notification from Philbox to verify the email delivery system is working correctly.</p>
+      </td>
+    </tr>
+    <tr>
+      <td class="footer">
+        <p>This is a test email from the Philbox notification system.</p>
+        <p>&copy; ${CURRENT_YEAR} Philbox. All rights reserved.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;

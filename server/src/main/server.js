@@ -10,6 +10,7 @@ import MongoStore from 'connect-mongo';
 import connectDB from './config/db.config.js';
 import { initializeSocket } from './config/socket.config.js';
 import seedSuperAdmin from './modules/admin/features/auth/utils/seedSuperAdmin.js';
+import reminderScheduler from './utils/reminderScheduler.js';
 
 import adminAuthRoutes from './modules/admin/features/auth/routes/auth.routes.js';
 import adminUserManagementRoutes from './modules/admin/features/user_management/routes/user.routes.js';
@@ -33,6 +34,7 @@ import customerAuthRoutes from './modules/customer/features/auth/routes/auth.rou
 import customerProfileRoutes from './modules/customer/features/profile/routes/profile.routes.js';
 import customerDashboardRoutes from './modules/customer/features/dashboard/routes/dashboard.routes.js';
 import customerSearchHistoryRoutes from './modules/customer/features/search_history/routes/searchHistory.routes.js';
+import customerRefillReminderRoutes from './modules/customer/features/refill_reminder/routes/refillReminder.routes.js';
 
 import salespersonAuthRoutes from './modules/salesperson/features/auth/routes/auth.routes.js';
 import salespersonTaskManagementRoutes from './modules/salesperson/features/task_management/routes/task.routes.js';
@@ -117,6 +119,7 @@ app.use(`/api/${ROUTES.CUSTOMER_AUTH}`, customerAuthRoutes);
 app.use(`/api/customer/profile`, customerProfileRoutes);
 app.use(`/api/customer/dashboard`, customerDashboardRoutes);
 app.use(`/api/customer/search-history`, customerSearchHistoryRoutes);
+app.use(`/api/customer/refill-reminders`, customerRefillReminderRoutes);
 app.use(`/api/${ROUTES.SALESPERSON_AUTH}`, salespersonAuthRoutes);
 app.use(`/api/salesperson/tasks`, salespersonTaskManagementRoutes);
 
@@ -132,6 +135,8 @@ const start_server = async () => {
     // Initialize Socket.IO
     initializeSocket(httpServer);
     console.log('✅ Socket.IO initialized');
+    // Start reminder scheduler
+    reminderScheduler.start();
 
     httpServer.listen(port, () =>
       console.log(`Server running on the port ${port}`)
