@@ -62,6 +62,19 @@ const Schema = {
     default: 'active', // Default to suspended until approved
   },
 
+  // Onboarding status to track doctor registration progress
+  onboarding_status: {
+    type: String,
+    enum: [
+      'pending',
+      'documents-submitted',
+      'documents-approved',
+      'documents-rejected',
+      'completed',
+    ],
+    default: 'pending',
+  },
+
   averageRating: { type: Number, default: 0 },
 
   profile_img_url: {

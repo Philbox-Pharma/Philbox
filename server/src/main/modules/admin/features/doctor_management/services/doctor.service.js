@@ -16,7 +16,7 @@ class DoctorManagementService {
    */
   async getDoctorApplications(query, req) {
     try {
-      const { page = 1, limit = 10, search, status = 'pending' } = query;
+      const { page = 1, limit = 10, search, status } = query;
 
       // Build query filter
       const filter = {};
