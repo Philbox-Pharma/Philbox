@@ -153,6 +153,119 @@ export const submitApplication = async (req, res) => {
   }
 };
 
+// ------------------------- RESUBMIT APPLICATION (FOR REJECTED APPLICATIONS) --------------------------
+export const resubmitApplication = async (req, res) => {
+  try {
+    const doctorId = req.session.doctorId || req.doctor?._id;
+
+    if (!doctorId) {
+      return sendResponse(
+        res,
+        401,
+        'Unauthorized',
+        null,
+        'Doctor authentication required'
+      );
+    }
+
+    const files = req.files;
+
+    if (!files || Object.keys(files).length === 0) {
+      return sendResponse(
+        res,
+        400,
+        'Bad Request',
+        null,
+        'No files uploaded. Please upload updated documents.'
+      );
+    }
+
+    const result = await doctorOnboardingService.resubmitApplication(
+      doctorId,
+      files,
+      req
+    );
+
+    return sendResponse(res, 200, result.message, result);
+  } catch (error) {
+    console.warn(error);
+
+    if (error.message === 'DOCTOR_NOT_FOUND') {
+      return sendResponse(
+        res,
+        404,
+        'Doctor Not Found',
+        null,
+        'The specified doctor does not exist.'
+      );
+    }
+
+    if (error.message === 'APPLICATION_NOT_REJECTED') {
+      return sendResponse(
+        res,
+        400,
+        'Application Not Rejected',
+        null,
+        'You can only resubmit if your application was rejected. Current status does not allow resubmission.'
+      );
+    }
+
+    if (error.message === 'NO_APPLICATION_FOUND') {
+      return sendResponse(
+        res,
+        404,
+        'No Application Found',
+        null,
+        'No previous application found. Please submit a new application instead.'
+      );
+    }
+
+    if (error.message.startsWith('MISSING_REQUIRED_FILES')) {
+      return sendResponse(
+        res,
+        400,
+        'Missing Required Documents',
+        { missingFiles: error.missingFiles },
+        `Please upload the following required documents: ${error.missingFiles.join(', ')}`
+      );
+    }
+
+    if (error.name === 'ValidationError') {
+      const missingFields = Object.keys(error.errors).map(key =>
+        key.replace(/_/g, ' ').toUpperCase()
+      );
+      return sendResponse(
+        res,
+        400,
+        'Validation Failed',
+        { missingFields },
+        `Missing required documents: ${missingFields.join(', ')}`
+      );
+    }
+
+    if (
+      error.message.includes('Cloudinary') ||
+      error.message.includes('upload')
+    ) {
+      return sendResponse(
+        res,
+        500,
+        'File Upload Failed',
+        null,
+        'There was an error uploading your documents. Please try again.'
+      );
+    }
+
+    return sendResponse(
+      res,
+      500,
+      'Server Error',
+      null,
+      'An unexpected error occurred. Please try again later.'
+    );
+  }
+};
+
 // ------------------------- COMPLETE PROFILE (EDUCATION, EXPERIENCE, ETC) --------------------------
 export const completeProfile = async (req, res) => {
   try {

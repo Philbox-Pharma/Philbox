@@ -67,7 +67,7 @@ Server running on the port 5000
 
 **Option A: Using HTML Test Client**
 
-1. Open `docs/backend_guides/socket-test-client.html` in browser
+1. Open `server/src/tests/socket-test-client.html` in browser
 2. Enter a salesperson ID (get from MongoDB)
 3. Click "Connect"
 4. Verify connection status shows "Connected"
@@ -75,9 +75,9 @@ Server running on the port 5000
 **Option B: Using Browser Console**
 
 ```javascript
-const socket = io("http://localhost:5000");
-socket.on("connect", () => console.log("Connected:", socket.id));
-socket.emit("join", { room: "salesperson:YOUR_ID" });
+const socket = io('http://localhost:5000');
+socket.on('connect', () => console.log('Connected:', socket.id));
+socket.emit('join', { room: 'salesperson:YOUR_ID' });
 ```
 
 ### Step 4: Test Task Creation (Admin Side)
@@ -179,8 +179,8 @@ npm install socket.io-client
 Create `client/src/shared/hooks/useSocket.js`:
 
 ```javascript
-import { useEffect, useState } from "react";
-import io from "socket.io-client";
+import { useEffect, useState } from 'react';
+import io from 'socket.io-client';
 
 export function useSocket(userId, userType) {
   const [socket, setSocket] = useState(null);
@@ -189,25 +189,25 @@ export function useSocket(userId, userType) {
   useEffect(() => {
     if (!userId || !userType) return;
 
-    const newSocket = io("http://localhost:5000", {
-      transports: ["websocket", "polling"],
+    const newSocket = io('http://localhost:5000', {
+      transports: ['websocket', 'polling'],
       withCredentials: true,
     });
 
-    newSocket.on("connect", () => {
-      console.log("✅ Socket connected", newSocket.id);
+    newSocket.on('connect', () => {
+      console.log('✅ Socket connected', newSocket.id);
       setConnected(true);
       // Join user-specific room for receiving events
-      newSocket.emit("join", { room: `${userType}:${userId}` });
+      newSocket.emit('join', { room: `${userType}:${userId}` });
     });
 
-    newSocket.on("disconnect", () => {
-      console.log("❌ Socket disconnected");
+    newSocket.on('disconnect', () => {
+      console.log('❌ Socket disconnected');
       setConnected(false);
     });
 
-    newSocket.on("connect_error", (error) => {
-      console.error("Socket connection error:", error);
+    newSocket.on('connect_error', error => {
+      console.error('Socket connection error:', error);
     });
 
     setSocket(newSocket);
@@ -226,21 +226,21 @@ export function useSocket(userId, userType) {
 Create `client/src/portals/salesperson/features/tasks/TaskDashboard.jsx`:
 
 ```javascript
-import { useEffect, useState } from "react";
-import { useSocket } from "../../../../shared/hooks/useSocket";
-import { useAuth } from "../../../../core/store/authSlice";
-import { toast } from "react-toastify";
+import { useEffect, useState } from 'react';
+import { useSocket } from '../../../../shared/hooks/useSocket';
+import { useAuth } from '../../../../core/store/authSlice';
+import { toast } from 'react-toastify';
 
 export function TaskDashboard() {
   const { user } = useAuth();
-  const { socket, connected } = useSocket(user._id, "salesperson");
+  const { socket, connected } = useSocket(user._id, 'salesperson');
   const [tasks, setTasks] = useState([]);
 
   // Fetch initial tasks
   useEffect(() => {
     async function fetchTasks() {
-      const response = await fetch("/api/salesperson/tasks", {
-        credentials: "include",
+      const response = await fetch('/api/salesperson/tasks', {
+        credentials: 'include',
       });
       const { data } = await response.json();
       setTasks(data.tasks);
@@ -252,53 +252,53 @@ export function TaskDashboard() {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("task:created", (data) => {
-      setTasks((prev) => [data, ...prev]);
+    socket.on('task:created', data => {
+      setTasks(prev => [data, ...prev]);
       toast.success(`New task: ${data.title}`);
       playNotificationSound();
     });
 
-    socket.on("task:updated", (data) => {
-      setTasks((prev) =>
-        prev.map((task) =>
-          task._id === data.taskId ? { ...task, ...data.changes } : task,
-        ),
+    socket.on('task:updated', data => {
+      setTasks(prev =>
+        prev.map(task =>
+          task._id === data.taskId ? { ...task, ...data.changes } : task
+        )
       );
-      toast.info("Task updated");
+      toast.info('Task updated');
     });
 
-    socket.on("task:deleted", (data) => {
-      setTasks((prev) => prev.filter((task) => task._id !== data.taskId));
+    socket.on('task:deleted', data => {
+      setTasks(prev => prev.filter(task => task._id !== data.taskId));
       toast.warning(`Task deleted: ${data.title}`);
     });
 
     return () => {
-      socket.off("task:created");
-      socket.off("task:updated");
-      socket.off("task:deleted");
+      socket.off('task:created');
+      socket.off('task:updated');
+      socket.off('task:deleted');
     };
   }, [socket]);
 
   const handleStatusUpdate = async (taskId, newStatus) => {
     try {
       const response = await fetch(`/api/salesperson/tasks/${taskId}/status`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ status: newStatus }),
       });
 
       const result = await response.json();
 
       if (result.success) {
-        toast.success("Status updated successfully");
+        toast.success('Status updated successfully');
         // Task will be updated via socket event to admin
       } else {
-        toast.error(result.message || "Failed to update status");
+        toast.error(result.message || 'Failed to update status');
       }
     } catch (error) {
-      console.error("Status update error:", error);
-      toast.error("Failed to update status");
+      console.error('Status update error:', error);
+      toast.error('Failed to update status');
     }
   };
 
@@ -318,30 +318,30 @@ Create `client/src/portals/admin/features/tasks/TaskMonitor.jsx`:
 ```javascript
 export function TaskMonitor() {
   const { user } = useAuth();
-  const { socket, connected } = useSocket(user._id, "admin");
+  const { socket, connected } = useSocket(user._id, 'admin');
   const [tasks, setTasks] = useState([]);
 
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("task:status_updated", (data) => {
-      setTasks((prev) =>
-        prev.map((task) =>
-          task._id === data.taskId ? { ...task, status: data.newStatus } : task,
-        ),
+    socket.on('task:status_updated', data => {
+      setTasks(prev =>
+        prev.map(task =>
+          task._id === data.taskId ? { ...task, status: data.newStatus } : task
+        )
       );
 
       toast.info(`${data.salespersonName} updated task to ${data.newStatus}`);
     });
 
-    socket.on("task:comment_added", (data) => {
+    socket.on('task:comment_added', data => {
       toast.info(`${data.salespersonName} added a comment`);
       // Refresh task details if viewing that task
     });
 
     return () => {
-      socket.off("task:status_updated");
-      socket.off("task:comment_added");
+      socket.off('task:status_updated');
+      socket.off('task:comment_added');
     };
   }, [socket]);
 
@@ -438,12 +438,14 @@ Before moving to production:
 
 ## 📚 Documentation Files Available
 
-1. **`ADMIN_API_COMPLETE_GUIDE.md`** - Complete admin API guide including task management with Socket.IO events
-2. **`SALESPERSON_COMPLETE_API_GUIDE.md`** - Complete salesperson API guide with task management and Socket.IO events
-3. **`socket-test-client.html`** - Interactive Socket.IO test client
-4. **`QUICK_START.md`** - Quick start guide with all endpoints
-5. **`README.md`** - Complete API map and overview
-6. **`IMPLEMENTATION_NEXT_STEPS.md`** - This file
+1. **`docs/backend_guides/ADMIN_API_COMPLETE_GUIDE.md`** - Complete admin API guide including task management with Socket.IO events
+2. **`docs/backend_guides/SALESPERSON_COMPLETE_API_GUIDE.md`** - Complete salesperson API guide with task management and Socket.IO events
+3. **`docs/backend_guides/CUSTOMER_COMPLETE_API_GUIDE.md`** - Complete customer API guide with auth, profile, dashboard, and health management
+4. **`docs/backend_guides/DOCTOR_COMPLETE_API_GUIDE.md`** - Complete doctor API guide with auth, onboarding, application tracking, and resubmit functionality
+5. **`server/src/tests/socket-test-client.html`** - Interactive Socket.IO test client
+6. **`docs/backend_guides/QUICK_START.md`** - Quick start guide with all endpoints
+7. **`docs/backend_guides/README.md`** - Complete API map and overview
+8. **`server/src/tests/Sockets_Testing_Guide.md`** - This file
 
 ---
 
@@ -491,15 +493,17 @@ The backend is now **100% complete** and ready for frontend integration:
 
 Refer to these documentation files:
 
-- Admin API (includes task management): `ADMIN_API_COMPLETE_GUIDE.md`
-- Salesperson API (includes task management): `SALESPERSON_COMPLETE_API_GUIDE.md`
-- Quick endpoint reference: `QUICK_START.md`
-- Complete API map: `README.md`
-- Test client: `socket-test-client.html`
+- Admin API (includes task management): `docs/backend_guides/ADMIN_API_COMPLETE_GUIDE.md`
+- Salesperson API (includes task management): `docs/backend_guides/SALESPERSON_COMPLETE_API_GUIDE.md`
+- Customer API: `docs/backend_guides/CUSTOMER_COMPLETE_API_GUIDE.md`
+- Doctor API (includes onboarding & resubmit): `docs/backend_guides/DOCTOR_COMPLETE_API_GUIDE.md`
+- Quick endpoint reference: `docs/backend_guides/QUICK_START.md`
+- Complete API map: `docs/backend_guides/README.md`
+- Test client: `server/src/tests/socket-test-client.html`
 
 ---
 
 **Implementation Status:** ✅ COMPLETE
-**Last Updated:** December 28, 2025
+**Last Updated:** December 31, 2025
 **Backend Version:** Node.js v18+
 **Socket.IO Version:** v4.7.5
