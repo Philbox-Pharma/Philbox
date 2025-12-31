@@ -5,6 +5,7 @@ import {
   submitApplication,
   getApplicationStatus,
   completeProfile,
+  resubmitApplication,
 } from '../controllers/onboarding.controller.js';
 import { authenticate } from '../../../middleware/auth.middleware.js';
 import { upload } from '../../../../../middlewares/multer.middleware.js';
@@ -28,7 +29,21 @@ router.post(
 // ✅ 2. Get Application Status (authenticated users only)
 router.get(`/application-status`, authenticate, getApplicationStatus);
 
-// ✅ 3. Complete Profile (authenticated users only)
+// ✅ 3. Resubmit Application (for rejected applications)
+router.post(
+  `/resubmit-application`,
+  authenticate,
+  upload.fields([
+    { name: 'cnic', maxCount: 1 },
+    { name: 'medical_license', maxCount: 1 },
+    { name: 'specialist_license', maxCount: 1 },
+    { name: 'mbbs_md_degree', maxCount: 1 },
+    { name: 'experience_letters', maxCount: 1 },
+  ]),
+  resubmitApplication
+);
+
+// ✅ 4. Complete Profile (authenticated users only)
 router.post(
   `/complete-profile`,
   authenticate,

@@ -37,7 +37,7 @@ Manages document submission, application status tracking, and profile completion
 
 ```
 Register → Verify Email → Login → Submit Documents →
-Check Status → Wait for Approval → Complete Profile → Start Practice
+Check Status → Wait for Approval (or Resubmit if Rejected) → Complete Profile → Start Practice
 ```
 
 ---
@@ -74,10 +74,17 @@ Check Status → Wait for Approval → Complete Profile → Start Practice
 │  (Monitor Progress)        │ → Pending/Processing/Approved/Rejected
 └──────┬─────────────────────┘
        │
-       ├─→ If Rejected → Re-submit Documents
-       │
-       ▼ If Approved
-┌─────────────────────────────┐
+       ├─→ If Rejected ───────────┐
+       │                           ▼
+       │                  ┌─────────────────────────────┐
+       │                  │  5a. Resubmit Application  │ POST /onboarding/resubmit-application
+       │                  │  (Upload Corrected Docs)   │ → Status reset to Pending
+       │                  └──────┬──────────────────────┘
+       │                         │
+       │                         └──────┐
+       │                                │
+       ▼ If Approved                    ▼
+┌─────────────────────────────┐  (Back to Check Status)
 │  6. Complete Profile        │ POST /onboarding/complete-profile
 │  (Education, Experience)    │ → Education, Specialization, Fee
 └──────┬──────────────────────┘
@@ -541,7 +548,114 @@ await fetch("/api/doctor/onboarding/submit-application", {
 
 ---
 
-### 3. Complete Profile
+### 3. Resubmit Application (For Rejected Applications)
+
+**Endpoint:** `POST /api/doctor/onboarding/resubmit-application`
+**Authentication:** Required
+**Content-Type:** `multipart/form-data`
+
+**Purpose:** Allows doctors to resubmit documents after their application has been rejected by admin.
+
+**Prerequisites:**
+
+- Previous application must exist
+- Application status must be "rejected"
+
+**Required Files:**
+
+- `cnic` - Updated CNIC image (front/back)
+- `medical_license` - Updated medical license certificate
+- `mbbs_md_degree` - Updated MBBS/MD degree certificate
+
+**Optional Files:**
+
+- `specialist_license` - Updated specialist certification
+- `experience_letters` - Updated experience/employment letters
+
+**Request (multipart/form-data):**
+
+```javascript
+const formData = new FormData();
+formData.append("cnic", updatedCnicFile);
+formData.append("medical_license", updatedLicenseFile);
+formData.append("mbbs_md_degree", updatedDegreeFile);
+formData.append("specialist_license", updatedSpecialistFile); // optional
+formData.append("experience_letters", updatedExperienceFile); // optional
+
+await fetch("/api/doctor/onboarding/resubmit-application", {
+  method: "POST",
+  body: formData,
+  credentials: "include",
+});
+```
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Application resubmitted successfully. Please wait for admin review.",
+  "data": {
+    "success": true,
+    "message": "Application resubmitted successfully. Please wait for admin review.",
+    "documentId": "doc123",
+    "nextStep": "waiting-approval"
+  }
+}
+```
+
+**What Happens:**
+
+1. Uploads new documents to Cloudinary (replacing old ones)
+2. Updates existing DoctorDocuments record
+3. Resets application status to "pending"
+4. Clears previous admin_comment, reviewed_by, and reviewed_at
+5. Updates doctor `onboarding_status` to "documents-submitted"
+6. Updates doctor `account_status` to "suspended/freezed"
+7. Logs resubmission activity
+
+**Error Responses:**
+
+**Application Not Rejected (400):**
+
+```json
+{
+  "success": false,
+  "status": 400,
+  "message": "Application Not Rejected",
+  "error": "You can only resubmit if your application was rejected. Current status does not allow resubmission."
+}
+```
+
+**No Application Found (404):**
+
+```json
+{
+  "success": false,
+  "status": 404,
+  "message": "No Application Found",
+  "error": "No previous application found. Please submit a new application instead."
+}
+```
+
+**Missing Required Documents (400):**
+
+```json
+{
+  "success": false,
+  "status": 400,
+  "message": "Missing Required Documents",
+  "data": {
+    "missingFiles": ["CNIC", "MEDICAL LICENSE"]
+  },
+  "error": "Please upload the following required documents: CNIC, MEDICAL LICENSE"
+}
+```
+
+---
+
+### 4. Complete Profile
 
 **Endpoint:** `POST /api/doctor/onboarding/complete-profile`
 **Authentication:** Required
@@ -644,7 +758,7 @@ formData.append("cover_img", coverImageFile);
 
 ## 📂 File Upload Requirements
 
-### Document Uploads (Submit Application)
+### Document Uploads (Submit Application & Resubmit)
 
 | Field                | Required    | Format        | Max Size | Description                   |
 | -------------------- | ----------- | ------------- | -------- | ----------------------------- |
@@ -653,6 +767,8 @@ formData.append("cover_img", coverImageFile);
 | `mbbs_md_degree`     | ✅ Yes      | JPG, PNG, PDF | 5MB      | Medical Degree Certificate    |
 | `specialist_license` | ⚠️ Optional | JPG, PNG, PDF | 5MB      | Specialist Certification      |
 | `experience_letters` | ⚠️ Optional | JPG, PNG, PDF | 5MB      | Employment/Experience Letters |
+
+**Note:** These same requirements apply to both initial submission and resubmission of rejected applications.
 
 ### Profile Files (Complete Profile)
 
@@ -815,6 +931,28 @@ formData.append("cover_img", coverImageFile);
   "status": 403,
   "message": "Application Not Approved",
   "error": "Your document verification is still pending. Please wait for admin approval before completing your profile."
+}
+```
+
+**Application Not Rejected (400):**
+
+```json
+{
+  "success": false,
+  "status": 400,
+  "message": "Application Not Rejected",
+  "error": "You can only resubmit if your application was rejected. Current status does not allow resubmission."
+}
+```
+
+**No Application Found (404):**
+
+```json
+{
+  "success": false,
+  "status": 404,
+  "message": "No Application Found",
+  "error": "No previous application found. Please submit a new application instead."
 }
 ```
 
