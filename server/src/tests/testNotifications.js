@@ -2,10 +2,12 @@
  * Test Script for Refill Reminder Notifications
  *
  * This script helps test the notification service independently
- * Run with: node server/src/utils/testNotifications.js
+ * Run with: node src/tests/testNotifications.js
  */
 
-import notificationService from './notificationService.js';
+import notificationService from '../main/utils/notificationService.js';
+import { sendEmail } from '../main/utils/sendEmail.js';
+import { TEST_REFILL_REMINDER_TEMPLATE } from '../main/constants/global.mail.constants.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -13,20 +15,10 @@ dotenv.config();
 const testEmail = async () => {
   console.log('\n📧 Testing Email Notification...');
 
-  const result = await notificationService.sendEmail(
+  const result = await sendEmail(
     process.env.TEST_EMAIL || 'test@example.com',
     '💊 Test Refill Reminder',
-    `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2563eb;">Test Medicine Refill Reminder</h2>
-        <p>Hello Test User,</p>
-        <p>This is a test reminder for your medication:</p>
-        <ul style="background: #f3f4f6; padding: 20px; border-radius: 8px;">
-          <li><strong>Test Medicine</strong> - 500mg</li>
-        </ul>
-        <p>This is a test notification from Philbox.</p>
-      </div>
-    `
+    TEST_REFILL_REMINDER_TEMPLATE
   );
 
   if (result.success) {

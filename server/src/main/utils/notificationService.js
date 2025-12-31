@@ -32,10 +32,10 @@ class NotificationService {
       const sms = await client.messages.create({
         body: message,
         from: process.env.TWILIO_PHONE_NUMBER,
-        to,
+        to: to,
       });
 
-      console.log('SMS sent:', sms.sid);
+      console.log('SMS sent successfully. SID:', sms.sid);
       return { success: true, messageId: sms.sid };
     } catch (error) {
       console.error('SMS sending error:', error);

@@ -314,6 +314,33 @@ export const sendDoctorStatusUpdateEmail = async (
 };
 
 /**
+ * Generic Email Sender
+ * @param {string} to - Recipient email
+ * @param {string} subject - Email subject
+ * @param {string} htmlContent - HTML content of the email
+ */
+export const sendEmail = async (to, subject, htmlContent) => {
+  const emailOptions = {
+    from: process.env.EMAIL_USER,
+    to: to,
+    subject: subject,
+    html: htmlContent,
+  };
+
+  return new Promise((resolve, reject) => {
+    transporter.sendMail(emailOptions, (error, info) => {
+      if (error) {
+        console.error('Error sending email:', error);
+        reject(error);
+      } else {
+        console.log('Email sent successfully: ' + info.response);
+        resolve({ success: true, messageId: info.messageId });
+      }
+    });
+  });
+};
+
+/**
  * Send Medicine Refill Reminder Email
  * @param {string} email - Customer's email
  * @param {string} name - Customer's full name
