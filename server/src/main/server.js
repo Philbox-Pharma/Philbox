@@ -9,7 +9,6 @@ import MongoStore from 'connect-mongo';
 
 import connectDB from './config/db.config.js';
 import { initializeSocket } from './config/socket.config.js';
-import seedSuperAdmin from './modules/admin/features/auth/utils/seedSuperAdmin.js';
 import reminderScheduler from './utils/reminderScheduler.js';
 
 import adminAuthRoutes from './modules/admin/features/auth/routes/auth.routes.js';
@@ -28,7 +27,8 @@ import salespersonTaskRoutes from './modules/admin/features/salesperson_task_man
 import salespersonPerformanceRoutes from './modules/admin/features/dashboard_management/salesperson_performance/routes/salespersonPerformance.routes.js';
 
 import doctorAuthRoutes from './modules/doctor/features/auth/routes/auth.routes.js';
-import passport from './modules/doctor/features/auth/config/passport.js';
+import doctorOnboardingRoutes from './modules/doctor/features/onboarding/routes/onboarding.routes.js';
+import passport from './modules/doctor/features/auth/config/passport.config.js';
 
 import customerAuthRoutes from './modules/customer/features/auth/routes/auth.routes.js';
 import customerProfileRoutes from './modules/customer/features/profile/routes/profile.routes.js';
@@ -116,6 +116,7 @@ app.use(
 );
 
 app.use(`/api/${ROUTES.DOCTOR_AUTH}`, doctorAuthRoutes);
+app.use(`/api/doctor/onboarding`, doctorOnboardingRoutes);
 app.use(`/api/${ROUTES.CUSTOMER_AUTH}`, customerAuthRoutes);
 app.use(`/api/customer/profile`, customerProfileRoutes);
 app.use(`/api/customer/dashboard`, customerDashboardRoutes);
@@ -127,7 +128,6 @@ app.use(`/api/salesperson/tasks`, salespersonTaskManagementRoutes);
 const start_server = async () => {
   try {
     await connectDB(process.env.MONGO_URI);
-    await seedSuperAdmin();
     const port = process.env.PORT || 5000;
 
     // Create HTTP server
