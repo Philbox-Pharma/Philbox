@@ -4,7 +4,24 @@
 
 ---
 
-## 🔐 AUTHENTICATION ENDPOINTS
+## � Table of Contents
+
+1. [🔐 Authentication Endpoints](#-authentication-endpoints)
+2. [👤 Profile Endpoints](#-profile-endpoints)
+3. [📊 Dashboard Endpoints](#-dashboard-endpoints)
+4. [🔍 Search History Endpoints](#-search-history-endpoints)
+5. [💊 Refill Reminders Endpoints](#-refill-reminders-endpoints)
+6. [📋 Validation Rules](#-validation-rules)
+7. [❌ Error Responses](#-error-responses)
+8. [🧪 Testing Guide](#-testing-guide)
+9. [🔒 Authentication](#-authentication)
+10. [📌 Notes](#-notes)
+11. [🚀 Quick Start](#-quick-start)
+12. [📞 Support](#-support)
+
+---
+
+## �🔐 AUTHENTICATION ENDPOINTS
 
 ### 1. Register Customer
 
@@ -713,7 +730,274 @@
 
 ---
 
-## �📋 VALIDATION RULES
+## 💊 REFILL REMINDERS ENDPOINTS
+
+The Refill Reminders feature allows customers to set up automated reminders for medicine refills to ensure they never run out of their medications.
+
+### Features
+
+- ✅ Set reminders for multiple medicines
+- ✅ Choose frequency (daily, weekly, monthly)
+- ✅ Choose notification method (email, SMS, push)
+- ✅ Automated scheduling with node-cron (runs every 5 minutes)
+- ✅ Email notifications with beautiful templates
+- ✅ SMS notifications via Twilio (optional)
+- ✅ View, edit, delete, and mark reminders as completed
+
+### 19. Create Refill Reminder
+
+**Endpoint:** `POST /api/customer/refill-reminders`
+**Auth Required:** Yes (Customer)
+
+**Request Body:**
+
+```json
+{
+  "medicines": ["medicineId1", "medicineId2"],
+  "frequency": "daily",
+  "timeOfDay": "08:00",
+  "notificationMethod": "email"
+}
+```
+
+**Validation Rules:**
+
+- `medicines`: Array of valid medicine IDs (minimum 1)
+- `frequency`: Must be one of: "daily", "weekly", "monthly"
+- `timeOfDay`: 24-hour format (HH:MM), e.g., "08:00" or "18:30"
+- `notificationMethod`: Must be one of: "email", "sms", "push"
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "status": 201,
+  "message": "Refill reminder created successfully",
+  "data": {
+    "_id": "reminder123",
+    "medicines": [
+      {
+        "_id": "med1",
+        "tradeName": "Paracetamol",
+        "genericName": "Acetaminophen",
+        "strength": "500mg"
+      }
+    ],
+    "patient_id": "customer123",
+    "frequency": "daily",
+    "timeOfDay": "08:00",
+    "notificationMethod": "email",
+    "isActive": true,
+    "nextNotificationDate": "2025-12-31T08:00:00.000Z",
+    "createdAt": "2025-12-30T10:00:00.000Z",
+    "updatedAt": "2025-12-30T10:00:00.000Z"
+  }
+}
+```
+
+---
+
+### 20. Get All Reminders
+
+**Endpoint:** `GET /api/customer/refill-reminders`
+**Auth Required:** Yes (Customer)
+
+**Query Parameters:**
+
+- `isActive` (optional): Filter by active status (true/false)
+- `page` (optional): Page number for pagination (default: 1)
+- `limit` (optional): Items per page (default: 10)
+
+**Example:** `GET /api/customer/refill-reminders?isActive=true&page=1&limit=10`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Reminders fetched successfully",
+  "data": {
+    "reminders": [
+      {
+        "_id": "reminder123",
+        "medicines": [
+          {
+            "_id": "med1",
+            "tradeName": "Paracetamol",
+            "genericName": "Acetaminophen",
+            "strength": "500mg",
+            "dosageForm": "Tablet"
+          }
+        ],
+        "patient_id": "customer123",
+        "frequency": "daily",
+        "timeOfDay": "08:00",
+        "notificationMethod": "email",
+        "isActive": true,
+        "lastNotificationSent": "2025-12-30T08:00:00.000Z",
+        "nextNotificationDate": "2025-12-31T08:00:00.000Z",
+        "createdAt": "2025-12-29T10:00:00.000Z",
+        "updatedAt": "2025-12-30T10:00:00.000Z"
+      }
+    ],
+    "pagination": {
+      "total": 5,
+      "page": 1,
+      "limit": 10,
+      "pages": 1
+    }
+  }
+}
+```
+
+---
+
+### 21. Get Single Reminder
+
+**Endpoint:** `GET /api/customer/refill-reminders/:id`
+**Auth Required:** Yes (Customer)
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Reminder fetched successfully",
+  "data": {
+    "_id": "reminder123",
+    "medicines": [
+      {
+        "_id": "med1",
+        "tradeName": "Paracetamol",
+        "genericName": "Acetaminophen",
+        "strength": "500mg",
+        "dosageForm": "Tablet"
+      }
+    ],
+    "patient_id": "customer123",
+    "frequency": "daily",
+    "timeOfDay": "08:00",
+    "notificationMethod": "email",
+    "isActive": true,
+    "lastNotificationSent": "2025-12-30T08:00:00.000Z",
+    "nextNotificationDate": "2025-12-31T08:00:00.000Z",
+    "createdAt": "2025-12-29T10:00:00.000Z",
+    "updatedAt": "2025-12-30T10:00:00.000Z"
+  }
+}
+```
+
+**Error (404):**
+
+```json
+{
+  "success": false,
+  "status": 404,
+  "message": "Reminder not found"
+}
+```
+
+---
+
+### 22. Update Reminder
+
+**Endpoint:** `PUT /api/customer/refill-reminders/:id`
+**Auth Required:** Yes (Customer)
+
+**Request Body (all fields optional):**
+
+```json
+{
+  "medicines": ["medicineId1"],
+  "frequency": "weekly",
+  "timeOfDay": "18:30",
+  "notificationMethod": "sms",
+  "isActive": true
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Refill reminder updated successfully",
+  "data": {
+    "_id": "reminder123",
+    "medicines": [
+      {
+        "_id": "med1",
+        "tradeName": "Aspirin",
+        "genericName": "Acetylsalicylic Acid",
+        "strength": "100mg"
+      }
+    ],
+    "patient_id": "customer123",
+    "frequency": "weekly",
+    "timeOfDay": "18:30",
+    "notificationMethod": "sms",
+    "isActive": true,
+    "nextNotificationDate": "2026-01-06T18:30:00.000Z",
+    "createdAt": "2025-12-29T10:00:00.000Z",
+    "updatedAt": "2025-12-30T11:00:00.000Z"
+  }
+}
+```
+
+---
+
+### 23. Mark Reminder as Completed
+
+**Endpoint:** `PATCH /api/customer/refill-reminders/:id/complete`
+**Auth Required:** Yes (Customer)
+
+**Request Body:**
+
+```json
+{
+  "isActive": false
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Reminder marked as completed",
+  "data": {
+    "_id": "reminder123",
+    "isActive": false,
+    "updatedAt": "2025-12-30T11:00:00.000Z"
+  }
+}
+```
+
+---
+
+### 24. Delete Reminder
+
+**Endpoint:** `DELETE /api/customer/refill-reminders/:id`
+**Auth Required:** Yes (Customer)
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Refill reminder deleted successfully"
+}
+```
+
+---
+
+## 📋 VALIDATION RULES
 
 ### Register
 
@@ -752,6 +1036,28 @@
   - `brand`: Optional, string
   - `dosageForm`: Optional, string
   - `prescriptionRequired`: Optional, boolean
+
+### Refill Reminders
+
+**Create Reminder:**
+
+- `medicines`: Required, array of valid medicine IDs (minimum 1 medicine)
+- `frequency`: Required, must be one of: "daily", "weekly", "monthly"
+- `timeOfDay`: Required, 24-hour format HH:MM (e.g., "08:00", "18:30")
+- `notificationMethod`: Required, must be one of: "email", "sms", "push"
+
+**Update Reminder:**
+
+- All fields optional
+- `medicines`: Array of valid medicine IDs
+- `frequency`: Must be one of: "daily", "weekly", "monthly"
+- `timeOfDay`: 24-hour format HH:MM
+- `notificationMethod`: Must be one of: "email", "sms", "push"
+- `isActive`: Boolean
+
+**Mark as Completed:**
+
+- `isActive`: Required, must be false
 
 ### Image Upload
 
