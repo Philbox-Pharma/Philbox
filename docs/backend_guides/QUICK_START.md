@@ -7,8 +7,8 @@
 Based on what you want to test, select from:
 
 - **Admin Operations** → `ADMIN_API_COMPLETE_GUIDE.md` (includes Socket.IO events)
-- **Customer Authentication** → `CUSTOMER_AUTH_API_GUIDE.md`
-- **Doctor Authentication** → `DOCTOR_AUTH_API_GUIDE.md`
+- **Customer Operations** → `CUSTOMER_COMPLETE_API_GUIDE.md` (auth, profile, dashboard, addresses, search, reminders)
+- **Doctor Operations** → `DOCTOR_COMPLETE_API_GUIDE.md` (auth, onboarding, application tracking, resubmit)
 - **Salesperson Operations** → `SALESPERSON_COMPLETE_API_GUIDE.md` (includes task management & Socket.IO events)
 
 ### Step 2: Open Postman
@@ -60,17 +60,20 @@ PUT    /api/customer/auth/profile               # Update customer profile
 ### Doctor Authentication & Onboarding
 
 ```
-POST   /api/doctor/auth/register                # Register new doctor
-POST   /api/doctor/auth/verify-email            # Verify email with token
-POST   /api/doctor/auth/login                   # Login with email/password
-GET    /api/doctor/auth/google                  # Google OAuth login
-GET    /api/doctor/auth/google/callback         # Google OAuth callback
-POST   /api/doctor/auth/submit-application      # Submit documents for verification
-POST   /api/doctor/auth/complete-profile        # Complete profile after approval
-POST   /api/doctor/auth/forget-password         # Request password reset
-POST   /api/doctor/auth/reset-password          # Reset password with token
-POST   /api/doctor/auth/logout                  # Logout and destroy session
-GET    /api/doctor/auth/me                      # Get current doctor profile
+POST   /api/doctor/auth/register                        # Register new doctor
+POST   /api/doctor/auth/verify-email                    # Verify email with token
+POST   /api/doctor/auth/login                           # Login with email/password
+GET    /api/doctor/auth/google                          # Google OAuth login
+GET    /api/doctor/auth/google/callback                 # Google OAuth callback
+POST   /api/doctor/auth/forget-password                 # Request password reset
+POST   /api/doctor/auth/reset-password                  # Reset password with token
+POST   /api/doctor/auth/logout                          # Logout and destroy session
+GET    /api/doctor/auth/me                              # Get current doctor profile
+
+POST   /api/doctor/onboarding/submit-application        # Submit documents for verification
+GET    /api/doctor/onboarding/application-status        # Check application status
+POST   /api/doctor/onboarding/resubmit-application      # Resubmit after rejection
+POST   /api/doctor/onboarding/complete-profile          # Complete profile after approval
 ```
 
 ### Salesperson Authentication

@@ -302,6 +302,140 @@ class DoctorOnboardingService {
   }
 
   /**
+   * Resubmit Application (for rejected applications)
+   */
+  async resubmitApplication(doctorId, files, req) {
+    try {
+      const doctor = await Doctor.findById(doctorId);
+      if (!doctor) {
+        throw new Error('DOCTOR_NOT_FOUND');
+      }
+
+      req.doctor = {
+        _id: doctor._id,
+        email: doctor.email,
+        fullName: doctor.fullName,
+      };
+
+      // Check if there's an existing application
+      const existingDocs = await DoctorDocuments.findOne({
+        doctor_id: doctorId,
+      });
+
+      if (!existingDocs) {
+        throw new Error('NO_APPLICATION_FOUND');
+      }
+
+      const existingApp = await DoctorApplication.findOne({
+        applications_documents_id: existingDocs._id,
+      });
+
+      if (!existingApp) {
+        throw new Error('NO_APPLICATION_FOUND');
+      }
+
+      // Check if application was actually rejected
+      if (existingApp.status !== 'rejected') {
+        throw new Error('APPLICATION_NOT_REJECTED');
+      }
+
+      // Validate required files
+      const requiredFiles = ['medical_license', 'mbbs_md_degree', 'cnic'];
+      const missingFiles = [];
+
+      for (const fileKey of requiredFiles) {
+        if (!files[fileKey] || !files[fileKey][0]) {
+          missingFiles.push(fileKey.replace(/_/g, ' ').toUpperCase());
+        }
+      }
+
+      if (missingFiles.length > 0) {
+        const error = new Error(
+          `MISSING_REQUIRED_FILES: ${missingFiles.join(', ')}`
+        );
+        error.statusCode = 400;
+        error.missingFiles = missingFiles;
+        throw error;
+      }
+
+      // Upload new files to Cloudinary
+      const docData = {};
+
+      if (files['cnic'] && files['cnic'][0]) {
+        docData.CNIC = await uploadToCloudinary(
+          files['cnic'][0].path,
+          'doctor_documents/cnic'
+        );
+      }
+
+      if (files['medical_license'] && files['medical_license'][0]) {
+        docData.medical_license = await uploadToCloudinary(
+          files['medical_license'][0].path,
+          'doctor_documents/medical_license'
+        );
+      }
+
+      if (files['specialist_license'] && files['specialist_license'][0]) {
+        docData.specialist_license = await uploadToCloudinary(
+          files['specialist_license'][0].path,
+          'doctor_documents/specialist_license'
+        );
+      }
+
+      if (files['mbbs_md_degree'] && files['mbbs_md_degree'][0]) {
+        docData.mbbs_md_degree = await uploadToCloudinary(
+          files['mbbs_md_degree'][0].path,
+          'doctor_documents/degrees'
+        );
+      }
+
+      if (files['experience_letters'] && files['experience_letters'][0]) {
+        docData.experience_letters = await uploadToCloudinary(
+          files['experience_letters'][0].path,
+          'doctor_documents/experience'
+        );
+      }
+
+      // Update existing documents
+      Object.assign(existingDocs, docData);
+      await existingDocs.save();
+
+      // Reset application to pending
+      existingApp.status = 'pending';
+      existingApp.admin_comment = null;
+      existingApp.reviewed_by_admin_id = null;
+      existingApp.reviewed_at = null;
+      existingApp.updated_at = new Date();
+      await existingApp.save();
+
+      // Update doctor status
+      await Doctor.findByIdAndUpdate(doctorId, {
+        account_status: 'suspended/freezed',
+        onboarding_status: 'documents-submitted',
+      });
+
+      await logDoctorActivity(
+        req,
+        'application_resubmit',
+        `Resubmitted application with updated documents`,
+        'doctors_documents',
+        existingDocs._id
+      );
+
+      return {
+        success: true,
+        message:
+          'Application resubmitted successfully. Please wait for admin review.',
+        documentId: existingDocs._id,
+        nextStep: 'waiting-approval',
+      };
+    } catch (error) {
+      console.error('Error in resubmitApplication:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Complete Profile (Education, Experience, Specialization)
    */
   async completeProfile(doctorId, profileData, files, req) {

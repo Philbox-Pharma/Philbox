@@ -34,34 +34,41 @@ For quick testing commands and endpoint reference, see **[QUICK_START.md](./QUIC
 
 ---
 
-### 2. **CUSTOMER_AUTH_API_GUIDE.md**
+### 2. **CUSTOMER_COMPLETE_API_GUIDE.md**
 
-**Coverage:** Customer authentication and profile management
+**Coverage:** Complete customer authentication, profile, dashboard, and health management
 
 **Key Features:**
 
 - Customer registration with email verification
 - Login (email/password + Google OAuth)
 - Profile management with image uploads
-- Address management
+- Address management (CRUD operations)
+- Dashboard with order history and appointments
+- Search history tracking
+- Medicine refill reminders
 - Password reset functionality
 - Session management
 - Frontend integration examples
 
 ---
 
-### 3. **DOCTOR_AUTH_API_GUIDE.md**
+### 3. **DOCTOR_COMPLETE_API_GUIDE.md**
 
-**Coverage:** Doctor onboarding, authentication, and verification process
+**Coverage:** Complete doctor authentication, onboarding, application tracking, and profile management
 
 **Key Features:**
 
 - Doctor registration with email verification
 - Multi-step onboarding process
-- Document submission for admin verification
-- Profile completion (education, experience, specialization)
+- Document submission for admin verification (CNIC, medical license, degrees)
+- Application status tracking (pending/processing/approved/rejected)
+- Resubmit functionality for rejected applications
+- Admin comments and feedback system
+- Email notifications on application status changes
+- Profile completion (education, experience, specialization, consultation fees)
 - Google OAuth authentication
-- Onboarding state management
+- Onboarding state management with status transitions
 - Frontend integration examples
 
 ---
@@ -97,7 +104,7 @@ http://localhost:5000/api/
 │   ├── POST /logout
 │   └── PATCH /2fa-settings
 │
-├── customer/auth/                       [CUSTOMER_AUTH_API_GUIDE.md]
+├── customer/auth/                       [CUSTOMER_COMPLETE_API_GUIDE.md]
 │   ├── POST /register
 │   ├── POST /verify-email
 │   ├── POST /login
@@ -109,16 +116,42 @@ http://localhost:5000/api/
 │   ├── GET /me
 │   └── PUT /profile
 │
-├── doctor/auth/                         [DOCTOR_AUTH_API_GUIDE.md]
+├── customer/                            [CUSTOMER_COMPLETE_API_GUIDE.md]
+│   ├── addresses/
+│   │   ├── POST /
+│   │   ├── GET /
+│   │   ├── GET /:id
+│   │   ├── PUT /:id
+│   │   ├── DELETE /:id
+│   │   └── PATCH /:id/default
+│   ├── dashboard/
+│   │   └── GET /
+│   ├── search-history/
+│   │   ├── POST /
+│   │   ├── GET /
+│   │   └── DELETE /:id
+│   └── refill-reminders/
+│       ├── POST /
+│       ├── GET /
+│       ├── PUT /:id
+│       └── DELETE /:id
+│
+├── doctor/auth/                         [DOCTOR_COMPLETE_API_GUIDE.md]
 │   ├── POST /register
 │   ├── POST /verify-email
 │   ├── POST /login
-│   ├── POST /submit-application
-│   ├── POST /complete-profile
+│   ├── GET /google
+│   ├── GET /google/callback
 │   ├── POST /forget-password
 │   ├── POST /reset-password
 │   ├── POST /logout
-│   └── GET /google
+│   └── GET /me
+│
+├── doctor/onboarding/                   [DOCTOR_COMPLETE_API_GUIDE.md]
+│   ├── POST /submit-application
+│   ├── GET /application-status
+│   ├── POST /resubmit-application
+│   └── POST /complete-profile
 │
 ├── salesperson/auth/                    [SALESPERSON_COMPLETE_API_GUIDE.md]
 │   ├── POST /login
@@ -192,10 +225,14 @@ http://localhost:5000/api/
 | Metric                            | Count |
 | --------------------------------- | ----- |
 | **Total Guides**                  | 4     |
-| **Total Endpoints**               | 71    |
+| **Total Endpoints**               | 100+  |
 | **Admin Endpoints**               | 49    |
+| **Customer Endpoints (Total)**    | 27    |
 | **Customer Auth Endpoints**       | 10    |
+| **Customer Feature Endpoints**    | 17    |
+| **Doctor Endpoints (Total)**      | 13    |
 | **Doctor Auth Endpoints**         | 9     |
+| **Doctor Onboarding Endpoints**   | 4     |
 | **Salesperson Endpoints (Total)** | 12    |
 | **Salesperson Auth Endpoints**    | 7     |
 | **Salesperson Task Endpoints**    | 5     |
@@ -340,10 +377,14 @@ http://localhost:5000/api/
 1. Doctor registers via `POST /api/doctor/auth/register`
 2. Doctor verifies email via `POST /api/doctor/auth/verify-email`
 3. Doctor logs in via `POST /api/doctor/auth/login`
-4. Doctor submits application via `POST /api/doctor/auth/submit-application`
-5. Admin reviews documents (backend process)
-6. Doctor completes profile via `POST /api/doctor/auth/complete-profile`
-7. Doctor profile becomes active and visible
+4. Doctor submits application via `POST /api/doctor/onboarding/submit-application`
+5. Doctor checks status via `GET /api/doctor/onboarding/application-status`
+6. Admin reviews and approves/rejects application
+   - If approved: Email notification sent to doctor
+   - If rejected: Email with admin comments sent to doctor
+7. If rejected: Doctor resubmits via `POST /api/doctor/onboarding/resubmit-application`
+8. After approval: Doctor completes profile via `POST /api/doctor/onboarding/complete-profile`
+9. Doctor profile becomes active and visible
 
 ### Salesperson Account Flow
 
@@ -365,6 +406,6 @@ For issues or questions regarding specific endpoints:
 
 ---
 
-**Last Updated:** December 28, 2025
-**Version:** 2.1
+**Last Updated:** December 31, 2025
+**Version:** 2.2
 **Status:** Complete & Production Ready
