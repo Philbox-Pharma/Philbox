@@ -16,7 +16,7 @@
     "format": "prettier --write \"src/**/*.{js,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{js,json,md}\"",
     "code:check": "npm run lint && npm run format:check",
-    "seed:roles": "node src/main/utils/seedRolesPermissions.js"
+    "seed:data": "node src/scripts/seedData.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
