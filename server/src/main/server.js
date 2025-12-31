@@ -46,6 +46,7 @@ import { ROUTES } from './constants/global.routes.constants.js';
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', 1);
 
 const STORE = {
   mongoUrl: process.env.MONGO_URI,
