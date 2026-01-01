@@ -43,6 +43,7 @@ import InventoryFilesLog from '../main/models/InventoryFilesLog.js';
 import UploadedInventoryFile from '../main/models/UploadedInventoryFile.js';
 import DoctorApplication from '../main/models/DoctorApplication.js';
 import DoctorDocuments from '../main/models/DoctorDocuments.js';
+import DoctorSlot from '../main/models/DoctorSlot.js';
 
 // Connect to MongoDB
 const connectDB = async () => {
@@ -542,7 +543,7 @@ const seedData = async () => {
         license_number: 'PMC-67890',
         consultation_type: 'online',
         consultation_fee: 1500,
-        account_status: 'suspended/freezed',
+        account_status: 'under_consideration',
         onboarding_status: 'documents-submitted',
         roleId: doctorRole._id,
         is_Verified: false,
@@ -1307,6 +1308,209 @@ const seedData = async () => {
     ]);
     console.log('  ✓ Created 2 doctor applications (1 approved, 1 pending)');
 
+    // ==================== 15. DOCTOR SLOTS ====================
+    console.log('\n📅 Seeding doctor slots...');
+
+    // Helper function to generate dates
+    const generateDateRange = (
+      startDate,
+      endDate,
+      frequency,
+      daysOfWeek = []
+    ) => {
+      const dates = [];
+      const current = new Date(startDate);
+      const end = new Date(endDate);
+
+      while (current <= end) {
+        if (frequency === 'daily') {
+          dates.push(new Date(current));
+          current.setDate(current.getDate() + 1);
+        } else if (frequency === 'weekly' && daysOfWeek.length > 0) {
+          if (daysOfWeek.includes(current.getDay())) {
+            dates.push(new Date(current));
+          }
+          current.setDate(current.getDate() + 1);
+        } else if (frequency === 'monthly') {
+          dates.push(new Date(current));
+          current.setMonth(current.getMonth() + 1);
+        }
+      }
+      return dates;
+    };
+
+    // Doctor 1 (Dr. Sarah Ahmed) - Active doctor with various slots
+    const sarahSlots = [];
+
+    // Single slots for next week (various durations)
+    sarahSlots.push(
+      {
+        doctor_id: doctors[0]._id,
+        date: new Date('2026-01-10'),
+        start_time: '09:00',
+        end_time: '12:00',
+        slot_duration: 30,
+        status: 'available',
+        is_recurring: false,
+        notes: 'Morning consultation - General checkups',
+      },
+      {
+        doctor_id: doctors[0]._id,
+        date: new Date('2026-01-10'),
+        start_time: '14:00',
+        end_time: '17:00',
+        slot_duration: 60,
+        status: 'available',
+        is_recurring: false,
+        notes: 'Afternoon consultation - Extended sessions',
+      },
+      {
+        doctor_id: doctors[0]._id,
+        date: new Date('2026-01-11'),
+        start_time: '10:00',
+        end_time: '13:00',
+        slot_duration: 30,
+        status: 'booked',
+        is_recurring: false,
+        appointment_id: appointments[0]._id,
+        notes: 'Booked for patient consultation',
+      },
+      {
+        doctor_id: doctors[0]._id,
+        date: new Date('2026-01-12'),
+        start_time: '09:00',
+        end_time: '11:00',
+        slot_duration: 15,
+        status: 'available',
+        is_recurring: false,
+        notes: 'Quick consultations - Follow-ups',
+      },
+      {
+        doctor_id: doctors[0]._id,
+        date: new Date('2026-01-13'),
+        start_time: '15:00',
+        end_time: '18:00',
+        slot_duration: 30,
+        status: 'unavailable',
+        is_recurring: false,
+        notes: 'Unavailable - Personal appointment',
+      }
+    );
+
+    // Recurring weekly slots (Mon, Wed, Fri) for next 2 months
+    const weeklyDates = generateDateRange(
+      new Date('2026-01-15'),
+      new Date('2026-03-15'),
+      'weekly',
+      [1, 3, 5] // Monday, Wednesday, Friday
+    );
+
+    weeklyDates.forEach(date => {
+      sarahSlots.push({
+        doctor_id: doctors[0]._id,
+        date: date,
+        start_time: '10:00',
+        end_time: '16:00',
+        slot_duration: 60,
+        status: 'available',
+        is_recurring: true,
+        recurring_pattern: {
+          frequency: 'weekly',
+          days_of_week: [1, 3, 5],
+          end_date: new Date('2026-03-15'),
+        },
+        notes: 'Regular weekly availability - Mon/Wed/Fri',
+      });
+    });
+
+    // Recurring monthly slots (15th of each month)
+    const monthlyDates = generateDateRange(
+      new Date('2026-01-15'),
+      new Date('2026-06-15'),
+      'monthly'
+    );
+
+    monthlyDates.forEach(date => {
+      sarahSlots.push({
+        doctor_id: doctors[0]._id,
+        date: date,
+        start_time: '14:00',
+        end_time: '18:00',
+        slot_duration: 60,
+        status: 'available',
+        is_recurring: true,
+        recurring_pattern: {
+          frequency: 'monthly',
+          days_of_week: [],
+          end_date: new Date('2026-06-15'),
+        },
+        notes: 'Monthly special consultation day',
+      });
+    });
+
+    // Doctor 2 (Dr. Bilal) - Pending doctor with limited slots
+    const bilalSlots = [];
+
+    // Daily slots for next week
+    const dailyDates = generateDateRange(
+      new Date('2026-01-10'),
+      new Date('2026-01-17'),
+      'daily'
+    );
+
+    dailyDates.forEach(date => {
+      bilalSlots.push({
+        doctor_id: doctors[1]._id,
+        date: date,
+        start_time: '11:00',
+        end_time: '15:00',
+        slot_duration: 30,
+        status: 'available',
+        is_recurring: true,
+        recurring_pattern: {
+          frequency: 'daily',
+          days_of_week: [],
+          end_date: new Date('2026-01-17'),
+        },
+        notes: 'Daily availability - Dermatology consultations',
+      });
+    });
+
+    // Weekend slots (Sat, Sun)
+    const weekendDates = generateDateRange(
+      new Date('2026-01-11'),
+      new Date('2026-02-28'),
+      'weekly',
+      [0, 6] // Sunday, Saturday
+    );
+
+    weekendDates.forEach(date => {
+      bilalSlots.push({
+        doctor_id: doctors[1]._id,
+        date: date,
+        start_time: '09:00',
+        end_time: '13:00',
+        slot_duration: 60,
+        status: 'available',
+        is_recurring: true,
+        recurring_pattern: {
+          frequency: 'weekly',
+          days_of_week: [0, 6],
+          end_date: new Date('2026-02-28'),
+        },
+        notes: 'Weekend availability - Extended sessions',
+      });
+    });
+
+    // Insert all slots
+    const doctorSlots = await DoctorSlot.insertMany([
+      ...sarahSlots,
+      ...bilalSlots,
+    ]);
+    console.log(
+      `  ✓ Created ${doctorSlots.length} doctor slots (${sarahSlots.length} for Dr. Sarah, ${bilalSlots.length} for Dr. Bilal)`
+    );
+
     console.log('\n✅ Data seeding completed successfully!\n');
     console.log('='.repeat(60));
     console.log('SUMMARY:');
@@ -1347,6 +1551,7 @@ const seedData = async () => {
     console.log(`✓ Inventory Logs: ${inventoryFilesLog.length}`);
     console.log(`✓ Doctor Documents: ${doctorDocuments.length}`);
     console.log(`✓ Doctor Applications: ${doctorApplications.length}`);
+    console.log(`✓ Doctor Slots: ${doctorSlots.length}`);
     console.log('='.repeat(60));
     console.log('\n💡 Test Credentials:');
     console.log(
