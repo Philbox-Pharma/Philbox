@@ -44,7 +44,7 @@ class DoctorAuthService {
       verificationToken,
       verificationTokenExpiresAt,
       is_Verified: false,
-      account_status: 'suspended/freezed',
+      account_status: 'under_consideration',
       onboarding_status: 'pending',
       roleId: doctorRole._id, // 🔐 RBAC - Assign doctor role
     });
