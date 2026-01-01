@@ -58,7 +58,7 @@ const isSecureEnvironment =
 // Configure allowed origins for CORS
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-  : ['http://localhost:3000', 'http://localhost:5173'];
+  : ['https://philbox-staging.up.railway.app/', 'http://localhost:5173'];
 
 const STORE = {
   mongoUrl: process.env.MONGO_URI,
