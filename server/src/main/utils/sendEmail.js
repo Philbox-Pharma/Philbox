@@ -1,4 +1,4 @@
-import { transporter } from '../config/nodemailer.config.js';
+import { resend, fromEmail } from '../config/resend.config.js';
 import {
   VERIFICATION_EMAIL_TEMPLATE,
   PASSWORD_RESET_TEMPLATE,
@@ -6,6 +6,8 @@ import {
   WELCOME_EMAIL_TEMPLATE,
   DOCTOR_APPLICATION_APPROVED_TEMPLATE,
   DOCTOR_APPLICATION_REJECTED_TEMPLATE,
+  DOCTOR_STATUS_UPDATE_TEMPLATE,
+  REFILL_REMINDER_TEMPLATE,
 } from '../constants/global.mail.constants.js';
 
 /**
@@ -49,19 +51,25 @@ export const sendVerificationEmail = async (
     .replace('{{LINK}}', verificationLink)
     .replace('{{ROLE}}', role);
 
-  const emailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: `Philbox - Verify Your ${role} Account`,
-    html: message,
-  };
+  try {
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: `Philbox - Verify Your ${role} Account`,
+      html: message,
+    });
 
-  transporter.sendMail(emailOptions, (error, info) => {
     if (error) {
-      return console.error(`Error sending ${role} verification email:`, error);
+      console.error(`Error sending ${role} verification email:`, error);
+      throw error;
     }
-    console.log(`${role} verification email sent: ${info.response}`);
-  });
+
+    console.log(`${role} verification email sent:`, data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error(`Error sending ${role} verification email:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -79,19 +87,25 @@ export const sendResetEmail = async (email, resetLink, name, role = 'User') => {
     .replace('{{LINK}}', resetLink)
     .replace('{{ROLE}}', role);
 
-  const emailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: `Philbox - Reset ${role} Password`,
-    html: message,
-  };
+  try {
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: `Philbox - Reset ${role} Password`,
+      html: message,
+    });
 
-  transporter.sendMail(emailOptions, (error, info) => {
     if (error) {
-      return console.error(`Error sending ${role} reset email:`, error);
+      console.error(`Error sending ${role} reset email:`, error);
+      throw error;
     }
-    console.log(`${role} password reset email sent: ${info.response}`);
-  });
+
+    console.log(`${role} password reset email sent:`, data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error(`Error sending ${role} reset email:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -108,19 +122,25 @@ export const sendOTP = async (email, otp, name = 'User', role = 'User') => {
     .replace('{{NAME}}', greetingName)
     .replace('{{ROLE}}', role);
 
-  const emailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: `Philbox - ${role} Login Verification`,
-    html: message,
-  };
+  try {
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: `Philbox - ${role} Login Verification`,
+      html: message,
+    });
 
-  transporter.sendMail(emailOptions, (error, info) => {
     if (error) {
-      return console.error(`Error sending ${role} OTP email:`, error);
+      console.error(`Error sending ${role} OTP email:`, error);
+      throw error;
     }
-    console.log(`${role} OTP email sent: ${info.response}`);
-  });
+
+    console.log(`${role} OTP email sent:`, data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error(`Error sending ${role} OTP email:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -147,19 +167,26 @@ export const sendWelcomeEmail = async (
     .replace('{{PASSWORD}}', password)
     .replace('{{LINK}}', loginLink);
 
-  const emailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: `Welcome to Philbox - Your ${role} Account`,
-    html: message,
-  };
+  try {
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      replyTo: 'philboxpk@gmail.com',
+      subject: `Welcome to Philbox - Your ${role} Account`,
+      html: message,
+    });
 
-  transporter.sendMail(emailOptions, (error, info) => {
     if (error) {
-      return console.error(`Error sending ${role} welcome email:`, error);
+      console.error(`Error sending ${role} welcome email:`, error);
+      throw error;
     }
-    console.log(`${role} welcome email sent: ${info.response}`);
-  });
+
+    console.log(`${role} welcome email sent:`, data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error(`Error sending ${role} welcome email:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -184,19 +211,26 @@ export const sendApplicationApprovedEmail = async (
     .replace('{{COMMENT}}', comment || 'Your credentials have been verified.')
     .replace('{{LINK}}', loginLink);
 
-  const emailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: 'Philbox - Your Doctor Application Has Been Approved',
-    html: message,
-  };
+  try {
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      replyTo: 'philboxpk@gmail.com',
+      subject: 'Philbox - Your Doctor Application Has Been Approved',
+      html: message,
+    });
 
-  transporter.sendMail(emailOptions, (error, info) => {
     if (error) {
-      return console.error('Error sending application approved email:', error);
+      console.error('Error sending application approved email:', error);
+      throw error;
     }
-    console.log('Application approved email sent: ' + info.response);
-  });
+
+    console.log('Application approved email sent:', data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('Error sending application approved email:', error);
+    throw error;
+  }
 };
 
 /**
@@ -224,19 +258,26 @@ export const sendApplicationRejectedEmail = async (
     )
     .replace('{{LINK}}', supportLink);
 
-  const emailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: 'Philbox - Application Status Update',
-    html: message,
-  };
+  try {
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      replyTo: 'philboxpk@gmail.com',
+      subject: 'Philbox - Application Status Update',
+      html: message,
+    });
 
-  transporter.sendMail(emailOptions, (error, info) => {
     if (error) {
-      return console.error('Error sending application rejected email:', error);
+      console.error('Error sending application rejected email:', error);
+      throw error;
     }
-    console.log('Application rejected email sent: ' + info.response);
-  });
+
+    console.log('Application rejected email sent:', data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('Error sending application rejected email:', error);
+    throw error;
+  }
 };
 
 /**
@@ -258,59 +299,38 @@ export const sendDoctorStatusUpdateEmail = async (
       ? 'Philbox - Your Account Has Been Activated'
       : 'Philbox - Account Status Update';
 
-  const emailTemplate = `
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <style>
-      body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
-      .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-      .header { text-align: center; padding-bottom: 20px; border-bottom: 2px solid #007bff; }
-      .content { padding: 20px 0; line-height: 1.6; color: #333; }
-      .button { display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-      .footer { text-align: center; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #888; font-size: 12px; }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <h1>Philbox</h1>
-        <h2>Account Status Update</h2>
-      </div>
-      <div class="content">
-        <p>Dear ${greetingName},</p>
-        <p>${message}</p>
-        ${
-          status === 'active'
-            ? '<a href="' +
-              process.env.FRONTEND_URL +
-              '/doctor/auth/login" class="button">Login to Your Account</a>'
-            : ''
-        }
-        <p>If you have any questions or concerns, please contact our support team.</p>
-        <p>Best regards,<br>The Philbox Team</p>
-      </div>
-      <div class="footer">
-        <p>&copy; ${new Date().getFullYear()} Philbox. All rights reserved.</p>
-      </div>
-    </div>
-  </body>
-  </html>
-  `;
+  const loginButton =
+    status === 'active'
+      ? `<a href="${process.env.FRONTEND_URL}/doctor/auth/login" class="btn">Login to Your Account</a>`
+      : '';
 
-  const emailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: subject,
-    html: emailTemplate,
-  };
+  const emailTemplate = DOCTOR_STATUS_UPDATE_TEMPLATE.replace(
+    '{{NAME}}',
+    greetingName
+  )
+    .replace('{{MESSAGE}}', message)
+    .replace('{{LOGIN_BUTTON}}', loginButton);
 
-  transporter.sendMail(emailOptions, (error, info) => {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      replyTo: 'philboxpk@gmail.com',
+      subject: subject,
+      html: emailTemplate,
+    });
+
     if (error) {
-      return console.error('Error sending status update email:', error);
+      console.error('Error sending status update email:', error);
+      throw error;
     }
-    console.log('Status update email sent: ' + info.response);
-  });
+
+    console.log('Status update email sent:', data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('Error sending status update email:', error);
+    throw error;
+  }
 };
 
 /**
@@ -320,24 +340,26 @@ export const sendDoctorStatusUpdateEmail = async (
  * @param {string} htmlContent - HTML content of the email
  */
 export const sendEmail = async (to, subject, htmlContent) => {
-  const emailOptions = {
-    from: process.env.EMAIL_USER,
-    to: to,
-    subject: subject,
-    html: htmlContent,
-  };
-
-  return new Promise((resolve, reject) => {
-    transporter.sendMail(emailOptions, (error, info) => {
-      if (error) {
-        console.error('Error sending email:', error);
-        reject(error);
-      } else {
-        console.log('Email sent successfully: ' + info.response);
-        resolve({ success: true, messageId: info.messageId });
-      }
+  try {
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: to,
+      replyTo: 'philboxpk@gmail.com',
+      subject: subject,
+      html: htmlContent,
     });
-  });
+
+    if (error) {
+      console.error('Error sending email:', error);
+      throw error;
+    }
+
+    console.log('Email sent successfully:', data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw error;
+  }
 };
 
 /**
@@ -356,65 +378,33 @@ export const sendRefillReminderEmail = async (email, name, medicines) => {
     )
     .join('');
 
-  const emailTemplate = `
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <style>
-      body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
-      .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-      .header { text-align: center; padding-bottom: 20px; border-bottom: 2px solid #2563eb; }
-      .header h1 { color: #2563eb; margin: 0; }
-      .content { padding: 20px 0; line-height: 1.6; color: #333; }
-      .medicine-list { background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; }
-      .medicine-list ul { margin: 0; padding: 0 0 0 20px; }
-      .button { display: inline-block; padding: 12px 24px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-      .footer { text-align: center; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #888; font-size: 12px; }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <h1>💊 Philbox</h1>
-        <h2>Medicine Refill Reminder</h2>
-      </div>
-      <div class="content">
-        <p>Hello ${greetingName},</p>
-        <p>This is a friendly reminder to refill your medication(s):</p>
-        <div class="medicine-list">
-          <ul>${medicineList}</ul>
-        </div>
-        <p>Remember to take your medications as prescribed to maintain your health and well-being.</p>
-        <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/customer/medicines" class="button">Browse Medicines</a>
-        <p style="margin-top: 20px; font-size: 14px; color: #666;">
-          You can manage your medication reminders anytime from your account settings.
-        </p>
-      </div>
-      <div class="footer">
-        <p>This is an automated reminder from Philbox.</p>
-        <p>&copy; ${new Date().getFullYear()} Philbox. All rights reserved.</p>
-      </div>
-    </div>
-  </body>
-  </html>
-  `;
+  const medicineLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/customer/medicines`;
 
-  const emailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: '💊 Medicine Refill Reminder - Philbox',
-    html: emailTemplate,
-  };
+  const emailTemplate = REFILL_REMINDER_TEMPLATE.replace(
+    '{{NAME}}',
+    greetingName
+  )
+    .replace('{{MEDICINE_LIST}}', medicineList)
+    .replace('{{LINK}}', medicineLink);
 
-  return new Promise((resolve, reject) => {
-    transporter.sendMail(emailOptions, (error, info) => {
-      if (error) {
-        console.error('Error sending refill reminder email:', error);
-        reject(error);
-      } else {
-        console.log('Refill reminder email sent: ' + info.response);
-        resolve(info);
-      }
+  try {
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      replyTo: 'philboxpk@gmail.com',
+      subject: '💊 Medicine Refill Reminder - Philbox',
+      html: emailTemplate,
     });
-  });
+
+    if (error) {
+      console.error('Error sending refill reminder email:', error);
+      throw error;
+    }
+
+    console.log('Refill reminder email sent:', data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('Error sending refill reminder email:', error);
+    throw error;
+  }
 };
