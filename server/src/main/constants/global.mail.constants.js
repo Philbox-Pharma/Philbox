@@ -294,7 +294,112 @@ export const DOCTOR_APPLICATION_REJECTED_TEMPLATE = `<!DOCTYPE html>
 </body>
 </html>`;
 
-// 7. Test Refill Reminder Template
+// 7. Doctor Status Update Template
+export const DOCTOR_STATUS_UPDATE_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Status Update</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .header { background-color: #007bff; color: #ffffff; padding: 20px; text-align: center; }
+    .content { padding: 30px 20px; line-height: 1.6; color: #333; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
+    .instructions { color: #666666; line-height: 1.5; margin-bottom: 20px; }
+    .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #999999; font-size: 12px; }
+    @media only screen and (max-width: 600px) {
+      .container { width: 100%; border-radius: 0; }
+      .btn { padding: 10px 18px; font-size: 14px; }
+      .content { padding: 20px 15px; }
+    }
+  </style>
+</head>
+<body>
+  <table class="container" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td class="header">
+        <h1 style="margin: 0; font-size: 24px;">Philbox</h1>
+        <h2 style="margin: 10px 0 0 0; font-size: 18px;">Account Status Update</h2>
+      </td>
+    </tr>
+    <tr>
+      <td class="content">
+        <p style="font-size: 16px; color: #333; margin-bottom: 10px;">Dear {{NAME}},</p>
+        <p class="instructions">{{MESSAGE}}</p>
+        {{LOGIN_BUTTON}}
+        <p class="instructions">If you have any questions or concerns, please contact our support team.</p>
+        <p style="margin-top: 20px;">Best regards,<br><strong>The Philbox Team</strong></p>
+      </td>
+    </tr>
+    <tr>
+      <td class="footer">
+        <p>&copy; ${CURRENT_YEAR} Philbox. All rights reserved.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+// 8. Medicine Refill Reminder Template
+export const REFILL_REMINDER_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Medicine Refill Reminder</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .header { background-color: #2563eb; color: #ffffff; padding: 20px; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .content { padding: 30px 20px; line-height: 1.6; color: #333; }
+    .medicine-list { background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    .medicine-list ul { margin: 0; padding: 0 0 0 20px; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #2563eb; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
+    .instructions { color: #666666; line-height: 1.5; margin-bottom: 20px; }
+    .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #999999; font-size: 12px; }
+    @media only screen and (max-width: 600px) {
+      .container { width: 100%; border-radius: 0; }
+      .btn { padding: 10px 18px; font-size: 14px; }
+      .content { padding: 20px 15px; }
+    }
+  </style>
+</head>
+<body>
+  <table class="container" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td class="header">
+        <h1>💊 Philbox</h1>
+        <h2 style="margin: 10px 0 0 0; font-size: 18px;">Medicine Refill Reminder</h2>
+      </td>
+    </tr>
+    <tr>
+      <td class="content">
+        <p style="font-size: 16px; color: #333; margin-bottom: 10px;">Hello {{NAME}},</p>
+        <p class="instructions">This is a friendly reminder to refill your medication(s):</p>
+        <div class="medicine-list">
+          <ul>{{MEDICINE_LIST}}</ul>
+        </div>
+        <p class="instructions">Remember to take your medications as prescribed to maintain your health and well-being.</p>
+        <a href="{{LINK}}" class="btn">Browse Medicines</a>
+        <p style="margin-top: 20px; font-size: 14px; color: #666;">
+          You can manage your medication reminders anytime from your account settings.
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td class="footer">
+        <p>This is an automated reminder from Philbox.</p>
+        <p>&copy; ${CURRENT_YEAR} Philbox. All rights reserved.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+// 9. Test Refill Reminder Template
 export const TEST_REFILL_REMINDER_TEMPLATE = `<!DOCTYPE html>
 <html lang="en">
 <head>
