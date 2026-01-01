@@ -171,6 +171,7 @@ export const sendWelcomeEmail = async (
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: email,
+      replyTo: 'philboxpk@gmail.com',
       subject: `Welcome to Philbox - Your ${role} Account`,
       html: message,
     });
@@ -214,6 +215,7 @@ export const sendApplicationApprovedEmail = async (
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: email,
+      replyTo: 'philboxpk@gmail.com',
       subject: 'Philbox - Your Doctor Application Has Been Approved',
       html: message,
     });
@@ -260,6 +262,7 @@ export const sendApplicationRejectedEmail = async (
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: email,
+      replyTo: 'philboxpk@gmail.com',
       subject: 'Philbox - Application Status Update',
       html: message,
     });
@@ -312,6 +315,7 @@ export const sendDoctorStatusUpdateEmail = async (
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: email,
+      replyTo: 'philboxpk@gmail.com',
       subject: subject,
       html: emailTemplate,
     });
@@ -340,6 +344,7 @@ export const sendEmail = async (to, subject, htmlContent) => {
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: to,
+      replyTo: 'philboxpk@gmail.com',
       subject: subject,
       html: htmlContent,
     });
@@ -386,6 +391,7 @@ export const sendRefillReminderEmail = async (email, name, medicines) => {
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: email,
+      replyTo: 'philboxpk@gmail.com',
       subject: '💊 Medicine Refill Reminder - Philbox',
       html: emailTemplate,
     });
