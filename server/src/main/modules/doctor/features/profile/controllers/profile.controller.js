@@ -1,5 +1,5 @@
 import doctorProfileService from '../service/profile.service.js';
-import { sendResponse } from '../../../../../utils/sendResponse.js';
+import sendResponse from '../../../../../utils/sendResponse.js';
 
 /**
  * @desc    Get current doctor's complete profile
@@ -11,29 +11,22 @@ export const getMyProfile = async (req, res) => {
     const doctorId = req.session.doctorId || req.user?.id;
 
     if (!doctorId) {
-      return sendResponse(res, 401, false, 'Unauthorized', null);
+      return sendResponse(res, 401, 'Unauthorized');
     }
 
     const profile = await doctorProfileService.getDoctorProfile(doctorId);
 
-    return sendResponse(
-      res,
-      200,
-      true,
-      'Profile retrieved successfully',
-      profile
-    );
+    return sendResponse(res, 200, 'Profile retrieved successfully', profile);
   } catch (error) {
     console.error('Error in getMyProfile:', error);
 
     if (error.message === 'DOCTOR_NOT_FOUND') {
-      return sendResponse(res, 404, false, 'Doctor not found', null);
+      return sendResponse(res, 404, 'Doctor not found');
     }
 
     return sendResponse(
       res,
       500,
-      false,
       'Failed to retrieve profile',
       null,
       error.message
@@ -51,7 +44,7 @@ export const updateProfile = async (req, res) => {
     const doctorId = req.session.doctorId || req.user?.id;
 
     if (!doctorId) {
-      return sendResponse(res, 401, false, 'Unauthorized', null);
+      return sendResponse(res, 401, 'Unauthorized');
     }
 
     const updatedProfile = await doctorProfileService.updateDoctorProfile(
@@ -63,7 +56,6 @@ export const updateProfile = async (req, res) => {
     return sendResponse(
       res,
       200,
-      true,
       'Profile updated successfully',
       updatedProfile
     );
@@ -71,17 +63,16 @@ export const updateProfile = async (req, res) => {
     console.error('Error in updateProfile:', error);
 
     if (error.message === 'DOCTOR_NOT_FOUND') {
-      return sendResponse(res, 404, false, 'Doctor not found', null);
+      return sendResponse(res, 404, 'Doctor not found');
     }
 
     if (error.message === 'INVALID_DATA') {
-      return sendResponse(res, 400, false, 'Invalid profile data', null);
+      return sendResponse(res, 400, 'Invalid profile data');
     }
 
     return sendResponse(
       res,
       500,
-      false,
       'Failed to update profile',
       null,
       error.message
@@ -99,11 +90,11 @@ export const updateProfileImage = async (req, res) => {
     const doctorId = req.session.doctorId || req.user?.id;
 
     if (!doctorId) {
-      return sendResponse(res, 401, false, 'Unauthorized', null);
+      return sendResponse(res, 401, 'Unauthorized');
     }
 
     if (!req.file) {
-      return sendResponse(res, 400, false, 'No image file provided', null);
+      return sendResponse(res, 400, 'No image file provided');
     }
 
     const updatedProfile = await doctorProfileService.updateProfileImage(
@@ -112,24 +103,23 @@ export const updateProfileImage = async (req, res) => {
       req
     );
 
-    return sendResponse(res, 200, true, 'Profile image updated successfully', {
+    return sendResponse(res, 200, 'Profile image updated successfully', {
       profile_img_url: updatedProfile.profile_img_url,
     });
   } catch (error) {
     console.error('Error in updateProfileImage:', error);
 
     if (error.message === 'DOCTOR_NOT_FOUND') {
-      return sendResponse(res, 404, false, 'Doctor not found', null);
+      return sendResponse(res, 404, 'Doctor not found');
     }
 
     if (error.message === 'FILE_UPLOAD_FAILED') {
-      return sendResponse(res, 500, false, 'Failed to upload image', null);
+      return sendResponse(res, 500, 'Failed to upload image');
     }
 
     return sendResponse(
       res,
       500,
-      false,
       'Failed to update profile image',
       null,
       error.message
@@ -147,11 +137,11 @@ export const updateCoverImage = async (req, res) => {
     const doctorId = req.session.doctorId || req.user?.id;
 
     if (!doctorId) {
-      return sendResponse(res, 401, false, 'Unauthorized', null);
+      return sendResponse(res, 401, 'Unauthorized');
     }
 
     if (!req.file) {
-      return sendResponse(res, 400, false, 'No image file provided', null);
+      return sendResponse(res, 400, 'No image file provided');
     }
 
     const updatedProfile = await doctorProfileService.updateCoverImage(
@@ -160,24 +150,23 @@ export const updateCoverImage = async (req, res) => {
       req
     );
 
-    return sendResponse(res, 200, true, 'Cover image updated successfully', {
+    return sendResponse(res, 200, 'Cover image updated successfully', {
       cover_img_url: updatedProfile.cover_img_url,
     });
   } catch (error) {
     console.error('Error in updateCoverImage:', error);
 
     if (error.message === 'DOCTOR_NOT_FOUND') {
-      return sendResponse(res, 404, false, 'Doctor not found', null);
+      return sendResponse(res, 404, 'Doctor not found');
     }
 
     if (error.message === 'FILE_UPLOAD_FAILED') {
-      return sendResponse(res, 500, false, 'Failed to upload image', null);
+      return sendResponse(res, 500, 'Failed to upload image');
     }
 
     return sendResponse(
       res,
       500,
-      false,
       'Failed to update cover image',
       null,
       error.message
@@ -195,28 +184,20 @@ export const updateConsultationType = async (req, res) => {
     const doctorId = req.session.doctorId || req.user?.id;
 
     if (!doctorId) {
-      return sendResponse(res, 401, false, 'Unauthorized', null);
+      return sendResponse(res, 401, 'Unauthorized');
     }
 
     const { consultation_type } = req.body;
 
     if (!consultation_type) {
-      return sendResponse(
-        res,
-        400,
-        false,
-        'Consultation type is required',
-        null
-      );
+      return sendResponse(res, 400, 'Consultation type is required');
     }
 
     if (!['in-person', 'online', 'both'].includes(consultation_type)) {
       return sendResponse(
         res,
         400,
-        false,
-        'Invalid consultation type. Must be: in-person, online, or both',
-        null
+        'Invalid consultation type. Must be: in-person, online, or both'
       );
     }
 
@@ -226,24 +207,19 @@ export const updateConsultationType = async (req, res) => {
       req
     );
 
-    return sendResponse(
-      res,
-      200,
-      true,
-      'Consultation type updated successfully',
-      { consultation_type: updatedProfile.consultation_type }
-    );
+    return sendResponse(res, 200, 'Consultation type updated successfully', {
+      consultation_type: updatedProfile.consultation_type,
+    });
   } catch (error) {
     console.error('Error in updateConsultationType:', error);
 
     if (error.message === 'DOCTOR_NOT_FOUND') {
-      return sendResponse(res, 404, false, 'Doctor not found', null);
+      return sendResponse(res, 404, 'Doctor not found');
     }
 
     return sendResponse(
       res,
       500,
-      false,
       'Failed to update consultation type',
       null,
       error.message
@@ -261,19 +237,13 @@ export const updateConsultationFee = async (req, res) => {
     const doctorId = req.session.doctorId || req.user?.id;
 
     if (!doctorId) {
-      return sendResponse(res, 401, false, 'Unauthorized', null);
+      return sendResponse(res, 401, 'Unauthorized');
     }
 
     const { consultation_fee } = req.body;
 
     if (consultation_fee === undefined || consultation_fee === null) {
-      return sendResponse(
-        res,
-        400,
-        false,
-        'Consultation fee is required',
-        null
-      );
+      return sendResponse(res, 400, 'Consultation fee is required');
     }
 
     const fee = parseFloat(consultation_fee);
@@ -282,9 +252,7 @@ export const updateConsultationFee = async (req, res) => {
       return sendResponse(
         res,
         400,
-        false,
-        'Consultation fee must be a positive number',
-        null
+        'Consultation fee must be a positive number'
       );
     }
 
@@ -294,24 +262,19 @@ export const updateConsultationFee = async (req, res) => {
       req
     );
 
-    return sendResponse(
-      res,
-      200,
-      true,
-      'Consultation fee updated successfully',
-      { consultation_fee: updatedProfile.consultation_fee }
-    );
+    return sendResponse(res, 200, 'Consultation fee updated successfully', {
+      consultation_fee: updatedProfile.consultation_fee,
+    });
   } catch (error) {
     console.error('Error in updateConsultationFee:', error);
 
     if (error.message === 'DOCTOR_NOT_FOUND') {
-      return sendResponse(res, 404, false, 'Doctor not found', null);
+      return sendResponse(res, 404, 'Doctor not found');
     }
 
     return sendResponse(
       res,
       500,
-      false,
       'Failed to update consultation fee',
       null,
       error.message
@@ -329,7 +292,7 @@ export const changePassword = async (req, res) => {
     const doctorId = req.session.doctorId || req.user?.id;
 
     if (!doctorId) {
-      return sendResponse(res, 401, false, 'Unauthorized', null);
+      return sendResponse(res, 401, 'Unauthorized');
     }
 
     const { currentPassword, newPassword } = req.body;
@@ -338,9 +301,7 @@ export const changePassword = async (req, res) => {
       return sendResponse(
         res,
         400,
-        false,
-        'Current password and new password are required',
-        null
+        'Current password and new password are required'
       );
     }
 
@@ -348,9 +309,7 @@ export const changePassword = async (req, res) => {
       return sendResponse(
         res,
         400,
-        false,
-        'New password must be at least 8 characters',
-        null
+        'New password must be at least 8 characters'
       );
     }
 
@@ -361,38 +320,29 @@ export const changePassword = async (req, res) => {
       req
     );
 
-    return sendResponse(res, 200, true, 'Password changed successfully', null);
+    return sendResponse(res, 200, 'Password changed successfully');
   } catch (error) {
     console.error('Error in changePassword:', error);
 
     if (error.message === 'DOCTOR_NOT_FOUND') {
-      return sendResponse(res, 404, false, 'Doctor not found', null);
+      return sendResponse(res, 404, 'Doctor not found');
     }
 
     if (error.message === 'INCORRECT_PASSWORD') {
-      return sendResponse(
-        res,
-        401,
-        false,
-        'Current password is incorrect',
-        null
-      );
+      return sendResponse(res, 401, 'Current password is incorrect');
     }
 
     if (error.message === 'OAUTH_ACCOUNT') {
       return sendResponse(
         res,
         400,
-        false,
-        'Cannot change password for OAuth accounts',
-        null
+        'Cannot change password for OAuth accounts'
       );
     }
 
     return sendResponse(
       res,
       500,
-      false,
       'Failed to change password',
       null,
       error.message

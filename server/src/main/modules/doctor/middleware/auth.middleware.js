@@ -22,16 +22,19 @@ export async function authenticate(req, res, next) {
       return sendResponse(res, 401, 'Doctor account not found');
     }
 
-    // 3. Security Check: Block if account is suspended or blocked
-    if (
-      doctor.account_status === 'blocked/removed' ||
-      doctor.account_status === 'suspended/freezed'
-    ) {
+    // 3. Security Check: Block if account is blocked or under consideration
+    if (doctor.account_status === 'blocked/removed') {
+      req.session.destroy();
+      return sendResponse(res, 403, 'Your account has been blocked.');
+    }
+
+    // Show message if account is under consideration
+    if (doctor.account_status === 'under_consideration') {
       req.session.destroy();
       return sendResponse(
         res,
         403,
-        'Your account has been blocked or suspended.'
+        'Your account is under consideration. Please wait for admin approval.'
       );
     }
 
@@ -41,7 +44,7 @@ export async function authenticate(req, res, next) {
       id: doctor._id,
       email: doctor.email,
       fullName: doctor.fullName,
-      status: doctor.account_status, // 'active', 'suspended/freezed', 'blocked/removed'
+      status: doctor.account_status, // 'active', 'under_consideration', 'blocked/removed'
       isVerified: doctor.is_Verified,
       onboardingStatus: doctor.onboarding_status,
       roleId: doctor.roleId, // 🔐 RBAC - Include roleId for middleware
@@ -86,11 +89,13 @@ export async function isApprovedDoctor(req, res, next) {
 
   // Only allow if status is 'active' (Admin has approved onboarding)
   if (req.doctor.status !== 'active') {
-    return sendResponse(
-      res,
-      403,
-      'Access denied: Your account is pending approval or suspended.'
-    );
+    const message =
+      req.doctor.status === 'under_consideration'
+        ? 'Access denied: Your account is under consideration. Please wait for admin approval.'
+        : req.doctor.status === 'blocked/removed'
+          ? 'Access denied: Your account has been blocked.'
+          : 'Access denied: Your account is not active.';
+    return sendResponse(res, 403, message);
   }
 
   next();

@@ -8,7 +8,7 @@ import {
   updateConsultationFee,
   changePassword,
 } from '../controllers/profile.controller.js';
-import { requireDoctorAuth } from '../../../../../middlewares/rbac.middleware.js';
+import { authenticate as requireDoctorAuth } from '../../../middleware/auth.middleware.js';
 import { upload } from '../../../../../middlewares/multer.middleware.js';
 
 const router = express.Router();

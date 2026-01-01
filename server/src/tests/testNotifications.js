@@ -16,7 +16,7 @@ const testEmail = async () => {
   console.log('\n📧 Testing Email Notification...');
 
   const result = await sendEmail(
-    process.env.TEST_EMAIL || 'test@example.com',
+    process.env.TEST_EMAIL || 'syedabdulalishah.786@gmail.com',
     '💊 Test Refill Reminder',
     TEST_REFILL_REMINDER_TEMPLATE
   );
@@ -75,10 +75,13 @@ const runTests = async () => {
 
   // Check environment variables
   console.log('\n📋 Environment Check:');
-  console.log('EMAIL_USER:', process.env.EMAIL_USER ? '✅ Set' : '❌ Not set');
   console.log(
-    'EMAIL_PASSWORD:',
-    process.env.EMAIL_PASSWORD ? '✅ Set' : '❌ Not set'
+    'BREVO_API_KEY:',
+    process.env.BREVO_API_KEY ? '✅ Set' : '❌ Not set'
+  );
+  console.log(
+    'EMAIL_USER:',
+    process.env.EMAIL_USER ? '✅ Set' : '⚠️  Using default email'
   );
   console.log(
     'TWILIO_ACCOUNT_SID:',

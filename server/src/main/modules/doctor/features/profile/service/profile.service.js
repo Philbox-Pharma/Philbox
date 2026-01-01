@@ -1,7 +1,7 @@
 import Doctor from '../../../../../models/Doctor.js';
-import { uploadToCloudinary } from '../../../../../utils/uploadCloudinary.js';
-import { logDoctorActivity } from '../../../../../utils/activityLogger.js';
-import bcrypt from 'bcrypt';
+import { uploadToCloudinary } from '../../../../../utils/uploadToCloudinary.js';
+import { logDoctorActivity } from '../../../utils/logDoctorActivities.js';
+import bcrypt from 'bcryptjs';
 
 class DoctorProfileService {
   /**
