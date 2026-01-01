@@ -76,14 +76,12 @@ const runTests = async () => {
   // Check environment variables
   console.log('\n📋 Environment Check:');
   console.log(
-    'RESEND_API_KEY:',
-    process.env.RESEND_API_KEY ? '✅ Set' : '❌ Not set'
+    'BREVO_API_KEY:',
+    process.env.BREVO_API_KEY ? '✅ Set' : '❌ Not set'
   );
   console.log(
-    'EMAIL_FROM:',
-    process.env.EMAIL_USER
-      ? '✅ Set'
-      : '⚠️  Using default (onboarding@resend.dev)'
+    'EMAIL_USER:',
+    process.env.EMAIL_USER ? '✅ Set' : '⚠️  Using default email'
   );
   console.log(
     'TWILIO_ACCOUNT_SID:',

@@ -1,4 +1,4 @@
-import { resend, fromEmail } from '../config/resend.config.js';
+import { brevo, fromEmail } from '../config/brevo.config.js';
 import {
   VERIFICATION_EMAIL_TEMPLATE,
   PASSWORD_RESET_TEMPLATE,
@@ -52,7 +52,7 @@ export const sendVerificationEmail = async (
     .replace('{{ROLE}}', role);
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await brevo.emails.send({
       from: fromEmail,
       to: email,
       subject: `Philbox - Verify Your ${role} Account`,
@@ -88,7 +88,7 @@ export const sendResetEmail = async (email, resetLink, name, role = 'User') => {
     .replace('{{ROLE}}', role);
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await brevo.emails.send({
       from: fromEmail,
       to: email,
       subject: `Philbox - Reset ${role} Password`,
@@ -123,7 +123,7 @@ export const sendOTP = async (email, otp, name = 'User', role = 'User') => {
     .replace('{{ROLE}}', role);
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await brevo.emails.send({
       from: fromEmail,
       to: email,
       subject: `Philbox - ${role} Login Verification`,
@@ -168,7 +168,7 @@ export const sendWelcomeEmail = async (
     .replace('{{LINK}}', loginLink);
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await brevo.emails.send({
       from: fromEmail,
       to: email,
       replyTo: 'philboxpk@gmail.com',
@@ -212,7 +212,7 @@ export const sendApplicationApprovedEmail = async (
     .replace('{{LINK}}', loginLink);
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await brevo.emails.send({
       from: fromEmail,
       to: email,
       replyTo: 'philboxpk@gmail.com',
@@ -259,7 +259,7 @@ export const sendApplicationRejectedEmail = async (
     .replace('{{LINK}}', supportLink);
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await brevo.emails.send({
       from: fromEmail,
       to: email,
       replyTo: 'philboxpk@gmail.com',
@@ -312,7 +312,7 @@ export const sendDoctorStatusUpdateEmail = async (
     .replace('{{LOGIN_BUTTON}}', loginButton);
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await brevo.emails.send({
       from: fromEmail,
       to: email,
       replyTo: 'philboxpk@gmail.com',
@@ -341,7 +341,7 @@ export const sendDoctorStatusUpdateEmail = async (
  */
 export const sendEmail = async (to, subject, htmlContent) => {
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await brevo.emails.send({
       from: fromEmail,
       to: to,
       replyTo: 'philboxpk@gmail.com',
@@ -388,7 +388,7 @@ export const sendRefillReminderEmail = async (email, name, medicines) => {
     .replace('{{LINK}}', medicineLink);
 
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await brevo.emails.send({
       from: fromEmail,
       to: email,
       replyTo: 'philboxpk@gmail.com',
