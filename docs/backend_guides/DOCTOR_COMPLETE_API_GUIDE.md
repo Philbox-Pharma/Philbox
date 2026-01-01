@@ -4,6 +4,7 @@
 
 - **Authentication:** `http://localhost:5000/api/doctor/auth`
 - **Onboarding:** `http://localhost:5000/api/doctor/onboarding`
+- **Profile:** `http://localhost:5000/api/doctor/profile`
 
 ---
 
@@ -13,17 +14,18 @@
 2. [Complete Registration Flow](#complete-registration-flow)
 3. [Authentication Endpoints](#authentication-endpoints)
 4. [Onboarding Endpoints](#onboarding-endpoints)
-5. [File Upload Requirements](#file-upload-requirements)
-6. [Validation Rules](#validation-rules)
-7. [Error Responses](#error-responses)
-8. [Application Status Reference](#application-status-reference)
-9. [Testing Guide](#testing-guide)
+5. [Profile Management Endpoints](#profile-management-endpoints)
+6. [File Upload Requirements](#file-upload-requirements)
+7. [Validation Rules](#validation-rules)
+8. [Error Responses](#error-responses)
+9. [Application Status Reference](#application-status-reference)
+10. [Testing Guide](#testing-guide)
 
 ---
 
 ## 🎯 Overview
 
-The PhilBox doctor system consists of two main modules:
+The PhilBox doctor system consists of three main modules:
 
 ### 1. Authentication Module (`/api/doctor/auth`)
 
@@ -33,11 +35,16 @@ Handles account creation, login, email verification, and password management.
 
 Manages document submission, application status tracking, and profile completion.
 
+### 3. Profile Management Module (`/api/doctor/profile`)
+
+Allows doctors to view and update their profile information, images, consultation settings, and password.
+
 ### Complete Journey:
 
 ```
 Register → Verify Email → Login → Submit Documents →
-Check Status → Wait for Approval (or Resubmit if Rejected) → Complete Profile → Start Practice
+Check Status → Wait for Approval (or Resubmit if Rejected) → Complete Profile →
+Manage Profile → Start Practice
 ```
 
 ---
@@ -756,7 +763,388 @@ formData.append("cover_img", coverImageFile);
 
 ---
 
-## 📂 File Upload Requirements
+## � Profile Management Endpoints
+
+### 1. Get My Profile
+
+**Endpoint:** `GET /api/doctor/profile`
+**Authentication:** Required
+**Rate Limited:** No
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Profile retrieved successfully",
+  "data": {
+    "_id": "doc123",
+    "fullName": "Dr. Sarah Ahmed",
+    "email": "sarah.ahmed@example.com",
+    "contactNumber": "+923001234567",
+    "gender": "Female",
+    "dateOfBirth": "1988-05-15T00:00:00.000Z",
+    "specialization": ["Cardiologist", "Internal Medicine"],
+    "educational_details": [
+      {
+        "degree": "MBBS",
+        "institution": "Aga Khan University",
+        "yearOfCompletion": 2012,
+        "specialization": "General Medicine",
+        "fileUrl": "https://cloudinary.com/..."
+      }
+    ],
+    "experience_details": [
+      {
+        "institution": "Aga Khan Hospital",
+        "starting_date": "2017-06-01T00:00:00.000Z",
+        "ending_date": "2022-12-31T00:00:00.000Z",
+        "is_going_on": false,
+        "institution_img_url": "https://cloudinary.com/..."
+      }
+    ],
+    "license_number": "PMC-12345",
+    "affiliated_hospital": "Aga Khan Hospital",
+    "consultation_type": "both",
+    "consultation_fee": 3000,
+    "onlineProfileURL": "https://linkedin.com/in/drsarah",
+    "profile_img_url": "https://cloudinary.com/...",
+    "cover_img_url": "https://cloudinary.com/...",
+    "digital_signature": "https://cloudinary.com/...",
+    "account_status": "active",
+    "onboarding_status": "completed",
+    "is_Verified": true,
+    "averageRating": 4.5,
+    "roleId": {
+      "_id": "role123",
+      "name": "doctor"
+    },
+    "created_at": "2025-12-01T10:00:00.000Z",
+    "updated_at": "2025-12-31T15:00:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+
+- `401` - Unauthorized
+- `404` - Doctor not found
+
+---
+
+### 2. Update Profile Details
+
+**Endpoint:** `PUT /api/doctor/profile`
+**Authentication:** Required
+**Content-Type:** `application/json`
+
+**Request Body:**
+
+```json
+{
+  "fullName": "Dr. Sarah Ahmed Khan",
+  "contactNumber": "+923001234567",
+  "specialization": [
+    "Cardiologist",
+    "Internal Medicine",
+    "Preventive Cardiology"
+  ],
+  "affiliated_hospital": "Aga Khan Hospital",
+  "educational_details": [
+    {
+      "degree": "MBBS",
+      "institution": "Aga Khan University",
+      "yearOfCompletion": 2012,
+      "specialization": "General Medicine"
+    },
+    {
+      "degree": "MD (Cardiology)",
+      "institution": "Harvard Medical School",
+      "yearOfCompletion": 2017,
+      "specialization": "Cardiology"
+    }
+  ],
+  "experience_details": [
+    {
+      "institution": "Aga Khan Hospital",
+      "starting_date": "2017-06-01",
+      "ending_date": "2022-12-31",
+      "is_going_on": false
+    },
+    {
+      "institution": "Liaquat National Hospital",
+      "starting_date": "2023-01-01",
+      "is_going_on": true
+    }
+  ],
+  "onlineProfileURL": "https://linkedin.com/in/drsarahkhan"
+}
+```
+
+**Allowed Fields:**
+
+- `fullName` - Doctor's full name
+- `contactNumber` - Contact phone number
+- `specialization` - Array of specializations
+- `affiliated_hospital` - Current hospital affiliation
+- `educational_details` - Array of education records
+- `experience_details` - Array of experience records
+- `onlineProfileURL` - LinkedIn or professional profile URL
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Profile updated successfully",
+  "data": {
+    "_id": "doc123",
+    "fullName": "Dr. Sarah Ahmed Khan",
+    "contactNumber": "+923001234567",
+    "specialization": [
+      "Cardiologist",
+      "Internal Medicine",
+      "Preventive Cardiology"
+    ]
+    // ... full updated profile
+  }
+}
+```
+
+**Error Responses:**
+
+- `401` - Unauthorized
+- `404` - Doctor not found
+- `400` - Invalid data (e.g., specialization not an array)
+
+---
+
+### 3. Update Profile Image
+
+**Endpoint:** `PUT /api/doctor/profile/profile-image`
+**Authentication:** Required
+**Content-Type:** `multipart/form-data`
+
+**Request Body:**
+
+```javascript
+const formData = new FormData();
+formData.append("profile_image", profileImageFile);
+
+await fetch("/api/doctor/profile/profile-image", {
+  method: "PUT",
+  body: formData,
+  credentials: "include",
+});
+```
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Profile image updated successfully",
+  "data": {
+    "profile_img_url": "https://res.cloudinary.com/.../doctor_profiles/profile_images/..."
+  }
+}
+```
+
+**File Requirements:**
+
+- Format: JPG, PNG, WEBP
+- Max Size: 2MB
+- Automatically uploaded to Cloudinary
+- Previous image replaced
+
+**Error Responses:**
+
+- `401` - Unauthorized
+- `400` - No image file provided
+- `404` - Doctor not found
+- `500` - File upload failed
+
+---
+
+### 4. Update Cover Image
+
+**Endpoint:** `PUT /api/doctor/profile/cover-image`
+**Authentication:** Required
+**Content-Type:** `multipart/form-data`
+
+**Request Body:**
+
+```javascript
+const formData = new FormData();
+formData.append("cover_image", coverImageFile);
+
+await fetch("/api/doctor/profile/cover-image", {
+  method: "PUT",
+  body: formData,
+  credentials: "include",
+});
+```
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Cover image updated successfully",
+  "data": {
+    "cover_img_url": "https://res.cloudinary.com/.../doctor_profiles/cover_images/..."
+  }
+}
+```
+
+**File Requirements:**
+
+- Format: JPG, PNG, WEBP
+- Max Size: 5MB
+- Automatically uploaded to Cloudinary
+- Previous image replaced
+
+**Error Responses:**
+
+- `401` - Unauthorized
+- `400` - No image file provided
+- `404` - Doctor not found
+- `500` - File upload failed
+
+---
+
+### 5. Update Consultation Type
+
+**Endpoint:** `PUT /api/doctor/profile/consultation-type`
+**Authentication:** Required
+**Content-Type:** `application/json`
+
+**Request Body:**
+
+```json
+{
+  "consultation_type": "both"
+}
+```
+
+**Valid Values:**
+
+- `"in-person"` - Only face-to-face consultations
+- `"online"` - Only video/telemedicine consultations
+- `"both"` - Both in-person and online
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Consultation type updated successfully",
+  "data": {
+    "consultation_type": "both"
+  }
+}
+```
+
+**Error Responses:**
+
+- `401` - Unauthorized
+- `400` - Consultation type is required
+- `400` - Invalid consultation type (must be: in-person, online, or both)
+- `404` - Doctor not found
+
+---
+
+### 6. Update Consultation Fee
+
+**Endpoint:** `PUT /api/doctor/profile/consultation-fee`
+**Authentication:** Required
+**Content-Type:** `application/json`
+
+**Request Body:**
+
+```json
+{
+  "consultation_fee": 3500
+}
+```
+
+**Validation:**
+
+- Must be a positive number
+- Can be integer or float
+- No maximum limit
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Consultation fee updated successfully",
+  "data": {
+    "consultation_fee": 3500
+  }
+}
+```
+
+**Error Responses:**
+
+- `401` - Unauthorized
+- `400` - Consultation fee is required
+- `400` - Consultation fee must be a positive number
+- `404` - Doctor not found
+
+---
+
+### 7. Change Password
+
+**Endpoint:** `PUT /api/doctor/profile/change-password`
+**Authentication:** Required
+**Content-Type:** `application/json`
+
+**Request Body:**
+
+```json
+{
+  "currentPassword": "OldPassword123!",
+  "newPassword": "NewSecurePass456!"
+}
+```
+
+**Validation:**
+
+- `currentPassword`: Required, must match existing password
+- `newPassword`: Required, minimum 8 characters
+- Not available for OAuth accounts (Google login)
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Password changed successfully",
+  "data": null
+}
+```
+
+**Error Responses:**
+
+- `401` - Unauthorized
+- `401` - Current password is incorrect
+- `400` - Current password and new password are required
+- `400` - New password must be at least 8 characters
+- `400` - Cannot change password for OAuth accounts
+- `404` - Doctor not found
+
+---
+
+## �📂 File Upload Requirements
 
 ### Document Uploads (Submit Application & Resubmit)
 
@@ -1080,7 +1468,69 @@ curl -X GET http://localhost:5000/api/doctor/auth/me \
   -H "Cookie: $(cat cookies.txt)"
 ```
 
-**Step 8: Logout**
+**Step 8: Get My Profile**
+
+```bash
+curl -X GET http://localhost:5000/api/doctor/profile \
+  -H "Cookie: $(cat cookies.txt)"
+```
+
+**Step 9: Update Profile Details**
+
+```bash
+curl -X PUT http://localhost:5000/api/doctor/profile \
+  -H "Cookie: $(cat cookies.txt)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fullName": "Dr. Test Doctor Updated",
+    "contactNumber": "+923009876543",
+    "specialization": ["Cardiologist", "Internal Medicine"]
+  }'
+```
+
+**Step 10: Update Profile Image**
+
+```bash
+curl -X PUT http://localhost:5000/api/doctor/profile/profile-image \
+  -H "Cookie: $(cat cookies.txt)" \
+  -F "profile_image=@/path/to/profile.jpg"
+```
+
+**Step 11: Update Consultation Type**
+
+```bash
+curl -X PUT http://localhost:5000/api/doctor/profile/consultation-type \
+  -H "Cookie: $(cat cookies.txt)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "consultation_type": "both"
+  }'
+```
+
+**Step 12: Update Consultation Fee**
+
+```bash
+curl -X PUT http://localhost:5000/api/doctor/profile/consultation-fee \
+  -H "Cookie: $(cat cookies.txt)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "consultation_fee": 3500
+  }'
+```
+
+**Step 13: Change Password**
+
+```bash
+curl -X PUT http://localhost:5000/api/doctor/profile/change-password \
+  -H "Cookie: $(cat cookies.txt)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currentPassword": "TestPass123",
+    "newPassword": "NewTestPass456"
+  }'
+```
+
+**Step 14: Logout**
 
 ```bash
 curl -X POST http://localhost:5000/api/doctor/auth/logout \
@@ -1099,7 +1549,9 @@ curl -X POST http://localhost:5000/api/doctor/auth/logout \
 4. **Session Management**: Sessions expire after 7 days of inactivity
 5. **File Size Limits**: Respect file size limits to avoid upload failures
 6. **Resubmission**: Rejected applications can be resubmitted with corrected documents
-7. **Email Notifications**: Doctors receive emails for:
+7. **Profile Management**: Doctors can update their profile anytime after completing onboarding
+8. **OAuth Accounts**: Cannot change password for Google OAuth accounts
+9. **Email Notifications**: Doctors receive emails for:
    - Email verification
    - Application approval
    - Application rejection
@@ -1172,6 +1624,6 @@ For technical issues or questions:
 
 ---
 
-**Last Updated:** December 31, 2025
-**API Version:** 1.0.0
-**Modules:** Authentication, Onboarding
+**Last Updated:** January 1, 2026
+**API Version:** 1.1.0
+**Modules:** Authentication, Onboarding, Profile Management

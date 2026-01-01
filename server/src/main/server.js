@@ -28,6 +28,7 @@ import salespersonPerformanceRoutes from './modules/admin/features/dashboard_man
 
 import doctorAuthRoutes from './modules/doctor/features/auth/routes/auth.routes.js';
 import doctorOnboardingRoutes from './modules/doctor/features/onboarding/routes/onboarding.routes.js';
+import doctorProfileRoutes from './modules/doctor/features/profile/routes/profile.routes.js';
 import passport from './modules/doctor/features/auth/config/passport.config.js';
 
 import customerAuthRoutes from './modules/customer/features/auth/routes/auth.routes.js';
@@ -117,6 +118,7 @@ app.use(
 
 app.use(`/api/${ROUTES.DOCTOR_AUTH}`, doctorAuthRoutes);
 app.use(`/api/doctor/onboarding`, doctorOnboardingRoutes);
+app.use(`/api/doctor/profile`, doctorProfileRoutes);
 app.use(`/api/${ROUTES.CUSTOMER_AUTH}`, customerAuthRoutes);
 app.use(`/api/customer/profile`, customerProfileRoutes);
 app.use(`/api/customer/dashboard`, customerDashboardRoutes);
