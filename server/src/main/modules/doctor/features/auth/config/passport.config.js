@@ -41,7 +41,7 @@ passport.use(
             profile_img_url ||
             `https://avatar.iran.liara.run/username?username=${fullName}`,
           is_Verified: true, // OAuth emails are pre-verified
-          account_status: 'suspended/freezed',
+          account_status: 'under_consideration',
           onboarding_status: 'pending',
           oauth_provider: 'google',
           oauth_id: profile.id,

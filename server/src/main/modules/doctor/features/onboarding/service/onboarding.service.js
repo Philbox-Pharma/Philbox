@@ -276,7 +276,7 @@ class DoctorOnboardingService {
 
       // Update doctor status
       await Doctor.findByIdAndUpdate(doctorId, {
-        account_status: 'suspended/freezed',
+        account_status: 'under_consideration',
         onboarding_status: 'documents-submitted',
       });
 
@@ -410,7 +410,7 @@ class DoctorOnboardingService {
 
       // Update doctor status
       await Doctor.findByIdAndUpdate(doctorId, {
-        account_status: 'suspended/freezed',
+        account_status: 'under_consideration',
         onboarding_status: 'documents-submitted',
       });
 
