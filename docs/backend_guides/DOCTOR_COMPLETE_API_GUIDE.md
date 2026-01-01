@@ -5,6 +5,7 @@
 - **Authentication:** `http://localhost:5000/api/doctor/auth`
 - **Onboarding:** `http://localhost:5000/api/doctor/onboarding`
 - **Profile:** `http://localhost:5000/api/doctor/profile`
+- **Slots Management:** `http://localhost:5000/api/doctor/slots`
 
 ---
 
@@ -15,11 +16,12 @@
 3. [Authentication Endpoints](#authentication-endpoints)
 4. [Onboarding Endpoints](#onboarding-endpoints)
 5. [Profile Management Endpoints](#profile-management-endpoints)
-6. [File Upload Requirements](#file-upload-requirements)
-7. [Validation Rules](#validation-rules)
-8. [Error Responses](#error-responses)
-9. [Application Status Reference](#application-status-reference)
-10. [Testing Guide](#testing-guide)
+6. [Slots Management Endpoints](#slots-management-endpoints)
+7. [File Upload Requirements](#file-upload-requirements)
+8. [Validation Rules](#validation-rules)
+9. [Error Responses](#error-responses)
+10. [Application Status Reference](#application-status-reference)
+11. [Testing Guide](#testing-guide)
 
 ---
 
@@ -39,12 +41,16 @@ Manages document submission, application status tracking, and profile completion
 
 Allows doctors to view and update their profile information, images, consultation settings, and password.
 
+### 4. Slots Management Module (`/api/doctor/slots`)
+
+Enables doctors to create, manage, and organize their availability slots for patient appointments. Supports single slots, recurring slots (daily/weekly/monthly), calendar view, and CRUD operations.
+
 ### Complete Journey:
 
 ```
 Register → Verify Email → Login → Submit Documents →
 Check Status → Wait for Approval (or Resubmit if Rejected) → Complete Profile →
-Manage Profile → Start Practice
+Manage Profile → Create Availability Slots → Start Practice
 ```
 
 ---
@@ -1144,6 +1150,715 @@ await fetch("/api/doctor/profile/cover-image", {
 
 ---
 
+## 📅 Slots Management Endpoints
+
+### Overview
+
+The Slots Management system allows doctors to define their availability for patient appointments. Doctors can:
+
+- Create single time slots for specific dates
+- Create recurring slots (daily, weekly, or monthly patterns)
+- View slots in a calendar format
+- Edit or delete unbooked future slots
+- Mark slots as unavailable
+- Filter slots by date range and status
+
+**Key Features:**
+
+- **Slot Duration Options:** 15, 30, or 60 minutes
+- **Overlap Prevention:** System prevents overlapping time slots
+- **Booking Protection:** Booked slots cannot be edited or deleted
+- **Past Slot Protection:** Past slots cannot be modified
+- **Activity Logging:** All slot operations are logged for tracking
+
+---
+
+### 1. Create Single Slot
+
+**Endpoint:** `POST /api/doctor/slots`
+**Authentication:** Required (Doctor)
+**Content-Type:** `application/json`
+
+**Purpose:** Create a single availability slot for a specific date and time.
+
+**Request Body:**
+
+```json
+{
+  "date": "2026-01-15",
+  "start_time": "09:00",
+  "end_time": "17:00",
+  "slot_duration": 30,
+  "notes": "Available for general consultations"
+}
+```
+
+**Field Descriptions:**
+
+- `date` (required): Date in ISO format (YYYY-MM-DD), must be today or future
+- `start_time` (required): Start time in HH:mm format (24-hour)
+- `end_time` (required): End time in HH:mm format (24-hour)
+- `slot_duration` (optional): Duration in minutes - 15, 30, or 60 (default: 30)
+- `notes` (optional): Additional notes about the slot (max 500 characters)
+
+**Success Response (201):**
+
+```json
+{
+  "success": true,
+  "status": 201,
+  "message": "Slot created successfully",
+  "data": {
+    "_id": "slot123",
+    "doctor_id": "doc123",
+    "date": "2026-01-15T00:00:00.000Z",
+    "start_time": "09:00",
+    "end_time": "17:00",
+    "slot_duration": 30,
+    "status": "available",
+    "is_recurring": false,
+    "notes": "Available for general consultations",
+    "created_at": "2026-01-01T10:00:00.000Z",
+    "updated_at": "2026-01-01T10:00:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+
+**Validation Error (400):**
+
+```json
+{
+  "success": false,
+  "status": 400,
+  "message": "Validation Error",
+  "error": "Start time must be in HH:mm format (e.g., 09:00)"
+}
+```
+
+**End Time Before Start Time (400):**
+
+```json
+{
+  "success": false,
+  "status": 400,
+  "message": "Invalid Time Range",
+  "error": "End time must be after start time"
+}
+```
+
+**Overlapping Slot (409):**
+
+```json
+{
+  "success": false,
+  "status": 409,
+  "message": "Slot Overlap",
+  "error": "This time slot overlaps with an existing slot. Please choose a different time."
+}
+```
+
+---
+
+### 2. Create Recurring Slots
+
+**Endpoint:** `POST /api/doctor/slots/recurring`
+**Authentication:** Required (Doctor)
+**Content-Type:** `application/json`
+
+**Purpose:** Create multiple recurring slots based on a pattern (daily, weekly, or monthly).
+
+**Request Body - Daily Pattern:**
+
+```json
+{
+  "start_time": "09:00",
+  "end_time": "17:00",
+  "slot_duration": 30,
+  "recurring_pattern": {
+    "frequency": "daily",
+    "start_date": "2026-01-10",
+    "end_date": "2026-01-31"
+  },
+  "notes": "Daily morning slots"
+}
+```
+
+**Request Body - Weekly Pattern:**
+
+```json
+{
+  "start_time": "10:00",
+  "end_time": "16:00",
+  "slot_duration": 60,
+  "recurring_pattern": {
+    "frequency": "weekly",
+    "days_of_week": [1, 3, 5],
+    "start_date": "2026-01-10",
+    "end_date": "2026-03-31"
+  },
+  "notes": "Monday, Wednesday, Friday availability"
+}
+```
+
+**Request Body - Monthly Pattern:**
+
+```json
+{
+  "start_time": "14:00",
+  "end_time": "18:00",
+  "slot_duration": 45,
+  "recurring_pattern": {
+    "frequency": "monthly",
+    "start_date": "2026-01-15",
+    "end_date": "2026-12-15"
+  },
+  "notes": "Monthly special consultation day"
+}
+```
+
+**Field Descriptions:**
+
+- `start_time` (required): Start time in HH:mm format
+- `end_time` (required): End time in HH:mm format
+- `slot_duration` (optional): 15, 30, or 60 minutes (default: 30)
+- `recurring_pattern` (required):
+  - `frequency` (required): "daily", "weekly", or "monthly"
+  - `days_of_week` (required for weekly): Array of numbers 0-6 (0=Sunday, 6=Saturday)
+  - `start_date` (required): Start date in ISO format
+  - `end_date` (required): End date in ISO format
+- `notes` (optional): Notes for all recurring slots
+
+**Success Response (201):**
+
+```json
+{
+  "success": true,
+  "status": 201,
+  "message": "Recurring slots created successfully",
+  "data": {
+    "totalCreated": 12,
+    "pattern": {
+      "frequency": "weekly",
+      "days_of_week": [1, 3, 5],
+      "start_date": "2026-01-10T00:00:00.000Z",
+      "end_date": "2026-03-31T00:00:00.000Z"
+    },
+    "slots": [
+      {
+        "_id": "slot124",
+        "date": "2026-01-13T00:00:00.000Z",
+        "start_time": "10:00",
+        "end_time": "16:00",
+        "slot_duration": 60,
+        "status": "available",
+        "is_recurring": true
+      }
+      // ... more slots
+    ]
+  }
+}
+```
+
+**Error Responses:**
+
+**Invalid Frequency (400):**
+
+```json
+{
+  "success": false,
+  "status": 400,
+  "message": "Validation Error",
+  "error": "Frequency must be daily, weekly, or monthly"
+}
+```
+
+**Missing Days for Weekly (400):**
+
+```json
+{
+  "success": false,
+  "status": 400,
+  "message": "Validation Error",
+  "error": "Days of week is required for weekly frequency"
+}
+```
+
+---
+
+### 3. Get All Slots
+
+**Endpoint:** `GET /api/doctor/slots`
+**Authentication:** Required (Doctor)
+
+**Purpose:** Retrieve all slots with optional filtering by date range and status.
+
+**Query Parameters:**
+
+- `start_date` (optional): Filter slots from this date (ISO format)
+- `end_date` (optional): Filter slots until this date (ISO format)
+- `status` (optional): Filter by status - "available", "booked", or "unavailable"
+
+**Example Requests:**
+
+```
+GET /api/doctor/slots
+GET /api/doctor/slots?start_date=2026-01-01&end_date=2026-01-31
+GET /api/doctor/slots?status=available
+GET /api/doctor/slots?start_date=2026-01-10&status=booked
+```
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Slots fetched successfully",
+  "data": {
+    "count": 25,
+    "slots": [
+      {
+        "_id": "slot123",
+        "doctor_id": "doc123",
+        "date": "2026-01-15T00:00:00.000Z",
+        "start_time": "09:00",
+        "end_time": "17:00",
+        "slot_duration": 30,
+        "status": "available",
+        "is_recurring": false,
+        "notes": "General availability",
+        "appointment_id": null,
+        "created_at": "2026-01-01T10:00:00.000Z",
+        "updated_at": "2026-01-01T10:00:00.000Z"
+      },
+      {
+        "_id": "slot124",
+        "doctor_id": "doc123",
+        "date": "2026-01-16T00:00:00.000Z",
+        "start_time": "10:00",
+        "end_time": "16:00",
+        "slot_duration": 60,
+        "status": "booked",
+        "is_recurring": true,
+        "appointment_id": "appt456",
+        "recurring_pattern": {
+          "frequency": "weekly",
+          "days_of_week": [1, 3, 5],
+          "end_date": "2026-03-31T00:00:00.000Z"
+        },
+        "created_at": "2026-01-01T10:00:00.000Z",
+        "updated_at": "2026-01-10T14:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+**Error Responses:**
+
+**Invalid Date Format (400):**
+
+```json
+{
+  "success": false,
+  "status": 400,
+  "message": "Validation Error",
+  "error": "Invalid date format. Use YYYY-MM-DD"
+}
+```
+
+---
+
+### 4. Get Calendar View
+
+**Endpoint:** `GET /api/doctor/slots/calendar/:year/:month`
+**Authentication:** Required (Doctor)
+
+**Purpose:** Get a calendar view of slots for a specific month, grouped by date.
+
+**Example Requests:**
+
+```
+GET /api/doctor/slots/calendar/2026/1
+GET /api/doctor/slots/calendar/2026/12
+```
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Calendar view fetched successfully",
+  "data": {
+    "year": 2026,
+    "month": 1,
+    "totalSlots": 45,
+    "calendar": {
+      "2026-01-15": [
+        {
+          "_id": "slot123",
+          "start_time": "09:00",
+          "end_time": "17:00",
+          "slot_duration": 30,
+          "status": "available",
+          "is_recurring": false,
+          "notes": "General availability"
+        }
+      ],
+      "2026-01-16": [
+        {
+          "_id": "slot124",
+          "start_time": "10:00",
+          "end_time": "14:00",
+          "slot_duration": 60,
+          "status": "booked",
+          "is_recurring": true
+        },
+        {
+          "_id": "slot125",
+          "start_time": "15:00",
+          "end_time": "18:00",
+          "slot_duration": 30,
+          "status": "available",
+          "is_recurring": false
+        }
+      ]
+    }
+  }
+}
+```
+
+**Error Responses:**
+
+**Invalid Month (400):**
+
+```json
+{
+  "success": false,
+  "status": 400,
+  "message": "Validation Error",
+  "error": "Month must be between 1 and 12"
+}
+```
+
+---
+
+### 5. Get Single Slot
+
+**Endpoint:** `GET /api/doctor/slots/:slotId`
+**Authentication:** Required (Doctor)
+
+**Purpose:** Retrieve detailed information about a specific slot.
+
+**Example Request:**
+
+```
+GET /api/doctor/slots/slot123
+```
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Slot fetched successfully",
+  "data": {
+    "_id": "slot123",
+    "doctor_id": "doc123",
+    "date": "2026-01-15T00:00:00.000Z",
+    "start_time": "09:00",
+    "end_time": "17:00",
+    "slot_duration": 30,
+    "status": "available",
+    "is_recurring": false,
+    "recurring_pattern": {
+      "frequency": null,
+      "days_of_week": [],
+      "end_date": null
+    },
+    "appointment_id": null,
+    "notes": "Available for general consultations",
+    "created_at": "2026-01-01T10:00:00.000Z",
+    "updated_at": "2026-01-01T10:00:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+
+**Slot Not Found (404):**
+
+```json
+{
+  "success": false,
+  "status": 404,
+  "message": "Slot Not Found",
+  "error": "The requested slot does not exist"
+}
+```
+
+**Unauthorized Access (403):**
+
+```json
+{
+  "success": false,
+  "status": 403,
+  "message": "Access Denied",
+  "error": "You can only access your own slots"
+}
+```
+
+---
+
+### 6. Update Slot
+
+**Endpoint:** `PUT /api/doctor/slots/:slotId`
+**Authentication:** Required (Doctor)
+**Content-Type:** `application/json`
+
+**Purpose:** Update slot details. Only unbooked, future slots can be updated.
+
+**Request Body:**
+
+```json
+{
+  "start_time": "10:00",
+  "end_time": "18:00",
+  "slot_duration": 60,
+  "notes": "Updated availability - Longer sessions"
+}
+```
+
+**Allowed Fields:**
+
+- `start_time` (optional): New start time
+- `end_time` (optional): New end time
+- `slot_duration` (optional): 15, 30, or 60 minutes
+- `notes` (optional): Updated notes
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Slot updated successfully",
+  "data": {
+    "_id": "slot123",
+    "doctor_id": "doc123",
+    "date": "2026-01-15T00:00:00.000Z",
+    "start_time": "10:00",
+    "end_time": "18:00",
+    "slot_duration": 60,
+    "status": "available",
+    "notes": "Updated availability - Longer sessions",
+    "updated_at": "2026-01-02T14:30:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+
+**Cannot Update Booked Slot (403):**
+
+```json
+{
+  "success": false,
+  "status": 403,
+  "message": "Cannot Update Booked Slot",
+  "error": "This slot is already booked and cannot be modified. Please contact the patient to reschedule."
+}
+```
+
+**Cannot Update Past Slot (403):**
+
+```json
+{
+  "success": false,
+  "status": 403,
+  "message": "Cannot Update Past Slot",
+  "error": "Past slots cannot be modified"
+}
+```
+
+**Slot Overlap After Update (409):**
+
+```json
+{
+  "success": false,
+  "status": 409,
+  "message": "Slot Overlap",
+  "error": "The updated time range overlaps with another existing slot"
+}
+```
+
+---
+
+### 7. Mark Slot as Unavailable
+
+**Endpoint:** `PATCH /api/doctor/slots/:slotId/unavailable`
+**Authentication:** Required (Doctor)
+
+**Purpose:** Mark a slot as unavailable without deleting it. Useful for temporary unavailability.
+
+**Example Request:**
+
+```
+PATCH /api/doctor/slots/slot123/unavailable
+```
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Slot marked as unavailable",
+  "data": {
+    "_id": "slot123",
+    "doctor_id": "doc123",
+    "date": "2026-01-15T00:00:00.000Z",
+    "start_time": "09:00",
+    "end_time": "17:00",
+    "status": "unavailable",
+    "updated_at": "2026-01-02T15:00:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+
+**Slot Already Booked (400):**
+
+```json
+{
+  "success": false,
+  "status": 400,
+  "message": "Cannot Mark Booked Slot",
+  "error": "This slot is already booked and cannot be marked unavailable"
+}
+```
+
+**Slot Not Found (404):**
+
+```json
+{
+  "success": false,
+  "status": 404,
+  "message": "Slot Not Found",
+  "error": "The requested slot does not exist"
+}
+```
+
+---
+
+### 8. Delete Slot
+
+**Endpoint:** `DELETE /api/doctor/slots/:slotId`
+**Authentication:** Required (Doctor)
+
+**Purpose:** Permanently delete a slot. Only unbooked, future slots can be deleted.
+
+**Example Request:**
+
+```
+DELETE /api/doctor/slots/slot123
+```
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "status": 200,
+  "message": "Slot deleted successfully",
+  "data": null
+}
+```
+
+**Error Responses:**
+
+**Cannot Delete Booked Slot (403):**
+
+```json
+{
+  "success": false,
+  "status": 403,
+  "message": "Cannot Delete Booked Slot",
+  "error": "This slot is already booked and cannot be deleted. Please contact the patient to cancel the appointment first."
+}
+```
+
+**Cannot Delete Past Slot (403):**
+
+```json
+{
+  "success": false,
+  "status": 403,
+  "message": "Cannot Delete Past Slot",
+  "error": "Past slots cannot be deleted"
+}
+```
+
+**Slot Not Found (404):**
+
+```json
+{
+  "success": false,
+  "status": 404,
+  "message": "Slot Not Found",
+  "error": "The requested slot does not exist"
+}
+```
+
+---
+
+### Slot Status Reference
+
+| Status        | Description                          | Can Edit? | Can Delete? |
+| ------------- | ------------------------------------ | --------- | ----------- |
+| `available`   | Slot is open for booking             | ✅ Yes    | ✅ Yes      |
+| `booked`      | Slot has an active appointment       | ❌ No     | ❌ No       |
+| `unavailable` | Slot is marked unavailable by doctor | ✅ Yes    | ✅ Yes      |
+
+### Slot Duration Options
+
+| Duration | Description            | Use Case                           |
+| -------- | ---------------------- | ---------------------------------- |
+| 15 min   | Quick consultations    | Follow-ups, prescription renewals  |
+| 30 min   | Standard consultations | General check-ups (default)        |
+| 60 min   | Extended consultations | Initial consultations, diagnostics |
+
+### Recurring Pattern Reference
+
+**Frequency Types:**
+
+1. **Daily**: Creates slots every day within the date range
+2. **Weekly**: Creates slots on specific days of the week (requires `days_of_week`)
+3. **Monthly**: Creates slots on the same date each month
+
+**Days of Week (for weekly pattern):**
+
+- `0` = Sunday
+- `1` = Monday
+- `2` = Tuesday
+- `3` = Wednesday
+- `4` = Thursday
+- `5` = Friday
+- `6` = Saturday
+
+**Example Patterns:**
+
+- Monday to Friday: `[1, 2, 3, 4, 5]`
+- Weekends only: `[0, 6]`
+- Mon, Wed, Fri: `[1, 3, 5]`
+
+---
+
 ## �📂 File Upload Requirements
 
 ### Document Uploads (Submit Application & Resubmit)
@@ -1212,6 +1927,34 @@ await fetch("/api/doctor/profile/cover-image", {
 - `consultation_type`: Required, "online", "in-person", or "both"
 - `consultation_fee`: Required, positive number
 - `onlineProfileURL`: Optional, valid URL
+
+### Slots Management
+
+**Create Single Slot**:
+
+- `date`: Required, ISO date string, must be today or future
+- `start_time`: Required, HH:mm format (e.g., "09:00")
+- `end_time`: Required, HH:mm format (e.g., "17:00")
+- `slot_duration`: Optional, 15, 30, or 60 (default: 30)
+- `notes`: Optional, max 500 characters
+
+**Create Recurring Slots**:
+
+- `start_time`: Required, HH:mm format
+- `end_time`: Required, HH:mm format
+- `slot_duration`: Optional, 15, 30, or 60 (default: 30)
+- `recurring_pattern`: Required object:
+  - `frequency`: Required, "daily", "weekly", or "monthly"
+  - `days_of_week`: Required for weekly, array of 0-6
+  - `start_date`: Required, ISO date string, must be today or future
+  - `end_date`: Required, ISO date string, must be after start_date
+- `notes`: Optional, max 500 characters
+
+**Update Slot**:
+
+- All fields optional
+- Only unbooked, future slots can be updated
+- Same format as create slot
 
 ---
 
@@ -1498,14 +2241,187 @@ curl -X PUT http://localhost:5000/api/doctor/profile/profile-image \
 
 **Step 11: Update Consultation Type**
 
-```bash
+````bash
 curl -X PUT http://localhost:5000/api/doctor/profile/consultation-type \
   -H "Cookie: $(cat cookies.txt)" \
   -H "Content-Type: application/json" \
+  -d '{Change Password**
+
+```bash
+curl -X PUT http://localhost:5000/api/doctor/profile/change-password \
+  -H "Cookie: $(cat cookies.txt)" \
+  -H "Content-Type: application/json" \
   -d '{
-    "consultation_type": "both"
+    "currentPassword": "TestPass123",
+    "newPassword": "NewTestPass456"
+  }'
+````
+
+**Step 15: Create Single Slot**
+
+```bash
+curl -X POST http://localhost:5000/api/doctor/slots \
+  -H "Cookie: $(cat cookies.txt)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2026-01-15",
+    "start_time": "09:00",
+    "end_time": "17:00",
+    "slot_duration": 30,
+    "notes": "Available for consultations"
   }'
 ```
+
+10. **Slot Management**: Doctors can manage availability after profile completion
+11. **Overlap Prevention**: System automatically prevents conflicting time slots
+12. **Activity Logging**: All slot operations (create, update, delete) are logged
+
+**Step 16: Create Recurring Slots (Weekly)**
+
+```bash
+curl -X POST http://localhost:5000/api/doctor/slots/recurring \
+  -H "Cookie: $(cat cookies.txt)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "start_time": "10:00",
+    "end_time": "16:00",
+    "slot_duration": 60,
+    "recurring_pattern": {
+      "frequency": "weekly",
+      "days_of_week": [1, 3, 5],
+      "start_date": "2026-01-10",
+      "end_date": "2026-03-31"
+    },
+    "notes": "Monday, Wednesday, Friday availability"
+  }'
+```
+
+**Step 17: Get All Slots**
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/slots?start_date=2026-01-01&end_date=2026-01-31&status=available" \
+  -H "Cookie: $(cat cookies.txt)"
+```
+
+**Step 18: Get Calendar View**
+
+```bash
+curl -X GET http://localhost:5000/api/doctor/slots/calendar/2026/1 \
+  -H "Cookie: $(cat cookies.txt)"
+```
+
+**Step 19: Get Single Slot**
+
+```bash
+curl -X GET http://localhost:5000/api/doctor/slots/slot123 \
+  -H "Cookie: $(cat cookies.txt)"
+```
+
+**Step 20: Update Slot**
+
+```bash
+curl -X PUT http://localhost:5000/api/doctor/slots/slot123 \
+  -H "Cookie: $(cat cookies.txt)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "start_time": "10:00",
+    "end_time": "18:00",
+    "slot_duration": 60,
+    "notes": "Extended hours"
+  }'
+
+// Handle slot creation with validation
+const createSlot = async (slotData) => {
+  try {
+    const response = await fetch('/api/doctor/slots', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(slotData),
+    });
+
+    const result = await response.json();
+2.0
+**Modules:** Authentication, Onboarding, Profile Management, Slots
+      if (result.status === 409) {
+        // Handle overlap error
+        return { error: 'Time slot overlaps with existing slot' };
+      }
+      return { error: result.error };
+    }
+
+    return { success: true, slot: result.data };
+  } catch (error) {
+    return { error: 'Failed to create slot' };
+  }
+};
+
+// Create recurring slots
+const createRecurringSlots = async (pattern) => {
+  try {
+    const response = await fetch('/api/doctor/slots/recurring', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(pattern),
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      return { error: result.error };
+    }
+
+    return {
+      success: true,
+      totalCreated: result.data.totalCreated,
+      slots: result.data.slots
+    };
+  } catch (error) {
+    return { error: 'Failed to create recurring slots' };
+  }
+};
+
+// Get calendar view
+const getCalendarView = async (year, month) => {
+  try {
+    const response = await fetch(
+      `/api/doctor/slots/calendar/${year}/${month}`,
+      { credentials: 'include' }
+    );
+
+    const result = await response.json();
+
+    if (!result.success) {
+      return { error: result.error };
+    }
+
+    return { success: true, calendar: result.data.calendar };
+  } catch (error) {
+    return { error: 'Failed to fetch calendar' };
+  }
+};
+```
+
+**Step 21: Mark Slot Unavailable**
+
+```bash
+curl -X PATCH http://localhost:5000/api/doctor/slots/slot123/unavailable \
+  -H "Cookie: $(cat cookies.txt)"
+```
+
+**Step 22: Delete Slot**
+
+```bash
+curl -X DELETE http://localhost:5000/api/doctor/slots/slot123 \
+  -H "Cookie: $(cat cookies.txt)"
+```
+
+\*\*Step 23:
+"consultation_type": "both"
+}'
+
+````
 
 **Step 12: Update Consultation Fee**
 
@@ -1516,7 +2432,7 @@ curl -X PUT http://localhost:5000/api/doctor/profile/consultation-fee \
   -d '{
     "consultation_fee": 3500
   }'
-```
+````
 
 **Step 13: Change Password**
 
