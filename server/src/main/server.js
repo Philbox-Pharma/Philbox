@@ -50,6 +50,16 @@ dotenv.config();
 const app = express();
 app.set('trust proxy', 1);
 
+// Determine if running in secure environment (production or staging with HTTPS)
+const isSecureEnvironment =
+  process.env.NODE_ENV === 'production' ||
+  process.env.USE_SECURE_COOKIES === 'true';
+
+// Configure allowed origins for CORS
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : ['http://localhost:3000', 'http://localhost:5173'];
+
 const STORE = {
   mongoUrl: process.env.MONGO_URI,
   touchAfter: 24 * 3600,
@@ -57,11 +67,13 @@ const STORE = {
     secret: process.env.SESSION_SECRET,
   },
 };
+
 const COOKIE = {
-  secure: process.env.NODE_ENV === 'production',
+  secure: isSecureEnvironment,
   httpOnly: true,
   maxAge: 7 * 24 * 60 * 60 * 1000,
-  sameSite: 'lax',
+  sameSite: isSecureEnvironment ? 'none' : 'lax',
+  ...(process.env.COOKIE_DOMAIN && { domain: process.env.COOKIE_DOMAIN }),
 };
 
 const SESSION = {
@@ -70,12 +82,28 @@ const SESSION = {
   saveUninitialized: false,
   store: MongoStore.create(STORE),
   cookie: COOKIE,
+  name: 'philbox.sid',
 };
 
 app.use(
   cors({
-    origin: true,
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+
+      // Check if origin is in allowed list
+      if (
+        allowedOrigins.indexOf(origin) !== -1 ||
+        process.env.NODE_ENV === 'development'
+      ) {
+        callback(null, true);
+      } else {
+        console.warn('CORS blocked origin:', origin);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
+    exposedHeaders: ['set-cookie'],
   })
 );
 app.use(helmet());
