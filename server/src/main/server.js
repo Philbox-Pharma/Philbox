@@ -57,8 +57,10 @@ const isSecureEnvironment =
 
 // Configure allowed origins for CORS
 const allowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-  : ['http://localhost:3000', 'http://localhost:5173'];
+  ? process.env.CORS_ORIGIN.split(',').map(origin =>
+      origin.trim().replace(/\/$/, '')
+    )
+  : ['https://philbox-staging.up.railway.app', 'http://localhost:5173'];
 
 const STORE = {
   mongoUrl: process.env.MONGO_URI,
@@ -91,18 +93,24 @@ app.use(
       // Allow requests with no origin (like mobile apps, Postman, etc.)
       if (!origin) return callback(null, true);
 
+      // Normalize origin by removing trailing slash
+      const normalizedOrigin = origin.replace(/\/$/, '');
+
       // Check if origin is in allowed list
       if (
-        allowedOrigins.indexOf(origin) !== -1 ||
+        allowedOrigins.indexOf(normalizedOrigin) !== -1 ||
         process.env.NODE_ENV === 'development'
       ) {
         callback(null, true);
       } else {
         console.warn('CORS blocked origin:', origin);
+        console.warn('Allowed origins:', allowedOrigins);
         callback(new Error('Not allowed by CORS'));
       }
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
     exposedHeaders: ['set-cookie'],
   })
 );
