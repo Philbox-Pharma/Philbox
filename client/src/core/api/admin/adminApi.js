@@ -4,15 +4,25 @@ const BASE_URL = 'http://localhost:5000/api';
 
 // Generic fetch wrapper with credentials
 const fetchWithAuth = async (endpoint, options = {}) => {
+  const defaultHeaders = {
+    'Content-Type': 'application/json',
+  };
+
+  const config = {
+    ...options,
+    credentials: 'include',
+    headers: {
+      ...defaultHeaders,
+      ...options.headers,
+    },
+  };
+
+  if (options.body instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
+
   try {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    });
+    const response = await fetch(`${BASE_URL}${endpoint}`, config);
 
     // Handle non-JSON responses
     const contentType = response.headers.get('content-type');
@@ -65,8 +75,17 @@ export const adminAuthApi = {
       body: JSON.stringify({ email, otp }),
     }),
 
-  // GET /api/admin/auth/me (Session Check) <-- ADD THIS
+  // GET /api/admin/auth/me (Session Check)
   verifySession: () => fetchWithAuth('/admin/auth/me'),
+
+  // PUT /api/admin/users/admin/:id (Update Admin Profile)
+  updateProfile: (adminId, data) =>
+    fetchWithAuth(`/admin/users/admin/${adminId}`, {
+      method: 'PUT',
+      body: data, // FormData or JSON
+      headers:
+        data instanceof FormData ? {} : { 'Content-Type': 'application/json' }, // fetchWithAuth adds json content type by default but FormData needs none allowed (to let browser set boundary)
+    }),
 
   // POST /api/admin/auth/logout
   logout: () => fetchWithAuth('/admin/auth/logout', { method: 'POST' }),
@@ -238,6 +257,7 @@ export const staffApi = {
     params.append('limit', limit);
     if (filters.search) params.append('search', filters.search);
     if (filters.status) params.append('status', filters.status);
+    if (filters.branch) params.append('branch', filters.branch);
     return fetchWithAuth(`/admin/users/admin?${params}`);
   },
 
@@ -268,9 +288,14 @@ export const staffApi = {
   deleteAdmin: id =>
     fetchWithAuth(`/admin/users/admin/${id}`, { method: 'DELETE' }),
 
-  // GET /api/admin/users/admin/search?q=
-  searchAdmins: query =>
-    fetchWithAuth(`/admin/users/admin/search?q=${encodeURIComponent(query)}`),
+  // GET /api/admin/users/admin/search?name=
+  searchAdmins: searchParams => {
+    const params = new URLSearchParams();
+    if (searchParams.id) params.append('id', searchParams.id);
+    if (searchParams.email) params.append('email', searchParams.email);
+    if (searchParams.name) params.append('name', searchParams.name);
+    return fetchWithAuth(`/admin/users/admin/search?${params}`);
+  },
 
   // ========== SALESPERSON MANAGEMENT ==========
   // GET /api/admin/users/salesperson
@@ -280,6 +305,7 @@ export const staffApi = {
     params.append('limit', limit);
     if (filters.search) params.append('search', filters.search);
     if (filters.status) params.append('status', filters.status);
+    if (filters.branch) params.append('branch', filters.branch);
     return fetchWithAuth(`/admin/users/salesperson?${params}`);
   },
 
@@ -311,11 +337,14 @@ export const staffApi = {
   deleteSalesperson: id =>
     fetchWithAuth(`/admin/users/salesperson/${id}`, { method: 'DELETE' }),
 
-  // GET /api/admin/users/salesperson/search?q=
-  searchSalespersons: query =>
-    fetchWithAuth(
-      `/admin/users/salesperson/search?q=${encodeURIComponent(query)}`
-    ),
+  // GET /api/admin/users/salesperson/search?fullName=
+  searchSalespersons: searchParams => {
+    const params = new URLSearchParams();
+    if (searchParams.id) params.append('id', searchParams.id);
+    if (searchParams.email) params.append('email', searchParams.email);
+    if (searchParams.fullName) params.append('fullName', searchParams.fullName);
+    return fetchWithAuth(`/admin/users/salesperson/search?${params}`);
+  },
 
   // GET /api/admin/users/salesperson-tasks/performance
   getSalespersonTaskPerformance: (filters = {}) => {
@@ -556,6 +585,481 @@ export const userEngagementApi = {
     );
   },
 };
+
+// ============ ORDERS ANALYTICS APIs ============
+// Base: /api/admin/orders-analytics
+export const ordersAnalyticsApi = {
+  // GET /api/admin/orders-analytics/overview
+  getOverview: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(`/admin/orders-analytics/overview?${params}`);
+  },
+
+  // GET /api/admin/orders-analytics/trends
+  getTrends: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.period) params.append('period', filters.period);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(`/admin/orders-analytics/trends?${params}`);
+  },
+
+  // GET /api/admin/orders-analytics/status-breakdown
+  getStatusBreakdown: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(`/admin/orders-analytics/status-breakdown?${params}`);
+  },
+
+  // GET /api/admin/orders-analytics/top-medicines
+  getTopMedicines: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.limit) params.append('limit', filters.limit);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(`/admin/orders-analytics/top-medicines?${params}`);
+  },
+
+  // GET /api/admin/orders-analytics/stock-alerts
+  getStockAlerts: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    if (filters.threshold) params.append('threshold', filters.threshold);
+    return fetchWithAuth(`/admin/orders-analytics/stock-alerts?${params}`);
+  },
+
+  // GET /api/admin/orders-analytics/revenue-by-category
+  getRevenueByCategory: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(
+      `/admin/orders-analytics/revenue-by-category?${params}`
+    );
+  },
+
+  // GET /api/admin/orders-analytics/refund-rate
+  getRefundRate: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(`/admin/orders-analytics/refund-rate?${params}`);
+  },
+};
+
+// ============ SALESPERSON TASK MANAGEMENT APIs ============
+// Base: /api/admin/salesperson-tasks
+export const salespersonTaskApi = {
+  // GET /api/admin/salesperson-tasks
+  getTasks: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.salesperson_id)
+      params.append('salesperson_id', filters.salesperson_id);
+    if (filters.branch_id) params.append('branch_id', filters.branch_id);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.priority) params.append('priority', filters.priority);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.page) params.append('page', filters.page);
+    if (filters.limit) params.append('limit', filters.limit);
+    return fetchWithAuth(`/admin/salesperson-tasks?${params}`);
+  },
+
+  // GET /api/admin/salesperson-tasks/:id
+  getTaskById: taskId => fetchWithAuth(`/admin/salesperson-tasks/${taskId}`),
+
+  // POST /api/admin/salesperson-tasks
+  createTask: taskData =>
+    fetchWithAuth('/admin/salesperson-tasks', {
+      method: 'POST',
+      body: JSON.stringify(taskData),
+    }),
+
+  // PUT /api/admin/salesperson-tasks/:id
+  updateTask: (taskId, taskData) =>
+    fetchWithAuth(`/admin/salesperson-tasks/${taskId}`, {
+      method: 'PUT',
+      body: JSON.stringify(taskData),
+    }),
+
+  // POST /api/admin/salesperson-tasks/:id/updates
+  addTaskUpdate: (taskId, updateData) =>
+    fetchWithAuth(`/admin/salesperson-tasks/${taskId}/updates`, {
+      method: 'POST',
+      body: JSON.stringify(updateData),
+    }),
+
+  // DELETE /api/admin/salesperson-tasks/:id
+  deleteTask: taskId =>
+    fetchWithAuth(`/admin/salesperson-tasks/${taskId}`, {
+      method: 'DELETE',
+    }),
+
+  // GET /api/admin/salesperson-tasks/statistics
+  getStatistics: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.branch_id) params.append('branch_id', filters.branch_id);
+    if (filters.salesperson_id)
+      params.append('salesperson_id', filters.salesperson_id);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    return fetchWithAuth(`/admin/salesperson-tasks/statistics?${params}`);
+  },
+};
+
+// ============ DOCTOR MANAGEMENT APIs ============
+// Base: /api/admin/doctors
+export const doctorApi = {
+  // GET /api/admin/doctors - Get all doctors
+  getAllDoctors: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.page) params.append('page', filters.page);
+    if (filters.limit) params.append('limit', filters.limit);
+    if (filters.search) params.append('search', filters.search);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.specialty) params.append('specialty', filters.specialty);
+    return fetchWithAuth(`/admin/doctors?${params}`);
+  },
+
+  // GET /api/admin/doctors/:id - Get doctor by ID
+  getDoctorById: id => fetchWithAuth(`/admin/doctors/${id}`),
+
+  // PUT /api/admin/doctors/:id - Update doctor profile
+  updateDoctorProfile: (id, data) =>
+    fetchWithAuth(`/admin/doctors/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // PATCH /api/admin/doctors/:id/status - Update doctor status (suspend/activate/block)
+  updateDoctorStatus: (id, statusData) =>
+    fetchWithAuth(`/admin/doctors/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify(statusData),
+    }),
+
+  // GET /api/admin/doctors/:id/metrics - Get doctor performance metrics
+  getDoctorMetrics: id => fetchWithAuth(`/admin/doctors/${id}/metrics`),
+
+  // ========== DOCTOR APPLICATIONS ==========
+  // GET /api/admin/doctors/applications
+  getApplications: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.page) params.append('page', filters.page);
+    if (filters.limit) params.append('limit', filters.limit);
+    if (filters.search) params.append('search', filters.search);
+    if (filters.status) params.append('status', filters.status || 'pending');
+    return fetchWithAuth(`/admin/doctors/applications?${params}`);
+  },
+
+  // GET /api/admin/doctors/applications/:id
+  getApplicationById: id => fetchWithAuth(`/admin/doctors/applications/${id}`),
+
+  // PATCH /api/admin/doctors/applications/:id/approve
+  approveApplication: (id, comment = '') =>
+    fetchWithAuth(`/admin/doctors/applications/${id}/approve`, {
+      method: 'PATCH',
+      body: JSON.stringify({ comment }),
+    }),
+
+  // PATCH /api/admin/doctors/applications/:id/reject
+  rejectApplication: (id, reason) =>
+    fetchWithAuth(`/admin/doctors/applications/${id}/reject`, {
+      method: 'PATCH',
+      body: JSON.stringify({ reason }),
+    }),
+};
+
+// ============ CUSTOMER MANAGEMENT APIs ============
+// Base: /api/super-admin/customers
+export const customerApi = {
+  // GET /api/super-admin/customers
+  getCustomers: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.page) params.append('page', filters.page);
+    if (filters.limit) params.append('limit', filters.limit);
+    if (filters.search) params.append('search', filters.search);
+    if (filters.account_status)
+      params.append('account_status', filters.account_status);
+    if (filters.is_Verified) params.append('is_Verified', filters.is_Verified);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(`/super-admin/customers?${params}`);
+  },
+
+  // GET /api/super-admin/customers/:id
+  getCustomerById: customerId =>
+    fetchWithAuth(`/super-admin/customers/${customerId}`),
+
+  // PATCH /api/super-admin/customers/:id/status
+  toggleCustomerStatus: (customerId, statusData) =>
+    fetchWithAuth(`/super-admin/customers/${customerId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify(statusData),
+    }),
+
+  // GET /api/super-admin/customers/metrics/analytics
+  getMetrics: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(`/super-admin/customers/metrics/analytics?${params}`);
+  },
+};
+
+// ============ FEEDBACK & COMPLAINTS ANALYTICS APIs ============
+// Base: /api/admin/feedback-complaints-analytics
+export const feedbackComplaintsApi = {
+  // GET /api/admin/feedback-complaints-analytics/summary
+  getSummary: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(
+      `/admin/feedback-complaints-analytics/summary?${params}`
+    );
+  },
+
+  // GET /api/admin/feedback-complaints-analytics/sentiment-analysis
+  getSentimentAnalysis: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(
+      `/admin/feedback-complaints-analytics/sentiment-analysis?${params}`
+    );
+  },
+
+  // GET /api/admin/feedback-complaints-analytics/resolution-time
+  getResolutionTime: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(
+      `/admin/feedback-complaints-analytics/resolution-time?${params}`
+    );
+  },
+
+  // GET /api/admin/feedback-complaints-analytics/complaints-by-category
+  getComplaintsByCategory: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(
+      `/admin/feedback-complaints-analytics/complaints-by-category?${params}`
+    );
+  },
+
+  // GET /api/admin/feedback-complaints-analytics/feedback-by-category
+  getFeedbackByCategory: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(
+      `/admin/feedback-complaints-analytics/feedback-by-category?${params}`
+    );
+  },
+
+  // GET /api/admin/feedback-complaints-analytics/resolution-status
+  getResolutionStatus: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(
+      `/admin/feedback-complaints-analytics/resolution-status?${params}`
+    );
+  },
+
+  // GET /api/admin/feedback-complaints-analytics/feedback-trends
+  getFeedbackTrends: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(
+      `/admin/feedback-complaints-analytics/feedback-trends?${params}`
+    );
+  },
+
+  // GET /api/admin/feedback-complaints-analytics/complaint-trends
+  getComplaintTrends: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(
+      `/admin/feedback-complaints-analytics/complaint-trends?${params}`
+    );
+  },
+};
+
+// ============ APPOINTMENT ANALYTICS APIs ============
+// Base: /api/admin/appointment-analytics
+export const appointmentAnalyticsApi = {
+  // GET /api/admin/appointment-analytics/overview
+  getOverview: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(`/admin/appointment-analytics/overview?${params}`);
+  },
+
+  // GET /api/admin/appointment-analytics/trends
+  getTrends: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.period) params.append('period', filters.period);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(`/admin/appointment-analytics/trends?${params}`);
+  },
+
+  // GET /api/admin/appointment-analytics/completion-rate
+  getCompletionRate: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(
+      `/admin/appointment-analytics/completion-rate?${params}`
+    );
+  },
+
+  // GET /api/admin/appointment-analytics/top-doctors/appointments
+  getTopDoctorsByAppointments: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(
+      `/admin/appointment-analytics/top-doctors/appointments?${params}`
+    );
+  },
+
+  // GET /api/admin/appointment-analytics/appointment-types
+  getAppointmentTypes: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(
+      `/admin/appointment-analytics/appointment-types?${params}`
+    );
+  },
+};
+
+// ============ GLOBAL SEARCH HELPER ============
+// Searches across all entities in parallel
+export const globalSearchApi = {
+  search: async (query, limit = 5) => {
+    if (!query || query.length < 2) return [];
+
+    const results = [];
+
+    try {
+      const [branches, admins, salespersons, customers, doctors] =
+        await Promise.allSettled([
+          branchApi.getAll(1, limit, { search: query }),
+          staffApi.getAdmins(1, limit, { search: query }),
+          staffApi.getSalespersons(1, limit, { search: query }),
+          customerApi.getCustomers({ page: 1, limit, search: query }),
+          doctorApi.getAllDoctors({ page: 1, limit, search: query }),
+        ]);
+
+      // Parse Branches
+      if (branches.status === 'fulfilled' && branches.value?.data?.branches) {
+        branches.value.data.branches.forEach(b => {
+          results.push({
+            id: b._id,
+            type: 'branch',
+            name: b.name || b.branch_name,
+            description: b.address || b.city || 'Branch',
+            path: `/admin/branches/${b._id}`,
+          });
+        });
+      }
+
+      // Parse Admins
+      if (admins.status === 'fulfilled' && admins.value?.data?.admins) {
+        admins.value.data.admins.forEach(a => {
+          results.push({
+            id: a._id,
+            type: 'admin',
+            name: a.name || a.fullName,
+            description: a.email || 'Admin',
+            path: `/admin/staff/admins/${a._id}`,
+          });
+        });
+      }
+
+      // Parse Salespersons
+      if (
+        salespersons.status === 'fulfilled' &&
+        salespersons.value?.data?.salespersons
+      ) {
+        salespersons.value.data.salespersons.forEach(s => {
+          results.push({
+            id: s._id,
+            type: 'salesperson',
+            name: s.fullName || s.name,
+            description: s.email || 'Salesperson',
+            path: `/admin/staff/salespersons/${s._id}`,
+          });
+        });
+      }
+
+      // Parse Customers
+      if (
+        customers.status === 'fulfilled' &&
+        customers.value?.data?.customers
+      ) {
+        customers.value.data.customers.forEach(c => {
+          results.push({
+            id: c._id,
+            type: 'customer',
+            name: c.fullName || c.name,
+            description: c.email || c.phone_number || 'Customer',
+            path: `/admin/customers/${c._id}`,
+          });
+        });
+      }
+
+      // Parse Doctors
+      if (doctors.status === 'fulfilled' && doctors.value?.data?.doctors) {
+        doctors.value.data.doctors.forEach(d => {
+          results.push({
+            id: d._id,
+            type: 'doctor',
+            name: d.fullName || d.name,
+            description: d.specialty || d.email || 'Doctor',
+            path: `/admin/doctors/${d._id}`,
+          });
+        });
+      }
+    } catch (err) {
+      console.error('Global search error:', err);
+    }
+
+    return results;
+  },
+};
+
 export default {
   auth: adminAuthApi,
   branches: branchApi,
@@ -564,4 +1068,11 @@ export default {
   activityLogs: activityLogsApi,
   userEngagement: userEngagementApi,
   revenue: revenueApi,
+  ordersAnalytics: ordersAnalyticsApi,
+  salespersonTasks: salespersonTaskApi,
+  customers: customerApi,
+  doctors: doctorApi,
+  feedbackComplaints: feedbackComplaintsApi,
+  appointmentAnalytics: appointmentAnalyticsApi,
+  globalSearch: globalSearchApi,
 };

@@ -374,9 +374,12 @@ export default function EditAdmin() {
           submit: 'Please fix the errors below',
         }));
       } else {
+        // Better error message
+        const errorMsg =
+          err.message || err.data?.message || 'Failed to update admin';
         setErrors(prev => ({
           ...prev,
-          submit: err.message || 'Failed to update admin',
+          submit: errorMsg,
         }));
       }
 

@@ -79,6 +79,66 @@ const RolesPermissions = lazy(
     import('../../../portals/admin/modules/roles-permissions/RolesPermissions')
 );
 
+// Orders Analytics
+const OrdersDashboard = lazy(
+  () => import('../../../portals/admin/modules/orders/OrdersDashboard')
+);
+
+// Task Management
+const TaskManagement = lazy(
+  () => import('../../../portals/admin/modules/tasks/TaskManagement')
+);
+
+// Customer Management
+const CustomerList = lazy(
+  () => import('../../../portals/admin/modules/customers/CustomerList')
+);
+const CustomerDetails = lazy(
+  () => import('../../../portals/admin/modules/customers/CustomerDetails')
+);
+
+// Doctor Management
+const DoctorList = lazy(
+  () => import('../../../portals/admin/modules/doctors/DoctorList')
+);
+const DoctorApplications = lazy(
+  () => import('../../../portals/admin/modules/doctors/DoctorApplications')
+);
+const DoctorApplicationDetails = lazy(
+  () =>
+    import('../../../portals/admin/modules/doctors/DoctorApplicationDetails')
+);
+const DoctorDetails = lazy(
+  () => import('../../../portals/admin/modules/doctors/DoctorDetails')
+);
+
+// Analytics
+const RevenueAnalytics = lazy(
+  () => import('../../../portals/admin/modules/analytics/RevenueAnalytics')
+);
+const UserEngagement = lazy(
+  () => import('../../../portals/admin/modules/analytics/UserEngagement')
+);
+const ActivityLogs = lazy(
+  () => import('../../../portals/admin/modules/analytics/ActivityLogs')
+);
+const FeedbackComplaints = lazy(
+  () => import('../../../portals/admin/modules/analytics/FeedbackComplaints')
+);
+const AppointmentAnalytics = lazy(
+  () => import('../../../portals/admin/modules/analytics/AppointmentAnalytics')
+);
+
+// Notifications
+const Notifications = lazy(
+  () => import('../../../portals/admin/modules/notifications/Notifications')
+);
+
+// Settings
+const Settings = lazy(
+  () => import('../../../portals/admin/modules/settings/Settings')
+);
+
 const adminRoutes = [
   // ---------------- PUBLIC ROUTES ----------------
   {
@@ -174,6 +234,80 @@ const adminRoutes = [
       {
         path: 'roles-permissions',
         element: <RolesPermissions />,
+      },
+
+      // --- Orders Analytics ---
+      {
+        path: 'orders',
+        element: <OrdersDashboard />,
+      },
+
+      // --- Task Management ---
+      {
+        path: 'tasks',
+        element: <TaskManagement />,
+      },
+
+      // --- Customer Management ---
+      {
+        path: 'customers',
+        element: <CustomerList />,
+      },
+      {
+        path: 'customers/:id',
+        element: <CustomerDetails />,
+      },
+
+      // --- Doctor Management ---
+      {
+        path: 'doctors',
+        element: <DoctorList />,
+      },
+      {
+        path: 'doctors/applications',
+        element: <DoctorApplications />,
+      },
+      {
+        path: 'doctors/applications/:id',
+        element: <DoctorApplicationDetails />,
+      },
+      {
+        path: 'doctors/:id',
+        element: <DoctorDetails />,
+      },
+
+      // --- Analytics ---
+      {
+        path: 'analytics/revenue',
+        element: <RevenueAnalytics />,
+      },
+      {
+        path: 'analytics/engagement',
+        element: <UserEngagement />,
+      },
+      {
+        path: 'analytics/activity-logs',
+        element: <ActivityLogs />,
+      },
+      {
+        path: 'analytics/feedback-complaints',
+        element: <FeedbackComplaints />,
+      },
+      {
+        path: 'analytics/appointments',
+        element: <AppointmentAnalytics />,
+      },
+
+      // --- Notifications ---
+      {
+        path: 'notifications',
+        element: <Notifications />,
+      },
+
+      // --- Settings ---
+      {
+        path: 'settings',
+        element: <Settings />,
       },
     ],
   },
