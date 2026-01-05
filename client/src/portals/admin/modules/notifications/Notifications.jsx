@@ -8,7 +8,6 @@ import {
   FaTrash,
   FaEdit,
   FaExclamationCircle,
-  FaUserPlus,
   FaSignInAlt,
   FaSignOutAlt,
   FaFilter,
