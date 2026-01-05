@@ -11,13 +11,14 @@
 3. [📊 Dashboard Endpoints](#-dashboard-endpoints)
 4. [🔍 Search History Endpoints](#-search-history-endpoints)
 5. [💊 Refill Reminders Endpoints](#-refill-reminders-endpoints)
-6. [📋 Validation Rules](#-validation-rules)
-7. [❌ Error Responses](#-error-responses)
-8. [🧪 Testing Guide](#-testing-guide)
-9. [🔒 Authentication](#-authentication)
-10. [📌 Notes](#-notes)
-11. [🚀 Quick Start](#-quick-start)
-12. [📞 Support](#-support)
+6. [�️ Appointment Request Management](#-appointment-request-management)
+7. [�📋 Validation Rules](#-validation-rules)
+8. [❌ Error Responses](#-error-responses)
+9. [🧪 Testing Guide](#-testing-guide)
+10. [🔒 Authentication](#-authentication)
+11. [📌 Notes](#-notes)
+12. [🚀 Quick Start](#-quick-start)
+13. [📞 Support](#-support)
 
 ---
 
@@ -997,7 +998,394 @@ The Refill Reminders feature allows customers to set up automated reminders for 
 
 ---
 
-## 📋 VALIDATION RULES
+## �️ APPOINTMENT REQUEST MANAGEMENT
+
+Base URL: `/api/customer/appointments`
+
+### Overview
+
+The appointment request management system allows customers to:
+
+- Create new appointment requests with doctors
+- View all their appointment requests with status
+- Check details of specific appointment requests
+- Cancel pending appointment requests
+- View accepted appointments
+- Receive automated email notifications
+
+---
+
+### 📋 Endpoints Summary
+
+| Method | Endpoint                          | Description                 | Auth Required |
+| ------ | --------------------------------- | --------------------------- | ------------- |
+| POST   | `/requests`                       | Create appointment request  | ✅ Customer   |
+| GET    | `/requests`                       | Get my appointment requests | ✅ Customer   |
+| GET    | `/requests/:appointmentId`        | Get request status/details  | ✅ Customer   |
+| POST   | `/requests/:appointmentId/cancel` | Cancel appointment request  | ✅ Customer   |
+| GET    | `/`                               | Get accepted appointments   | ✅ Customer   |
+
+---
+
+### 25. Create Appointment Request
+
+**Endpoint:** `POST /api/customer/appointments/requests`
+**Auth Required:** Yes (Customer)
+
+Create a new appointment request with a doctor.
+
+**Request Body:**
+
+```json
+{
+  "doctor_id": "doc123",
+  "slot_id": "slot456",
+  "appointment_type": "in-person",
+  "consultation_reason": "I have been experiencing chest pain and shortness of breath for the past 2 days. Need urgent consultation.",
+  "preferred_date": "2026-01-15",
+  "preferred_time": "09:00"
+}
+```
+
+**Field Descriptions:**
+
+| Field               | Type   | Required | Description                                             |
+| ------------------- | ------ | -------- | ------------------------------------------------------- |
+| doctor_id           | string | Yes      | Doctor's unique ID                                      |
+| slot_id             | string | No       | Specific time slot ID (if available)                    |
+| appointment_type    | string | Yes      | Type: 'in-person' or 'online'                           |
+| consultation_reason | string | Yes      | Detailed reason (10-500 characters)                     |
+| preferred_date      | string | No       | Preferred date (YYYY-MM-DD format, must be future date) |
+| preferred_time      | string | No       | Preferred time (HH:mm format, 24-hour)                  |
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "message": "Appointment request created successfully",
+  "data": {
+    "_id": "app123",
+    "doctor_id": {
+      "_id": "doc123",
+      "first_name": "Sarah",
+      "last_name": "Ahmed",
+      "email": "sarah.ahmed@philbox.com",
+      "consultation_fee": 3000,
+      "specialization": "Cardiologist"
+    },
+    "patient_id": "cust123",
+    "slot_id": {
+      "_id": "slot456",
+      "date": "2026-01-15T00:00:00.000Z",
+      "start_time": "09:00",
+      "end_time": "09:30"
+    },
+    "appointment_type": "in-person",
+    "consultation_reason": "I have been experiencing chest pain and shortness of breath for the past 2 days. Need urgent consultation.",
+    "preferred_date": "2026-01-15T00:00:00.000Z",
+    "preferred_time": "09:00",
+    "appointment_request": "processing",
+    "status": "pending",
+    "created_at": "2026-01-10T10:30:00.000Z",
+    "updated_at": "2026-01-10T10:30:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+
+**404 Not Found - Doctor Not Active**
+
+```json
+{
+  "success": false,
+  "message": "Doctor not found or inactive"
+}
+```
+
+**400 Bad Request - Slot Not Available**
+
+```json
+{
+  "success": false,
+  "message": "Selected time slot is not available"
+}
+```
+
+**Email Notifications:**
+
+- Customer receives confirmation email with request details
+- Doctor receives notification email about new request
+
+---
+
+### 26. Get My Appointment Requests
+
+**Endpoint:** `GET /api/customer/appointments/requests`
+**Auth Required:** Yes (Customer)
+
+Retrieve all your appointment requests with pagination and filtering.
+
+**Query Parameters:**
+
+| Parameter        | Type   | Default      | Description                           |
+| ---------------- | ------ | ------------ | ------------------------------------- |
+| page             | number | 1            | Page number                           |
+| limit            | number | 10           | Items per page (max 100)              |
+| status           | string | 'processing' | Filter: processing/accepted/cancelled |
+| appointment_type | string | -            | Filter by type: in-person/online      |
+| sort_by          | string | 'created_at' | Sort field                            |
+| sort_order       | string | 'desc'       | Sort order: asc/desc                  |
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Appointment requests retrieved successfully",
+  "data": {
+    "appointments": [
+      {
+        "_id": "app123",
+        "doctor_id": {
+          "_id": "doc123",
+          "first_name": "Sarah",
+          "last_name": "Ahmed",
+          "email": "sarah.ahmed@philbox.com",
+          "consultation_fee": 3000,
+          "specialization": "Cardiologist",
+          "profile_picture": "https://cloudinary.com/..."
+        },
+        "patient_id": "cust123",
+        "slot_id": {
+          "_id": "slot456",
+          "date": "2026-01-15T00:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "09:30"
+        },
+        "appointment_type": "in-person",
+        "consultation_reason": "Experiencing chest pain",
+        "appointment_request": "processing",
+        "status": "pending",
+        "created_at": "2026-01-10T10:30:00.000Z",
+        "updated_at": "2026-01-10T10:30:00.000Z"
+      }
+    ],
+    "pagination": {
+      "current_page": 1,
+      "total_pages": 2,
+      "total_items": 15,
+      "items_per_page": 10,
+      "has_next": true,
+      "has_prev": false
+    }
+  }
+}
+```
+
+---
+
+### 27. Get Appointment Request Details
+
+**Endpoint:** `GET /api/customer/appointments/requests/:appointmentId`
+**Auth Required:** Yes (Customer)
+
+Get detailed information about a specific appointment request.
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Appointment request details retrieved successfully",
+  "data": {
+    "_id": "app123",
+    "doctor_id": {
+      "_id": "doc123",
+      "first_name": "Sarah",
+      "last_name": "Ahmed",
+      "email": "sarah.ahmed@philbox.com",
+      "consultation_fee": 3000,
+      "specialization": "Cardiologist",
+      "profile_picture": "https://cloudinary.com/..."
+    },
+    "patient_id": "cust123",
+    "slot_id": {
+      "_id": "slot456",
+      "date": "2026-01-15T00:00:00.000Z",
+      "start_time": "09:00",
+      "end_time": "09:30"
+    },
+    "appointment_type": "in-person",
+    "consultation_reason": "Experiencing chest pain and shortness of breath",
+    "preferred_date": "2026-01-15T00:00:00.000Z",
+    "preferred_time": "09:00",
+    "appointment_request": "processing",
+    "status": "pending",
+    "notes": "Please bring previous medical reports",
+    "rejection_reason": null,
+    "created_at": "2026-01-10T10:30:00.000Z",
+    "updated_at": "2026-01-10T10:30:00.000Z"
+  }
+}
+```
+
+**Error (404):**
+
+```json
+{
+  "success": false,
+  "message": "Appointment request not found"
+}
+```
+
+---
+
+### 28. Cancel Appointment Request
+
+**Endpoint:** `POST /api/customer/appointments/requests/:appointmentId/cancel`
+**Auth Required:** Yes (Customer)
+
+Cancel a pending appointment request.
+
+**Request Body:**
+
+```json
+{
+  "cancellation_reason": "Found another doctor with earlier availability"
+}
+```
+
+**Field Descriptions:**
+
+| Field               | Type   | Required | Description                      |
+| ------------------- | ------ | -------- | -------------------------------- |
+| cancellation_reason | string | No       | Optional reason for cancellation |
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Appointment request cancelled successfully",
+  "data": {
+    "_id": "app123",
+    "doctor_id": {
+      "_id": "doc123",
+      "first_name": "Sarah",
+      "last_name": "Ahmed",
+      "email": "sarah.ahmed@philbox.com"
+    },
+    "patient_id": {
+      "_id": "cust123",
+      "first_name": "John",
+      "last_name": "Doe"
+    },
+    "appointment_request": "cancelled",
+    "cancellation_reason": "Found another doctor with earlier availability",
+    "updated_at": "2026-01-11T10:00:00.000Z"
+  }
+}
+```
+
+**Error (404):**
+
+```json
+{
+  "success": false,
+  "message": "Appointment request not found or already processed"
+}
+```
+
+---
+
+### 29. Get Accepted Appointments
+
+**Endpoint:** `GET /api/customer/appointments`
+**Auth Required:** Yes (Customer)
+
+Retrieve all your accepted appointments (confirmed consultations).
+
+**Query Parameters:**
+
+| Parameter        | Type   | Default      | Description                                  |
+| ---------------- | ------ | ------------ | -------------------------------------------- |
+| page             | number | 1            | Page number                                  |
+| limit            | number | 10           | Items per page (max 100)                     |
+| status           | string | 'pending'    | Filter: pending/completed/missed/in-progress |
+| appointment_type | string | -            | Filter by type: in-person/online             |
+| sort_by          | string | 'created_at' | Sort field                                   |
+| sort_order       | string | 'desc'       | Sort order: asc/desc                         |
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Appointments retrieved successfully",
+  "data": {
+    "appointments": [
+      {
+        "_id": "app123",
+        "doctor_id": {
+          "_id": "doc123",
+          "first_name": "Sarah",
+          "last_name": "Ahmed",
+          "email": "sarah.ahmed@philbox.com",
+          "consultation_fee": 3000,
+          "specialization": "Cardiologist",
+          "profile_picture": "https://cloudinary.com/..."
+        },
+        "patient_id": "cust123",
+        "slot_id": {
+          "_id": "slot456",
+          "date": "2026-01-15T00:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "09:30"
+        },
+        "appointment_type": "in-person",
+        "consultation_reason": "Regular checkup for diabetes management",
+        "appointment_request": "accepted",
+        "status": "pending",
+        "notes": "Please bring glucose monitor readings",
+        "created_at": "2026-01-10T10:30:00.000Z",
+        "updated_at": "2026-01-11T14:20:00.000Z"
+      }
+    ],
+    "pagination": {
+      "current_page": 1,
+      "total_pages": 3,
+      "total_items": 28,
+      "items_per_page": 10,
+      "has_next": true,
+      "has_prev": false
+    }
+  }
+}
+```
+
+---
+
+### 📌 Important Notes for Appointments
+
+1. **Consultation Reason**: Must be between 10-500 characters, provide detailed information
+2. **Preferred Date**: Must be a future date, cannot book appointments in the past
+3. **Slot Booking**: If slot_id provided, it will be validated for availability
+4. **Email Notifications**:
+   - Request submitted: Confirmation to customer + notification to doctor
+   - Request accepted: Confirmation email with appointment details
+   - Request rejected: Email with rejection reason and suggestions
+5. **Cancellation**: Only processing requests can be cancelled
+6. **Activity Logging**: All actions are logged for audit purposes
+7. **Request Status**:
+   - `processing`: Waiting for doctor's response
+   - `accepted`: Doctor confirmed the appointment
+   - `cancelled`: Rejected by doctor or cancelled by customer
+
+---
+
+## �📋 VALIDATION RULES
 
 ### Register
 
