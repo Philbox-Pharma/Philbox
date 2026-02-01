@@ -1,9 +1,8 @@
-/* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 // src/portals/admin/layouts/components/AdminHeader.jsx
-import { motion } from 'framer-motion';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import {
   FaBars,
   FaBell,
@@ -21,13 +20,17 @@ import {
   FaTrash,
   FaCheck,
   FaExclamationCircle,
+  FaUsers,
+  FaUserMd,
+  FaUserFriends,
 } from 'react-icons/fa';
 import {
   adminAuthApi,
   activityLogsApi,
+  globalSearchApi,
 } from '../../../../core/api/admin/adminApi';
 
-export default function AdminHeader({ toggleSidebar, sidebarOpen, admin }) {
+export default function AdminHeader({ toggleSidebar, admin }) {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -36,6 +39,15 @@ export default function AdminHeader({ toggleSidebar, sidebarOpen, admin }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const profileRef = useRef(null);
   const notificationRef = useRef(null);
+
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const searchRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -49,10 +61,119 @@ export default function AdminHeader({ toggleSidebar, sidebarOpen, admin }) {
       ) {
         setNotificationsOpen(false);
       }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSearchResults(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Debounced search
+  const handleSearch = useCallback(async query => {
+    if (!query || query.length < 2) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    setSearchLoading(true);
+    setShowSearchResults(true);
+
+    try {
+      const results = await globalSearchApi.search(query, 5);
+      setSearchResults(results);
+      setSelectedIndex(-1);
+    } catch (err) {
+      console.error('Search failed:', err);
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, []);
+
+  // Handle search input change with debounce
+  const handleSearchInputChange = e => {
+    const query = e.target.value;
+    setSearchQuery(query);
+
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Debounce search
+    searchTimeoutRef.current = setTimeout(() => {
+      handleSearch(query);
+    }, 300);
+  };
+
+  // Handle keyboard navigation
+  const handleSearchKeyDown = e => {
+    if (!showSearchResults || searchResults.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex(prev =>
+          prev < searchResults.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex(prev => (prev > 0 ? prev - 1 : prev));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedIndex >= 0 && searchResults[selectedIndex]) {
+          navigateToResult(searchResults[selectedIndex]);
+        }
+        break;
+      case 'Escape':
+        setShowSearchResults(false);
+        setSearchQuery('');
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Navigate to search result
+  const navigateToResult = result => {
+    setShowSearchResults(false);
+    setSearchQuery('');
+    navigate(result.path);
+  };
+
+  // Get icon for result type
+  const getResultIcon = type => {
+    switch (type) {
+      case 'branch':
+        return <FaCodeBranch className="text-blue-500" />;
+      case 'admin':
+        return <FaShieldAlt className="text-purple-500" />;
+      case 'salesperson':
+        return <FaUsers className="text-green-500" />;
+      case 'customer':
+        return <FaUserFriends className="text-orange-500" />;
+      case 'doctor':
+        return <FaUserMd className="text-teal-500" />;
+      default:
+        return <FaUser className="text-gray-500" />;
+    }
+  };
+
+  // Get label for result type
+  const getResultLabel = type => {
+    const labels = {
+      branch: 'Branch',
+      admin: 'Admin',
+      salesperson: 'Salesperson',
+      customer: 'Customer',
+      doctor: 'Doctor',
+    };
+    return labels[type] || 'Item';
+  };
 
   // Fetch notifications (from activity logs)
   useEffect(() => {
@@ -60,7 +181,6 @@ export default function AdminHeader({ toggleSidebar, sidebarOpen, admin }) {
     // Refresh every 2 minutes
     const interval = setInterval(fetchNotifications, 120000);
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchNotifications = async () => {
@@ -190,9 +310,11 @@ export default function AdminHeader({ toggleSidebar, sidebarOpen, admin }) {
   const handleLogout = async () => {
     try {
       await adminAuthApi.logout();
+      localStorage.removeItem('adminData');
       navigate('/admin/login');
     } catch (error) {
       console.error('Logout failed:', error);
+      localStorage.removeItem('adminData');
       navigate('/admin/login');
     }
   };
@@ -230,15 +352,79 @@ export default function AdminHeader({ toggleSidebar, sidebarOpen, admin }) {
         </div>
 
         {/* Center - Search Bar */}
-        <div className="hidden md:flex flex-1 max-w-md mx-8">
+        <div
+          className="hidden md:flex flex-1 max-w-md mx-8 relative"
+          ref={searchRef}
+        >
           <div className="relative w-full">
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" />
             <input
               type="text"
-              placeholder="Search branches, staff, orders..."
+              placeholder="Search branches, staff, customers..."
+              value={searchQuery}
+              onChange={handleSearchInputChange}
+              onKeyDown={handleSearchKeyDown}
+              onFocus={() =>
+                searchQuery.length >= 2 && setShowSearchResults(true)
+              }
               className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#d69e2e] focus:border-transparent"
             />
+            {searchLoading && (
+              <FaSpinner className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 animate-spin" />
+            )}
           </div>
+
+          {/* Search Results Dropdown */}
+          <AnimatePresence>
+            {showSearchResults && (
+              <Motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50"
+              >
+                {searchLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <FaSpinner className="animate-spin text-gray-400 text-xl" />
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div className="max-h-80 overflow-y-auto">
+                    {searchResults.map((result, index) => (
+                      <button
+                        key={`${result.type}-${result.id}`}
+                        onClick={() => navigateToResult(result)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
+                          selectedIndex === index ? 'bg-blue-50' : ''
+                        }`}
+                      >
+                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                          {getResultIcon(result.type)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-gray-800 font-medium truncate">
+                            {result.name}
+                          </p>
+                          <p className="text-gray-500 text-sm truncate">
+                            {result.description}
+                          </p>
+                        </div>
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full shrink-0">
+                          {getResultLabel(result.type)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : searchQuery.length >= 2 ? (
+                  <div className="py-8 text-center text-gray-500">
+                    <FaSearch className="text-3xl mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">
+                      No results found for "{searchQuery}"
+                    </p>
+                  </div>
+                ) : null}
+              </Motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Right Side - Actions */}
@@ -262,7 +448,7 @@ export default function AdminHeader({ toggleSidebar, sidebarOpen, admin }) {
 
             <AnimatePresence>
               {notificationsOpen && (
-                <motion.div
+                <Motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 10 }}
@@ -329,7 +515,7 @@ export default function AdminHeader({ toggleSidebar, sidebarOpen, admin }) {
                       View All Activity
                     </Link>
                   </div>
-                </motion.div>
+                </Motion.div>
               )}
             </AnimatePresence>
           </div>
@@ -371,7 +557,7 @@ export default function AdminHeader({ toggleSidebar, sidebarOpen, admin }) {
 
             <AnimatePresence>
               {profileOpen && (
-                <motion.div
+                <Motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 10 }}
@@ -448,7 +634,7 @@ export default function AdminHeader({ toggleSidebar, sidebarOpen, admin }) {
                       <span>Logout</span>
                     </button>
                   </div>
-                </motion.div>
+                </Motion.div>
               )}
             </AnimatePresence>
           </div>

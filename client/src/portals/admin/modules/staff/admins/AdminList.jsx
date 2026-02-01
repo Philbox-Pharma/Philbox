@@ -1,8 +1,7 @@
 // src/portals/admin/modules/staff/admins/AdminList.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-// eslint-disable-next-line no-unused-vars
-import { motion } from 'framer-motion';
+
 import {
   FaSearch,
   FaFilter,
@@ -37,6 +36,13 @@ export default function AdminList() {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
 
+  // Use ref for search to allow fetchAdmins to access latest value without dependency
+  // This preserves the debounce behavior controlled by the separate useEffect
+  const searchRef = useRef(search);
+  useEffect(() => {
+    searchRef.current = search;
+  }, [search]);
+
   // Clear success message
   useEffect(() => {
     if (successMessage) {
@@ -53,14 +59,14 @@ export default function AdminList() {
   }, [location.state]);
 
   // Fetch admins
-  const fetchAdmins = async () => {
+  const fetchAdmins = useCallback(async () => {
     setLoading(true);
     setError(null);
     setUsingMockData(false);
 
     try {
       const filters = {};
-      if (search) filters.search = search;
+      if (searchRef.current) filters.search = searchRef.current;
       if (statusFilter) filters.status = statusFilter;
 
       const response = await staffApi.getAdmins(page, limit, filters);
@@ -125,12 +131,11 @@ export default function AdminList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, limit, statusFilter]);
 
   useEffect(() => {
     fetchAdmins();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, statusFilter]);
+  }, [fetchAdmins]);
 
   // Search debounce
   useEffect(() => {
@@ -425,21 +430,15 @@ export default function AdminList() {
 
       {/* Success Message */}
       {successMessage && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-green-50 border border-green-200 rounded-xl p-4 text-green-700 flex items-center gap-2"
-        >
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-green-700 flex items-center gap-2">
           <FaCheckCircle className="flex-shrink-0" />
           {successMessage}
-        </motion.div>
+        </div>
       )}
 
       {/* Error/Warning Banner */}
       {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
+        <div
           className={`rounded-xl p-4 flex items-center gap-2 ${
             usingMockData
               ? 'bg-yellow-50 border border-yellow-200 text-yellow-700'
@@ -451,7 +450,7 @@ export default function AdminList() {
             {error}
             {usingMockData && ' - Showing demo data'}
           </span>
-        </motion.div>
+        </div>
       )}
 
       {/* Filters */}
@@ -530,8 +529,8 @@ export default function AdminList() {
 }
 
 // Stats Card Component
-// eslint-disable-next-line no-unused-vars
-const StatsCard = ({ icon: IconComponent, label, value, color }) => {
+const StatsCard = ({ icon, label, value, color }) => {
+  const Icon = icon;
   const colorMap = {
     purple: { bg: 'bg-purple-100', text: 'text-purple-600' },
     blue: { bg: 'bg-blue-100', text: 'text-blue-600' },
@@ -540,22 +539,18 @@ const StatsCard = ({ icon: IconComponent, label, value, color }) => {
   const c = colorMap[color] || colorMap.blue;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-xl shadow-lg border border-gray-100 p-3 sm:p-4"
-    >
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-3 sm:p-4">
       <div className="flex items-center gap-2 sm:gap-4">
         <div
           className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${c.bg} flex items-center justify-center flex-shrink-0`}
         >
-          <IconComponent className={`text-base sm:text-xl ${c.text}`} />
+          <Icon className={`text-base sm:text-xl ${c.text}`} />
         </div>
         <div className="min-w-0">
           <p className="text-gray-500 text-xs sm:text-sm truncate">{label}</p>
           <p className="text-lg sm:text-2xl font-bold text-gray-800">{value}</p>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
