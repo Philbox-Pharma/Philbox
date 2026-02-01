@@ -73,8 +73,11 @@ export const updateBranchAdminSchema = Joi.object({
     .optional(),
   addresses: Joi.array().items(addressSchema).optional(),
   isTwoFactorEnabled: Joi.boolean().optional(),
+  // Allow empty body when files are uploaded
+  remove_profile_img: Joi.string().optional(),
+  remove_cover_img: Joi.string().optional(),
 })
-  .min(1)
+  .min(0) // Changed from 1 to 0 to allow image-only updates
   .messages({
     'object.min': 'At least one field must be provided for update',
   });

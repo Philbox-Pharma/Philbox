@@ -1,13 +1,13 @@
 // src/portals/admin/modules/dashboard/AdminDashboard.jsx
 import { useState, useEffect } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
-// eslint-disable-next-line no-unused-vars
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import {
   FaCodeBranch,
   FaUsers,
   FaUserTie,
   FaArrowUp,
+  FaArrowDown,
   FaEye,
   FaPlus,
   FaClipboardList,
@@ -16,77 +16,83 @@ import {
   FaExclamationTriangle,
   FaCheckCircle,
   FaClock,
+  FaShoppingCart,
+  FaMoneyBillWave,
 } from 'react-icons/fa';
-import { branchApi } from '../../../../core/api/admin/adminApi';
+import {
+  branchApi,
+  staffApi,
+  doctorApi,
+  ordersAnalyticsApi,
+} from '../../../../core/api/admin/adminApi';
 
 // Stats Card Component
 const StatCard = ({
-  icon,
+  icon: Icon, // eslint-disable-line no-unused-vars
   label,
   value,
   trend,
   trendValue,
   color,
   loading,
-}) => {
-  const Icon = icon;
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow"
-    >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-gray-500 text-sm font-medium">{label}</p>
-          {loading ? (
-            <div className="h-8 w-20 bg-gray-200 animate-pulse rounded mt-2"></div>
-          ) : (
-            <h3 className="text-3xl font-bold text-gray-800 mt-2">{value}</h3>
-          )}
-          {trend && !loading && (
-            <div className="flex items-center gap-1 mt-2 text-sm text-green-600">
-              <FaArrowUp />
-              <span>{trendValue}</span>
-            </div>
-          )}
-        </div>
-        <div
-          className="w-14 h-14 rounded-xl flex items-center justify-center"
-          style={{ backgroundColor: `${color}15` }}
-        >
-          <Icon className="text-2xl" style={{ color }} />
-        </div>
+}) => (
+  <Motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow"
+  >
+    <div className="flex items-start justify-between">
+      <div>
+        <p className="text-gray-500 text-sm font-medium">{label}</p>
+        {loading ? (
+          <div className="h-8 w-20 bg-gray-200 animate-pulse rounded mt-2"></div>
+        ) : (
+          <h3 className="text-3xl font-bold text-gray-800 mt-2">{value}</h3>
+        )}
+        {trend && !loading && (
+          <div className="flex items-center gap-1 mt-2 text-sm text-green-600">
+            <FaArrowUp />
+            <span>{trendValue}</span>
+          </div>
+        )}
       </div>
-    </motion.div>
-  );
-};
+      <div
+        className="w-14 h-14 rounded-xl flex items-center justify-center"
+        style={{ backgroundColor: `${color}15` }}
+      >
+        <Icon className="text-2xl" style={{ color }} />
+      </div>
+    </div>
+  </Motion.div>
+);
 
 // Quick Action Button
-const QuickAction = ({ icon, label, to, color }) => {
-  const Icon = icon;
-  return (
-    <Link to={to}>
-      <motion.div
-        whileHover={{ scale: 1.02, y: -2 }}
-        whileTap={{ scale: 0.98 }}
-        className="bg-white rounded-xl shadow-md p-4 border border-gray-100 hover:shadow-lg transition-all cursor-pointer flex items-center gap-4"
+const QuickAction = ({
+  icon: Icon, // eslint-disable-line no-unused-vars
+  label,
+  to,
+  color,
+}) => (
+  <Link to={to}>
+    <Motion.div
+      whileHover={{ scale: 1.02, y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      className="bg-white rounded-xl shadow-md p-4 border border-gray-100 hover:shadow-lg transition-all cursor-pointer flex items-center gap-4"
+    >
+      <div
+        className="w-12 h-12 rounded-xl flex items-center justify-center"
+        style={{ backgroundColor: `${color}15` }}
       >
-        <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center"
-          style={{ backgroundColor: `${color}15` }}
-        >
-          <Icon className="text-xl" style={{ color }} />
-        </div>
-        <span className="font-medium text-gray-700">{label}</span>
-      </motion.div>
-    </Link>
-  );
-};
+        <Icon className="text-xl" style={{ color }} />
+      </div>
+      <span className="font-medium text-gray-700">{label}</span>
+    </Motion.div>
+  </Link>
+);
 
 // Branch Card
 const BranchCard = ({ branch }) => (
-  <motion.div
+  <Motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     className="bg-white rounded-xl shadow-md p-4 border border-gray-100 hover:shadow-lg transition-all"
@@ -115,12 +121,16 @@ const BranchCard = ({ branch }) => (
         <FaEye /> View
       </Link>
     </div>
-  </motion.div>
+  </Motion.div>
 );
 
 // Activity Item
-const ActivityItem = ({ icon, text, time, status }) => {
-  const Icon = icon;
+const ActivityItem = ({
+  icon: Icon, // eslint-disable-line no-unused-vars
+  text,
+  time,
+  status,
+}) => {
   const statusColors = {
     success: 'text-green-600 bg-green-100',
     warning: 'text-yellow-600 bg-yellow-100',
@@ -149,6 +159,10 @@ export default function AdminDashboard() {
   const [error, setError] = useState(null);
   const [stats, setStats] = useState({
     branches: { total: 0, active: 0, inactive: 0 },
+    admins: { total: 0 },
+    salespersons: { total: 0 },
+    doctors: { total: 0, pending: 0 },
+    orders: { total: 0, todayOrders: 0, revenue: 0 },
   });
   const [branches, setBranches] = useState([]);
 
@@ -159,17 +173,59 @@ export default function AdminDashboard() {
       setError(null);
 
       try {
-        // Fetch branch statistics
-        const branchStatsResponse = await branchApi.getStatistics();
-
-        // Fetch branches list
-        const branchesResponse = await branchApi.getAll(1, 6);
+        // Fetch all dashboard data in parallel
+        const [
+          branchStatsResponse,
+          branchesResponse,
+          adminsResponse,
+          salespersonsResponse,
+          doctorApplicationsResponse,
+          doctorsListResponse,
+          ordersOverviewResponse,
+        ] = await Promise.all([
+          branchApi.getStatistics().catch(() => ({ data: null })),
+          branchApi.getAll(1, 6).catch(() => ({ data: { branches: [] } })),
+          staffApi
+            .getAdmins(1, 1)
+            .catch(() => ({ data: { pagination: { total: 0 } } })),
+          staffApi
+            .getSalespersons(1, 1)
+            .catch(() => ({ data: { pagination: { total: 0 } } })),
+          doctorApi
+            .getApplications({ status: 'pending', limit: 1 })
+            .catch(() => ({ data: { pagination: { total: 0 } } })),
+          doctorApi
+            .getAllDoctors({ limit: 1 })
+            .catch(() => ({ data: { pagination: { total: 0 } } })),
+          ordersAnalyticsApi.getOverview({}).catch(() => ({ data: null })),
+        ]);
 
         setStats({
           branches: branchStatsResponse.data || {
             total: 0,
             active: 0,
             inactive: 0,
+          },
+          admins: {
+            total:
+              adminsResponse.data?.pagination?.total ||
+              adminsResponse.data?.total ||
+              0,
+          },
+          salespersons: {
+            total:
+              salespersonsResponse.data?.pagination?.total ||
+              salespersonsResponse.data?.total ||
+              0,
+          },
+          doctors: {
+            total: doctorsListResponse.data?.pagination?.total || 0,
+            pending: doctorApplicationsResponse.data?.pagination?.total || 0,
+          },
+          orders: {
+            total: ordersOverviewResponse.data?.totalOrders || 0,
+            todayOrders: ordersOverviewResponse.data?.todayOrders || 0,
+            revenue: ordersOverviewResponse.data?.totalRevenue || 0,
           },
         });
 
@@ -178,33 +234,15 @@ export default function AdminDashboard() {
         console.error('Failed to fetch dashboard data:', err);
         setError(err.message || 'Failed to load dashboard data');
 
-        // Mock data for development
+        // Fallback mock data
         setStats({
-          branches: { total: 10, active: 8, inactive: 2 },
+          branches: { total: 0, active: 0, inactive: 0 },
+          admins: { total: 0 },
+          salespersons: { total: 0 },
+          doctors: { total: 0, pending: 0 },
+          orders: { total: 0, todayOrders: 0, revenue: 0 },
         });
-        setBranches([
-          {
-            _id: '1',
-            name: 'Lahore Main Branch',
-            code: 'PHIL25#001',
-            status: 'Active',
-            phone: '+92-42-1234567',
-          },
-          {
-            _id: '2',
-            name: 'Karachi Branch',
-            code: 'PHIL25#002',
-            status: 'Active',
-            phone: '+92-21-7654321',
-          },
-          {
-            _id: '3',
-            name: 'Islamabad Branch',
-            code: 'PHIL25#003',
-            status: 'Inactive',
-            phone: '+92-51-1234567',
-          },
-        ]);
+        setBranches([]);
       } finally {
         setLoading(false);
       }
@@ -242,7 +280,7 @@ export default function AdminDashboard() {
   ];
 
   // Recent activities (mock)
-  const recentActivities = [
+  const activities = [
     {
       icon: FaCodeBranch,
       text: 'New branch "Faisalabad" added',
@@ -278,7 +316,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-[#1a365d] to-[#2c5282] rounded-2xl p-6 text-white">
+      <div className="bg-linear-to-r from-[#1a365d] to-[#2c5282] rounded-2xl p-6 text-white">
         <h1 className="text-2xl md:text-3xl font-bold">
           Welcome back, {admin?.name || 'Admin'}! 👋
         </h1>
@@ -296,13 +334,11 @@ export default function AdminDashboard() {
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatCard
           icon={FaCodeBranch}
           label="Total Branches"
           value={stats.branches.total}
-          trend="up"
-          trendValue="+2 this month"
           color="#1a365d"
           loading={loading}
         />
@@ -316,17 +352,29 @@ export default function AdminDashboard() {
         <StatCard
           icon={FaUsers}
           label="Total Admins"
-          value={5}
+          value={stats.admins.total}
           color="#805ad5"
           loading={loading}
         />
         <StatCard
           icon={FaUserTie}
           label="Salespersons"
-          value={25}
-          trend="up"
-          trendValue="+5 this month"
+          value={stats.salespersons.total}
           color="#d69e2e"
+          loading={loading}
+        />
+        <StatCard
+          icon={FaShoppingCart}
+          label="Orders Today"
+          value={stats.orders.todayOrders}
+          color="#3182ce"
+          loading={loading}
+        />
+        <StatCard
+          icon={FaMoneyBillWave}
+          label="Total Revenue"
+          value={`Rs ${(stats.orders.revenue / 1000).toFixed(0)}K`}
+          color="#38a169"
           loading={loading}
         />
       </div>
@@ -397,7 +445,7 @@ export default function AdminDashboard() {
               </h2>
             </div>
             <div className="max-h-96 overflow-y-auto">
-              {recentActivities.map((activity, index) => (
+              {activities.map((activity, index) => (
                 <ActivityItem key={index} {...activity} />
               ))}
             </div>
@@ -414,11 +462,13 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-gray-500 text-sm">Doctors Pending</p>
-              <h3 className="text-2xl font-bold text-gray-800">12</h3>
+              <h3 className="text-2xl font-bold text-gray-800">
+                {loading ? '...' : stats.doctors.pending}
+              </h3>
             </div>
           </div>
           <Link
-            to="/admin/doctors?status=pending"
+            to="/admin/doctors/applications"
             className="mt-4 block text-center py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors font-medium text-sm"
           >
             Review Applications
@@ -431,8 +481,10 @@ export default function AdminDashboard() {
               <FaClipboardList className="text-2xl text-blue-600" />
             </div>
             <div>
-              <p className="text-gray-500 text-sm">Orders Today</p>
-              <h3 className="text-2xl font-bold text-gray-800">48</h3>
+              <p className="text-gray-500 text-sm">Total Orders</p>
+              <h3 className="text-2xl font-bold text-gray-800">
+                {loading ? '...' : stats.orders.total}
+              </h3>
             </div>
           </div>
           <Link
@@ -445,19 +497,21 @@ export default function AdminDashboard() {
 
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-red-100 flex items-center justify-center">
-              <FaExclamationTriangle className="text-2xl text-red-600" />
+            <div className="w-14 h-14 rounded-xl bg-green-100 flex items-center justify-center">
+              <FaUserMd className="text-2xl text-green-600" />
             </div>
             <div>
-              <p className="text-gray-500 text-sm">Low Stock Alerts</p>
-              <h3 className="text-2xl font-bold text-gray-800">7</h3>
+              <p className="text-gray-500 text-sm">Registered Doctors</p>
+              <h3 className="text-2xl font-bold text-gray-800">
+                {loading ? '...' : stats.doctors.total}
+              </h3>
             </div>
           </div>
           <Link
-            to="/admin/inventory?filter=low-stock"
-            className="mt-4 block text-center py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium text-sm"
+            to="/admin/doctors"
+            className="mt-4 block text-center py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors font-medium text-sm"
           >
-            View Alerts
+            View Doctors
           </Link>
         </div>
       </div>
