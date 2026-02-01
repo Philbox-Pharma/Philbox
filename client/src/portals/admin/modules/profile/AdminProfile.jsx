@@ -1,22 +1,18 @@
 // src/portals/admin/modules/profile/AdminProfile.jsx
 import { useState, useEffect } from 'react';
-// eslint-disable-next-line no-unused-vars
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import {
   FaUserShield,
   FaEnvelope,
   FaPhone,
-  FaLock,
   FaShieldAlt,
   FaEdit,
   FaCamera,
   FaSpinner,
   FaCheckCircle,
   FaExclamationTriangle,
-  FaEye,
-  FaEyeSlash,
 } from 'react-icons/fa';
-import { adminAuthApi, staffApi } from '../../../../core/api/admin/adminApi';
+import { adminAuthApi } from '../../../../core/api/admin/adminApi';
 import { FormInput } from '../../../../shared/components/Form';
 
 export default function AdminProfile() {
@@ -32,6 +28,8 @@ export default function AdminProfile() {
   const [editing, setEditing] = useState(false);
   const [profileData, setProfileData] = useState({});
   const [savingProfile, setSavingProfile] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   // 2FA State
   const [toggling2FA, setToggling2FA] = useState(false);
@@ -44,20 +42,21 @@ export default function AdminProfile() {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const response = await adminAuthApi.verifySession();
-      if (response.status === 200 || response.data) {
-        const data = response.data?.admin || response.data;
+      // Read from localStorage (saved during login)
+      const storedAdmin = localStorage.getItem('adminData');
+      if (storedAdmin) {
+        const data = JSON.parse(storedAdmin);
         setAdmin(data);
         setProfileData({
           name: data.name || data.fullName,
           phone_number: data.phone_number || data.contactNumber,
         });
       } else {
-        throw new Error('Failed to load profile');
+        throw new Error('No profile data found. Please login again.');
       }
     } catch (err) {
-      console.error(err);
-      setError('Could not load profile data');
+      console.error('Fetch Profile Error:', err);
+      setError(err?.message || 'Could not load profile data');
     } finally {
       setLoading(false);
     }
@@ -67,22 +66,52 @@ export default function AdminProfile() {
   const handleProfileUpdate = async e => {
     e.preventDefault();
     setSavingProfile(true);
+    setError(null);
     try {
-      // Use existing update API or specific profile update endpoint if available
-      // Assuming we use updateAdmin with current ID
+      // Build FormData with fields matching backend DTO
       const formData = new FormData();
       formData.append('name', profileData.name);
-      if (profileData.phone_number)
+      if (profileData.phone_number) {
         formData.append('phone_number', profileData.phone_number);
+      }
 
-      const response = await staffApi.updateAdmin(admin._id, formData);
+      if (selectedFile) {
+        formData.append('profile_img', selectedFile);
+      }
+
+      // Pass admin ID to the API
+      const adminId = admin._id || admin.id;
+      if (!adminId) {
+        throw new Error('Admin ID not found. Please login again.');
+      }
+
+      const response = await adminAuthApi.updateProfile(adminId, formData);
       if (response.status === 200 || response.success) {
-        setAdmin(prev => ({ ...prev, ...profileData }));
+        // If server returns updated admin object, merge it
+        const updatedAdmin = response.data?.admin || response.data || {};
+
+        const newAdminData = {
+          ...admin,
+          name: profileData.name,
+          phone_number: profileData.phone_number,
+          profile_img_url:
+            updatedAdmin.profile_img_url || admin.profile_img_url,
+        };
+
+        setAdmin(newAdminData);
+        // Update localStorage so header and other components reflect the change
+        localStorage.setItem('adminData', JSON.stringify(newAdminData));
+
         setSuccessMessage('Profile updated successfully');
         setEditing(false);
+        setSelectedFile(null);
+        setPreviewUrl(null);
         setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        throw new Error(response.message || 'Failed to update profile');
       }
     } catch (err) {
+      console.error('Profile update error:', err);
       setError(err.message || 'Failed to update profile');
     } finally {
       setSavingProfile(false);
@@ -97,15 +126,17 @@ export default function AdminProfile() {
       const response = await adminAuthApi.update2FASettings(newValue);
 
       if (response.status === 200 || response.success) {
-        setAdmin(prev => ({ ...prev, isTwoFactorEnabled: newValue }));
+        const newAdminData = { ...admin, isTwoFactorEnabled: newValue };
+        setAdmin(newAdminData);
+        localStorage.setItem('adminData', JSON.stringify(newAdminData));
         setSuccessMessage(
           `Two-Factor Authentication ${newValue ? 'Enabled' : 'Disabled'}`
         );
         setTimeout(() => setSuccessMessage(''), 3000);
       }
-      // eslint-disable-next-line no-unused-vars
     } catch (err) {
-      setError('Failed to update 2FA settings');
+      console.error('2FA Error:', err);
+      setError(err?.message || 'Failed to update 2FA settings');
     } finally {
       setToggling2FA(false);
     }
@@ -131,13 +162,13 @@ export default function AdminProfile() {
 
       {/* Success/Error Messages */}
       {successMessage && (
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl flex items-center gap-2"
         >
           <FaCheckCircle /> {successMessage}
-        </motion.div>
+        </Motion.div>
       )}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
@@ -152,8 +183,14 @@ export default function AdminProfile() {
             <div className="h-24 bg-gradient-to-r from-[#1a365d] to-[#2f855a]"></div>
             <div className="px-6 pb-6 text-center -mt-12">
               <div className="relative inline-block">
-                <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-100 flex items-center justify-center shadow-md overflow-hidden">
-                  {admin?.profile_img_url ? (
+                <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-100 flex items-center justify-center shadow-md overflow-hidden relative">
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : admin?.profile_img_url ? (
                     <img
                       src={admin.profile_img_url}
                       alt="Profile"
@@ -163,9 +200,27 @@ export default function AdminProfile() {
                     <FaUserShield className="text-4xl text-gray-400" />
                   )}
                 </div>
-                {/* <button className="absolute bottom-0 right-0 p-2 bg-[#1a365d] text-white rounded-full shadow hover:bg-[#2c5282] transition-colors">
-                                    <FaCamera className="text-xs" />
-                                </button> */}
+                <input
+                  type="file"
+                  id="profile-upload"
+                  hidden
+                  accept="image/*"
+                  onChange={e => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setSelectedFile(file);
+                      setPreviewUrl(URL.createObjectURL(file));
+                      setEditing(true); // Auto-enable edit mode if they pick an image
+                    }
+                  }}
+                />
+                <label
+                  htmlFor="profile-upload"
+                  className="absolute bottom-0 right-0 p-2 bg-[#1a365d] text-white rounded-full shadow hover:bg-[#2c5282] transition-colors cursor-pointer"
+                  title="Upload Profile Picture"
+                >
+                  <FaCamera className="text-xs" />
+                </label>
               </div>
               <h2 className="text-xl font-bold text-gray-800 mt-3">
                 {admin?.name || admin?.fullName}
@@ -220,7 +275,7 @@ export default function AdminProfile() {
 
         {/* Main Content Area */}
         <div className="lg:col-span-2">
-          <motion.div
+          <Motion.div
             key={activeTab}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -394,7 +449,7 @@ export default function AdminProfile() {
                 </div>
               </div>
             )}
-          </motion.div>
+          </Motion.div>
         </div>
       </div>
     </div>

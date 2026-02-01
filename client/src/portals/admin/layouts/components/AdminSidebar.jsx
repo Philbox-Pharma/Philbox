@@ -1,9 +1,8 @@
-/* eslint-disable no-unused-vars */
 // src/portals/admin/layouts/components/AdminSidebar.jsx
-import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+// eslint-disable-next-line no-unused-vars
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   FaTachometerAlt,
   FaCodeBranch,
@@ -15,11 +14,12 @@ import {
   FaChevronRight,
   FaTimes,
   FaBoxes,
-  FaClipboardList,
   FaUserMd,
   FaBell,
   FaQuestionCircle,
   FaUserShield,
+  FaTasks,
+  FaUserFriends,
 } from 'react-icons/fa';
 
 export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
@@ -101,42 +101,33 @@ export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
       key: 'doctors',
       label: 'Doctors',
       icon: FaUserMd,
-      permission: 'read_doctors',
+      permission: null, // Backend only requires authentication
       submenu: [
         {
           label: 'All Doctors',
           path: '/admin/doctors',
-          permission: 'read_doctors',
+          permission: null,
         },
         {
           label: 'Applications',
           path: '/admin/doctors/applications',
-          permission: 'read_doctors',
+          permission: null,
         },
       ],
     },
     {
-      key: 'orders',
-      label: 'Orders',
-      icon: FaClipboardList,
-      permission: 'read_orders',
-      submenu: [
-        {
-          label: 'All Orders',
-          path: '/admin/orders',
-          permission: 'read_orders',
-        },
-        {
-          label: 'Pending Orders',
-          path: '/admin/orders?status=pending',
-          permission: 'read_orders',
-        },
-        {
-          label: 'Completed Orders',
-          path: '/admin/orders?status=completed',
-          permission: 'read_orders',
-        },
-      ],
+      key: 'tasks',
+      label: 'Task Management',
+      icon: FaTasks,
+      path: '/admin/tasks',
+      permission: null, // Allow all admins to access
+    },
+    {
+      key: 'customers',
+      label: 'Customer Management',
+      icon: FaUserFriends,
+      path: '/admin/customers',
+      permission: null, // Allow all admins to access
     },
     {
       key: 'inventory',
@@ -149,22 +140,37 @@ export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
       key: 'analytics',
       label: 'Analytics',
       icon: FaChartBar,
-      permission: 'read_reports',
+      permission: null, // Backend only requires authentication
       submenu: [
         {
           label: 'Revenue Analytics',
           path: '/admin/analytics/revenue',
-          permission: 'read_reports',
+          permission: null,
         },
         {
           label: 'User Engagement',
           path: '/admin/analytics/engagement',
-          permission: 'read_reports',
+          permission: null,
         },
         {
           label: 'Activity Logs',
           path: '/admin/analytics/activity-logs',
-          permission: 'read_reports',
+          permission: null,
+        },
+        {
+          label: 'Feedback & Complaints',
+          path: '/admin/analytics/feedback-complaints',
+          permission: null,
+        },
+        {
+          label: 'Appointments',
+          path: '/admin/analytics/appointments',
+          permission: null,
+        },
+        {
+          label: 'Orders',
+          path: '/admin/orders',
+          permission: null,
         },
       ],
     },
@@ -317,7 +323,7 @@ export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
                 `}
       >
         {/* Header - Gradient Blue-Green */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 bg-linear-to-r from-[#2f855a] to-[#1a365d]">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 bg-gradient-to-r from-[#2f855a] to-[#1a365d]">
           <div className="flex items-center justify-center w-full lg:w-auto">
             <img
               src="/Philbox.PNG"
@@ -351,7 +357,7 @@ export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
         </nav>
 
         {/* Footer - Gradient Blue-Green */}
-        <div className="p-4 border-t border-white/10 bg-linear-to-r from-[#2f855a] to-[#1a365d]">
+        <div className="p-4 border-t border-white/10 bg-gradient-to-r from-[#2f855a] to-[#1a365d]">
           <div className="flex items-center gap-3 text-white/80 text-sm">
             <FaQuestionCircle />
             <span>Need Help?</span>

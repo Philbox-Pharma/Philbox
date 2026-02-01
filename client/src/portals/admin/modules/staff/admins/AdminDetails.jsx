@@ -1,7 +1,8 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-unused-vars */
 // src/portals/admin/modules/staff/admins/AdminDetails.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import {
   FaArrowLeft,
@@ -20,7 +21,7 @@ import {
   FaCheckCircle,
   FaTimesCircle,
 } from 'react-icons/fa';
-import { staffApi } from '../../../../../core/api/admin/adminApi';
+import { staffApi, rolesApi } from '../../../../../core/api/admin/adminApi';
 import ConfirmModal from '../../../../../shared/components/Modal/ConfirmModal';
 
 export default function AdminDetails() {
@@ -51,6 +52,10 @@ export default function AdminDetails() {
     }
   }, [location.state]);
 
+  useEffect(() => {
+    fetchAdminDetails();
+  }, [id]);
+
   const fetchAdminDetails = async () => {
     setLoading(true);
     setError(null);
@@ -73,9 +78,7 @@ export default function AdminDetails() {
       setLoading(false);
     }
   };
-  useEffect(() => {
-    fetchAdminDetails();
-  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleDelete = async () => {
     setActionLoading(true);
     try {
@@ -208,7 +211,7 @@ export default function AdminDetails() {
       {/* Profile Card */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
         {/* Cover Image */}
-        <div className="h-32 sm:h-40 bg-gradient-to-r from-[#1a365d] to-[#2c5282] relative">
+        <div className="h-32 sm:h-40 bg-linear-to-r from-[#1a365d] to-[#2c5282] relative">
           {adminCoverImg ? (
             <img
               src={adminCoverImg}
@@ -346,7 +349,7 @@ export default function AdminDetails() {
                     className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-lg bg-[#1a365d]/10 flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 rounded-lg bg-[#1a365d]/10 flex items-center justify-center shrink-0">
                         <FaCodeBranch className="text-[#1a365d]" />
                       </div>
                       <div className="min-w-0">
@@ -357,7 +360,7 @@ export default function AdminDetails() {
                       </div>
                     </div>
                     <span
-                      className={`px-2 py-1 rounded text-xs font-medium flex-shrink-0 ${
+                      className={`px-2 py-1 rounded text-xs font-medium shrink-0 ${
                         branchStatus === 'Active'
                           ? 'bg-green-100 text-green-700'
                           : 'bg-gray-100 text-gray-600'
@@ -465,19 +468,16 @@ export default function AdminDetails() {
 }
 
 // Sub-component - Responsive InfoCard
-const InfoCard = ({ icon, label, value, valueClass = '' }) => {
-  const Icon = icon;
-  return (
-    <div className="flex items-center gap-3">
-      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 flex-shrink-0">
-        <Icon />
-      </div>
-      <div className="min-w-0">
-        <p className="text-xs text-gray-500">{label}</p>
-        <p className={`font-medium text-gray-800 truncate ${valueClass}`}>
-          {value}
-        </p>
-      </div>
+const InfoCard = ({ icon: Icon, label, value, valueClass = '' }) => (
+  <div className="flex items-center gap-3">
+    <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 shrink-0">
+      <Icon />
     </div>
-  );
-};
+    <div className="min-w-0">
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className={`font-medium text-gray-800 truncate ${valueClass}`}>
+        {value}
+      </p>
+    </div>
+  </div>
+);

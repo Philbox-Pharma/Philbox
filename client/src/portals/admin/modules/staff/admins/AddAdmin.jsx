@@ -17,6 +17,9 @@ import {
   FaEyeSlash,
   FaCodeBranch,
   FaExclamationTriangle,
+  FaShieldAlt,
+  FaToggleOn,
+  FaToggleOff,
 } from 'react-icons/fa';
 import {
   FormInput,
@@ -52,12 +55,19 @@ export default function AddAdmin() {
     password: '',
     phone_number: '',
     category: 'branch-admin',
+    status: 'active',
+    isTwoFactorEnabled: false,
     branches_managed: [],
   });
 
   const categoryOptions = [
     { value: 'branch-admin', label: 'Branch Admin' },
     { value: 'super-admin', label: 'Super Admin' },
+  ];
+
+  const statusOptions = [
+    { value: 'active', label: 'Active' },
+    { value: 'suspended', label: 'Suspended' },
   ];
 
   // Fetch branches
@@ -263,6 +273,8 @@ export default function AddAdmin() {
       submitData.append('email', formData.email.trim().toLowerCase());
       submitData.append('password', formData.password);
       submitData.append('category', formData.category);
+      submitData.append('status', formData.status);
+      submitData.append('isTwoFactorEnabled', formData.isTwoFactorEnabled);
 
       if (formData.phone_number) {
         submitData.append('phone_number', formData.phone_number.trim());
@@ -522,6 +534,14 @@ export default function AddAdmin() {
                 required
               />
 
+              <FormSelect
+                label="Account Status"
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                options={statusOptions}
+              />
+
               {/* Password Field */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -587,6 +607,42 @@ export default function AddAdmin() {
               </div>
             </div>
           )}
+
+          {/* Security Settings */}
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <FaShieldAlt className="text-[#1a365d]" /> Security Settings
+            </h2>
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">
+                    Two-Factor Authentication
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Require OTP verification on login
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData(prev => ({
+                      ...prev,
+                      isTwoFactorEnabled: !prev.isTwoFactorEnabled,
+                    }))
+                  }
+                  className="flex items-center gap-2 text-2xl transition-colors"
+                >
+                  {formData.isTwoFactorEnabled ? (
+                    <FaToggleOn className="text-green-500" />
+                  ) : (
+                    <FaToggleOff className="text-gray-400" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
 
           {/* Info Box */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
