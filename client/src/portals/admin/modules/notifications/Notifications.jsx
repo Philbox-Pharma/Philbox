@@ -310,7 +310,7 @@ export default function Notifications() {
                 >
                   <div className="flex items-start gap-4">
                     {/* Icon */}
-                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
                       {getNotificationIcon(notif.type, notif.actionType)}
                     </div>
 
@@ -344,7 +344,7 @@ export default function Notifications() {
 
                     {/* Unread indicator */}
                     {!markedAsRead.has(notif.id) && (
-                      <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></div>
+                      <div className="w-2 h-2 bg-blue-500 rounded-full shrink-0 mt-2"></div>
                     )}
                   </div>
                 </Motion.div>
