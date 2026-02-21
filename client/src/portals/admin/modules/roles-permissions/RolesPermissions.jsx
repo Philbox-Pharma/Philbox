@@ -20,7 +20,7 @@ import {
   FaUserTie,
   FaUserFriends,
 } from 'react-icons/fa';
-import { rolesApi } from '../../../../core/api/admin/adminApi';
+import { rolesService } from '../../../../core/api/admin/roles.service';
 
 export default function RolesPermissions() {
   const [roles, setRoles] = useState([]);
@@ -42,8 +42,8 @@ export default function RolesPermissions() {
     setError(null);
     try {
       const [rolesRes, permissionsRes] = await Promise.all([
-        rolesApi.getAllRoles(),
-        rolesApi.getAllPermissions(),
+        rolesService.getAllRoles(),
+        rolesService.getAllPermissions(),
       ]);
 
       if (rolesRes.data) {
@@ -244,7 +244,7 @@ export default function RolesPermissions() {
         }
       });
 
-      await rolesApi.updateRolePermissions(role._id, finalPermissions);
+      await rolesService.updateRolePermissions(role._id, finalPermissions);
 
       // Update local state
       setRoles(prev =>

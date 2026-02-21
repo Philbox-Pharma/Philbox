@@ -15,7 +15,7 @@ import {
   FaPhone,
   FaStethoscope,
 } from 'react-icons/fa';
-import { doctorApi } from '../../../../core/api/admin/adminApi';
+import { doctorsService } from '../../../../core/api/admin/doctors.service';
 
 // Status Badge Component
 const StatusBadge = ({ status }) => {
@@ -64,7 +64,7 @@ const DoctorCard = ({ doctor }) => (
   <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5 hover:shadow-lg transition-all duration-300">
     <div className="flex items-start gap-4">
       {/* Avatar */}
-      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#1a365d] to-[#2c5282] flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
+      <div className="w-16 h-16 rounded-full bg-linear-to-br from-[#1a365d] to-[#2c5282] flex items-center justify-center text-white text-xl font-bold shrink-0">
         {doctor.name?.charAt(0) || 'D'}
       </div>
 
@@ -150,7 +150,7 @@ export default function DoctorList() {
     setError(null);
 
     try {
-      const response = await doctorApi.getAllDoctors({
+      const response = await doctorsService.getAllDoctors({
         page,
         limit,
         ...filters,
@@ -190,7 +190,7 @@ export default function DoctorList() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#1a365d] to-[#2c5282] rounded-2xl p-6 text-white">
+      <div className="bg-linear-to-r from-[#1a365d] to-[#2c5282] rounded-2xl p-6 text-white">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">

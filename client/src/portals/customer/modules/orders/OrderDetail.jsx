@@ -619,7 +619,7 @@ export default function OrderDetail() {
               Delivery Address
             </h2>
             <div className="flex gap-3">
-              <FaMapMarkerAlt className="text-blue-500 mt-1 flex-shrink-0" />
+              <FaMapMarkerAlt className="text-blue-500 mt-1 shrink-0" />
               <div>
                 <p className="font-medium text-gray-800">
                   {order.address.fullName}

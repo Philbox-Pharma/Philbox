@@ -561,7 +561,7 @@ For any queries, contact us at: support@philbox.pk
           className="bg-white rounded-xl shadow-lg border overflow-hidden mb-6"
         >
           {/* Receipt Header */}
-          <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 text-center">
+          <div className="bg-linear-to-r from-blue-500 to-blue-600 text-white p-4 text-center">
             <h2 className="text-xl font-bold">💊 Philbox Pharmacy</h2>
             <p className="text-blue-100 text-sm">Appointment Receipt</p>
           </div>

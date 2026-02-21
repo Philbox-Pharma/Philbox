@@ -1,10 +1,8 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from 'react';
-import {
-  salespersonTaskApi,
-  branchApi,
-  staffApi,
-} from '../../../../core/api/admin/adminApi';
+import { staffService } from '../../../../core/api/admin/staff.service';
+import { branchesService } from '../../../../core/api/admin/branches.service';
+import { salespersonTasksService } from '../../../../core/api/admin/salespersonsTasks.service';
 import {
   FaPlus,
   FaEdit,
@@ -57,10 +55,10 @@ export default function TaskManagement() {
     try {
       const [tasksRes, statsRes, branchesRes, salespersonsRes] =
         await Promise.all([
-          salespersonTaskApi.getTasks(filters),
-          salespersonTaskApi.getStatistics(filters),
-          branchApi.getAll(1, 100),
-          staffApi.getSalespersons(1, 100),
+          salespersonTasksService.getTasks(filters),
+          salespersonTasksService.getStatistics(filters),
+          branchesService.getAll(1, 100),
+          staffService.getSalespersons(1, 100),
         ]);
 
       if (tasksRes.status === 200) {
@@ -88,7 +86,7 @@ export default function TaskManagement() {
   const handleCreateTask = async e => {
     e.preventDefault();
     try {
-      const res = await salespersonTaskApi.createTask(formData);
+      const res = await salespersonTasksService.createTask(formData);
       if (res.status === 201) {
         alert('Task created successfully!');
         setShowModal(false);
@@ -103,7 +101,7 @@ export default function TaskManagement() {
   const handleUpdateTask = async e => {
     e.preventDefault();
     try {
-      const res = await salespersonTaskApi.updateTask(
+      const res = await salespersonTasksService.updateTask(
         selectedTask._id,
         formData
       );
@@ -121,7 +119,7 @@ export default function TaskManagement() {
   const handleDeleteTask = async taskId => {
     if (!confirm('Are you sure you want to delete this task?')) return;
     try {
-      const res = await salespersonTaskApi.deleteTask(taskId);
+      const res = await salespersonTasksService.deleteTask(taskId);
       if (res.status === 200) {
         alert('Task deleted successfully!');
         fetchData();

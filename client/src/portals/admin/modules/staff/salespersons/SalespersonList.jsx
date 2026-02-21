@@ -25,7 +25,7 @@ import {
 } from 'react-icons/fa';
 import DataTable from '../../../../../shared/components/DataTable/DataTable';
 import ConfirmModal from '../../../../../shared/components/Modal/ConfirmModal';
-import { staffApi } from '../../../../../core/api/admin/adminApi';
+import { staffService } from '../../../../../core/api/admin/staff.service';
 
 export default function SalespersonList() {
   const _navigate = useNavigate(); // Not currently used
@@ -76,7 +76,7 @@ export default function SalespersonList() {
       if (search) filters.search = search;
       if (statusFilter) filters.status = statusFilter;
 
-      const response = await staffApi.getSalespersons(page, limit, filters);
+      const response = await staffService.getSalespersons(page, limit, filters);
 
       if (response.status === 200 || response.data) {
         setSalespersons(response.data?.salespersons || []);
@@ -165,7 +165,7 @@ export default function SalespersonList() {
 
     setDeleteLoading(true);
     try {
-      const response = await staffApi.deleteSalesperson(selectedPerson._id);
+      const response = await staffService.deleteSalesperson(selectedPerson._id);
       if (response.status === 200 || response.data) {
         setSuccessMessage('Salesperson deleted successfully!');
         fetchSalespersons();

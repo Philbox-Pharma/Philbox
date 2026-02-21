@@ -20,7 +20,7 @@ import {
   FaEdit,
   FaExclamationTriangle,
 } from 'react-icons/fa';
-import { doctorApi } from '../../../../core/api/admin/adminApi';
+import { doctorsService } from '../../../../core/api/admin/doctors.service';
 
 // Status Badge
 const StatusBadge = ({ status }) => {
@@ -187,8 +187,8 @@ export default function DoctorDetails() {
 
       try {
         const [doctorRes, metricsRes] = await Promise.all([
-          doctorApi.getDoctorById(id),
-          doctorApi.getDoctorMetrics(id).catch(() => ({ data: null })),
+          doctorsService.getDoctorById(id),
+          doctorsService.getDoctorMetrics(id).catch(() => ({ data: null })),
         ]);
 
         setDoctor(doctorRes.data?.doctor || doctorRes.data);
@@ -209,7 +209,7 @@ export default function DoctorDetails() {
   const handleStatusChange = async data => {
     setStatusLoading(true);
     try {
-      await doctorApi.updateDoctorStatus(id, data);
+      await doctorsService.updateDoctorStatus(id, data);
       setDoctor(prev => ({ ...prev, accountStatus: data.status }));
       setStatusModal(false);
     } catch (err) {

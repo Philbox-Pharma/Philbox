@@ -1,17 +1,17 @@
 import ForgotPasswordForm from '../../../../shared/components/auth/ForgotPasswordForm';
-import { adminAuthApi } from '../../../../core/api/admin/auth';
+import { adminAuthApi } from '../../../../core/api/admin/auth.service';
 
 export default function ForgotPassword() {
-    const handleSubmit = async (email) => {
-        await adminAuthApi.forgotPassword(email);
-    };
+  const handleSubmit = async email => {
+    await adminAuthApi.forgotPassword(email);
+  };
 
-    return (
-        <ForgotPasswordForm
-            onSubmit={handleSubmit}
-            loginPath="/admin/login"
-            title="Admin - Forgot Password"
-            subtitle="Enter your admin email to reset password"
-        />
-    );
+  return (
+    <ForgotPasswordForm
+      onSubmit={handleSubmit}
+      loginPath="/admin/login"
+      title="Admin - Forgot Password"
+      subtitle="Enter your admin email to reset password"
+    />
+  );
 }

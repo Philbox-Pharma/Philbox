@@ -12,7 +12,7 @@ import {
   FaCheckCircle,
   FaExclamationTriangle,
 } from 'react-icons/fa';
-import { adminAuthApi } from '../../../../core/api/admin/adminApi';
+import { profileService } from '../../../../core/api/admin/profile.service';
 import { FormInput } from '../../../../shared/components/Form';
 
 export default function AdminProfile() {
@@ -85,7 +85,7 @@ export default function AdminProfile() {
         throw new Error('Admin ID not found. Please login again.');
       }
 
-      const response = await adminAuthApi.updateProfile(adminId, formData);
+      const response = await profileService.updateProfile(adminId, formData);
       if (response.status === 200 || response.success) {
         // If server returns updated admin object, merge it
         const updatedAdmin = response.data?.admin || response.data || {};
@@ -123,7 +123,7 @@ export default function AdminProfile() {
     setToggling2FA(true);
     try {
       const newValue = !admin.isTwoFactorEnabled;
-      const response = await adminAuthApi.update2FASettings(newValue);
+      const response = await profileService.update2FASettings(newValue);
 
       if (response.status === 200 || response.success) {
         const newAdminData = { ...admin, isTwoFactorEnabled: newValue };
@@ -180,7 +180,7 @@ export default function AdminProfile() {
         {/* Sidebar / Profile Card */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="h-24 bg-gradient-to-r from-[#1a365d] to-[#2f855a]"></div>
+            <div className="h-24 bg-linear-to-r from-[#1a365d] to-[#2f855a]"></div>
             <div className="px-6 pb-6 text-center -mt-12">
               <div className="relative inline-block">
                 <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-100 flex items-center justify-center shadow-md overflow-hidden relative">

@@ -1,16 +1,16 @@
 import VerifyEmail from '../../../../shared/components/auth/VerifyEmail';
-import { doctorAuthApi } from '../../../../core/api/doctor/auth';
+import { doctorAuthApi } from '../../../../core/api/doctor/auth.service';
 
 export default function DoctorVerifyEmail() {
-    const handleVerify = async (token) => {
-        await doctorAuthApi.verifyEmail(token);
-    };
+  const handleVerify = async token => {
+    await doctorAuthApi.verifyEmail(token);
+  };
 
-    return (
-        <VerifyEmail
-            onVerify={handleVerify}
-            loginPath="/doctor/login"
-            title="Doctor Email Verification"
-        />
-    );
+  return (
+    <VerifyEmail
+      onVerify={handleVerify}
+      loginPath="/doctor/login"
+      title="Doctor Email Verification"
+    />
+  );
 }
