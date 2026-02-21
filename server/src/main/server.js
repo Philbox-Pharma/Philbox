@@ -30,6 +30,7 @@ import doctorAuthRoutes from './modules/doctor/features/auth/routes/auth.routes.
 import doctorOnboardingRoutes from './modules/doctor/features/onboarding/routes/onboarding.routes.js';
 import doctorProfileRoutes from './modules/doctor/features/profile/routes/profile.routes.js';
 import doctorSlotsRoutes from './modules/doctor/features/slots/routes/slots.routes.js';
+import doctorAppointmentsRoutes from './modules/doctor/features/appointments/routes/appointments.routes.js';
 import passport from './modules/doctor/features/auth/config/passport.config.js';
 
 import customerAuthRoutes from './modules/customer/features/auth/routes/auth.routes.js';
@@ -37,6 +38,7 @@ import customerProfileRoutes from './modules/customer/features/profile/routes/pr
 import customerDashboardRoutes from './modules/customer/features/dashboard/routes/dashboard.routes.js';
 import customerSearchHistoryRoutes from './modules/customer/features/search_history/routes/searchHistory.routes.js';
 import customerRefillReminderRoutes from './modules/customer/features/refill_reminder/routes/refillReminder.routes.js';
+import customerAppointmentsRoutes from './modules/customer/features/appointments/routes/appointments.routes.js';
 
 import salespersonAuthRoutes from './modules/salesperson/features/auth/routes/auth.routes.js';
 import salespersonTaskManagementRoutes from './modules/salesperson/features/task_management/routes/task.routes.js';
@@ -157,11 +159,13 @@ app.use(`/api/${ROUTES.DOCTOR_AUTH}`, doctorAuthRoutes);
 app.use(`/api/doctor/onboarding`, doctorOnboardingRoutes);
 app.use(`/api/doctor/profile`, doctorProfileRoutes);
 app.use(`/api/doctor/slots`, doctorSlotsRoutes);
+app.use(`/api/doctor/appointments`, doctorAppointmentsRoutes);
 app.use(`/api/${ROUTES.CUSTOMER_AUTH}`, customerAuthRoutes);
 app.use(`/api/customer/profile`, customerProfileRoutes);
 app.use(`/api/customer/dashboard`, customerDashboardRoutes);
 app.use(`/api/customer/search-history`, customerSearchHistoryRoutes);
 app.use(`/api/customer/refill-reminders`, customerRefillReminderRoutes);
+app.use(`/api/customer/appointments`, customerAppointmentsRoutes);
 app.use(`/api/${ROUTES.SALESPERSON_AUTH}`, salespersonAuthRoutes);
 app.use(`/api/salesperson/tasks`, salespersonTaskManagementRoutes);
 
