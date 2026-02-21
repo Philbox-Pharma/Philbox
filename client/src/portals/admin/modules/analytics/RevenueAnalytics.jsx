@@ -8,7 +8,7 @@ import {
   FaArrowUp,
   FaArrowDown,
 } from 'react-icons/fa';
-import { revenueApi } from '../../../../core/api/admin/adminApi';
+import { revenueService } from '../../../../core/api/admin/revenue.service';
 
 // KPI Card Component
 
@@ -165,16 +165,16 @@ export default function RevenueAnalytics() {
       try {
         const [overviewRes, trendsRes, splitRes, topBranchesRes] =
           await Promise.all([
-            revenueApi
+            revenueService
               .getOverview(dateRange.startDate, dateRange.endDate)
               .catch(() => ({ data: null })),
-            revenueApi
+            revenueService
               .getTrends(dateRange.startDate, dateRange.endDate, 'daily')
               .catch(() => ({ data: [] })),
-            revenueApi
+            revenueService
               .getSplit(dateRange.startDate, dateRange.endDate)
               .catch(() => ({ data: [] })),
-            revenueApi
+            revenueService
               .getTopBranches(dateRange.startDate, dateRange.endDate, 5)
               .catch(() => ({ data: [] })),
           ]);
