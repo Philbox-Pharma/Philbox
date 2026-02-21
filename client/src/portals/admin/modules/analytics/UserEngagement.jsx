@@ -9,9 +9,7 @@ import {
   FaUserMd,
   FaSyncAlt,
 } from 'react-icons/fa';
-import adminApi from '../../../../core/api/admin/adminApi';
-
-const { userEngagement: userEngagementApi } = adminApi;
+import { userEngagementApi } from '../../../../core/api/admin/adminApi';
 
 export default function UserEngagement() {
   const [loading, setLoading] = useState(true);
@@ -96,7 +94,7 @@ export default function UserEngagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#38a169] to-[#2f855a] rounded-2xl p-6 text-white">
+      <div className="bg-linear-to-r from-[#38a169] to-[#2f855a] rounded-2xl p-6 text-white">
         <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
           <FaUsers />
           User Engagement Analytics

@@ -20,7 +20,8 @@ import {
   FormSelect,
   FormMultiSelect,
 } from '../../../../shared/components/Form';
-import { branchApi, staffApi } from '../../../../core/api/admin/adminApi';
+import { branchesService } from '../../../../core/api/admin/branches.service';
+import { staffService } from '../../../../core/api/admin/staff.service';
 import MapPickerModal from '../../../../shared/components/Map/MapPickerModal';
 
 export default function EditBranch() {
@@ -74,7 +75,7 @@ export default function EditBranch() {
       setLoading(true);
       try {
         // 1. Fetch Branch Data
-        const branchRes = await branchApi.getById(id);
+        const branchRes = await branchesService.getById(id);
         if (branchRes.success || branchRes.status === 200) {
           const branch = branchRes.data;
           const address = branch.address || branch.address_id || {};
@@ -107,7 +108,7 @@ export default function EditBranch() {
         }
 
         // 2. Fetch Staff Options
-        const adminsRes = await staffApi.getAdmins(1, 100);
+        const adminsRes = await staffService.getAdmins(1, 100);
         if (adminsRes.success || adminsRes.status === 200) {
           const admins = adminsRes.data?.admins || [];
           setAdminOptions(
@@ -119,7 +120,7 @@ export default function EditBranch() {
         }
 
         // Fetch Salespersons
-        const spRes = await staffApi.getSalespersons(1, 100);
+        const spRes = await staffService.getSalespersons(1, 100);
         if (spRes.success || spRes.status === 200) {
           const salespersons = spRes.data?.salespersons || [];
           setSalespersonOptions(
@@ -255,7 +256,7 @@ export default function EditBranch() {
 
       console.log('Sending Payload:', payload);
 
-      const response = await branchApi.update(id, payload); // Use .create() in AddBranch
+      const response = await branchesService.update(id, payload); // Use .create() in AddBranch
 
       if (response.success || response.status === 200) {
         navigate('/admin/branches', {

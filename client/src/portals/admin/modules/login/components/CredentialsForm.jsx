@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
-import { adminAuthApi } from '../../../../../core/api/admin/auth';
+import { adminAuthApi } from '../../../../../core/api/admin/auth.service';
 
 const CredentialsForm = ({ onOtpSent }) => {
   const navigate = useNavigate();

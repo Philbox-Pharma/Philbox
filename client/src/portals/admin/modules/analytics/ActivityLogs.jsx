@@ -11,9 +11,8 @@ import {
   FaChevronLeft,
   FaChevronRight,
 } from 'react-icons/fa';
-import adminApi from '../../../../core/api/admin/adminApi';
 
-const { activityLogs: activityLogsApi } = adminApi;
+import { activityLogsApi } from '../../../../core/api/admin/adminApi';
 
 // KPI Card
 

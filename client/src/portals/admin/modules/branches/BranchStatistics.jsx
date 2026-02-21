@@ -33,7 +33,8 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
-import { branchApi, revenueApi } from '../../../../core/api/admin/adminApi';
+import { branchesService } from '../../../../core/api/admin/branches.service';
+import { revenueService } from '../../../../core/api/admin/revenue.service';
 
 // Chart Colors
 const COLORS = {
@@ -90,7 +91,7 @@ export default function BranchStatistics() {
 
   const fetchBranchData = async () => {
     try {
-      const response = await branchApi.getAll(1, 1000);
+      const response = await branchesService.getAll(1, 1000);
       if (response.success || response.status === 200) {
         const allBranches = response.data?.branches || [];
         setBranches(allBranches);
@@ -116,12 +117,12 @@ export default function BranchStatistics() {
       // Fetch all revenue data in parallel
       const [trendsRes, splitRes, topRes, refundsRes, avgRes, paymentRes] =
         await Promise.all([
-          revenueApi.getTrends(startDate, endDate, period),
-          revenueApi.getSplit(startDate, endDate),
-          revenueApi.getTopBranches(startDate, endDate, 5),
-          revenueApi.getRefunds(startDate, endDate),
-          revenueApi.getAvgPerCustomer(startDate, endDate),
-          revenueApi.getPaymentMethods(startDate, endDate),
+          revenueService.getTrends(startDate, endDate, period),
+          revenueService.getSplit(startDate, endDate),
+          revenueService.getTopBranches(startDate, endDate, 5),
+          revenueService.getRefunds(startDate, endDate),
+          revenueService.getAvgPerCustomer(startDate, endDate),
+          revenueService.getPaymentMethods(startDate, endDate),
         ]);
 
       // Process Trends
