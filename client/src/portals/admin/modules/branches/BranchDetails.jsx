@@ -1,7 +1,7 @@
 // src/portals/admin/modules/branches/BranchDetails.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-// eslint-disable-next-line no-unused-vars
+
 import { motion } from 'framer-motion';
 import {
   FaArrowLeft,
@@ -309,7 +309,7 @@ export default function BranchDetails() {
       </div>
 
       {/* Cover Image */}
-      <div className="h-48 md:h-64 rounded-xl overflow-hidden shadow-lg bg-gradient-to-r from-[#1a365d] to-[#2c5282] relative">
+      <div className="h-48 md:h-64 rounded-xl overflow-hidden shadow-lg bg-linear-to-r from-[#1a365d] to-[#2c5282] relative">
         {branch?.cover_img_url ? (
           <img
             src={branch.cover_img_url}
@@ -365,7 +365,7 @@ export default function BranchDetails() {
             />
             {address.google_map_link && (
               <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0 text-blue-600">
+                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center shrink-0 text-blue-600">
                   <FaGlobe />
                 </div>
                 <div>
@@ -812,12 +812,12 @@ const InfoRow = ({ icon, label, value }) => {
   const Icon = icon;
   return (
     <div className="flex items-start gap-4">
-      <div className="w-10 h-10 rounded-lg bg-[#1a365d]/10 flex items-center justify-center flex-shrink-0 text-[#1a365d]">
+      <div className="w-10 h-10 rounded-lg bg-[#1a365d]/10 flex items-center justify-center shrink-0 text-[#1a365d]">
         <Icon />
       </div>
       <div>
         <p className="text-sm text-gray-500">{label}</p>
-        <p className="font-medium text-gray-800 break-words">{value}</p>
+        <p className="font-medium text-gray-800 wrap-break-word">{value}</p>
       </div>
     </div>
   );
