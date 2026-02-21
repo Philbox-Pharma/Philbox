@@ -366,7 +366,7 @@ export default function AddAdmin() {
         {/* Error Banner */}
         {errors.submit && (
           <div className="bg-red-50 p-4 text-red-700 border-b border-red-200 flex items-center gap-2">
-            <FaExclamationTriangle className="flex-shrink-0" />
+            <FaExclamationTriangle className="shrink-0" />
             <span>{errors.submit}</span>
           </div>
         )}
@@ -380,7 +380,7 @@ export default function AddAdmin() {
 
             {/* Cover Image */}
             <div className="relative mb-6">
-              <div className="h-32 sm:h-40 bg-gradient-to-r from-[#1a365d] to-[#2c5282] rounded-xl overflow-hidden">
+              <div className="h-32 sm:h-40 bg-linear-to-r from-[#1a365d] to-[#2c5282] rounded-xl overflow-hidden">
                 {coverPreview ? (
                   <img
                     src={coverPreview}
