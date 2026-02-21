@@ -451,3 +451,293 @@ export const TEST_REFILL_REMINDER_TEMPLATE = `<!DOCTYPE html>
   </table>
 </body>
 </html>`;
+
+// Appointment Request Templates
+export const APPOINTMENT_REQUEST_SUBMITTED_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Request Received</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { background-color: #007bff; color: #ffffff; padding: 20px; text-align: center; }
+        .content { padding: 30px 20px; }
+        .appointment-details { background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; }
+        .detail-row { display: flex; justify-content: space-between; margin: 10px 0; }
+        .detail-label { font-weight: bold; color: #333; }
+        .detail-value { color: #666; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #999999; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <table class="container" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td class="header">
+                <h1>Appointment Request Received</h1>
+            </td>
+        </tr>
+        <tr>
+            <td class="content">
+                <p style="font-size:16px; color:#333;">Hello {{PATIENT_NAME}},</p>
+                <p style="color:#666; line-height:1.6;">Your appointment request has been successfully submitted. We have notified {{DOCTOR_NAME}}, who will review your request shortly.</p>
+
+                <div class="appointment-details">
+                    <h3 style="margin-top:0; color:#333;">Appointment Details</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">Doctor:</span>
+                        <span class="detail-value">{{DOCTOR_NAME}}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Type:</span>
+                        <span class="detail-value">{{APPOINTMENT_TYPE}}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Preferred Date:</span>
+                        <span class="detail-value">{{PREFERRED_DATE}}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Consultation Fee:</span>
+                        <span class="detail-value">PKR {{CONSULTATION_FEE}}</span>
+                    </div>
+                </div>
+
+                <p style="color:#666; line-height:1.6;">You will receive a notification once the doctor responds to your request. Please keep an eye on your email and account dashboard.</p>
+            </td>
+        </tr>
+        <tr>
+            <td class="footer">
+                <p>Thank you for choosing Philbox for your healthcare needs.</p>
+                <p>&copy; ${CURRENT_YEAR} Philbox. All rights reserved.</p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+export const APPOINTMENT_REQUEST_ACCEPTED_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Request Accepted</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { background-color: #28a745; color: #ffffff; padding: 20px; text-align: center; }
+        .content { padding: 30px 20px; }
+        .success-badge { background-color: #28a745; color: white; padding: 10px 20px; border-radius: 20px; display: inline-block; margin-bottom: 20px; }
+        .appointment-details { background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; }
+        .detail-row { display: flex; justify-content: space-between; margin: 10px 0; }
+        .detail-label { font-weight: bold; color: #333; }
+        .detail-value { color: #666; }
+        .btn { display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff !important; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #999999; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <table class="container" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td class="header">
+                <h1>Great News! Appointment Confirmed</h1>
+            </td>
+        </tr>
+        <tr>
+            <td class="content">
+                <div class="success-badge">✓ Appointment Accepted</div>
+
+                <p style="font-size:16px; color:#333;">Hello {{PATIENT_NAME}},</p>
+                <p style="color:#666; line-height:1.6;">{{DOCTOR_NAME}} has accepted your appointment request. Your consultation is now confirmed!</p>
+
+                <div class="appointment-details">
+                    <h3 style="margin-top:0; color:#333;">Confirmed Appointment Details</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">Doctor:</span>
+                        <span class="detail-value">{{DOCTOR_NAME}}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Type:</span>
+                        <span class="detail-value">{{APPOINTMENT_TYPE}}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Date & Time:</span>
+                        <span class="detail-value">{{APPOINTMENT_DATE}}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Consultation Fee:</span>
+                        <span class="detail-value">PKR {{CONSULTATION_FEE}}</span>
+                    </div>
+                    {{#if NOTES}}
+                    <div class="detail-row">
+                        <span class="detail-label">Doctor's Notes:</span>
+                        <span class="detail-value">{{NOTES}}</span>
+                    </div>
+                    {{/if}}
+                </div>
+
+                <p style="color:#666; line-height:1.6;">Please arrive on time or log in to the online consultation platform a few minutes early. If you need to reschedule or cancel, please do so at least 24 hours in advance.</p>
+
+                <a href="{{DASHBOARD_LINK}}" class="btn">View in Dashboard</a>
+            </td>
+        </tr>
+        <tr>
+            <td class="footer">
+                <p>We look forward to serving your healthcare needs.</p>
+                <p>&copy; ${CURRENT_YEAR} Philbox. All rights reserved.</p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+export const APPOINTMENT_REQUEST_REJECTED_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Request Update</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { background-color: #dc3545; color: #ffffff; padding: 20px; text-align: center; }
+        .content { padding: 30px 20px; }
+        .rejection-badge { background-color: #dc3545; color: white; padding: 10px 20px; border-radius: 20px; display: inline-block; margin-bottom: 20px; }
+        .reason-box { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .appointment-details { background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; }
+        .detail-row { display: flex; justify-content: space-between; margin: 10px 0; }
+        .detail-label { font-weight: bold; color: #333; }
+        .detail-value { color: #666; }
+        .btn { display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff !important; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #999999; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <table class="container" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td class="header">
+                <h1>Appointment Request Update</h1>
+            </td>
+        </tr>
+        <tr>
+            <td class="content">
+                <div class="rejection-badge">Request Not Accepted</div>
+
+                <p style="font-size:16px; color:#333;">Hello {{PATIENT_NAME}},</p>
+                <p style="color:#666; line-height:1.6;">We regret to inform you that {{DOCTOR_NAME}} is unable to accept your appointment request at this time.</p>
+
+                <div class="reason-box">
+                    <strong style="color:#856404;">Reason:</strong>
+                    <p style="color:#856404; margin:10px 0 0 0;">{{REJECTION_REASON}}</p>
+                </div>
+
+                <div class="appointment-details">
+                    <h3 style="margin-top:0; color:#333;">Request Details</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">Doctor:</span>
+                        <span class="detail-value">{{DOCTOR_NAME}}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Requested Date:</span>
+                        <span class="detail-value">{{REQUESTED_DATE}}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Type:</span>
+                        <span class="detail-value">{{APPOINTMENT_TYPE}}</span>
+                    </div>
+                </div>
+
+                <p style="color:#666; line-height:1.6;">Don't worry! You can:</p>
+                <ul style="color:#666; line-height:1.8;">
+                    <li>Try booking with another available doctor</li>
+                    <li>Request a different date/time slot</li>
+                    <li>Contact our support team for assistance</li>
+                </ul>
+
+                <a href="{{FIND_DOCTORS_LINK}}" class="btn">Find Other Doctors</a>
+            </td>
+        </tr>
+        <tr>
+            <td class="footer">
+                <p>We're here to help you find the right healthcare provider.</p>
+                <p>&copy; ${CURRENT_YEAR} Philbox. All rights reserved.</p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+export const NEW_APPOINTMENT_REQUEST_NOTIFICATION_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Appointment Request</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { background-color: #007bff; color: #ffffff; padding: 20px; text-align: center; }
+        .content { padding: 30px 20px; }
+        .new-badge { background-color: #ff6b6b; color: white; padding: 10px 20px; border-radius: 20px; display: inline-block; margin-bottom: 20px; }
+        .patient-details { background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; }
+        .detail-row { display: flex; justify-content: space-between; margin: 10px 0; }
+        .detail-label { font-weight: bold; color: #333; }
+        .detail-value { color: #666; }
+        .reason-box { background-color: #e7f3ff; border-left: 4px solid #007bff; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .btn { display: inline-block; padding: 12px 24px; background-color: #28a745; color: #ffffff !important; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #999999; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <table class="container" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td class="header">
+                <h1>New Appointment Request</h1>
+            </td>
+        </tr>
+        <tr>
+            <td class="content">
+                <div class="new-badge">🔔 New Request</div>
+
+                <p style="font-size:16px; color:#333;">Hello Dr. {{DOCTOR_NAME}},</p>
+                <p style="color:#666; line-height:1.6;">You have received a new appointment request from a patient. Please review the details and respond at your earliest convenience.</p>
+
+                <div class="patient-details">
+                    <h3 style="margin-top:0; color:#333;">Patient Information</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">Patient Name:</span>
+                        <span class="detail-value">{{PATIENT_NAME}}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Type:</span>
+                        <span class="detail-value">{{APPOINTMENT_TYPE}}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Preferred Date:</span>
+                        <span class="detail-value">{{PREFERRED_DATE}}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Requested:</span>
+                        <span class="detail-value">{{REQUEST_DATE}}</span>
+                    </div>
+                </div>
+
+                <div class="reason-box">
+                    <strong style="color:#004085;">Consultation Reason:</strong>
+                    <p style="color:#004085; margin:10px 0 0 0;">{{CONSULTATION_REASON}}</p>
+                </div>
+
+                <p style="color:#666; line-height:1.6;">Please log in to your dashboard to accept or decline this request. Timely responses help provide better patient care.</p>
+
+                <a href="{{DASHBOARD_LINK}}" class="btn">Review Request</a>
+            </td>
+        </tr>
+        <tr>
+            <td class="footer">
+                <p>Thank you for being part of the Philbox healthcare network.</p>
+                <p>&copy; ${CURRENT_YEAR} Philbox. All rights reserved.</p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;

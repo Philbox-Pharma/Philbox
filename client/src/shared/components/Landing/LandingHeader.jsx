@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 // src/shared/components/Landing/LandingHeader.jsx
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';

@@ -59,7 +59,7 @@ const StatusBadge = ({ status }) => {
 };
 
 // Stat Card Component
-// eslint-disable-next-line no-unused-vars
+
 const StatCard = ({ icon: Icon, label, value, color, subtext }) => (
   <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5">
     <div className="flex items-center gap-4">
@@ -263,7 +263,7 @@ export default function DoctorDetails() {
   return (
     <div className="space-y-6">
       {/* Header Card */}
-      <div className="bg-gradient-to-r from-[#1a365d] to-[#2c5282] rounded-2xl p-6 text-white">
+      <div className="bg-linear-to-r from-[#1a365d] to-[#2c5282] rounded-2xl p-6 text-white">
         <Link
           to="/admin/doctors"
           className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 text-sm"
@@ -274,7 +274,7 @@ export default function DoctorDetails() {
 
         <div className="flex flex-col md:flex-row md:items-center gap-6">
           {/* Avatar */}
-          <div className="w-24 h-24 rounded-2xl bg-white/20 flex items-center justify-center text-4xl font-bold flex-shrink-0">
+          <div className="w-24 h-24 rounded-2xl bg-white/20 flex items-center justify-center text-4xl font-bold shrink-0">
             {doctor.name?.charAt(0) || 'D'}
           </div>
 

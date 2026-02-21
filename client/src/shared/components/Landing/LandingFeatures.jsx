@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 // src/shared/components/Landing/LandingFeatures.jsx
 import { motion } from 'framer-motion';
 import { FaCheck } from 'react-icons/fa';

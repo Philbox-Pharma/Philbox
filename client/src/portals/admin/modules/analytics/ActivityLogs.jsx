@@ -16,7 +16,7 @@ import adminApi from '../../../../core/api/admin/adminApi';
 const { activityLogs: activityLogsApi } = adminApi;
 
 // KPI Card
-// eslint-disable-next-line no-unused-vars
+
 const KPICard = ({ title, value, icon: Icon, color, loading }) => (
   <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5">
     <div className="flex items-center justify-between">
@@ -67,7 +67,7 @@ const ActivityBadge = ({ type }) => {
 // Timeline Item
 const TimelineItem = ({ log }) => (
   <div className="flex gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-    <div className="w-10 h-10 rounded-full bg-[#1a365d] flex items-center justify-center text-white flex-shrink-0">
+    <div className="w-10 h-10 rounded-full bg-[#1a365d] flex items-center justify-center text-white shrink-0">
       <FaUser />
     </div>
     <div className="flex-1 min-w-0">
@@ -163,7 +163,7 @@ export default function ActivityLogs() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#805ad5] to-[#6b46c1] rounded-2xl p-6 text-white">
+      <div className="bg-linear-to-r from-[#805ad5] to-[#6b46c1] rounded-2xl p-6 text-white">
         <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
           <FaHistory />
           Activity Logs

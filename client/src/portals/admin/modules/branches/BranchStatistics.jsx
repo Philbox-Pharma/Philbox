@@ -1,7 +1,7 @@
 // src/portals/admin/modules/branches/BranchStatistics.jsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-// eslint-disable-next-line no-unused-vars
+
 import { motion } from 'framer-motion';
 import {
   FaCodeBranch,
@@ -613,7 +613,6 @@ export default function BranchStatistics() {
 
 // ============ SUB COMPONENTS ============
 
-// eslint-disable-next-line no-unused-vars
 const StatCard = ({ icon: IconComponent, label, value, color, bg }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
@@ -632,7 +631,6 @@ const StatCard = ({ icon: IconComponent, label, value, color, bg }) => (
   </motion.div>
 );
 
-// eslint-disable-next-line no-unused-vars
 const KPICard = ({ icon: IconComponent, label, value, subValue, color }) => {
   const colorMap = {
     green: { bg: 'bg-green-100', text: 'text-green-600' },
@@ -664,7 +662,6 @@ const KPICard = ({ icon: IconComponent, label, value, subValue, color }) => {
   );
 };
 
-// eslint-disable-next-line no-unused-vars
 const BranchStatusList = ({ title, branches, icon: IconComponent, color }) => (
   <motion.div
     initial={{ opacity: 0 }}

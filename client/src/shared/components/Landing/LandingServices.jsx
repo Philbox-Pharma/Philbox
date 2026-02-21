@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 // src/shared/components/Landing/LandingServices.jsx
 import { motion } from 'framer-motion';
 

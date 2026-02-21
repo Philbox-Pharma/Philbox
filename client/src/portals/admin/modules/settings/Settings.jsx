@@ -92,7 +92,6 @@ export default function Settings() {
   };
 
   const SettingsCard = ({
-    // eslint-disable-next-line no-unused-vars
     Icon,
     title,
     description,
@@ -106,7 +105,7 @@ export default function Settings() {
     >
       <div className="flex items-start gap-4 mb-4">
         <div
-          className={`w-12 h-12 rounded-xl bg-${color}-100 flex items-center justify-center flex-shrink-0`}
+          className={`w-12 h-12 rounded-xl bg-${color}-100 flex items-center justify-center shrink-0`}
         >
           <Icon className={`text-xl text-${color}-600`} />
         </div>

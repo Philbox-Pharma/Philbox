@@ -1,6 +1,7 @@
 // src/portals/admin/modules/branches/components/AssignAdminsModal.jsx
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FaTimes, FaUserShield, FaSpinner, FaCheck } from 'react-icons/fa';
 import { branchApi, staffApi } from '../../../../../core/api/admin/adminApi';
 
@@ -113,7 +114,7 @@ export default function AssignAdminsModal({
           >
             <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gradient-to-r from-[#1a365d] to-[#2c5282] text-white">
+              <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-linear-to-r from-[#1a365d] to-[#2c5282] text-white">
                 <div>
                   <h3 className="text-lg font-semibold flex items-center gap-2">
                     <FaUserShield />
