@@ -42,17 +42,19 @@ export default function AdminProfile() {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      // Read from localStorage (saved during login)
-      const storedAdmin = localStorage.getItem('adminData');
-      if (storedAdmin) {
-        const data = JSON.parse(storedAdmin);
+      // Fetch fresh profile data from backend
+      const response = await profileService.getProfile();
+      if (response.status === 200 || response.success) {
+        const data = response.data?.admin || response.data;
         setAdmin(data);
         setProfileData({
           name: data.name || data.fullName,
           phone_number: data.phone_number || data.contactNumber,
         });
+        // Update localStorage with fresh data
+        localStorage.setItem('adminData', JSON.stringify(data));
       } else {
-        throw new Error('No profile data found. Please login again.');
+        throw new Error(response.message || 'Could not load profile data');
       }
     } catch (err) {
       console.error('Fetch Profile Error:', err);
@@ -68,34 +70,34 @@ export default function AdminProfile() {
     setSavingProfile(true);
     setError(null);
     try {
-      // Build FormData with fields matching backend DTO
-      const formData = new FormData();
-      formData.append('name', profileData.name);
-      if (profileData.phone_number) {
-        formData.append('phone_number', profileData.phone_number);
-      }
+      let response;
 
+      // If there's a profile picture, upload it separately first
       if (selectedFile) {
-        formData.append('profile_img', selectedFile);
+        const pictureResponse =
+          await profileService.uploadProfilePicture(selectedFile);
+        if (pictureResponse.status === 200 || pictureResponse.success) {
+          // Update admin state with new profile picture URL
+          const newProfileImgUrl = pictureResponse.data?.profile_img_url;
+          if (newProfileImgUrl) {
+            setAdmin(prev => ({ ...prev, profile_img_url: newProfileImgUrl }));
+          }
+        }
       }
 
-      // Pass admin ID to the API
-      const adminId = admin._id || admin.id;
-      if (!adminId) {
-        throw new Error('Admin ID not found. Please login again.');
-      }
+      // Update profile info (name, phone_number)
+      response = await profileService.updateProfile({
+        name: profileData.name,
+        phone_number: profileData.phone_number,
+      });
 
-      const response = await profileService.updateProfile(adminId, formData);
       if (response.status === 200 || response.success) {
-        // If server returns updated admin object, merge it
+        // Get updated admin object from response
         const updatedAdmin = response.data?.admin || response.data || {};
 
         const newAdminData = {
           ...admin,
-          name: profileData.name,
-          phone_number: profileData.phone_number,
-          profile_img_url:
-            updatedAdmin.profile_img_url || admin.profile_img_url,
+          ...updatedAdmin,
         };
 
         setAdmin(newAdminData);
