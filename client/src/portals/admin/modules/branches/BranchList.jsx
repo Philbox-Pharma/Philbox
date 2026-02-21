@@ -359,6 +359,65 @@ export default function BranchList() {
         actions={renderActions}
         emptyMessage="No branches found."
         onRowClick={row => navigate(`/admin/branches/${row._id}`)}
+        mobileCardRender={(row, actions) => (
+          <div className="p-4 space-y-3">
+            <div className="flex justify-between items-start">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#1a365d]/10 flex items-center justify-center">
+                  <FaCodeBranch className="text-[#1a365d]" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800 break-all">
+                    {row.name}
+                  </p>
+                  <p className="text-xs text-gray-500">{row.code}</p>
+                </div>
+              </div>
+              <span
+                className={`px-2 py-1 rounded-full text-xs font-medium shrink-0 ${row.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+              >
+                {row.status}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+              <div className="flex items-center gap-2">
+                <FaPhone className="text-gray-400 shrink-0" />
+                <span className="break-all">
+                  {row.phone || row.contact_number || 'Not set'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <FaMapMarkerAlt className="text-gray-400 shrink-0" />
+                <span className="line-clamp-2">
+                  {typeof row.address === 'object'
+                    ? [
+                        row.address?.street,
+                        row.address?.town,
+                        row.address?.city,
+                        row.address?.province,
+                      ]
+                        .filter(Boolean)
+                        .join(', ')
+                    : typeof row.address_id === 'object'
+                      ? [
+                          row.address_id?.street,
+                          row.address_id?.town,
+                          row.address_id?.city,
+                          row.address_id?.province,
+                        ]
+                          .filter(Boolean)
+                          .join(', ')
+                      : 'Location not set'}
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-gray-100 flex justify-end">
+              {actions && actions(row)}
+            </div>
+          </div>
+        )}
       />
 
       {/* Modals */}

@@ -23,6 +23,7 @@ import {
   FaUsers,
   FaUserMd,
   FaUserFriends,
+  FaTimes,
 } from 'react-icons/fa';
 import {
   adminAuthApi,
@@ -34,6 +35,7 @@ export default function AdminHeader({ toggleSidebar, admin }) {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -192,7 +194,7 @@ export default function AdminHeader({ toggleSidebar, admin }) {
         Date.now() - 7 * 24 * 60 * 60 * 1000
       ).toISOString(); // Last 7 days
 
-      const response = await activityLogsApi.getTimeline({
+      const response = await activityLogsApi.getSuspiciousActivities({
         startDate,
         endDate,
         limit: 10,
@@ -353,24 +355,39 @@ export default function AdminHeader({ toggleSidebar, admin }) {
 
         {/* Center - Search Bar */}
         <div
-          className="hidden md:flex flex-1 max-w-md mx-8 relative"
+          className={`md:flex flex-1 max-w-md mx-8 relative ${
+            mobileSearchOpen
+              ? 'flex absolute inset-x-0 top-0 h-full bg-[#1a365d] px-4 items-center z-50'
+              : 'hidden'
+          }`}
           ref={searchRef}
         >
-          <div className="relative w-full">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" />
-            <input
-              type="text"
-              placeholder="Search branches, staff, customers..."
-              value={searchQuery}
-              onChange={handleSearchInputChange}
-              onKeyDown={handleSearchKeyDown}
-              onFocus={() =>
-                searchQuery.length >= 2 && setShowSearchResults(true)
-              }
-              className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#d69e2e] focus:border-transparent"
-            />
-            {searchLoading && (
-              <FaSpinner className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 animate-spin" />
+          <div className="relative w-full flex items-center gap-2">
+            <div className="relative w-full">
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" />
+              <input
+                type="text"
+                placeholder="Search branches, staff, customers..."
+                value={searchQuery}
+                onChange={handleSearchInputChange}
+                onKeyDown={handleSearchKeyDown}
+                onFocus={() =>
+                  searchQuery.length >= 2 && setShowSearchResults(true)
+                }
+                autoFocus={mobileSearchOpen}
+                className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#d69e2e] focus:border-transparent"
+              />
+              {searchLoading && (
+                <FaSpinner className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 animate-spin" />
+              )}
+            </div>
+            {mobileSearchOpen && (
+              <button
+                onClick={() => setMobileSearchOpen(false)}
+                className="p-2 ml-2 text-white/70 hover:text-white"
+              >
+                <FaTimes />
+              </button>
             )}
           </div>
 
@@ -429,6 +446,13 @@ export default function AdminHeader({ toggleSidebar, admin }) {
 
         {/* Right Side - Actions */}
         <div className="flex items-center gap-2">
+          {/* Mobile Search Toggle */}
+          <button
+            onClick={() => setMobileSearchOpen(true)}
+            className="p-2 rounded-lg hover:bg-white/10 transition-colors md:hidden"
+          >
+            <FaSearch className="text-xl" />
+          </button>
           {/* Notifications */}
           <div className="relative" ref={notificationRef}>
             <button
@@ -452,7 +476,7 @@ export default function AdminHeader({ toggleSidebar, admin }) {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 10 }}
-                  className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden"
+                  className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-80 sm:max-w-96 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden"
                 >
                   {/* Header */}
                   <div className="p-4 bg-[#1a365d] text-white flex items-center justify-between">

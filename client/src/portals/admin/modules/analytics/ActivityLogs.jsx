@@ -77,10 +77,10 @@ const TimelineItem = ({ log }) => (
         </p>
         <ActivityBadge type={log.action || log.actionType} />
       </div>
-      <p className="text-sm text-gray-600 mt-1">
+      <p className="text-sm text-gray-600 mt-1 break-words">
         {log.description || log.details || 'Activity performed'}
       </p>
-      <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+      <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-gray-400">
         <span>
           {log.createdAt
             ? new Date(log.createdAt).toLocaleString()
@@ -176,9 +176,9 @@ export default function ActivityLogs() {
       {/* Date Filter */}
       <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4">
         <div className="flex flex-wrap items-center gap-4">
-          <FaFilter className="text-gray-400" />
-          <div className="flex items-center gap-2">
-            <FaCalendarAlt className="text-gray-400" />
+          <FaFilter className="text-gray-400 shrink-0" />
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
+            <FaCalendarAlt className="text-gray-400 shrink-0" />
             <input
               type="date"
               value={dateRange.startDate}

@@ -267,14 +267,6 @@ export default function CustomerLanding() {
             >
               Login
             </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/register')}
-              className="px-6 py-2 rounded-full font-medium bg-[#4FA64F] text-white hover:bg-[#3d8c3d] transition-all"
-            >
-              Get Started
-            </motion.button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -316,18 +308,9 @@ export default function CustomerLanding() {
                       navigate('/login');
                       setMobileMenuOpen(false);
                     }}
-                    className="flex-1 py-3 rounded-full border-2 border-[#003399] text-[#003399] font-medium"
+                    className="flex-1 py-3 rounded-full bg-[#003399] text-white font-medium"
                   >
                     Login
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigate('/register');
-                      setMobileMenuOpen(false);
-                    }}
-                    className="flex-1 py-3 rounded-full bg-[#4FA64F] text-white font-medium"
-                  >
-                    Sign Up
                   </button>
                 </div>
               </div>
@@ -431,7 +414,7 @@ export default function CustomerLanding() {
             </motion.p>
 
             <motion.div
-              className="flex flex-wrap justify-center gap-4 mb-12"
+              className="flex justify-center mb-12"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
@@ -447,15 +430,6 @@ export default function CustomerLanding() {
               >
                 Get Started Free
                 <FaArrowRight />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => navigate('/doctor/login')}
-                className="px-8 py-4 bg-white/10 backdrop-blur-sm border-2 border-white text-white rounded-full font-bold text-lg hover:bg-white hover:text-[#003399] transition-all flex items-center gap-2"
-              >
-                <FaUserMd />
-                I'm a Doctor
               </motion.button>
             </motion.div>
 
@@ -565,7 +539,7 @@ export default function CustomerLanding() {
               <span className="text-[#003399] font-semibold text-sm uppercase tracking-wider">
                 For Doctors
               </span>
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mt-2 mb-6">
+              <h2 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-gray-800 mt-2 mb-6 tracking-tight">
                 Grow Your Practice{' '}
                 <span className="text-[#003399]">Digitally</span>
               </h2>
@@ -593,22 +567,7 @@ export default function CustomerLanding() {
               </ul>
 
               <div className="flex flex-wrap gap-4">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigate('/doctor/register')}
-                  className="px-8 py-3 bg-[#003399] text-white rounded-full font-semibold hover:bg-[#002277] transition-all shadow-lg hover:shadow-xl"
-                >
-                  Register as Doctor
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigate('/doctor/login')}
-                  className="px-8 py-3 border-2 border-[#003399] text-[#003399] rounded-full font-semibold hover:bg-[#003399] hover:text-white transition-all"
-                >
-                  Doctor Login
-                </motion.button>
+                {/* buttons removed based on bug specification */}
               </div>
             </motion.div>
 
@@ -917,7 +876,7 @@ export default function CustomerLanding() {
                   <img
                     src="/Philbox.PNG"
                     alt="Philbox"
-                    className="h-20 w-auto"
+                    className="h-10 md:h-16 w-auto object-contain"
                     onError={e => {
                       e.target.onerror = null;
                       e.target.src = '/vite.svg';
@@ -1024,7 +983,7 @@ export default function CustomerLanding() {
           <div className="max-w-7xl mx-auto px-6 py-6">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-gray-500 text-sm text-center md:text-left">
-                © 2025{' '}
+                © {new Date().getFullYear()}{' '}
                 <span className="text-[#4FA64F]">Philbox Pharmaceuticals</span>.
                 All rights reserved.
               </p>

@@ -102,7 +102,7 @@ export default function LandingFeatures({
       whileInView="visible"
       viewport={{ once: true }}
       variants={imageSide === 'right' ? fadeInRight : fadeInLeft}
-      className="relative"
+      className="relative flex flex-col gap-6"
     >
       <div
         className="w-full aspect-square max-w-lg mx-auto rounded-3xl shadow-2xl flex items-center justify-center relative overflow-hidden"
@@ -116,25 +116,46 @@ export default function LandingFeatures({
           <ImageIcon className="text-white/90 text-[120px] md:text-[180px]" />
         )}
 
-        {floatingStats.map((stat, i) => (
-          <motion.div
-            key={i}
-            className={`absolute bg-white rounded-2xl p-4 shadow-lg ${
-              i === 0 ? 'top-8 right-8' : 'bottom-8 left-8'
-            }`}
-            animate={{ y: [0, i === 0 ? -10 : 10, 0] }}
-            transition={{ duration: 3, repeat: Infinity, delay: i * 0.5 }}
-          >
-            <p
-              className="font-bold text-lg"
-              style={{ color: i === 0 ? primaryColor : secondaryColor }}
+        <div className="hidden md:block">
+          {floatingStats.map((stat, i) => (
+            <motion.div
+              key={i}
+              className={`absolute bg-white rounded-2xl p-4 shadow-lg ${
+                i === 0 ? 'top-8 right-8' : 'bottom-8 left-8'
+              }`}
+              animate={{ y: [0, i === 0 ? -10 : 10, 0] }}
+              transition={{ duration: 3, repeat: Infinity, delay: i * 0.5 }}
             >
-              {stat.value}
-            </p>
-            <p className="text-gray-500 text-sm">{stat.label}</p>
-          </motion.div>
-        ))}
+              <p
+                className="font-bold text-lg"
+                style={{ color: i === 0 ? primaryColor : secondaryColor }}
+              >
+                {stat.value}
+              </p>
+              <p className="text-gray-500 text-sm">{stat.label}</p>
+            </motion.div>
+          ))}
+        </div>
       </div>
+
+      {floatingStats.length > 0 && (
+        <div className="flex md:hidden flex-wrap justify-center gap-4">
+          {floatingStats.map((stat, i) => (
+            <div
+              key={i}
+              className="bg-white rounded-2xl p-4 shadow-sm flex-1 min-w-[140px] text-center border border-gray-100"
+            >
+              <p
+                className="font-bold text-2xl mb-1"
+                style={{ color: i === 0 ? primaryColor : secondaryColor }}
+              >
+                {stat.value}
+              </p>
+              <p className="text-gray-500 text-sm font-medium">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </motion.div>
   );
 

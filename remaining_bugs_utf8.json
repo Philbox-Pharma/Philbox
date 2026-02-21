@@ -1,0 +1,205 @@
+[
+  {
+    "Bug ID": "A-001",
+    "Page / Module": "Notifications Dropdown on Admin Portal (Header)",
+    "Description": "The minimum small screen size is 280 and the notifications dropdown is out of sight on that screen size. Its not responsive",
+    "Expected Behavior": "must be visible within the screen size",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-002",
+    "Page / Module": "Branch Management (All Branches Page) of Admin",
+    "Description": "The minimum small screen size is 280 and the Tables on Branch Management page are making this page irresponsive. Its not responsive",
+    "Expected Behavior": "must be visible within the screen size",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-003",
+    "Page / Module": "Branch Management (Side Bar Page) of Admin",
+    "Description": "The sidebar becomes short highted on 280 width and 500 height",
+    "Expected Behavior": "hight of sidebar must be full",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-004",
+    "Page / Module": "Branch Management (Side Bar Page) of Admin",
+    "Description": "The sidebar is showing both All Branches and Add Branch buttons as selected",
+    "Expected Behavior": "only selected page must be hovered",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-005",
+    "Page / Module": "Branch Management (Add New Branch Page) of Admin",
+    "Description": "The form is making this page irresponsive",
+    "Expected Behavior": "form must be within the screen",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-006",
+    "Page / Module": "Branch Management (Statistics Page) of Admin",
+    "Description": "The div after Revenue analytics heading must show the dates in centered alligned manner",
+    "Expected Behavior": "must be center alligned",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-007 ",
+    "Page / Module": "Branch Management (Statistics Page) of Admin",
+    "Description": "The fontsize of the heading Branch Statistics & Revenue Analytics must be adjustable in accordance with the width",
+    "Expected Behavior": "font size must be small for small screens",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-008",
+    "Page / Module": "Notifications Dropdown on Admin Portal (Header)",
+    "Description": "The notifications Dropdown in the admin header must call getSuspiciousActivities function instead of getTimeline function as you have defined in the adminApi.js the purpose of showing suspicious activities as notifications is to notify them about any suspicious activity if any happened not to notify them about all notifications in a specific timeline",
+    "Expected Behavior": "notifications dropdown must show suspicious activities to the super admin",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-009",
+    "Page / Module": "All Admins Page",
+    "Description": "The numbers inside the 3 divs (above the Branch admins cards are getting outside those divs on small screens",
+    "Expected Behavior": "on small screens make those 3 divs to be vertically aligned (one over another) instead of horizontal allignment",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-010",
+    "Page / Module": "All Admins Page",
+    "Description": "The buttons on admins cards are justified to end. For smaller screens make them justify center or the best choice is justify between",
+    "Expected Behavior": "justify between",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-011",
+    "Page / Module": "Add New Admin Page",
+    "Description": "The font size of Add New Admin is too large on small screens",
+    "Expected Behavior": "font size must be small for small screens",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-012",
+    "Page / Module": "Salespersons Page in Staff Management",
+    "Description": "This page is irresponsive may be because of form",
+    "Expected Behavior": "it must be responsive",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-013",
+    "Page / Module": "SideBar on Salespersons Page in Staff Management",
+    "Description": "The sidebar on this page is irresponsive",
+    "Expected Behavior": "it must be responsive",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-014",
+    "Page / Module": "Staff Management Add New Salespersons Page",
+    "Description": "The font size of Add New Salesperson is too large on small screens",
+    "Expected Behavior": "font size must be small for small screens",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-015",
+    "Page / Module": "Doctors Applications Page",
+    "Description": "The Doctors Applications Page is not Responsive",
+    "Expected Behavior": "responsive",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-016",
+    "Page / Module": "Task Management Page",
+    "Description": "This page is not responsive",
+    "Expected Behavior": "responsive",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-017",
+    "Page / Module": "Task Management Page",
+    "Description": "As per the requirements mentioned in the document we are required to show a proper task management board (like jira)",
+    "Expected Behavior": "tasks are shown in table",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-018",
+    "Page / Module": "Customer Management Page",
+    "Description": "The customer management page is irresponsive",
+    "Expected Behavior": "responsive",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-019",
+    "Page / Module": "Revenue Analytics Page",
+    "Description": "The revnue analytics page is not responsive",
+    "Expected Behavior": "responsive",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-020",
+    "Page / Module": "Revenue Analytics Page",
+    "Description": "There is a div on revenue-analytics-page that is showing a loading card a circle in center and a rectangle at the top left",
+    "Expected Behavior": "after loading it should be removed",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-021",
+    "Page / Module": "User Engagement Page",
+    "Description": "This page is irresponsive ",
+    "Expected Behavior": "responsive",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-022",
+    "Page / Module": "Activity Logs Page",
+    "Description": "This page is irresponasive",
+    "Expected Behavior": "responsive",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-023",
+    "Page / Module": "Feedback and Complaints Analytics Page",
+    "Description": "This page is not responsive",
+    "Expected Behavior": "responsive",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-024",
+    "Page / Module": "Appointments Analytics Page",
+    "Description": "This page is not responsive",
+    "Expected Behavior": "responsive",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-025",
+    "Page / Module": "Admin Dashboard Footer",
+    "Description": "this is too much concise footer. Provide a professional footer",
+    "Expected Behavior": "detailed footer",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-026",
+    "Page / Module": "Roles And Permissions Page",
+    "Description": "This page is not responsive",
+    "Expected Behavior": "responsive",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-027",
+    "Page / Module": "Notifications Page",
+    "Description": "This page is not responsive",
+    "Expected Behavior": "responsive",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-028",
+    "Page / Module": "Settings Page",
+    "Description": "The 2fa enable button on small screen is too bad because of irresponsiveness",
+    "Expected Behavior": "responsive",
+    "Status": "Fixed"
+  },
+  {
+    "Bug ID": "A-029",
+    "Page / Module": "Admin Dashboard Searchbar",
+    "Description": "the search bar must allow admin to search about any of the features which we are providing on dashboard. For example if admin searches about branches the search bar must show all the branch related activities that admin can do in a dropdown",
+    "Expected Behavior": "search bar must provide correct response on admins search",
+    "Status": "Fixed"
+  }
+]

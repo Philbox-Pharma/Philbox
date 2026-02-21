@@ -123,7 +123,7 @@ export default function Settings() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
           <FaCog className="text-[#1a365d]" />
           Settings
         </h1>
@@ -246,8 +246,8 @@ export default function Settings() {
           color="blue"
         >
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-gray-50 rounded-lg gap-4">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
                 <div
                   className={`w-3 h-3 rounded-full ${admin?.isTwoFactorEnabled ? 'bg-green-500' : 'bg-gray-300'}`}
                 ></div>
@@ -266,7 +266,7 @@ export default function Settings() {
               <button
                 onClick={toggle2FA}
                 disabled={toggling2FA}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors flex justify-center items-center gap-2 ${
                   admin?.isTwoFactorEnabled
                     ? 'bg-red-100 text-red-700 hover:bg-red-200'
                     : 'bg-green-100 text-green-700 hover:bg-green-200'

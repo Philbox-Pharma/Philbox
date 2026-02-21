@@ -355,7 +355,7 @@ export default function RolesPermissions() {
       </AnimatePresence>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <StatsCard
           icon={FaShieldAlt}
           label="Total Roles"
@@ -400,7 +400,7 @@ export default function RolesPermissions() {
               {/* Role Header */}
               <div
                 onClick={() => setExpandedRole(isExpanded ? null : role._id)}
-                className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center gap-4">
                   <div

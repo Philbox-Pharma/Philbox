@@ -393,7 +393,7 @@ export default function SalespersonList() {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-gray-100">
+      <div className="flex items-center justify-start sm:justify-end gap-2 mt-4 pt-3 border-t border-gray-100">
         <Link
           to={`/admin/staff/salespersons/${row._id}`}
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
@@ -427,7 +427,9 @@ export default function SalespersonList() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Salespersons</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
+            Salespersons
+          </h1>
           <p className="text-gray-600 mt-1">Manage all salesperson accounts</p>
         </div>
         <Link
@@ -508,7 +510,7 @@ export default function SalespersonList() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatsCard
           icon={FaUserTie}
           label="Total"

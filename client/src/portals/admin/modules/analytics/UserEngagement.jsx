@@ -110,8 +110,8 @@ export default function UserEngagement() {
       <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4">
         <div className="flex flex-wrap items-center gap-4">
           <FaFilter className="text-gray-400" />
-          <div className="flex items-center gap-2">
-            <FaCalendarAlt className="text-gray-400" />
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
+            <FaCalendarAlt className="text-gray-400 shrink-0" />
             <input
               type="date"
               value={dateRange.startDate}
@@ -231,7 +231,7 @@ export default function UserEngagement() {
               <div className="w-32 h-32 bg-gray-200 rounded-full mx-auto"></div>
             </div>
           ) : (
-            <div className="flex items-center justify-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 flex-wrap">
               <div
                 className="w-32 h-32 rounded-full relative"
                 style={{

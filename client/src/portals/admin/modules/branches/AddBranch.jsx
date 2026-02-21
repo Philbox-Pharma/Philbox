@@ -373,7 +373,7 @@ export default function AddBranch() {
               <FaGlobe className="text-[#1a365d]" /> Google Maps
             </h2>
             <div className="space-y-4">
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                   <FaGlobe className="absolute left-3 top-3.5 text-gray-400" />
                   <input
@@ -416,17 +416,17 @@ export default function AddBranch() {
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-gray-50 border-t flex justify-end gap-3">
+        <div className="px-6 py-4 bg-gray-50 border-t flex flex-col sm:flex-row justify-end gap-3">
           <Link
             to="/admin/branches"
-            className="px-6 py-2 border rounded-lg hover:bg-gray-100"
+            className="px-6 py-2 border rounded-lg hover:bg-gray-100 text-center"
           >
             Cancel
           </Link>
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 bg-[#1a365d] text-white rounded-lg hover:bg-[#2c5282] flex items-center gap-2"
+            className="px-6 py-2 bg-[#1a365d] text-white rounded-lg hover:bg-[#2c5282] flex justify-center items-center gap-2"
           >
             {loading ? (
               <FaSpinner className="animate-spin" />

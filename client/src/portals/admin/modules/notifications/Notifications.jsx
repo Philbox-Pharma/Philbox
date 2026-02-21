@@ -257,7 +257,7 @@ export default function Notifications() {
           </div>
 
           {/* Date Range */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
             <input
               type="date"
               value={dateRange.startDate}
@@ -323,7 +323,7 @@ export default function Notifications() {
                             {notif.description}
                           </p>
                         )}
-                      <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+                      <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-gray-400">
                         <span className="flex items-center gap-1">
                           {notif.userType === 'admin' && (
                             <FaUserShield className="text-purple-400" />

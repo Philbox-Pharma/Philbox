@@ -1,0 +1,14 @@
+﻿ .../admin/layouts/components/AdminHeader.jsx       |  60 ++--
+ .../admin/layouts/components/AdminSidebar.jsx      |   8 +-
+ .../admin/modules/branches/BranchStatistics.jsx    |   6 +-
+ .../admin/modules/customers/CustomerList.jsx       |   6 +-
+ .../admin/modules/doctors/DoctorApplications.jsx   |   4 +-
+ .../portals/admin/modules/doctors/DoctorList.jsx   |   4 +-
+ .../portals/admin/modules/profile/AdminProfile.jsx |   6 +-
+ .../portals/admin/modules/settings/Settings.jsx    |   4 +-
+ .../admin/modules/staff/admins/AdminList.jsx       |   4 +-
+ .../modules/staff/salespersons/AddSalesperson.jsx  |   2 +-
+ .../modules/staff/salespersons/SalespersonList.jsx |   8 +-
+ .../portals/admin/modules/tasks/TaskManagement.jsx | 346 +++++++++++++++------
+ ...gs_and_Refactoring_Template(AutoRecovered).xlsx | Bin 16603 -> 16559 bytes
+ 13 files changed, 324 insertions(+), 134 deletions(-)

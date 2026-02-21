@@ -82,7 +82,11 @@ export default function Register() {
     <div className="auth-wrapper">
       <div className="card-container !w-[450px]">
         {/* Logo */}
-        <img src="/vite.svg" alt="Logo" className="auth-logo" />
+        <img
+          src="/Philbox.PNG"
+          alt="Philbox"
+          className="auth-logo h-12 w-auto mx-auto mb-6 object-contain"
+        />
 
         {/* Title */}
         <h1 className="auth-title">Create Account</h1>

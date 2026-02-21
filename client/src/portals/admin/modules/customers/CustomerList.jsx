@@ -130,7 +130,7 @@ export default function CustomerList() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-800 flex items-center gap-3">
             <FaUsers className="text-blue-600" />
             Customer Management
           </h1>
@@ -278,7 +278,7 @@ export default function CustomerList() {
       </div>
 
       {/* Customers Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-lg shadow overflow-hidden overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -367,7 +367,7 @@ export default function CustomerList() {
 
         {/* Pagination */}
         {pagination.pages > 1 && (
-          <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t">
+          <div className="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t">
             <div className="text-sm text-gray-700">
               Showing page {pagination.page} of {pagination.pages} (
               {pagination.total} total customers)

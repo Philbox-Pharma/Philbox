@@ -215,7 +215,7 @@ export default function BranchStatistics() {
         <Link to="/admin/branches" className="p-2 hover:bg-gray-100 rounded-lg">
           <FaArrowLeft />
         </Link>
-        <h1 className="text-2xl font-bold text-gray-800">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
           Branch Statistics & Revenue Analytics
         </h1>
       </div>
@@ -268,13 +268,13 @@ export default function BranchStatistics() {
       {/* ============ REVENUE ANALYTICS ============ */}
       <div className="border-t border-gray-200 pt-8 mt-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
             <FaChartLine className="text-[#1a365d]" />
             Revenue Analytics
           </h2>
 
           {/* Date Range Filter */}
-          <div className="flex flex-wrap items-center gap-2 bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
             <div className="relative">
               <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
               <input

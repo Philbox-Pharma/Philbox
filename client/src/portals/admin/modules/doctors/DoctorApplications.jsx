@@ -327,7 +327,7 @@ export default function DoctorApplications() {
               <FaArrowLeft />
               Back to Doctors
             </Link>
-            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold flex items-center gap-3">
               <FaClock />
               Doctor Applications
             </h1>
@@ -361,7 +361,7 @@ export default function DoctorApplications() {
           </div>
 
           {/* Status Filter */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {['pending', 'approved', 'rejected'].map(status => (
               <button
                 key={status}

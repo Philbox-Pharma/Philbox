@@ -308,7 +308,7 @@ export default function AddSalesperson() {
           <FaArrowLeft />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
             Add New Salesperson
           </h1>
           <p className="text-gray-600">Create a new salesperson account</p>
