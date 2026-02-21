@@ -59,7 +59,7 @@ const StatusBadge = ({ status }) => {
 };
 
 // Stat Card Component
-// eslint-disable-next-line no-unused-vars
+
 const StatCard = ({ icon: Icon, label, value, color, subtext }) => (
   <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5">
     <div className="flex items-center gap-4">

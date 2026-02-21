@@ -92,7 +92,6 @@ export default function Settings() {
   };
 
   const SettingsCard = ({
-    // eslint-disable-next-line no-unused-vars
     Icon,
     title,
     description,

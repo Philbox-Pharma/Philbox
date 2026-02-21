@@ -28,7 +28,7 @@ import {
 
 // Stats Card Component
 const StatCard = ({
-  icon: Icon, // eslint-disable-line no-unused-vars
+  icon: Icon,
   label,
   value,
   trend,
@@ -67,12 +67,7 @@ const StatCard = ({
 );
 
 // Quick Action Button
-const QuickAction = ({
-  icon: Icon, // eslint-disable-line no-unused-vars
-  label,
-  to,
-  color,
-}) => (
+const QuickAction = ({ icon: Icon, label, to, color }) => (
   <Link to={to}>
     <Motion.div
       whileHover={{ scale: 1.02, y: -2 }}
@@ -125,12 +120,7 @@ const BranchCard = ({ branch }) => (
 );
 
 // Activity Item
-const ActivityItem = ({
-  icon: Icon, // eslint-disable-line no-unused-vars
-  text,
-  time,
-  status,
-}) => {
+const ActivityItem = ({ icon: Icon, text, time, status }) => {
   const statusColors = {
     success: 'text-green-600 bg-green-100',
     warning: 'text-yellow-600 bg-yellow-100',

@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 // src/portals/admin/modules/branches/EditBranch.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
