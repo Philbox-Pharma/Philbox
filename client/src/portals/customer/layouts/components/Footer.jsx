@@ -21,7 +21,7 @@ export default function Footer() {
                     {/* Company Info */}
                     <div>
                         <div className="flex items-center gap-2 mb-4">
-                            <img src="/vite.svg" alt="PhilBox" className="h-8 w-8" />
+                            <img src="/Philbox.PNG" alt="PhilBox" className="h-8 w-8" />
                             <span className="text-xl font-bold text-white">PhilBox</span>
                         </div>
                         <p className="text-sm text-gray-400 mb-4">

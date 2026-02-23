@@ -6,7 +6,7 @@ export default function ApplicationStatus() {
     <div className="auth-wrapper">
       <div className="card-container w-[450px]!">
         {/* Logo */}
-        <img src="/vite.svg" alt="Logo" className="auth-logo" />
+        <img src="/Philbox.PNG" alt="Logo" className="auth-logo" />
 
         {/* Title */}
         <h1 className="auth-title">Application Under Review</h1>

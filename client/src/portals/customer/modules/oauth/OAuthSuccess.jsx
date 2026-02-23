@@ -48,7 +48,7 @@ export default function OAuthSuccess() {
         <div className="auth-wrapper">
             <div className="card-container">
                 {/* Logo */}
-                <img src="/vite.svg" alt="Logo" className="auth-logo" />
+                <img src="/Philbox.PNG" alt="Logo" className="auth-logo" />
 
                 {/* Loading State */}
                 {loading && !error && (

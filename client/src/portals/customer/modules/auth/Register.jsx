@@ -157,7 +157,7 @@ export default function Register() {
               </div>
 
               {/* Password & Confirm Password - Side by Side */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 {/* Password */}
                 <div className="relative">
                   <label htmlFor="password" className="input-label">
@@ -231,7 +231,7 @@ export default function Register() {
               </div>
 
               {/* Gender & Date of Birth - Side by Side */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 {/* Gender */}
                 <div>
                   <label htmlFor="gender" className="input-label">

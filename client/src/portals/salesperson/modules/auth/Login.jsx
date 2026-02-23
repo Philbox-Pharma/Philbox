@@ -31,7 +31,7 @@ export default function Login() {
         <div className="auth-wrapper">
             <div className="card-container">
                 {/* Logo */}
-                <img src="/vite.svg" alt="Logo" className="auth-logo" />
+                <img src="/Philbox.PNG" alt="Logo" className="auth-logo" />
 
                 {/* Title */}
                 <h1 className="auth-title">Salesperson Login</h1>

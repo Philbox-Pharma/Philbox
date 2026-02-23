@@ -28,7 +28,6 @@ export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
 
   const toggleMenu = menuKey => {
     setExpandedMenus(prev => ({
-      ...prev,
       [menuKey]: !prev[menuKey],
     }));
   };
@@ -251,6 +250,7 @@ export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
                       <NavLink
                         key={subItem.path}
                         to={subItem.path}
+                        end
                         onClick={() =>
                           window.innerWidth < 1024 && closeSidebar()
                         }

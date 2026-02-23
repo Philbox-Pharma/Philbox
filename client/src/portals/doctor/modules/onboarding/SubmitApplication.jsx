@@ -110,7 +110,7 @@ export default function SubmitApplication() {
         <div className="auth-wrapper">
             <div className="card-container !w-[550px]">
                 {/* Logo */}
-                <img src="/vite.svg" alt="Logo" className="auth-logo" />
+                <img src="/Philbox.PNG" alt="Logo" className="auth-logo" />
 
                 {/* Title */}
                 <h1 className="auth-title">

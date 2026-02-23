@@ -180,7 +180,7 @@ export default function LandingFooter({
             <p className="text-gray-500 text-sm text-center md:text-left">
               {copyrightText || (
                 <>
-                  © 2025{' '}
+                  © {new Date().getFullYear()}{' '}
                   <span style={{ color: secondaryColor }}>
                     Philbox Pharmaceuticals
                   </span>

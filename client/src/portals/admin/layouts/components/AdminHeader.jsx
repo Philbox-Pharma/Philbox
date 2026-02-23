@@ -476,7 +476,7 @@ export default function AdminHeader({ toggleSidebar, admin }) {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 10 }}
-                  className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-80 sm:max-w-96 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden"
+                  className="absolute -right-8 sm:right-0 mt-2 w-[260px] sm:w-80 md:w-96 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden"
                 >
                   {/* Header */}
                   <div className="p-4 bg-[#1a365d] text-white flex items-center justify-between">
@@ -585,7 +585,7 @@ export default function AdminHeader({ toggleSidebar, admin }) {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 10 }}
-                  className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden"
+                  className="absolute right-0 mt-2 w-56 sm:w-64 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden"
                 >
                   {/* Profile Header */}
                   <div className="p-4 bg-linear-to-r from-[#1a365d] to-[#2c5282] text-white">

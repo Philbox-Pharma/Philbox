@@ -87,9 +87,9 @@ export default function Register() {
 
   return (
     <div className="auth-wrapper">
-      <div className="card-container !w-[480px]">
+      <div className="card-container w-full !max-w-[480px]">
         {/* Logo */}
-        <img src="/vite.svg" alt="Logo" className="auth-logo" />
+        <img src="/Philbox.PNG" alt="Logo" className="auth-logo" />
 
         {/* Title */}
         <h1 className="auth-title">Doctor Registration</h1>
@@ -163,7 +163,7 @@ export default function Register() {
               </div>
 
               {/* Password & Confirm Password - Side by Side */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 {/* Password */}
                 <div className="relative">
                   <label htmlFor="password" className="input-label">
@@ -237,7 +237,7 @@ export default function Register() {
               </div>
 
               {/* Gender & Date of Birth - Side by Side */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 {/* Gender */}
                 <div>
                   <label htmlFor="gender" className="input-label">
