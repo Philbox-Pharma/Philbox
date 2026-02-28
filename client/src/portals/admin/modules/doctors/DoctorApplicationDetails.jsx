@@ -17,7 +17,7 @@ import {
   FaExclamationTriangle,
   FaClock,
 } from 'react-icons/fa';
-import { doctorApi } from '../../../../core/api/admin/adminApi';
+import { doctorsService } from '../../../../core/api/admin/doctors.service';
 
 // Status Badge
 const StatusBadge = ({ status }) => {
@@ -162,7 +162,7 @@ export default function DoctorApplicationDetails() {
       setError(null);
 
       try {
-        const response = await doctorApi.getApplicationById(id);
+        const response = await doctorsService.getApplicationById(id);
         setApplication(response.data?.application || response.data);
       } catch (err) {
         console.error('Failed to fetch application:', err);
@@ -181,9 +181,9 @@ export default function DoctorApplicationDetails() {
     setActionLoading(true);
     try {
       if (modal.type === 'approve') {
-        await doctorApi.approveApplication(id, data.comment);
+        await doctorsService.approveApplication(id, data.comment);
       } else {
-        await doctorApi.rejectApplication(id, data.reason);
+        await doctorsService.rejectApplication(id, data.reason);
       }
       navigate('/admin/doctors/applications');
     } catch (err) {
@@ -232,7 +232,7 @@ export default function DoctorApplicationDetails() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#d69e2e] to-[#b7891f] rounded-2xl p-6 text-white">
+      <div className="bg-linear-to-r from-[#d69e2e] to-[#b7891f] rounded-2xl p-6 text-white">
         <Link
           to="/admin/doctors/applications"
           className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 text-sm"
@@ -243,7 +243,7 @@ export default function DoctorApplicationDetails() {
 
         <div className="flex flex-col md:flex-row md:items-center gap-6">
           {/* Avatar */}
-          <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center text-3xl font-bold flex-shrink-0">
+          <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center text-3xl font-bold shrink-0">
             {application.name?.charAt(0) || 'D'}
           </div>
 

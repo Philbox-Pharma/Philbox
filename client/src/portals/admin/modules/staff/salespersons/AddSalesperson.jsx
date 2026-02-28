@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 // src/portals/admin/modules/staff/salespersons/AddSalesperson.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -22,7 +21,8 @@ import {
   FormSelect,
   FormMultiSelect,
 } from '../../../../../shared/components/Form';
-import { staffApi, branchApi } from '../../../../../core/api/admin/adminApi';
+import { staffService } from '../../../../../core/api/admin/staff.service';
+import { branchesService } from '../../../../../core/api/admin/branches.service';
 
 export default function AddSalesperson() {
   const navigate = useNavigate();
@@ -55,7 +55,9 @@ export default function AddSalesperson() {
     const fetchBranches = async () => {
       setBranchLoading(true);
       try {
-        const response = await branchApi.getAll(1, 100, { status: 'Active' });
+        const response = await branchesService.getAll(1, 100, {
+          status: 'Active',
+        });
         if (response.status === 200 || response.data) {
           const branches = response.data?.branches || [];
           setBranchOptions(
@@ -253,7 +255,7 @@ export default function AddSalesperson() {
         payload.dateOfBirth = formData.dateOfBirth;
       }
 
-      const response = await staffApi.createSalesperson(payload);
+      const response = await staffService.createSalesperson(payload);
 
       if (
         response.status === 200 ||

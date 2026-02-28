@@ -1,7 +1,7 @@
 // src/portals/admin/modules/branches/BranchStatistics.jsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-// eslint-disable-next-line no-unused-vars
+
 import { motion } from 'framer-motion';
 import {
   FaCodeBranch,
@@ -33,7 +33,8 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
-import { branchApi, revenueApi } from '../../../../core/api/admin/adminApi';
+import { branchesService } from '../../../../core/api/admin/branches.service';
+import { revenueService } from '../../../../core/api/admin/revenue.service';
 
 // Chart Colors
 const COLORS = {
@@ -90,7 +91,7 @@ export default function BranchStatistics() {
 
   const fetchBranchData = async () => {
     try {
-      const response = await branchApi.getAll(1, 1000);
+      const response = await branchesService.getAll(1, 1000);
       if (response.success || response.status === 200) {
         const allBranches = response.data?.branches || [];
         setBranches(allBranches);
@@ -116,12 +117,12 @@ export default function BranchStatistics() {
       // Fetch all revenue data in parallel
       const [trendsRes, splitRes, topRes, refundsRes, avgRes, paymentRes] =
         await Promise.all([
-          revenueApi.getTrends(startDate, endDate, period),
-          revenueApi.getSplit(startDate, endDate),
-          revenueApi.getTopBranches(startDate, endDate, 5),
-          revenueApi.getRefunds(startDate, endDate),
-          revenueApi.getAvgPerCustomer(startDate, endDate),
-          revenueApi.getPaymentMethods(startDate, endDate),
+          revenueService.getTrends(startDate, endDate, period),
+          revenueService.getSplit(startDate, endDate),
+          revenueService.getTopBranches(startDate, endDate, 5),
+          revenueService.getRefunds(startDate, endDate),
+          revenueService.getAvgPerCustomer(startDate, endDate),
+          revenueService.getPaymentMethods(startDate, endDate),
         ]);
 
       // Process Trends
@@ -613,7 +614,6 @@ export default function BranchStatistics() {
 
 // ============ SUB COMPONENTS ============
 
-// eslint-disable-next-line no-unused-vars
 const StatCard = ({ icon: IconComponent, label, value, color, bg }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
@@ -632,7 +632,6 @@ const StatCard = ({ icon: IconComponent, label, value, color, bg }) => (
   </motion.div>
 );
 
-// eslint-disable-next-line no-unused-vars
 const KPICard = ({ icon: IconComponent, label, value, subValue, color }) => {
   const colorMap = {
     green: { bg: 'bg-green-100', text: 'text-green-600' },
@@ -664,7 +663,6 @@ const KPICard = ({ icon: IconComponent, label, value, subValue, color }) => {
   );
 };
 
-// eslint-disable-next-line no-unused-vars
 const BranchStatusList = ({ title, branches, icon: IconComponent, color }) => (
   <motion.div
     initial={{ opacity: 0 }}

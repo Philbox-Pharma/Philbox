@@ -1,7 +1,7 @@
 // src/portals/admin/modules/staff/admins/AddAdmin.jsx
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-// eslint-disable-next-line no-unused-vars
+
 import { motion } from 'framer-motion';
 import {
   FaArrowLeft,
@@ -26,7 +26,8 @@ import {
   FormSelect,
   FormMultiSelect,
 } from '../../../../../shared/components/Form';
-import { staffApi, branchApi } from '../../../../../core/api/admin/adminApi';
+import { branchesService } from '../../../../../core/api/admin/branches.service';
+import { staffService } from '../../../../../core/api/admin/staff.service';
 
 export default function AddAdmin() {
   const navigate = useNavigate();
@@ -75,7 +76,9 @@ export default function AddAdmin() {
     const fetchBranches = async () => {
       setBranchLoading(true);
       try {
-        const response = await branchApi.getAll(1, 100, { status: 'Active' });
+        const response = await branchesService.getAll(1, 100, {
+          status: 'Active',
+        });
         if (response.status === 200 || response.data) {
           const branches = response.data?.branches || [];
           setBranchOptions(
@@ -295,7 +298,7 @@ export default function AddAdmin() {
         submitData.append('cover_img', coverImg);
       }
 
-      const response = await staffApi.createAdmin(submitData);
+      const response = await staffService.createAdmin(submitData);
 
       if (
         response.status === 200 ||
@@ -366,7 +369,7 @@ export default function AddAdmin() {
         {/* Error Banner */}
         {errors.submit && (
           <div className="bg-red-50 p-4 text-red-700 border-b border-red-200 flex items-center gap-2">
-            <FaExclamationTriangle className="flex-shrink-0" />
+            <FaExclamationTriangle className="shrink-0" />
             <span>{errors.submit}</span>
           </div>
         )}
@@ -380,7 +383,7 @@ export default function AddAdmin() {
 
             {/* Cover Image */}
             <div className="relative mb-6">
-              <div className="h-32 sm:h-40 bg-gradient-to-r from-[#1a365d] to-[#2c5282] rounded-xl overflow-hidden">
+              <div className="h-32 sm:h-40 bg-linear-to-r from-[#1a365d] to-[#2c5282] rounded-xl overflow-hidden">
                 {coverPreview ? (
                   <img
                     src={coverPreview}

@@ -15,7 +15,7 @@ import {
   FaKey,
 } from 'react-icons/fa';
 
-import { adminAuthApi } from '../../../../core/api/admin/adminApi';
+import { profileService } from '../../../../core/api/admin/profile.service';
 
 export default function Settings() {
   // Password Reset State
@@ -41,7 +41,7 @@ export default function Settings() {
     setResetSuccess('');
 
     try {
-      const response = await adminAuthApi.forgotPassword(resetEmail);
+      const response = await profileService.forgotPassword(resetEmail);
       if (response.status === 200 || response.success) {
         setResetSuccess('Password reset link has been sent to your email!');
         setResetEmail('');
@@ -68,7 +68,7 @@ export default function Settings() {
 
     try {
       const newValue = !admin?.isTwoFactorEnabled;
-      const response = await adminAuthApi.update2FASettings(newValue);
+      const response = await profileService.update2FASettings(newValue);
 
       if (response.status === 200 || response.success) {
         const updatedAdmin = { ...admin, isTwoFactorEnabled: newValue };
@@ -92,7 +92,6 @@ export default function Settings() {
   };
 
   const SettingsCard = ({
-    // eslint-disable-next-line no-unused-vars
     Icon,
     title,
     description,
@@ -106,7 +105,7 @@ export default function Settings() {
     >
       <div className="flex items-start gap-4 mb-4">
         <div
-          className={`w-12 h-12 rounded-xl bg-${color}-100 flex items-center justify-center flex-shrink-0`}
+          className={`w-12 h-12 rounded-xl bg-${color}-100 flex items-center justify-center shrink-0`}
         >
           <Icon className={`text-xl text-${color}-600`} />
         </div>

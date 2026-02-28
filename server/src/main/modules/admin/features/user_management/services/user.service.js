@@ -498,6 +498,8 @@ class UserManagementService {
     } = updateData;
 
     const admin = await Admin.findById(adminId);
+    console.log(adminId);
+    console.log(admin);
     if (!admin || admin.category !== 'branch-admin') {
       throw new Error('ADMIN_NOT_FOUND');
     }

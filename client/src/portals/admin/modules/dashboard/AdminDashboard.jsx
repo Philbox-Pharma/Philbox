@@ -19,16 +19,14 @@ import {
   FaShoppingCart,
   FaMoneyBillWave,
 } from 'react-icons/fa';
-import {
-  branchApi,
-  staffApi,
-  doctorApi,
-  ordersAnalyticsApi,
-} from '../../../../core/api/admin/adminApi';
 
+import { ordersAnalyticsService } from '../../../../core/api/admin/ordersAnalytics.service';
+import { doctorsService } from '../../../../core/api/admin/doctors.service';
+import { staffService } from '../../../../core/api/admin/staff.service';
+import { branchesService } from '../../../../core/api/admin/branches.service';
 // Stats Card Component
 const StatCard = ({
-  icon: Icon, // eslint-disable-line no-unused-vars
+  icon: Icon,
   label,
   value,
   trend,
@@ -67,12 +65,7 @@ const StatCard = ({
 );
 
 // Quick Action Button
-const QuickAction = ({
-  icon: Icon, // eslint-disable-line no-unused-vars
-  label,
-  to,
-  color,
-}) => (
+const QuickAction = ({ icon: Icon, label, to, color }) => (
   <Link to={to}>
     <Motion.div
       whileHover={{ scale: 1.02, y: -2 }}
@@ -125,12 +118,7 @@ const BranchCard = ({ branch }) => (
 );
 
 // Activity Item
-const ActivityItem = ({
-  icon: Icon, // eslint-disable-line no-unused-vars
-  text,
-  time,
-  status,
-}) => {
+const ActivityItem = ({ icon: Icon, text, time, status }) => {
   const statusColors = {
     success: 'text-green-600 bg-green-100',
     warning: 'text-yellow-600 bg-yellow-100',
@@ -183,21 +171,23 @@ export default function AdminDashboard() {
           doctorsListResponse,
           ordersOverviewResponse,
         ] = await Promise.all([
-          branchApi.getStatistics().catch(() => ({ data: null })),
-          branchApi.getAll(1, 6).catch(() => ({ data: { branches: [] } })),
-          staffApi
+          branchesService.getStatistics().catch(() => ({ data: null })),
+          branchesService
+            .getAll(1, 6)
+            .catch(() => ({ data: { branches: [] } })),
+          staffService
             .getAdmins(1, 1)
             .catch(() => ({ data: { pagination: { total: 0 } } })),
-          staffApi
+          staffService
             .getSalespersons(1, 1)
             .catch(() => ({ data: { pagination: { total: 0 } } })),
-          doctorApi
+          doctorsService
             .getApplications({ status: 'pending', limit: 1 })
             .catch(() => ({ data: { pagination: { total: 0 } } })),
-          doctorApi
+          doctorsService
             .getAllDoctors({ limit: 1 })
             .catch(() => ({ data: { pagination: { total: 0 } } })),
-          ordersAnalyticsApi.getOverview({}).catch(() => ({ data: null })),
+          ordersAnalyticsService.getOverview({}).catch(() => ({ data: null })),
         ]);
 
         setStats({

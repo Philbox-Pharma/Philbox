@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 // src/shared/components/DataTable/DataTable.jsx
 // import { useState } from 'react'; // Not currently used
 import { motion } from 'framer-motion';

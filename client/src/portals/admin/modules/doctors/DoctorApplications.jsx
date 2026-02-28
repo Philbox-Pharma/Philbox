@@ -16,7 +16,7 @@ import {
   FaIdCard,
   FaArrowLeft,
 } from 'react-icons/fa';
-import { doctorApi } from '../../../../core/api/admin/adminApi';
+import { doctorsService } from '../../../../core/api/admin/doctors.service';
 
 // Application Status Badge
 const StatusBadge = ({ status }) => {
@@ -152,7 +152,7 @@ const ApplicationCard = ({ application, onApprove, onReject }) => (
   <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5 hover:shadow-lg transition-all duration-300">
     <div className="flex items-start gap-4">
       {/* Avatar */}
-      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#d69e2e] to-[#b7891f] flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
+      <div className="w-14 h-14 rounded-full bg-linear-to-br from-[#d69e2e] to-[#b7891f] flex items-center justify-center text-white text-lg font-bold shrink-0">
         {application.name?.charAt(0) || 'D'}
       </div>
 
@@ -264,7 +264,7 @@ export default function DoctorApplications() {
     setError(null);
 
     try {
-      const response = await doctorApi.getApplications({
+      const response = await doctorsService.getApplications({
         page,
         limit,
         status: statusFilter,
@@ -297,9 +297,15 @@ export default function DoctorApplications() {
     setActionLoading(true);
     try {
       if (modal.type === 'approve') {
-        await doctorApi.approveApplication(modal.application._id, data.comment);
+        await doctorsService.approveApplication(
+          modal.application._id,
+          data.comment
+        );
       } else {
-        await doctorApi.rejectApplication(modal.application._id, data.reason);
+        await doctorsService.rejectApplication(
+          modal.application._id,
+          data.reason
+        );
       }
       setModal({ isOpen: false, type: '', application: null });
       fetchApplications();
@@ -317,7 +323,7 @@ export default function DoctorApplications() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#d69e2e] to-[#b7891f] rounded-2xl p-6 text-white">
+      <div className="bg-linear-to-r from-[#d69e2e] to-[#b7891f] rounded-2xl p-6 text-white">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <Link

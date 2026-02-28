@@ -6,6 +6,7 @@
 - **Onboarding:** `http://localhost:5000/api/doctor/onboarding`
 - **Profile:** `http://localhost:5000/api/doctor/profile`
 - **Slots Management:** `http://localhost:5000/api/doctor/slots`
+- **Appointment Requests:** `http://localhost:5000/api/doctor/appointments`
 
 ---
 
@@ -17,11 +18,12 @@
 4. [Onboarding Endpoints](#onboarding-endpoints)
 5. [Profile Management Endpoints](#profile-management-endpoints)
 6. [Slots Management Endpoints](#slots-management-endpoints)
-7. [File Upload Requirements](#file-upload-requirements)
-8. [Validation Rules](#validation-rules)
-9. [Error Responses](#error-responses)
-10. [Application Status Reference](#application-status-reference)
-11. [Testing Guide](#testing-guide)
+7. [Appointment Request Management](#appointment-request-management)
+8. [File Upload Requirements](#file-upload-requirements)
+9. [Validation Rules](#validation-rules)
+10. [Error Responses](#error-responses)
+11. [Application Status Reference](#application-status-reference)
+12. [Testing Guide](#testing-guide)
 
 ---
 
@@ -45,12 +47,16 @@ Allows doctors to view and update their profile information, images, consultatio
 
 Enables doctors to create, manage, and organize their availability slots for patient appointments. Supports single slots, recurring slots (daily/weekly/monthly), calendar view, and CRUD operations.
 
+### 5. Appointment Request Management (`/api/doctor/appointments`)
+
+Manages patient appointment requests - allows doctors to view pending requests, review details, accept or reject appointments with reasons, and send automated email notifications to patients.
+
 ### Complete Journey:
 
 ```
 Register → Verify Email → Login → Submit Documents →
 Check Status → Wait for Approval (or Resubmit if Rejected) → Complete Profile →
-Manage Profile → Create Availability Slots → Start Practice
+Manage Profile → Create Availability Slots → Manage Appointment Requests → Start Practice
 ```
 
 ---
@@ -2417,7 +2423,480 @@ curl -X DELETE http://localhost:5000/api/doctor/slots/slot123 \
   -H "Cookie: $(cat cookies.txt)"
 ```
 
-\*\*Step 23:
+---
+
+## 🗓️ Appointment Request Management
+
+Base URL: `/api/doctor/appointments`
+
+### Overview
+
+The appointment request management system allows doctors to:
+
+- View pending appointment requests from patients
+- Review request details including patient information and consultation reason
+- Accept appointment requests (with optional time slot assignment and notes)
+- Reject appointment requests with detailed reasons
+- View accepted appointments in their schedule
+- Automated email notifications to patients on decisions
+
+---
+
+### 📋 Endpoints Summary
+
+| Method | Endpoint                          | Description                | Auth Required |
+| ------ | --------------------------------- | -------------------------- | ------------- |
+| GET    | `/requests`                       | Get pending requests       | ✅ Doctor     |
+| GET    | `/requests/:appointmentId`        | Get request details        | ✅ Doctor     |
+| POST   | `/requests/:appointmentId/accept` | Accept appointment request | ✅ Doctor     |
+| POST   | `/requests/:appointmentId/reject` | Reject appointment request | ✅ Doctor     |
+| GET    | `/accepted`                       | Get accepted appointments  | ✅ Doctor     |
+
+---
+
+### 1. Get Pending Appointment Requests
+
+**GET** `/api/doctor/appointments/requests`
+
+Retrieve all pending appointment requests with pagination and filtering.
+
+#### Query Parameters
+
+| Parameter        | Type   | Required | Default      | Description                                   |
+| ---------------- | ------ | -------- | ------------ | --------------------------------------------- |
+| page             | number | No       | 1            | Page number                                   |
+| limit            | number | No       | 10           | Items per page (max 100)                      |
+| status           | string | No       | 'processing' | Request status: processing/accepted/cancelled |
+| appointment_type | string | No       | -            | Filter by type: in-person/online              |
+| sort_by          | string | No       | 'created_at' | Sort field: created_at/preferred_date         |
+| sort_order       | string | No       | 'desc'       | Sort order: asc/desc                          |
+
+#### Success Response (200 OK)
+
+```json
+{
+  "success": true,
+  "message": "Pending appointment requests retrieved successfully",
+  "data": {
+    "appointments": [
+      {
+        "_id": "app123",
+        "doctor_id": "doc123",
+        "patient_id": {
+          "_id": "cust123",
+          "first_name": "John",
+          "last_name": "Doe",
+          "email": "john@example.com",
+          "phone_number": "+923001234567"
+        },
+        "slot_id": {
+          "_id": "slot123",
+          "date": "2026-01-15T00:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "09:30"
+        },
+        "appointment_type": "in-person",
+        "consultation_reason": "Experiencing chest pain and shortness of breath for the past 2 days. Need urgent consultation.",
+        "preferred_date": "2026-01-15T00:00:00.000Z",
+        "preferred_time": "09:00",
+        "appointment_request": "processing",
+        "status": "pending",
+        "created_at": "2026-01-10T10:30:00.000Z",
+        "updated_at": "2026-01-10T10:30:00.000Z"
+      }
+    ],
+    "pagination": {
+      "current_page": 1,
+      "total_pages": 3,
+      "total_items": 25,
+      "items_per_page": 10,
+      "has_next": true,
+      "has_prev": false
+    }
+  }
+}
+```
+
+#### Example Request
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/appointments/requests?page=1&limit=10&status=processing" \
+  -H "Cookie: your-session-cookie"
+```
+
+---
+
+### 2. Get Appointment Request Details
+
+**GET** `/api/doctor/appointments/requests/:appointmentId`
+
+Get detailed information about a specific appointment request.
+
+#### URL Parameters
+
+| Parameter     | Type   | Required | Description    |
+| ------------- | ------ | -------- | -------------- |
+| appointmentId | string | Yes      | Appointment ID |
+
+#### Success Response (200 OK)
+
+```json
+{
+  "success": true,
+  "message": "Appointment request details retrieved successfully",
+  "data": {
+    "_id": "app123",
+    "doctor_id": "doc123",
+    "patient_id": {
+      "_id": "cust123",
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john@example.com",
+      "phone_number": "+923001234567"
+    },
+    "slot_id": {
+      "_id": "slot123",
+      "date": "2026-01-15T00:00:00.000Z",
+      "start_time": "09:00",
+      "end_time": "09:30",
+      "slot_duration": 30
+    },
+    "appointment_type": "in-person",
+    "consultation_reason": "Experiencing chest pain and shortness of breath for the past 2 days. Need urgent consultation.",
+    "preferred_date": "2026-01-15T00:00:00.000Z",
+    "preferred_time": "09:00",
+    "appointment_request": "processing",
+    "status": "pending",
+    "created_at": "2026-01-10T10:30:00.000Z",
+    "updated_at": "2026-01-10T10:30:00.000Z"
+  }
+}
+```
+
+#### Error Response (404 Not Found)
+
+```json
+{
+  "success": false,
+  "message": "Appointment request not found"
+}
+```
+
+#### Example Request
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/appointments/requests/app123" \
+  -H "Cookie: your-session-cookie"
+```
+
+---
+
+### 3. Accept Appointment Request
+
+**POST** `/api/doctor/appointments/requests/:appointmentId/accept`
+
+Accept a pending appointment request. Optionally assign a time slot and add notes for the patient.
+
+#### URL Parameters
+
+| Parameter     | Type   | Required | Description    |
+| ------------- | ------ | -------- | -------------- |
+| appointmentId | string | Yes      | Appointment ID |
+
+#### Request Body
+
+| Field   | Type   | Required | Description                                       |
+| ------- | ------ | -------- | ------------------------------------------------- |
+| slot_id | string | No       | Slot ID to assign (must be available)             |
+| notes   | string | No       | Optional notes/instructions for patient (max 500) |
+
+#### Success Response (200 OK)
+
+```json
+{
+  "success": true,
+  "message": "Appointment request accepted successfully",
+  "data": {
+    "_id": "app123",
+    "doctor_id": {
+      "_id": "doc123",
+      "first_name": "Dr. Sarah",
+      "last_name": "Ahmed",
+      "consultation_fee": 3000
+    },
+    "patient_id": {
+      "_id": "cust123",
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john@example.com"
+    },
+    "slot_id": "slot123",
+    "appointment_type": "in-person",
+    "appointment_request": "accepted",
+    "notes": "Please bring your previous medical reports and arrive 10 minutes early.",
+    "status": "pending",
+    "created_at": "2026-01-10T10:30:00.000Z",
+    "updated_at": "2026-01-11T14:20:00.000Z"
+  }
+}
+```
+
+#### Error Responses
+
+**404 Not Found**
+
+```json
+{
+  "success": false,
+  "message": "Appointment request not found or already processed"
+}
+```
+
+**400 Bad Request**
+
+```json
+{
+  "success": false,
+  "message": "Selected time slot is not available"
+}
+```
+
+#### Example Request
+
+```bash
+curl -X POST "http://localhost:5000/api/doctor/appointments/requests/app123/accept" \
+  -H "Cookie: your-session-cookie" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "slot_id": "slot123",
+    "notes": "Please bring your previous medical reports and arrive 10 minutes early."
+  }'
+```
+
+#### Email Notification
+
+When an appointment is accepted, the patient receives an automated email with:
+
+- Doctor's name
+- Confirmed date and time
+- Appointment type (in-person/online)
+- Consultation fee
+- Doctor's notes (if provided)
+- Link to patient dashboard
+
+---
+
+### 4. Reject Appointment Request
+
+**POST** `/api/doctor/appointments/requests/:appointmentId/reject`
+
+Reject a pending appointment request with a detailed reason.
+
+#### URL Parameters
+
+| Parameter     | Type   | Required | Description    |
+| ------------- | ------ | -------- | -------------- |
+| appointmentId | string | Yes      | Appointment ID |
+
+#### Request Body
+
+| Field            | Type   | Required | Description                              |
+| ---------------- | ------ | -------- | ---------------------------------------- |
+| rejection_reason | string | Yes      | Reason for rejection (10-500 characters) |
+
+#### Success Response (200 OK)
+
+```json
+{
+  "success": true,
+  "message": "Appointment request rejected successfully",
+  "data": {
+    "_id": "app123",
+    "doctor_id": {
+      "_id": "doc123",
+      "first_name": "Dr. Sarah",
+      "last_name": "Ahmed"
+    },
+    "patient_id": {
+      "_id": "cust123",
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john@example.com"
+    },
+    "appointment_type": "in-person",
+    "appointment_request": "cancelled",
+    "rejection_reason": "I specialize in cardiology, but your symptoms require immediate emergency care. Please visit the nearest ER or call emergency services.",
+    "created_at": "2026-01-10T10:30:00.000Z",
+    "updated_at": "2026-01-11T14:25:00.000Z"
+  }
+}
+```
+
+#### Error Response (404 Not Found)
+
+```json
+{
+  "success": false,
+  "message": "Appointment request not found or already processed"
+}
+```
+
+#### Example Request
+
+```bash
+curl -X POST "http://localhost:5000/api/doctor/appointments/requests/app123/reject" \
+  -H "Cookie: your-session-cookie" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "rejection_reason": "I specialize in cardiology, but your symptoms require immediate emergency care. Please visit the nearest ER or call emergency services."
+  }'
+```
+
+#### Email Notification
+
+When an appointment is rejected, the patient receives an automated email with:
+
+- Doctor's name
+- Rejection reason
+- Originally requested date/time
+- Suggestions to find other doctors
+- Link to doctor search page
+
+---
+
+### 5. Get Accepted Appointments
+
+**GET** `/api/doctor/appointments/accepted`
+
+Retrieve all accepted appointments (doctor's schedule) with pagination and filtering.
+
+#### Query Parameters
+
+| Parameter        | Type   | Required | Default      | Description                                  |
+| ---------------- | ------ | -------- | ------------ | -------------------------------------------- |
+| page             | number | No       | 1            | Page number                                  |
+| limit            | number | No       | 10           | Items per page (max 100)                     |
+| status           | string | No       | 'pending'    | Appointment status: pending/completed/missed |
+| appointment_type | string | No       | -            | Filter by type: in-person/online             |
+| sort_by          | string | No       | 'created_at' | Sort field                                   |
+| sort_order       | string | No       | 'desc'       | Sort order: asc/desc                         |
+
+#### Success Response (200 OK)
+
+```json
+{
+  "success": true,
+  "message": "Accepted appointments retrieved successfully",
+  "data": {
+    "appointments": [
+      {
+        "_id": "app123",
+        "doctor_id": "doc123",
+        "patient_id": {
+          "_id": "cust123",
+          "first_name": "John",
+          "last_name": "Doe",
+          "email": "john@example.com",
+          "phone_number": "+923001234567"
+        },
+        "slot_id": {
+          "_id": "slot123",
+          "date": "2026-01-15T00:00:00.000Z",
+          "start_time": "09:00",
+          "end_time": "09:30",
+          "slot_duration": 30
+        },
+        "appointment_type": "in-person",
+        "consultation_reason": "Regular checkup for diabetes management",
+        "appointment_request": "accepted",
+        "status": "pending",
+        "notes": "Please bring your glucose monitor readings.",
+        "created_at": "2026-01-10T10:30:00.000Z",
+        "updated_at": "2026-01-11T14:20:00.000Z"
+      }
+    ],
+    "pagination": {
+      "current_page": 1,
+      "total_pages": 5,
+      "total_items": 45,
+      "items_per_page": 10,
+      "has_next": true,
+      "has_prev": false
+    }
+  }
+}
+```
+
+#### Example Request
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/appointments/accepted?page=1&limit=10&status=pending" \
+  -H "Cookie: your-session-cookie"
+```
+
+---
+
+### 📌 Important Notes
+
+1. **Email Notifications**: Automated emails are sent to patients for all accept/reject actions
+2. **Slot Assignment**: When accepting, if a slot_id is provided, the slot status changes to 'booked'
+3. **Activity Logging**: All actions are logged in doctor activity logs for audit trails
+4. **One-Time Actions**: Requests can only be accepted or rejected once
+5. **Rejection Reasons**: Must be detailed (10-500 characters) to help patients understand
+6. **Session Required**: All endpoints require active doctor session
+7. **Ownership Validation**: Doctors can only manage requests assigned to them
+
+---
+
+### 🧪 Testing Workflow
+
+**Step 23: View Pending Appointment Requests**
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/appointments/requests?status=processing" \
+  -H "Cookie: $(cat cookies.txt)"
+```
+
+**Step 24: Get Appointment Request Details**
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/appointments/requests/app123" \
+  -H "Cookie: $(cat cookies.txt)"
+```
+
+**Step 25: Accept Appointment Request**
+
+```bash
+curl -X POST "http://localhost:5000/api/doctor/appointments/requests/app123/accept" \
+  -H "Cookie: $(cat cookies.txt)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "slot_id": "slot123",
+    "notes": "Please bring your previous medical reports."
+  }'
+```
+
+**Step 26: Reject Appointment Request**
+
+```bash
+curl -X POST "http://localhost:5000/api/doctor/appointments/requests/app456/reject" \
+  -H "Cookie: $(cat cookies.txt)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "rejection_reason": "Unfortunately, I do not have availability for the requested date. Please consider booking with another doctor or selecting a different time slot."
+  }'
+```
+
+**Step 27: View Accepted Appointments (Schedule)**
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/appointments/accepted?status=pending" \
+  -H "Cookie: $(cat cookies.txt)"
+```
+
+---
+
+\*\*Step 28:
 "consultation_type": "both"
 }'
 

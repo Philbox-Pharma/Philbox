@@ -14,9 +14,7 @@ import {
   FaChartBar,
   FaChartPie,
 } from 'react-icons/fa';
-import adminApi from '../../../../core/api/admin/adminApi';
-
-const { feedbackComplaints: feedbackComplaintsApi } = adminApi;
+import { feedbackComplaintsService } from '../../../../core/api/admin/feedbackComplaints.service';
 
 export default function FeedbackComplaints() {
   const [loading, setLoading] = useState(true);
@@ -47,19 +45,19 @@ export default function FeedbackComplaints() {
           complaintsCatRes,
           feedbackCatRes,
         ] = await Promise.all([
-          feedbackComplaintsApi
+          feedbackComplaintsService
             .getSummary(filters)
             .catch(() => ({ data: null })),
-          feedbackComplaintsApi
+          feedbackComplaintsService
             .getSentimentAnalysis(filters)
             .catch(() => ({ data: null })),
-          feedbackComplaintsApi
+          feedbackComplaintsService
             .getResolutionStatus(filters)
             .catch(() => ({ data: null })),
-          feedbackComplaintsApi
+          feedbackComplaintsService
             .getComplaintsByCategory(filters)
             .catch(() => ({ data: [] })),
-          feedbackComplaintsApi
+          feedbackComplaintsService
             .getFeedbackByCategory(filters)
             .catch(() => ({ data: [] })),
         ]);
@@ -108,7 +106,7 @@ export default function FeedbackComplaints() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#e53e3e] to-[#c53030] rounded-2xl p-6 text-white">
+      <div className="bg-linear-to-r from-[#e53e3e] to-[#c53030] rounded-2xl p-6 text-white">
         <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
           <FaComments />
           Feedback & Complaints Analytics

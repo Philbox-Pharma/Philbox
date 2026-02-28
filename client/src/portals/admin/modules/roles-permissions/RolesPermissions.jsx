@@ -1,6 +1,6 @@
 // src/portals/admin/modules/roles-permissions/RolesPermissions.jsx
 import { useState, useEffect } from 'react';
-// eslint-disable-next-line no-unused-vars
+
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FaShieldAlt,
@@ -20,7 +20,7 @@ import {
   FaUserTie,
   FaUserFriends,
 } from 'react-icons/fa';
-import { rolesApi } from '../../../../core/api/admin/adminApi';
+import { rolesService } from '../../../../core/api/admin/roles.service';
 
 export default function RolesPermissions() {
   const [roles, setRoles] = useState([]);
@@ -42,8 +42,8 @@ export default function RolesPermissions() {
     setError(null);
     try {
       const [rolesRes, permissionsRes] = await Promise.all([
-        rolesApi.getAllRoles(),
-        rolesApi.getAllPermissions(),
+        rolesService.getAllRoles(),
+        rolesService.getAllPermissions(),
       ]);
 
       if (rolesRes.data) {
@@ -244,7 +244,7 @@ export default function RolesPermissions() {
         }
       });
 
-      await rolesApi.updateRolePermissions(role._id, finalPermissions);
+      await rolesService.updateRolePermissions(role._id, finalPermissions);
 
       // Update local state
       setRoles(prev =>
@@ -333,7 +333,7 @@ export default function RolesPermissions() {
             exit={{ opacity: 0 }}
             className="bg-green-50 border border-green-200 rounded-xl p-4 text-green-700 flex items-center gap-2"
           >
-            <FaCheckCircle className="flex-shrink-0" />
+            <FaCheckCircle className="shrink-0" />
             {success}
           </motion.div>
         )}
@@ -348,7 +348,7 @@ export default function RolesPermissions() {
             exit={{ opacity: 0 }}
             className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 flex items-center gap-2"
           >
-            <FaExclamationTriangle className="flex-shrink-0" />
+            <FaExclamationTriangle className="shrink-0" />
             {error}
           </motion.div>
         )}
@@ -561,7 +561,7 @@ export default function RolesPermissions() {
 }
 
 // Stats Card Component
-// eslint-disable-next-line no-unused-vars
+
 const StatsCard = ({ icon: Icon, label, value, color }) => {
   const colorMap = {
     purple: { bg: 'bg-purple-100', text: 'text-purple-600' },

@@ -19,7 +19,8 @@ import {
   FormSelect,
   FormMultiSelect,
 } from '../../../../../shared/components/Form';
-import { staffApi, branchApi } from '../../../../../core/api/admin/adminApi';
+import { staffService } from '../../../../../core/api/admin/staff.service';
+import { branchesService } from '../../../../../core/api/admin/branches.service';
 
 export default function EditAdmin() {
   const { id } = useParams();
@@ -73,7 +74,9 @@ export default function EditAdmin() {
     const fetchBranches = async () => {
       setBranchLoading(true);
       try {
-        const response = await branchApi.getAll(1, 100, { status: 'Active' });
+        const response = await branchesService.getAll(1, 100, {
+          status: 'Active',
+        });
         if (response.status === 200 || response.data) {
           const branches = response.data?.branches || [];
           setBranchOptions(
@@ -107,7 +110,7 @@ export default function EditAdmin() {
     setLoading(true);
     setErrors({});
     try {
-      const response = await staffApi.getAdminById(id);
+      const response = await staffService.getAdminById(id);
 
       if (response.status === 200 || response.data) {
         const admin = response.data?.admin || response.data;
@@ -347,7 +350,7 @@ export default function EditAdmin() {
         submitData.append('remove_cover_img', 'true');
       }
 
-      const response = await staffApi.updateAdmin(id, submitData);
+      const response = await staffService.updateAdmin(id, submitData);
 
       if (response.status === 200 || response.success) {
         navigate(`/admin/staff/admins/${id}`, {
@@ -474,7 +477,7 @@ export default function EditAdmin() {
         {/* Error Banner */}
         {errors.submit && (
           <div className="bg-red-50 p-4 text-red-700 border-b border-red-200 flex items-center gap-2">
-            <FaExclamationTriangle className="flex-shrink-0" />
+            <FaExclamationTriangle className="shrink-0" />
             <span>{errors.submit}</span>
           </div>
         )}
@@ -488,7 +491,7 @@ export default function EditAdmin() {
 
             {/* Cover Image */}
             <div className="relative mb-6">
-              <div className="h-32 sm:h-40 bg-gradient-to-r from-[#1a365d] to-[#2c5282] rounded-xl overflow-hidden">
+              <div className="h-32 sm:h-40 bg-linear-to-r from-[#1a365d] to-[#2c5282] rounded-xl overflow-hidden">
                 {coverPreview ? (
                   <img
                     src={coverPreview}
@@ -613,7 +616,7 @@ export default function EditAdmin() {
                 Email Address
               </label>
               <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 rounded-lg border border-gray-200 text-gray-600">
-                <FaEnvelope className="text-gray-400 flex-shrink-0" />
+                <FaEnvelope className="text-gray-400 shrink-0" />
                 <span className="truncate">{adminEmail}</span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
