@@ -122,6 +122,12 @@ export const login = async (req, res) => {
       return sendResponse(res, 403, 'Please verify your email first');
     if (err.message === 'ACCOUNT_BLOCKED')
       return sendResponse(res, 403, 'Your account has been blocked');
+    if (err.message === 'OAUTH_ACCOUNT')
+      return sendResponse(
+        res,
+        400,
+        'This account was created with Google. Please use Google Sign-In to login'
+      );
 
     return sendResponse(res, 500, 'Server Error', null, err.message);
   }

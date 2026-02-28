@@ -126,6 +126,11 @@ class DoctorAuthService {
 
     if (!doctor) throw new Error('INVALID_CREDENTIALS');
 
+    // Check if account was created via OAuth
+    if (!doctor.passwordHash) {
+      throw new Error('OAUTH_ACCOUNT');
+    }
+
     const isMatch = await bcrypt.compare(password, doctor.passwordHash);
     if (!isMatch) throw new Error('INVALID_CREDENTIALS');
 

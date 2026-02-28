@@ -7,6 +7,7 @@
 - **Profile:** `http://localhost:5000/api/doctor/profile`
 - **Slots Management:** `http://localhost:5000/api/doctor/slots`
 - **Appointment Requests:** `http://localhost:5000/api/doctor/appointments`
+- **Reviews Management:** `http://localhost:5000/api/doctor/reviews`
 
 ---
 
@@ -19,11 +20,12 @@
 5. [Profile Management Endpoints](#profile-management-endpoints)
 6. [Slots Management Endpoints](#slots-management-endpoints)
 7. [Appointment Request Management](#appointment-request-management)
-8. [File Upload Requirements](#file-upload-requirements)
-9. [Validation Rules](#validation-rules)
-10. [Error Responses](#error-responses)
-11. [Application Status Reference](#application-status-reference)
-12. [Testing Guide](#testing-guide)
+8. [Reviews Management](#reviews-management)
+9. [File Upload Requirements](#file-upload-requirements)
+10. [Validation Rules](#validation-rules)
+11. [Error Responses](#error-responses)
+12. [Application Status Reference](#application-status-reference)
+13. [Testing Guide](#testing-guide)
 
 ---
 
@@ -51,12 +53,16 @@ Enables doctors to create, manage, and organize their availability slots for pat
 
 Manages patient appointment requests - allows doctors to view pending requests, review details, accept or reject appointments with reasons, and send automated email notifications to patients.
 
+### 6. Reviews Management (`/api/doctor/reviews`)
+
+Provides doctors with read-only access to patient reviews and feedback. Doctors can view their average ratings, filter reviews by star rating (1-5), sentiment (positive/negative/neutral), and date ranges. Includes comprehensive statistics with rating distribution and sentiment analysis.
+
 ### Complete Journey:
 
 ```
 Register → Verify Email → Login → Submit Documents →
 Check Status → Wait for Approval (or Resubmit if Rejected) → Complete Profile →
-Manage Profile → Create Availability Slots → Manage Appointment Requests → Start Practice
+Manage Profile → Create Availability Slots → Manage Appointment Requests → View Patient Reviews → Start Practice
 ```
 
 ---
@@ -2934,6 +2940,393 @@ curl -X POST http://localhost:5000/api/doctor/auth/logout \
 
 ---
 
+## ⭐ Reviews Management
+
+### Overview
+
+The Reviews Management module allows doctors to view and analyze patient feedback. This is a **read-only** feature - doctors can view reviews but cannot reply to or modify them. The system provides comprehensive analytics including average ratings, rating distribution, and sentiment analysis.
+
+**Key Features:**
+
+- View all patient reviews with pagination
+- Filter reviews by star rating (1-5)
+- Filter by sentiment (positive, negative, neutral)
+- Filter by date range
+- View comprehensive statistics and analytics
+- Sort by date or rating
+- View individual review details
+
+**Base URL:** `http://localhost:5000/api/doctor/reviews`
+
+**Authentication:** All endpoints require doctor authentication (active session)
+
+---
+
+### 📋 Endpoints Summary
+
+| Method | Endpoint                         | Description                         |
+| ------ | -------------------------------- | ----------------------------------- |
+| GET    | `/api/doctor/reviews`            | Get all reviews with filters        |
+| GET    | `/api/doctor/reviews/statistics` | Get review statistics and analytics |
+| GET    | `/api/doctor/reviews/:reviewId`  | Get single review details           |
+
+---
+
+### 1. Get All Reviews
+
+Retrieve all reviews for the logged-in doctor with pagination and filtering options.
+
+**Endpoint:** `GET /api/doctor/reviews`
+
+**Authentication:** Required (Doctor session)
+
+**Query Parameters:**
+
+| Parameter  | Type   | Required | Default    | Description                                     |
+| ---------- | ------ | -------- | ---------- | ----------------------------------------------- |
+| page       | Number | No       | 1          | Page number                                     |
+| limit      | Number | No       | 10         | Items per page (max: 100)                       |
+| rating     | Number | No       | -          | Filter by specific rating (1-5)                 |
+| sentiment  | String | No       | -          | Filter by sentiment (positive/negative/neutral) |
+| start_date | Date   | No       | -          | Filter reviews from this date                   |
+| end_date   | Date   | No       | -          | Filter reviews until this date                  |
+| sort_by    | String | No       | created_at | Sort field (created_at, rating)                 |
+| sort_order | String | No       | desc       | Sort order (asc, desc)                          |
+
+**Success Response (200):**
+
+```json
+{
+  "status": 200,
+  "message": "Reviews retrieved successfully",
+  "data": {
+    "reviews": [
+      {
+        "_id": "60d5ec49eb1d8e3f4c8b4567",
+        "message": "Dr. Smith was very professional and helpful. Explained everything clearly.",
+        "rating": 5,
+        "sentiment": "positive",
+        "customer_id": {
+          "_id": "60d5ec49eb1d8e3f4c8b4568",
+          "first_name": "John",
+          "last_name": "Doe",
+          "profile_img_url": "https://example.com/profile.jpg"
+        },
+        "target_type": "doctor",
+        "target_id": "60d5ec49eb1d8e3f4c8b4569",
+        "created_at": "2024-01-15T10:30:00.000Z",
+        "updated_at": "2024-01-15T10:30:00.000Z"
+      },
+      {
+        "_id": "60d5ec49eb1d8e3f4c8b4570",
+        "message": "Good experience overall, but waiting time was a bit long.",
+        "rating": 4,
+        "sentiment": "neutral",
+        "customer_id": {
+          "_id": "60d5ec49eb1d8e3f4c8b4571",
+          "first_name": "Jane",
+          "last_name": "Smith",
+          "profile_img_url": "https://example.com/jane.jpg"
+        },
+        "target_type": "doctor",
+        "target_id": "60d5ec49eb1d8e3f4c8b4569",
+        "created_at": "2024-01-14T14:20:00.000Z",
+        "updated_at": "2024-01-14T14:20:00.000Z"
+      }
+    ],
+    "pagination": {
+      "current_page": 1,
+      "total_pages": 5,
+      "total_items": 47,
+      "items_per_page": 10,
+      "has_next": true,
+      "has_prev": false
+    }
+  }
+}
+```
+
+**Example Requests:**
+
+```bash
+# Get all reviews (default pagination)
+curl -X GET "http://localhost:5000/api/doctor/reviews" \
+  -H "Cookie: connect.sid=your-session-cookie"
+
+# Get 5-star reviews only
+curl -X GET "http://localhost:5000/api/doctor/reviews?rating=5" \
+  -H "Cookie: connect.sid=your-session-cookie"
+
+# Get positive sentiment reviews
+curl -X GET "http://localhost:5000/api/doctor/reviews?sentiment=positive" \
+  -H "Cookie: connect.sid=your-session-cookie"
+
+# Get reviews from last month
+curl -X GET "http://localhost:5000/api/doctor/reviews?start_date=2024-01-01&end_date=2024-01-31" \
+  -H "Cookie: connect.sid=your-session-cookie"
+
+# Get reviews sorted by rating (highest first)
+curl -X GET "http://localhost:5000/api/doctor/reviews?sort_by=rating&sort_order=desc" \
+  -H "Cookie: connect.sid=your-session-cookie"
+
+# Combine filters: 5-star positive reviews from January, page 2
+curl -X GET "http://localhost:5000/api/doctor/reviews?rating=5&sentiment=positive&start_date=2024-01-01&end_date=2024-01-31&page=2&limit=20" \
+  -H "Cookie: connect.sid=your-session-cookie"
+```
+
+---
+
+### 2. Get Review Statistics
+
+Retrieve comprehensive statistics including average rating, rating distribution, and sentiment analysis.
+
+**Endpoint:** `GET /api/doctor/reviews/statistics`
+
+**Authentication:** Required (Doctor session)
+
+**Query Parameters:**
+
+| Parameter  | Type | Required | Description                    |
+| ---------- | ---- | -------- | ------------------------------ |
+| start_date | Date | No       | Get statistics from this date  |
+| end_date   | Date | No       | Get statistics until this date |
+
+**Success Response (200):**
+
+```json
+{
+  "status": 200,
+  "message": "Review statistics retrieved successfully",
+  "data": {
+    "total_reviews": 47,
+    "average_rating": 4.32,
+    "rating_distribution": {
+      "1": 2,
+      "2": 3,
+      "3": 8,
+      "4": 15,
+      "5": 19
+    },
+    "sentiment_distribution": {
+      "counts": {
+        "positive": 28,
+        "negative": 5,
+        "neutral": 14
+      },
+      "percentages": {
+        "positive": 59.57,
+        "negative": 10.64,
+        "neutral": 29.79
+      }
+    }
+  }
+}
+```
+
+**Example Requests:**
+
+```bash
+# Get overall statistics (all time)
+curl -X GET "http://localhost:5000/api/doctor/reviews/statistics" \
+  -H "Cookie: connect.sid=your-session-cookie"
+
+# Get statistics for January 2024
+curl -X GET "http://localhost:5000/api/doctor/reviews/statistics?start_date=2024-01-01&end_date=2024-01-31" \
+  -H "Cookie: connect.sid=your-session-cookie"
+
+# Get statistics for last 30 days
+curl -X GET "http://localhost:5000/api/doctor/reviews/statistics?start_date=2024-01-01" \
+  -H "Cookie: connect.sid=your-session-cookie"
+```
+
+**Statistics Explanation:**
+
+- **total_reviews**: Total number of reviews received
+- **average_rating**: Average star rating (0-5, rounded to 2 decimal places)
+- **rating_distribution**: Count of reviews for each star rating (1-5)
+- **sentiment_distribution**:
+  - **counts**: Raw count for each sentiment type
+  - **percentages**: Percentage of reviews for each sentiment (rounded to 2 decimal places)
+
+---
+
+### 3. Get Single Review
+
+Retrieve detailed information about a specific review.
+
+**Endpoint:** `GET /api/doctor/reviews/:reviewId`
+
+**Authentication:** Required (Doctor session)
+
+**Path Parameters:**
+
+| Parameter | Type   | Required | Description                |
+| --------- | ------ | -------- | -------------------------- |
+| reviewId  | String | Yes      | MongoDB ObjectId of review |
+
+**Success Response (200):**
+
+```json
+{
+  "status": 200,
+  "message": "Review retrieved successfully",
+  "data": {
+    "_id": "60d5ec49eb1d8e3f4c8b4567",
+    "message": "Dr. Smith was very professional and helpful. Explained everything clearly and answered all my questions. The consultation was thorough and I felt very comfortable throughout.",
+    "rating": 5,
+    "sentiment": "positive",
+    "customer_id": {
+      "_id": "60d5ec49eb1d8e3f4c8b4568",
+      "first_name": "John",
+      "last_name": "Doe",
+      "profile_img_url": "https://example.com/profile.jpg",
+      "email": "john.doe@example.com"
+    },
+    "target_type": "doctor",
+    "target_id": "60d5ec49eb1d8e3f4c8b4569",
+    "created_at": "2024-01-15T10:30:00.000Z",
+    "updated_at": "2024-01-15T10:30:00.000Z"
+  }
+}
+```
+
+**Error Response (404):**
+
+```json
+{
+  "status": 404,
+  "message": "Review not found or does not belong to this doctor",
+  "data": null
+}
+```
+
+**Example Request:**
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/reviews/60d5ec49eb1d8e3f4c8b4567" \
+  -H "Cookie: connect.sid=your-session-cookie"
+```
+
+---
+
+### 📌 Important Notes
+
+1. **Read-Only Access**: Doctors can only view reviews, not reply to or modify them
+2. **Own Reviews Only**: Doctors can only access reviews written about them
+3. **Pagination**: Use pagination for better performance when fetching large numbers of reviews
+4. **Date Filters**: Date filters use ISO 8601 format (YYYY-MM-DD)
+5. **Sentiment Analysis**: Sentiment is automatically calculated when reviews are created
+6. **Statistics Calculation**: Statistics are calculated in real-time based on filters
+7. **Customer Privacy**: Only basic customer information (name, profile image) is shown
+8. **Rating Scale**: Ratings are on a scale of 1-5 stars
+9. **Filter Combinations**: Multiple filters can be combined for precise filtering
+10. **Session Required**: All endpoints require an active doctor session
+
+---
+
+### 🔍 Use Cases
+
+**Monitor Service Quality:**
+
+```bash
+# Check recent reviews (last 7 days)
+curl -X GET "http://localhost:5000/api/doctor/reviews?start_date=2024-01-08&sort_by=created_at&sort_order=desc" \
+  -H "Cookie: connect.sid=your-session-cookie"
+```
+
+**Identify Areas for Improvement:**
+
+```bash
+# Get negative reviews to understand patient concerns
+curl -X GET "http://localhost:5000/api/doctor/reviews?sentiment=negative" \
+  -H "Cookie: connect.sid=your-session-cookie"
+```
+
+**Track Monthly Performance:**
+
+```bash
+# Get January statistics
+curl -X GET "http://localhost:5000/api/doctor/reviews/statistics?start_date=2024-01-01&end_date=2024-01-31" \
+  -H "Cookie: connect.sid=your-session-cookie"
+```
+
+**Showcase Positive Feedback:**
+
+```bash
+# Get top-rated reviews
+curl -X GET "http://localhost:5000/api/doctor/reviews?rating=5&sentiment=positive&limit=10" \
+  -H "Cookie: connect.sid=your-session-cookie"
+```
+
+---
+
+### 🧪 Testing Workflow
+
+**Step 1: Login as Doctor**
+
+```bash
+curl -X POST http://localhost:5000/api/doctor/auth/login \
+  -H "Content-Type: application/json" \
+  -c cookies.txt \
+  -d '{
+    "email": "doctor@example.com",
+    "password": "YourPassword123"
+  }'
+```
+
+**Step 2: Get Review Statistics**
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/reviews/statistics" \
+  -H "Cookie: $(cat cookies.txt)"
+```
+
+**Step 3: Get All Reviews (Paginated)**
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/reviews?page=1&limit=10" \
+  -H "Cookie: $(cat cookies.txt)"
+```
+
+**Step 4: Filter by Rating**
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/reviews?rating=5" \
+  -H "Cookie: $(cat cookies.txt)"
+```
+
+**Step 5: Filter by Sentiment**
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/reviews?sentiment=positive" \
+  -H "Cookie: $(cat cookies.txt)"
+```
+
+**Step 6: Filter by Date Range**
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/reviews?start_date=2024-01-01&end_date=2024-01-31" \
+  -H "Cookie: $(cat cookies.txt)"
+```
+
+**Step 7: Get Single Review Details**
+
+```bash
+# Replace reviewId with actual review ID from previous response
+curl -X GET "http://localhost:5000/api/doctor/reviews/60d5ec49eb1d8e3f4c8b4567" \
+  -H "Cookie: $(cat cookies.txt)"
+```
+
+**Step 8: Combined Filters**
+
+```bash
+# Get positive 5-star reviews from January
+curl -X GET "http://localhost:5000/api/doctor/reviews?rating=5&sentiment=positive&start_date=2024-01-01&end_date=2024-01-31&page=1&limit=20" \
+  -H "Cookie: $(cat cookies.txt)"
+```
+
+---
+
 ## 📞 Support & Notes
 
 ### Important Notes
@@ -2946,11 +3339,13 @@ curl -X POST http://localhost:5000/api/doctor/auth/logout \
 6. **Resubmission**: Rejected applications can be resubmitted with corrected documents
 7. **Profile Management**: Doctors can update their profile anytime after completing onboarding
 8. **OAuth Accounts**: Cannot change password for Google OAuth accounts
-9. **Email Notifications**: Doctors receive emails for:
-   - Email verification
-   - Application approval
-   - Application rejection
-   - Password reset
+9. **Reviews Access**: Doctors have read-only access to patient reviews and cannot reply or modify them
+10. **Email Notifications**: Doctors receive emails for:
+
+- Email verification
+- Application approval
+- Application rejection
+- Password reset
 
 ### Frontend Integration Example
 
@@ -3019,6 +3414,6 @@ For technical issues or questions:
 
 ---
 
-**Last Updated:** January 1, 2026
-**API Version:** 1.1.0
-**Modules:** Authentication, Onboarding, Profile Management
+**Last Updated:** February 28, 2026
+**API Version:** 1.2.0
+**Modules:** Authentication, Onboarding, Profile Management, Slots Management, Appointments, Reviews
