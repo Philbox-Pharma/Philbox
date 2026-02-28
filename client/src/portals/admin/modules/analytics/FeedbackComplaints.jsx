@@ -14,7 +14,7 @@ import {
   FaChartBar,
   FaChartPie,
 } from 'react-icons/fa';
-import { feedbackComplaintsApi } from '../../../../core/api/admin/adminApi';
+import { feedbackComplaintsService } from '../../../../core/api/admin/feedbackComplaints.service';
 
 export default function FeedbackComplaints() {
   const [loading, setLoading] = useState(true);
@@ -45,19 +45,19 @@ export default function FeedbackComplaints() {
           complaintsCatRes,
           feedbackCatRes,
         ] = await Promise.all([
-          feedbackComplaintsApi
+          feedbackComplaintsService
             .getSummary(filters)
             .catch(() => ({ data: null })),
-          feedbackComplaintsApi
+          feedbackComplaintsService
             .getSentimentAnalysis(filters)
             .catch(() => ({ data: null })),
-          feedbackComplaintsApi
+          feedbackComplaintsService
             .getResolutionStatus(filters)
             .catch(() => ({ data: null })),
-          feedbackComplaintsApi
+          feedbackComplaintsService
             .getComplaintsByCategory(filters)
             .catch(() => ({ data: [] })),
-          feedbackComplaintsApi
+          feedbackComplaintsService
             .getFeedbackByCategory(filters)
             .catch(() => ({ data: [] })),
         ]);

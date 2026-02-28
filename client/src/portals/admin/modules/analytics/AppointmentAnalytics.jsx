@@ -14,7 +14,7 @@ import {
   FaVideo,
   FaHospital,
 } from 'react-icons/fa';
-import { appointmentAnalyticsApi } from '../../../../core/api/admin/adminApi';
+import { appointmentAnalyticsService } from '../../../../core/api/admin/appointmentAnalytics.service';
 
 export default function AppointmentAnalytics() {
   const [loading, setLoading] = useState(true);
@@ -41,7 +41,7 @@ export default function AppointmentAnalytics() {
         };
 
         // Fetch overview data which contains all analytics
-        const overviewRes = await appointmentAnalyticsApi
+        const overviewRes = await appointmentAnalyticsService
           .getOverview(filters)
           .catch(() => ({ data: null }));
 

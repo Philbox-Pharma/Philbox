@@ -13,7 +13,7 @@ import {
   FaPills,
   FaCheckCircle,
 } from 'react-icons/fa';
-import { ordersAnalyticsApi } from '../../../../core/api/admin/adminApi';
+import { ordersAnalyticsService } from '../../../../core/api/admin/ordersAnalytics.service';
 
 export default function OrdersAnalytics() {
   const [loading, setLoading] = useState(true);
@@ -40,7 +40,7 @@ export default function OrdersAnalytics() {
         };
 
         // Fetch overview data which contains all analytics
-        const overviewRes = await ordersAnalyticsApi
+        const overviewRes = await ordersAnalyticsService
           .getOverview(filters)
           .catch(() => ({ data: null }));
 
