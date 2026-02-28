@@ -32,6 +32,7 @@ import doctorOnboardingRoutes from './modules/doctor/features/onboarding/routes/
 import doctorProfileRoutes from './modules/doctor/features/profile/routes/profile.routes.js';
 import doctorSlotsRoutes from './modules/doctor/features/slots/routes/slots.routes.js';
 import doctorAppointmentsRoutes from './modules/doctor/features/appointments/routes/appointments.routes.js';
+import doctorReviewsRoutes from './modules/doctor/features/reviews/routes/reviews.routes.js';
 import passport from './modules/doctor/features/auth/config/passport.config.js';
 
 import customerAuthRoutes from './modules/customer/features/auth/routes/auth.routes.js';
@@ -162,6 +163,7 @@ app.use(`/api/doctor/onboarding`, doctorOnboardingRoutes);
 app.use(`/api/doctor/profile`, doctorProfileRoutes);
 app.use(`/api/doctor/slots`, doctorSlotsRoutes);
 app.use(`/api/doctor/appointments`, doctorAppointmentsRoutes);
+app.use(`/api/doctor/reviews`, doctorReviewsRoutes);
 app.use(`/api/${ROUTES.CUSTOMER_AUTH}`, customerAuthRoutes);
 app.use(`/api/customer/profile`, customerProfileRoutes);
 app.use(`/api/customer/dashboard`, customerDashboardRoutes);
