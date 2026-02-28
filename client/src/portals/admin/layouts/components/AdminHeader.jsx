@@ -24,11 +24,10 @@ import {
   FaUserMd,
   FaUserFriends,
 } from 'react-icons/fa';
-import {
-  adminAuthApi,
-  activityLogsApi,
-  globalSearchApi,
-} from '../../../../core/api/admin/adminApi';
+
+import { profileService } from '../../../../core/api/admin/profile.service';
+import { activityLogsService } from '../../../../core/api/admin/activityLogs.service';
+import { globalSearchService } from '../../../../core/api/admin/globalSearch.service';
 
 export default function AdminHeader({ toggleSidebar, admin }) {
   const navigate = useNavigate();
@@ -81,7 +80,7 @@ export default function AdminHeader({ toggleSidebar, admin }) {
     setShowSearchResults(true);
 
     try {
-      const results = await globalSearchApi.search(query, 5);
+      const results = await globalSearchService.search(query, 5);
       setSearchResults(results);
       setSelectedIndex(-1);
     } catch (err) {
@@ -192,7 +191,7 @@ export default function AdminHeader({ toggleSidebar, admin }) {
         Date.now() - 7 * 24 * 60 * 60 * 1000
       ).toISOString(); // Last 7 days
 
-      const response = await activityLogsApi.getTimeline({
+      const response = await activityLogsService.getTimeline({
         startDate,
         endDate,
         limit: 10,
@@ -309,7 +308,7 @@ export default function AdminHeader({ toggleSidebar, admin }) {
 
   const handleLogout = async () => {
     try {
-      await adminAuthApi.logout();
+      await profileService.logout();
       localStorage.removeItem('adminData');
       navigate('/admin/login');
     } catch (error) {

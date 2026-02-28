@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable no-unused-vars */
+
 // src/portals/admin/modules/staff/admins/AdminDetails.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
@@ -21,7 +21,7 @@ import {
   FaCheckCircle,
   FaTimesCircle,
 } from 'react-icons/fa';
-import { staffApi, rolesApi } from '../../../../../core/api/admin/adminApi';
+import { staffService } from '../../../../../core/api/admin/staff.service';
 import ConfirmModal from '../../../../../shared/components/Modal/ConfirmModal';
 
 export default function AdminDetails() {
@@ -60,7 +60,7 @@ export default function AdminDetails() {
     setLoading(true);
     setError(null);
     try {
-      const response = await staffApi.getAdminById(id);
+      const response = await staffService.getAdminById(id);
       console.log('Admin Details API Response:', response);
 
       if (response.success || response.status === 200) {
@@ -82,7 +82,7 @@ export default function AdminDetails() {
   const handleDelete = async () => {
     setActionLoading(true);
     try {
-      const response = await staffApi.deleteAdmin(id);
+      const response = await staffService.deleteAdmin(id);
       if (response.success || response.status === 200) {
         navigate('/admin/staff/admins', {
           state: { message: 'Admin deleted successfully!' },

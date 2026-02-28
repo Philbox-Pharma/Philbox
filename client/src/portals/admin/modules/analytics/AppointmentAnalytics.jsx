@@ -14,9 +14,7 @@ import {
   FaVideo,
   FaHospital,
 } from 'react-icons/fa';
-import adminApi from '../../../../core/api/admin/adminApi';
-
-const { appointmentAnalytics: appointmentAnalyticsApi } = adminApi;
+import { appointmentAnalyticsService } from '../../../../core/api/admin/appointmentAnalytics.service';
 
 export default function AppointmentAnalytics() {
   const [loading, setLoading] = useState(true);
@@ -43,7 +41,7 @@ export default function AppointmentAnalytics() {
         };
 
         // Fetch overview data which contains all analytics
-        const overviewRes = await appointmentAnalyticsApi
+        const overviewRes = await appointmentAnalyticsService
           .getOverview(filters)
           .catch(() => ({ data: null }));
 
@@ -136,7 +134,7 @@ export default function AppointmentAnalytics() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#805ad5] to-[#6b46c1] rounded-2xl p-6 text-white">
+      <div className="bg-linear-to-r from-[#805ad5] to-[#6b46c1] rounded-2xl p-6 text-white">
         <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
           <FaCalendarCheck />
           Appointment Analytics

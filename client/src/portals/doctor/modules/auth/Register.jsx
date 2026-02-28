@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import { doctorAuthApi } from '../../../../core/api/doctor/auth';
+import { doctorAuthApi } from '../../../../core/api/doctor/auth.service';
 
 export default function Register() {
   // eslint-disable-next-line no-unused-vars
@@ -87,7 +87,7 @@ export default function Register() {
 
   return (
     <div className="auth-wrapper">
-      <div className="card-container !w-[480px]">
+      <div className="card-container w-[480px]!">
         {/* Logo */}
         <img src="/vite.svg" alt="Logo" className="auth-logo" />
 

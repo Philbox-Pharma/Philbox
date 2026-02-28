@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { motion } from 'framer-motion';
 import { FaTimes, FaUserShield, FaSpinner, FaCheck } from 'react-icons/fa';
-import { branchApi, staffApi } from '../../../../../core/api/admin/adminApi';
-
+import { branchesService } from '../../../../../core/api/admin/branches.service';
+import { staffService } from '../../../../../core/api/admin/staff.service';
 export default function AssignAdminsModal({
   isOpen,
   onClose,
@@ -32,7 +32,7 @@ export default function AssignAdminsModal({
     setLoading(true);
     setError(null);
     try {
-      const response = await staffApi.getAdmins(1, 100);
+      const response = await staffService.getAdmins(1, 100);
       if (response.success || response.data) {
         setAdmins(response.data?.admins || []);
       }
@@ -78,7 +78,10 @@ export default function AssignAdminsModal({
     setSaving(true);
     setError(null);
     try {
-      const response = await branchApi.assignAdmins(branchId, selectedAdmins);
+      const response = await branchesService.assignAdmins(
+        branchId,
+        selectedAdmins
+      );
       if (response.success || response.status === 200) {
         onSuccess();
       } else {

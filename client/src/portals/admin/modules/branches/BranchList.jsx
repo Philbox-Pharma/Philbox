@@ -19,7 +19,7 @@ import {
 } from 'react-icons/fa';
 import DataTable from '../../../../shared/components/DataTable/DataTable';
 import ConfirmModal from '../../../../shared/components/Modal/ConfirmModal';
-import { branchApi } from '../../../../core/api/admin/adminApi';
+import { branchesService } from '../../../../core/api/admin/branches.service';
 
 export default function BranchList() {
   const navigate = useNavigate();
@@ -62,7 +62,7 @@ export default function BranchList() {
       if (search) filters.search = search;
       if (statusFilter) filters.status = statusFilter;
 
-      const response = await branchApi.getAll(page, limit, filters);
+      const response = await branchesService.getAll(page, limit, filters);
       if (response.success || response.status === 200) {
         setBranches(response.data?.branches || []);
         const pageData = response.data?.pagination;
@@ -103,7 +103,9 @@ export default function BranchList() {
     if (!toggleModal.branch) return;
     setActionLoading(true);
     try {
-      const response = await branchApi.toggleStatus(toggleModal.branch._id);
+      const response = await branchesService.toggleStatus(
+        toggleModal.branch._id
+      );
       if (response.success || response.status === 200) {
         // Update local state instantly without refresh
         const newStatus =
@@ -133,7 +135,7 @@ export default function BranchList() {
     if (!deleteModal.branch) return;
     setActionLoading(true);
     try {
-      const response = await branchApi.delete(deleteModal.branch._id);
+      const response = await branchesService.delete(deleteModal.branch._id);
       if (response.success || response.status === 200) {
         setSuccessMessage('Branch deleted successfully!');
         setDeleteModal({ open: false, branch: null });

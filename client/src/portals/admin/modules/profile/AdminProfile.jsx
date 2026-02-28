@@ -12,7 +12,7 @@ import {
   FaCheckCircle,
   FaExclamationTriangle,
 } from 'react-icons/fa';
-import { adminAuthApi } from '../../../../core/api/admin/adminApi';
+import { profileService } from '../../../../core/api/admin/profile.service';
 import { FormInput } from '../../../../shared/components/Form';
 
 export default function AdminProfile() {
@@ -42,17 +42,19 @@ export default function AdminProfile() {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      // Read from localStorage (saved during login)
-      const storedAdmin = localStorage.getItem('adminData');
-      if (storedAdmin) {
-        const data = JSON.parse(storedAdmin);
+      // Fetch fresh profile data from backend
+      const response = await profileService.getProfile();
+      if (response.status === 200 || response.success) {
+        const data = response.data?.admin || response.data;
         setAdmin(data);
         setProfileData({
           name: data.name || data.fullName,
           phone_number: data.phone_number || data.contactNumber,
         });
+        // Update localStorage with fresh data
+        localStorage.setItem('adminData', JSON.stringify(data));
       } else {
-        throw new Error('No profile data found. Please login again.');
+        throw new Error(response.message || 'Could not load profile data');
       }
     } catch (err) {
       console.error('Fetch Profile Error:', err);
@@ -68,34 +70,34 @@ export default function AdminProfile() {
     setSavingProfile(true);
     setError(null);
     try {
-      // Build FormData with fields matching backend DTO
-      const formData = new FormData();
-      formData.append('name', profileData.name);
-      if (profileData.phone_number) {
-        formData.append('phone_number', profileData.phone_number);
-      }
+      let response;
 
+      // If there's a profile picture, upload it separately first
       if (selectedFile) {
-        formData.append('profile_img', selectedFile);
+        const pictureResponse =
+          await profileService.uploadProfilePicture(selectedFile);
+        if (pictureResponse.status === 200 || pictureResponse.success) {
+          // Update admin state with new profile picture URL
+          const newProfileImgUrl = pictureResponse.data?.profile_img_url;
+          if (newProfileImgUrl) {
+            setAdmin(prev => ({ ...prev, profile_img_url: newProfileImgUrl }));
+          }
+        }
       }
 
-      // Pass admin ID to the API
-      const adminId = admin._id || admin.id;
-      if (!adminId) {
-        throw new Error('Admin ID not found. Please login again.');
-      }
+      // Update profile info (name, phone_number)
+      response = await profileService.updateProfile({
+        name: profileData.name,
+        phone_number: profileData.phone_number,
+      });
 
-      const response = await adminAuthApi.updateProfile(adminId, formData);
       if (response.status === 200 || response.success) {
-        // If server returns updated admin object, merge it
+        // Get updated admin object from response
         const updatedAdmin = response.data?.admin || response.data || {};
 
         const newAdminData = {
           ...admin,
-          name: profileData.name,
-          phone_number: profileData.phone_number,
-          profile_img_url:
-            updatedAdmin.profile_img_url || admin.profile_img_url,
+          ...updatedAdmin,
         };
 
         setAdmin(newAdminData);
@@ -123,7 +125,7 @@ export default function AdminProfile() {
     setToggling2FA(true);
     try {
       const newValue = !admin.isTwoFactorEnabled;
-      const response = await adminAuthApi.update2FASettings(newValue);
+      const response = await profileService.update2FASettings(newValue);
 
       if (response.status === 200 || response.success) {
         const newAdminData = { ...admin, isTwoFactorEnabled: newValue };
@@ -180,7 +182,7 @@ export default function AdminProfile() {
         {/* Sidebar / Profile Card */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="h-24 bg-gradient-to-r from-[#1a365d] to-[#2f855a]"></div>
+            <div className="h-24 bg-linear-to-r from-[#1a365d] to-[#2f855a]"></div>
             <div className="px-6 pb-6 text-center -mt-12">
               <div className="relative inline-block">
                 <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-100 flex items-center justify-center shadow-md overflow-hidden relative">

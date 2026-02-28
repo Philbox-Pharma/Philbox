@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import adminApi from '../../../../core/api/admin/adminApi';
 import {
   FaArrowLeft,
   FaUser,
@@ -18,7 +17,7 @@ import {
   FaChartLine,
 } from 'react-icons/fa';
 
-const { customers: customerApi } = adminApi;
+import { customersService } from '../../../../core/api/admin/customers.service';
 
 export default function CustomerDetails() {
   const { id } = useParams();
@@ -39,7 +38,7 @@ export default function CustomerDetails() {
   const fetchCustomerDetails = async () => {
     setLoading(true);
     try {
-      const res = await customerApi.getCustomerById(id);
+      const res = await customersService.getCustomerById(id);
       if (res.status === 200) {
         setData(res.data);
       }
@@ -54,7 +53,7 @@ export default function CustomerDetails() {
   const handleStatusChange = async e => {
     e.preventDefault();
     try {
-      const res = await customerApi.toggleCustomerStatus(id, statusForm);
+      const res = await customersService.toggleCustomerStatus(id, statusForm);
       if (res.status === 200) {
         alert('Customer status updated successfully!');
         setShowStatusModal(false);

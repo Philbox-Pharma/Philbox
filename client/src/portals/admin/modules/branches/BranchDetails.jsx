@@ -43,7 +43,8 @@ import {
 } from 'recharts';
 import ConfirmModal from '../../../../shared/components/Modal/ConfirmModal';
 import AssignAdminsModal from './components/AssignAdminsModal';
-import { branchApi, revenueApi } from '../../../../core/api/admin/adminApi';
+import { branchesService } from '../../../../core/api/admin/branches.service';
+import { revenueService } from '../../../../core/api/admin/revenue.service';
 
 // Chart Colors
 const COLORS = {
@@ -92,7 +93,7 @@ export default function BranchDetails() {
     setLoading(true);
     setError(null);
     try {
-      const branchRes = await branchApi.getById(id);
+      const branchRes = await branchesService.getById(id);
       if (branchRes.success || branchRes.status === 200) {
         setBranch(branchRes.data);
         // Fetch revenue after branch loads
@@ -121,11 +122,11 @@ export default function BranchDetails() {
       // Fetch all revenue data in parallel with branchId filter
       const [trendsRes, splitRes, refundsRes, avgRes, paymentRes] =
         await Promise.all([
-          revenueApi.getTrendsForBranch(id, startDate, endDate, period),
-          revenueApi.getSplitForBranch(id, startDate, endDate),
-          revenueApi.getRefundsForBranch(id, startDate, endDate),
-          revenueApi.getAvgPerCustomerForBranch(id, startDate, endDate),
-          revenueApi.getPaymentMethodsForBranch(id, startDate, endDate),
+          revenueService.getTrendsForBranch(id, startDate, endDate, period),
+          revenueService.getSplitForBranch(id, startDate, endDate),
+          revenueService.getRefundsForBranch(id, startDate, endDate),
+          revenueService.getAvgPerCustomerForBranch(id, startDate, endDate),
+          revenueService.getPaymentMethodsForBranch(id, startDate, endDate),
         ]);
 
       // Process Trends
@@ -198,7 +199,7 @@ export default function BranchDetails() {
   const handleDelete = async () => {
     setActionLoading(true);
     try {
-      const response = await branchApi.delete(id);
+      const response = await branchesService.delete(id);
       if (response.success || response.status === 200) {
         navigate('/admin/branches', {
           state: { message: 'Branch deleted successfully!' },
@@ -218,7 +219,7 @@ export default function BranchDetails() {
   const handleToggleStatus = async () => {
     setActionLoading(true);
     try {
-      const response = await branchApi.toggleStatus(id);
+      const response = await branchesService.toggleStatus(id);
       if (response.success || response.status === 200) {
         setBranch(prev => ({
           ...prev,

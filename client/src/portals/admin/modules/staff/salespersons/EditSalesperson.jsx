@@ -18,7 +18,8 @@ import {
   FormSelect,
   FormMultiSelect,
 } from '../../../../../shared/components/Form';
-import { staffApi, branchApi } from '../../../../../core/api/admin/adminApi';
+import { staffService } from '../../../../../core/api/admin/staff.service';
+import { branchesService } from '../../../../../core/api/admin/branches.service';
 
 export default function EditSalesperson() {
   const navigate = useNavigate();
@@ -62,7 +63,7 @@ export default function EditSalesperson() {
     try {
       // Fetch branches
       setBranchLoading(true);
-      const branchResponse = await branchApi.getAll(1, 100, {
+      const branchResponse = await branchesService.getAll(1, 100, {
         status: 'Active',
       });
       if (branchResponse.status === 200 || branchResponse.data) {
@@ -77,7 +78,7 @@ export default function EditSalesperson() {
       setBranchLoading(false);
 
       // Fetch salesperson
-      const spResponse = await staffApi.getSalespersonById(id);
+      const spResponse = await staffService.getSalespersonById(id);
       if (spResponse.status === 200 || spResponse.data) {
         const person = spResponse.data;
         const formValues = {
@@ -284,7 +285,7 @@ export default function EditSalesperson() {
         payload.branches_to_be_managed = formData.branches_to_be_managed;
       }
 
-      const response = await staffApi.updateSalesperson(id, payload);
+      const response = await staffService.updateSalesperson(id, payload);
 
       if (response.status === 200 || response.success) {
         navigate(`/admin/staff/salespersons/${id}`, {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 //import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import { customerAuthApi } from '../../../../core/api/customer/auth';
+import { customerAuthApi } from '../../../../core/api/customer/auth.service';
 
 export default function Register() {
   // Form States
@@ -80,7 +80,7 @@ export default function Register() {
 
   return (
     <div className="auth-wrapper">
-      <div className="card-container !w-[450px]">
+      <div className="card-container w-[450px]!">
         {/* Logo */}
         <img src="/vite.svg" alt="Logo" className="auth-logo" />
 

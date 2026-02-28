@@ -1,23 +1,28 @@
-import apiClient from "../client";
+import apiClient from '../client';
 
-const BASE_URL = "/customer/auth";
+const BASE_URL = '/customer/auth';
 
 export const customerAuthApi = {
   // Register
-  register: async (data) => {
+  register: async data => {
     const response = await apiClient.post(`${BASE_URL}/register`, data);
     return response.data;
   },
 
   // Verify Email
-  verifyEmail: async (token) => {
-    const response = await apiClient.post(`${BASE_URL}/verify-email`, { token });
+  verifyEmail: async token => {
+    const response = await apiClient.post(`${BASE_URL}/verify-email`, {
+      token,
+    });
     return response.data;
   },
 
   // Login
   login: async (email, password) => {
-    const response = await apiClient.post(`${BASE_URL}/login`, { email, password });
+    const response = await apiClient.post(`${BASE_URL}/login`, {
+      email,
+      password,
+    });
     return response.data;
   },
 
@@ -28,7 +33,7 @@ export const customerAuthApi = {
   },
 
   // Update Profile (with images)
-  updateProfile: async (formData) => {
+  updateProfile: async formData => {
     const response = await apiClient.put(`${BASE_URL}/profile`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -38,14 +43,19 @@ export const customerAuthApi = {
   },
 
   // Forgot Password
-  forgotPassword: async (email) => {
-    const response = await apiClient.post(`${BASE_URL}/forget-password`, { email });
+  forgotPassword: async email => {
+    const response = await apiClient.post(`${BASE_URL}/forget-password`, {
+      email,
+    });
     return response.data;
   },
 
   // Reset Password
   resetPassword: async (token, newPassword) => {
-    const response = await apiClient.post(`${BASE_URL}/reset-password`, { token, newPassword });
+    const response = await apiClient.post(`${BASE_URL}/reset-password`, {
+      token,
+      newPassword,
+    });
     return response.data;
   },
 
@@ -59,7 +69,7 @@ export const customerAuthApi = {
   getGoogleAuthUrl: () => {
     return `${apiClient.defaults.baseURL}/customer/auth/google`;
   },
-  cancelOrder: async (orderId) => {
+  cancelOrder: async orderId => {
     const response = await apiClient.post(`/customer/orders/${orderId}/cancel`);
     return response.data;
   },

@@ -11,9 +11,8 @@ import {
   FaChevronLeft,
   FaChevronRight,
 } from 'react-icons/fa';
-import adminApi from '../../../../core/api/admin/adminApi';
 
-const { activityLogs: activityLogsApi } = adminApi;
+import { activityLogsService } from '../../../../core/api/admin/activityLogs.service';
 
 // KPI Card
 
@@ -120,10 +119,10 @@ export default function ActivityLogs() {
       try {
         const [overviewRes, timelineRes, freqActionsRes, loginRes] =
           await Promise.all([
-            activityLogsApi
+            activityLogsService
               .getOverview(dateRange.startDate, dateRange.endDate)
               .catch(() => ({ data: null })),
-            activityLogsApi
+            activityLogsService
               .getTimeline({
                 startDate: dateRange.startDate,
                 endDate: dateRange.endDate,
@@ -132,13 +131,13 @@ export default function ActivityLogs() {
                 ...filters,
               })
               .catch(() => ({ data: { logs: [], pagination: {} } })),
-            activityLogsApi
+            activityLogsService
               .getFrequentActions({
                 startDate: dateRange.startDate,
                 endDate: dateRange.endDate,
               })
               .catch(() => ({ data: [] })),
-            activityLogsApi
+            activityLogsService
               .getLoginAttempts(dateRange.startDate, dateRange.endDate)
               .catch(() => ({ data: null })),
           ]);

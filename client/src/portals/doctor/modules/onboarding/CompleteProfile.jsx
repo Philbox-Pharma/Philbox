@@ -7,7 +7,7 @@ import {
   FaPlus,
   FaTrash,
 } from 'react-icons/fa';
-import { doctorAuthApi } from '../../../../core/api/doctor/auth';
+import { doctorAuthApi } from '../../../../core/api/doctor/auth.service';
 
 export default function CompleteProfile() {
   const navigate = useNavigate();
@@ -230,7 +230,7 @@ export default function CompleteProfile() {
       {file ? (
         <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
           <div className="flex items-center gap-2 overflow-hidden">
-            <FaCheckCircle className="text-green-500 flex-shrink-0" />
+            <FaCheckCircle className="text-green-500 shrink-0" />
             <span className="text-sm text-green-700 truncate">{file.name}</span>
           </div>
           <button
@@ -257,8 +257,8 @@ export default function CompleteProfile() {
   );
 
   return (
-    <div className="auth-wrapper !py-8">
-      <div className="card-container !w-[700px] !max-w-[95vw]">
+    <div className="auth-wrapper py-8!">
+      <div className="card-container w-[700px]! max-w-[95vw]!">
         {/* Logo */}
         <img src="/vite.svg" alt="Logo" className="auth-logo" />
 

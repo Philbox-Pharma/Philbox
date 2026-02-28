@@ -26,7 +26,8 @@ import {
   FormSelect,
   FormMultiSelect,
 } from '../../../../../shared/components/Form';
-import { staffApi, branchApi } from '../../../../../core/api/admin/adminApi';
+import { branchesService } from '../../../../../core/api/admin/branches.service';
+import { staffService } from '../../../../../core/api/admin/staff.service';
 
 export default function AddAdmin() {
   const navigate = useNavigate();
@@ -75,7 +76,9 @@ export default function AddAdmin() {
     const fetchBranches = async () => {
       setBranchLoading(true);
       try {
-        const response = await branchApi.getAll(1, 100, { status: 'Active' });
+        const response = await branchesService.getAll(1, 100, {
+          status: 'Active',
+        });
         if (response.status === 200 || response.data) {
           const branches = response.data?.branches || [];
           setBranchOptions(
@@ -295,7 +298,7 @@ export default function AddAdmin() {
         submitData.append('cover_img', coverImg);
       }
 
-      const response = await staffApi.createAdmin(submitData);
+      const response = await staffService.createAdmin(submitData);
 
       if (
         response.status === 200 ||

@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import adminApi from '../../../../core/api/admin/adminApi';
 import {
   FaUsers,
   FaSearch,
@@ -14,8 +13,8 @@ import {
   FaExclamationTriangle,
 } from 'react-icons/fa';
 
-const { customers: customerApi, branches: branchApi } = adminApi;
-
+import { customersService } from '../../../../core/api/admin/customers.service';
+import { branchesService } from '../../../../core/api/admin/branches.service';
 export default function CustomerList() {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
@@ -46,13 +45,13 @@ export default function CustomerList() {
     setLoading(true);
     try {
       const [customersRes, metricsRes, branchesRes] = await Promise.all([
-        customerApi.getCustomers({
+        customersService.getCustomers({
           ...filters,
           page: pagination.page,
           limit: pagination.limit,
         }),
-        customerApi.getMetrics({ branchId: filters.branchId }),
-        branchApi.getAll(1, 100),
+        customersService.getMetrics({ branchId: filters.branchId }),
+        branchesService.getAll(1, 100),
       ]);
 
       if (customersRes.status === 200) {

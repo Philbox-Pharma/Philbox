@@ -23,7 +23,7 @@ import {
   FaExclamationTriangle,
   FaBan,
 } from 'react-icons/fa';
-import { staffApi } from '../../../../../core/api/admin/adminApi';
+import { staffService } from '../../../../../core/api/admin/staff.service';
 import ConfirmModal from '../../../../../shared/components/Modal/ConfirmModal';
 
 export default function SalespersonDetails() {
@@ -76,7 +76,7 @@ export default function SalespersonDetails() {
     setUsingMockData(false);
 
     try {
-      const response = await staffApi.getSalespersonById(id);
+      const response = await staffService.getSalespersonById(id);
       if (response.status === 200 || response.data) {
         setPerson(response.data);
       } else {
@@ -115,7 +115,7 @@ export default function SalespersonDetails() {
   const fetchTaskPerformance = async () => {
     setTaskLoading(true);
     try {
-      const response = await staffApi.getSalespersonTaskPerformance({
+      const response = await staffService.getSalespersonTaskPerformance({
         salesperson_id: id,
         limit: 5,
       });
@@ -171,7 +171,7 @@ export default function SalespersonDetails() {
   const handleDelete = async () => {
     setActionLoading(true);
     try {
-      const response = await staffApi.deleteSalesperson(id);
+      const response = await staffService.deleteSalesperson(id);
       if (response.status === 200 || response.success) {
         navigate('/admin/staff/salespersons', {
           state: { message: 'Salesperson deleted successfully!' },
@@ -191,7 +191,10 @@ export default function SalespersonDetails() {
   const handleStatusChange = async () => {
     setActionLoading(true);
     try {
-      const response = await staffApi.changeSalespersonStatus(id, newStatus);
+      const response = await staffService.changeSalespersonStatus(
+        id,
+        newStatus
+      );
       if (response.status === 200 || response.success) {
         setPerson(prev => ({ ...prev, status: newStatus }));
         setSuccessMessage(`Status changed to ${newStatus} successfully!`);

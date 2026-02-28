@@ -17,6 +17,7 @@ import adminBranchManagementRoutes from './modules/admin/features/branch_managem
 import permissionsManagementRoutes from './modules/admin/features/permissions_management/routes/permissions.routes.js';
 import adminDoctorManagementRoutes from './modules/admin/features/doctor_management/routes/doctor.routes.js';
 import adminCustomerManagementRoutes from './modules/admin/features/customer_management/routes/customer.routes.js';
+import adminProfileRoutes from './modules/admin/features/profile_management/routes/profile.routes.js';
 import appointmentAnalyticsRoutes from './modules/admin/features/dashboard_management/appointment_analytics/routes/appointmentAnalytics.routes.js';
 import revenueAnalyticsRoutes from './modules/admin/features/dashboard_management/revenue_analytics/routes/revenueAnalytics.routes.js';
 import ordersAnalyticsRoutes from './modules/admin/features/dashboard_management/orders_analytics/routes/ordersAnalytics.routes.js';
@@ -131,6 +132,7 @@ app.use(`/api/${ROUTES.ADMIN}`, adminBranchManagementRoutes);
 app.use(`/api/${ROUTES.ADMIN}/permissions`, permissionsManagementRoutes);
 app.use(`/api/${ROUTES.ADMIN}/doctors`, adminDoctorManagementRoutes);
 app.use(`/api/${ROUTES.ADMIN}/customers`, adminCustomerManagementRoutes);
+app.use(`/api/${ROUTES.ADMIN}/profile`, adminProfileRoutes);
 app.use(
   `/api/${ROUTES.ADMIN}/appointment-analytics`,
   appointmentAnalyticsRoutes

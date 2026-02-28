@@ -12,7 +12,6 @@ import {
   FaCodeBranch,
   FaSync,
 } from 'react-icons/fa';
-import adminApi from '../../../../core/api/admin/adminApi';
 import { Line, Pie, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -27,7 +26,8 @@ import {
   ArcElement,
 } from 'chart.js';
 
-const { ordersAnalytics: ordersAnalyticsApi, branches: branchApi } = adminApi;
+import { branchesService } from '../../../../core/api/admin/branches.service';
+import { ordersAnalyticsService } from '../../../../core/api/admin/ordersAnalytics.service';
 
 // Register ChartJS components
 ChartJS.register(
@@ -68,7 +68,7 @@ export default function OrdersDashboard() {
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        const response = await branchApi.getAll(1, 100);
+        const response = await branchesService.getAll(1, 100);
         if (response.status === 200 || response.data) {
           setBranches(response.data?.branches || []);
         }
@@ -92,13 +92,13 @@ export default function OrdersDashboard() {
         revCatRes,
         refundRes,
       ] = await Promise.all([
-        ordersAnalyticsApi.getOverview(filters),
-        ordersAnalyticsApi.getTrends(filters),
-        ordersAnalyticsApi.getStatusBreakdown(filters),
-        ordersAnalyticsApi.getTopMedicines({ ...filters, limit: 10 }),
-        ordersAnalyticsApi.getStockAlerts(filters),
-        ordersAnalyticsApi.getRevenueByCategory(filters),
-        ordersAnalyticsApi.getRefundRate(filters),
+        ordersAnalyticsService.getOverview(filters),
+        ordersAnalyticsService.getTrends(filters),
+        ordersAnalyticsService.getStatusBreakdown(filters),
+        ordersAnalyticsService.getTopMedicines({ ...filters, limit: 10 }),
+        ordersAnalyticsService.getStockAlerts(filters),
+        ordersAnalyticsService.getRevenueByCategory(filters),
+        ordersAnalyticsService.getRefundRate(filters),
       ]);
 
       if (overviewRes.status === 200) setOverview(overviewRes.data);

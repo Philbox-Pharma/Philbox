@@ -19,13 +19,11 @@ import {
   FaShoppingCart,
   FaMoneyBillWave,
 } from 'react-icons/fa';
-import {
-  branchApi,
-  staffApi,
-  doctorApi,
-  ordersAnalyticsApi,
-} from '../../../../core/api/admin/adminApi';
 
+import { ordersAnalyticsService } from '../../../../core/api/admin/ordersAnalytics.service';
+import { doctorsService } from '../../../../core/api/admin/doctors.service';
+import { staffService } from '../../../../core/api/admin/staff.service';
+import { branchesService } from '../../../../core/api/admin/branches.service';
 // Stats Card Component
 const StatCard = ({
   icon: Icon,
@@ -173,21 +171,23 @@ export default function AdminDashboard() {
           doctorsListResponse,
           ordersOverviewResponse,
         ] = await Promise.all([
-          branchApi.getStatistics().catch(() => ({ data: null })),
-          branchApi.getAll(1, 6).catch(() => ({ data: { branches: [] } })),
-          staffApi
+          branchesService.getStatistics().catch(() => ({ data: null })),
+          branchesService
+            .getAll(1, 6)
+            .catch(() => ({ data: { branches: [] } })),
+          staffService
             .getAdmins(1, 1)
             .catch(() => ({ data: { pagination: { total: 0 } } })),
-          staffApi
+          staffService
             .getSalespersons(1, 1)
             .catch(() => ({ data: { pagination: { total: 0 } } })),
-          doctorApi
+          doctorsService
             .getApplications({ status: 'pending', limit: 1 })
             .catch(() => ({ data: { pagination: { total: 0 } } })),
-          doctorApi
+          doctorsService
             .getAllDoctors({ limit: 1 })
             .catch(() => ({ data: { pagination: { total: 0 } } })),
-          ordersAnalyticsApi.getOverview({}).catch(() => ({ data: null })),
+          ordersAnalyticsService.getOverview({}).catch(() => ({ data: null })),
         ]);
 
         setStats({
