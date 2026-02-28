@@ -490,7 +490,7 @@ export default function OrderDetail() {
               {order.items.map(item => (
                 <div
                   key={item.id}
-                  className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg"
+                  className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-gray-50 rounded-lg"
                 >
                   <img
                     src={item.image}
@@ -509,7 +509,7 @@ export default function OrderDetail() {
                       Qty: {item.quantity}
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="mt-2 sm:mt-0 w-full sm:w-auto text-left sm:text-right flex justify-between sm:block border-t sm:border-0 pt-2 sm:pt-0 border-gray-200">
                     <p className="font-bold text-gray-800">
                       Rs. {item.price * item.quantity}
                     </p>

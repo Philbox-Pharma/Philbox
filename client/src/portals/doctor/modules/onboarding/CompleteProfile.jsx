@@ -260,7 +260,7 @@ export default function CompleteProfile() {
     <div className="auth-wrapper !py-8">
       <div className="card-container !w-[700px] !max-w-[95vw]">
         {/* Logo */}
-        <img src="/vite.svg" alt="Logo" className="auth-logo" />
+        <img src="/Philbox.PNG" alt="Logo" className="auth-logo" />
 
         {/* Title */}
         <h1 className="auth-title">Complete Your Profile</h1>

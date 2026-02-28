@@ -1,12 +1,12 @@
 /* src/index.css */
-@import "tailwindcss";
-@import "leaflet/dist/leaflet.css";
+@import 'tailwindcss';
+@import 'leaflet/dist/leaflet.css';
 @layer base {
   :root {
     --color-primary-blue: #003399;
-    --color-primary-green: #4FA64F;
-    --color-secondary-green: #2E8B57;
-    --color-accent-green: #7AC143;
+    --color-primary-green: #4fa64f;
+    --color-secondary-green: #2e8b57;
+    --color-accent-green: #7ac143;
   }
 }
 
@@ -15,27 +15,27 @@
     color: #003399;
   }
   .text-primary-green {
-    color: #4FA64F;
+    color: #4fa64f;
   }
   .text-secondary-green {
-    color: #2E8B57;
+    color: #2e8b57;
   }
 
   .bg-primary-blue {
     background-color: #003399;
   }
   .bg-primary-green {
-    background-color: #4FA64F;
+    background-color: #4fa64f;
   }
   .bg-secondary-green {
-    background-color: #2E8B57;
+    background-color: #2e8b57;
   }
 
   .border-primary-blue {
     border-color: #003399;
   }
   .border-primary-green {
-    border-color: #4FA64F;
+    border-color: #4fa64f;
   }
 
   .from-primary-blue {
@@ -45,16 +45,15 @@
     --tw-gradient-to: #003399;
   }
   .via-secondary-green {
-    --tw-gradient-via: #2E8B57;
+    --tw-gradient-via: #2e8b57;
   }
   .from-primary-green {
-    --tw-gradient-from: #4FA64F;
+    --tw-gradient-from: #4fa64f;
   }
   .to-primary-green {
-    --tw-gradient-to: #4FA64F;
+    --tw-gradient-to: #4fa64f;
   }
 }
-
 
 @layer components {
   /* ============================================
@@ -175,11 +174,11 @@
 
   /* Old card-container (keeping for backward compatibility) */
   .card-container {
-    @apply bg-white p-10 rounded-2xl shadow-xl w-96;
+    @apply bg-white p-6 sm:p-10 rounded-2xl shadow-xl w-full max-w-[400px];
   }
 
   .auth-wrapper {
-    @apply min-h-screen flex items-center justify-center bg-gray-100;
+    @apply min-h-screen flex items-center justify-center bg-gray-100 p-4;
   }
 
   /* ============================================
@@ -223,7 +222,7 @@
      LOGO
   ============================================ */
   .auth-logo {
-    @apply w-16 h-16 mx-auto mb-4;
+    @apply h-12 sm:h-16 w-auto object-contain mx-auto mb-4;
   }
 
   /* ============================================

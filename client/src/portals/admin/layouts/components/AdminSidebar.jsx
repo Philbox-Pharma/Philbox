@@ -28,7 +28,6 @@ export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
 
   const toggleMenu = menuKey => {
     setExpandedMenus(prev => ({
-      ...prev,
       [menuKey]: !prev[menuKey],
     }));
   };
@@ -247,21 +246,18 @@ export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
                       !hasPermission(subItem.permission)
                     )
                       return null;
-                    const subPath = subItem.path.split('?')[0];
-
                     return (
                       <NavLink
                         key={subItem.path}
                         to={subItem.path}
+                        end
                         onClick={() =>
                           window.innerWidth < 1024 && closeSidebar()
                         }
                         className={({ isActive }) => `
                                                     block py-2 px-3 rounded-lg text-sm transition-all duration-200
                                                     ${
-                                                      isActive ||
-                                                      location.pathname ===
-                                                        subPath
+                                                      isActive
                                                         ? 'text-[#d69e2e] font-medium bg-white/5'
                                                         : 'text-gray-400 hover:text-white hover:bg-white/5'
                                                     }
@@ -316,7 +312,7 @@ export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
       {/* Sidebar */}
       <aside
         className={`
-                    fixed lg:sticky top-0 left-0 h-screen w-64 bg-[#1a365d] z-50
+                    fixed lg:sticky top-0 left-0 min-h-screen w-64 bg-[#1a365d] z-50
                     transform transition-transform duration-300 ease-in-out border-r border-white/5
                     ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                     flex flex-col shadow-xl

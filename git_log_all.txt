@@ -1,0 +1,203 @@
+﻿3ae1ae0 Starting FYP-2
+7671e3a Starting FYP-11
+f9a2888 Admins-Responsiveness Related Bugs have been reported
+4298535 Added Bug Report
+3a3bf19 Added Bug Report
+6b0a367 documentation updated
+52f3460 added vercel files for deployment
+1afb130 Merged feature/admin-dashboard
+93f52a0 Admin Panel Completed
+3d843b1 Roles and Permissions added to Admin Dashboard
+3b3db93 Merge pull request #159 from Philbox-Pharma/bug/railway-session-issue
+756def7 fix: CORS configuration for Railway staging environment
+8c5d69d Merge pull request #157 from Philbox-Pharma/bug/railway-session-issue
+f4b228b solving-railway-session-issue
+82a0170 Merge pull request #154 from Philbox-Pharma/bug/railway-session-issue
+044c3d6 solving-railway-session-issue
+245a637 Merge pull request #151 from Philbox-Pharma/feature/doctors-slots-backend
+b6e758d Doctor Slot Management Completed
+5336d1e Doctor Slot Management Completed
+405f5ba Merge pull request #148 from Philbox-Pharma/feature/doctor-profile-management
+67aa295 Doctor Profile Completed
+40f1f89 Merge pull request #145 from Philbox-Pharma/bug/railway-email-resender
+d120f2c replaced resend with brevo
+6da5d72 Merge pull request #142 from Philbox-Pharma/bug/railway-email-resender
+631153b Resend Integrated
+414fd3e Resend Integrated
+b0301f3 Doctor Profile Management in Progress
+821d725 Merge pull request #139 from Philbox-Pharma/feature/doctor-management-backend
+9abc955 Resubmission of Application Doctors Application added + Guides Updated
+85260fe Merge pull request #136 from Philbox-Pharma/feature/doctor-management-backend
+80df153 Resubmission of Application Doctors Application added + Guides Updated
+ecdf1e8 Merge pull request #133 from Philbox-Pharma/feature/doctor-management-backend
+ca6e0dc Completed Doctor application status checking + data seeding
+cc6e264 Merge pull request #130 from Philbox-Pharma/refactor/socket-test-html
+6d59e8b Socket Test Client moved to tests
+9a02153 Merge pull request #127 from Philbox-Pharma/feature/refill-reminders-backend
+52fe5a1 nodemailer changed to tls
+0af6b55 Merge pull request #124 from Philbox-Pharma/feature/refill-reminders-backend
+2f28c77 Solving railway issue
+7441d02 Merge pull request #121 from Philbox-Pharma/feature/refill-reminders-backend
+cab37e6 Refill Remainder Backend completed with proper structuring for tests
+c1cbfbc Refil Reminder Functionality in Progress
+a2b583c Merge pull request #118 from Philbox-Pharma/feature/customer-search-history-backend
+f4c5416 Search History feature implemented. Scrum-245
+bf9ac0e Merge pull request #115 from Philbox-Pharma/feature/customer-dashboard-backend
+1565ba5 Dashboard analytics completed
+9bbe26d Merge pull request #112 from Philbox-Pharma/feature/customer-profile-management-backend
+6d2d8f0 warnings resolved
+719345b Customer profile management backend completed. Scrum-226
+1c3152c Motion issue resolved
+7fc8643 Motion issue resolved
+990100e Motion issue resolved
+27c422c backend url used from env
+1456448 backend url used from env
+0aa4d7f backend url used from env
+bb4dc64 motion issue resolved
+393cb33 All linting issues resolved
+e062a1b Linting issues resolved
+27028e6 Auth Rate Limiter Corrected
+c215f83 Merge pull request #95 from Philbox-Pharma/feature/admin-dashboard
+db53a1f Merge pull request #92 from Philbox-Pharma/feature/salespersons-task-management
+22f3e40 Sockets added to task management
+df8005e docs corrected
+280ba88 Merge pull request #89 from Philbox-Pharma/refactor/docs-refactoring
+1174aa7 Frontend guide structured
+1fc26f8 Merge pull request #86 from Philbox-Pharma/refactor/docs-refactoring
+098908b Guides refactored
+4b2ccce staff management in process
+3980614 Dev branch fixed bugs merged
+8720bd9 Merge pull request #83 from Philbox-Pharma/bug/actors-sessions-route
+841bf91 /me route for session validation added for all actors
+73d357d hi
+c105230 Merge pull request #80 from Philbox-Pharma/bug/branch-service-phone-field
+70317f1 Bug of branch service caused by phone field solved
+b290d2f admin branch management completed
+8139601 salespersons task management via socket. in-progress
+4c11565 Merge pull request #79 from Philbox-Pharma/staging
+a2f2040 Merge pull request #78 from Philbox-Pharma/dev
+0d46de4 Merge pull request #77 from Philbox-Pharma/feature/salespersons-performance-track
+44f5efa Salesperson task performane analytics completed. Scrum-215
+9663bf8 Merge pull request #76 from Philbox-Pharma/staging
+b659afc Merge pull request #75 from Philbox-Pharma/dev
+fdb5653 Merge pull request #74 from Philbox-Pharma/feature/activity-analytics
+8e33fbc Activity Logs Scrum-202 completed
+9945ff7 Merge pull request #73 from Philbox-Pharma/staging
+1b0cbf8 Merge pull request #72 from Philbox-Pharma/dev
+31b2a2f Merge pull request #71 from Philbox-Pharma/feature/feedback-complaints-analytics
+91656b0 Feedback and Complaints analytics feature completed. Scrum-188
+71b4c0e Merge pull request #70 from Philbox-Pharma/staging
+34dc693 Merge pull request #69 from Philbox-Pharma/dev
+3351c0b Merge pull request #68 from Philbox-Pharma/dev
+2283b1d Merge pull request #67 from Philbox-Pharma/feature/engagement-analytics
+85bc969 User-Engagement Scrum-179 completed
+8f8a928 Merge pull request #66 from Philbox-Pharma/staging
+e66e21a Merge pull request #65 from Philbox-Pharma/dev
+9f0a68b Merge pull request #64 from Philbox-Pharma/feature/orders-inventory-analytics
+d03d480 Order Analytics Completed. Scrum-168 backend
+be2301f Merge pull request #63 from Philbox-Pharma/staging
+0d11eeb Merge pull request #62 from Philbox-Pharma/dev
+f64d0cc Merge pull request #61 from Philbox-Pharma/feature/revenue-analytics
+124cdda Completed Revenue Analytics Scrum-157
+3abfec8 Merge pull request #60 from Philbox-Pharma/staging
+4216054 Merge pull request #59 from Philbox-Pharma/dev
+f64237a Merge pull request #58 from Philbox-Pharma/refactor/dashboard-feature-creation
+809fdc9 Refactored appointment analytics into dashboard management folder
+dd8046d Merge pull request #57 from Philbox-Pharma/staging
+8f31f12 Merge pull request #56 from Philbox-Pharma/dev
+00c25be Merge pull request #55 from Philbox-Pharma/feature/appointments-analytics
+940ffce Appointment Analytics section for dashboard completed
+19fb50a Merge pull request #54 from Philbox-Pharma/staging
+1e00073 Merge pull request #53 from Philbox-Pharma/dev
+1e9cf23 Merge pull request #51 from Philbox-Pharma/feature/doctor-management
+430a070 doctor-management completed
+91b9ec3 Update Readme.md
+652e788 customer panel frontend
+c8d65fa Merge pull request #50 from Philbox-Pharma/staging
+8d4b3e6 Merge pull request #49 from Philbox-Pharma/dev
+d5f37a1 Merge pull request #48 from Philbox-Pharma/feature/customer-management
+973cdb3 customer management done
+ee71d79 Merge pull request #47 from Philbox-Pharma/staging
+243bd62 Merge pull request #46 from Philbox-Pharma/dev
+0b37854 Merge pull request #45 from Philbox-Pharma/feature/Doctor-Approval
+fe237fd doctor approval management done
+f428e20 Merge pull request #43 from Philbox-Pharma/staging
+69096bd Merge pull request #42 from Philbox-Pharma/dev
+868e084 Merge pull request #41 from Philbox-Pharma/feature/salesperson-task-performance
+490679b Salesperson Performace added
+bc6ada7 Merge pull request #40 from Philbox-Pharma/staging
+48f1706 Merge pull request #39 from Philbox-Pharma/dev
+d37bbe1 Merge pull request #38 from Philbox-Pharma/feature/branch-management-for-admin
+8217fa9 branch-management-user-management completed. along with guides
+fc2c995 Frontend Guides Updated
+d782dda RBAC-Implemented Along with proper guide
+6f31b5a Working on Landing Page
+782cd92 admin login page
+80df2f8 Guides Updated
+8b60e75 Doctor Guide Updated
+b2c4903 Merge pull request #37 from Philbox-Pharma/staging
+30fb232 Merge pull request #36 from Philbox-Pharma/dev
+f1923fa Merge pull request #35 from Philbox-Pharma/feature/salesperson-admin-auth-backend
+317376a Doctor Guide updated
+4c7fd50 linting warnings resolved
+c016edc All small mistakes corrected
+58ba470 All Four Users Auth Implemented
+c11c843 Pulled from Dev Branch
+34c043e Admin Guide for Frontend Developer Added
+771e142 Admin Service for Auth tackled
+b09613a Customer Guide Added
+c843fd7 Commiting Dev Branch
+6f05d71 Customer Auth Guide for Frontend Added
+9ebe8e3 Admin activity logging problem solved
+b91dfdf Customer Auth Implemented
+acf8c7a Customer Auth Implemented
+2c5ce42 Merge pull request #34 from Philbox-Pharma/dev
+d76df9f Merge pull request #33 from Philbox-Pharma/doc/doctor-registration-frontend-details
+93d22ff Doctor Backend Registration Details For Frontend Added
+001987f Doctor Auth Implemented
+244ec5e Working on user registration
+fa5065f Updated Main
+b14d5cf Delete client/.env.staging
+39de60e Delete client/.env.production
+03e24ea Delete client/.env.development
+a1052c7 Delete client/.env.staging
+1a3cf33 Delete client/.env.production
+a243560 Delete client/.env.development
+6f7e2eb Merge pull request #32 from Philbox-Pharma/dev
+af49a31 Merge pull request #31 from Philbox-Pharma/staging
+9d159cf Merge branch 'dev' into staging
+0390971 Merge pull request #30 from Philbox-Pharma/refactor/backend-folder-structuring
+24be9ee Merge branch 'staging' into refactor/backend-folder-structuring
+d8e650b Merge pull request #28 from Philbox-Pharma/staging
+558f471 Health Check Route Added
+dafbe0a Updated Clients package.json
+dddb8f5 Backend structured
+0c8ca75 Client/Server formatted
+96f4f08 README updated
+ae4719f Client/Frontend properly structured
+040c25d Structuring-Frontend
+8d1cd8c Test-commit
+c997310 Update last modified date and improve section headers
+ae20718 Update Readme with code quality commands
+168be44 Merge pull request #5 from shah541-g/staging
+2aa3edf Merge pull request #4 from shah541-g/main
+c1a97c1 Merge pull request #3 from shah541-g/dev
+e6c3237 Eslint and Prettier Configured
+4738d73 Eslint and Prettier Configured
+8ecb235 Update Readme with pre-commit guidelines
+882cef1 Add Discord server link to team chat section
+98e44bc Update project lead and repository links in Readme
+4f8a87e Fix formatting for contact links in Readme.md
+882dc32 Update Readme.md
+7cc1584 Update project lead, chat, and version info
+81cdf71 Merge pull request #2 from shah541-g/staging
+ae5b13f Merge pull request #1 from shah541-g/dev
+3e1c29a All branches brought to same level
+628f413 Git workflow added to dev branch
+0786a3f Git Workflow added to main branch
+c523969 Git Workflow Documentation Added
+adacf3e Initial-Configuration
+574a0f4 frontend structure created
+733c457 auth completed along with logs, admin management CRUD completed along with cloudinary
+3df1e47 admin_management completed except auditing. next target branch_management and specifically image upload
+8a1d0fa first commit

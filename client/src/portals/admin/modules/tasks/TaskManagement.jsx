@@ -15,10 +15,13 @@ import {
   FaExclamationCircle,
   FaCheckCircle,
   FaHourglassHalf,
+  FaThLarge,
+  FaList,
 } from 'react-icons/fa';
 
 export default function TaskManagement() {
   const [tasks, setTasks] = useState([]);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'board'
   const [statistics, setStatistics] = useState(null);
   const [branches, setBranches] = useState([]);
   const [salespersons, setSalespersons] = useState([]);
@@ -131,6 +134,49 @@ export default function TaskManagement() {
     }
   };
 
+  const handleStatusChange = async (taskId, newStatus) => {
+    try {
+      const task = tasks.find(t => t._id === taskId);
+      if (!task) return;
+
+      // Optimistic update
+      const updatedTasks = tasks.map(t =>
+        t._id === taskId ? { ...t, status: newStatus } : t
+      );
+      setTasks(updatedTasks);
+
+      const res = await salespersonTaskApi.updateTask(taskId, {
+        ...task,
+        status: newStatus,
+        salesperson_id: task.salesperson_id._id, // Ensure ID is passed
+        branch_id: task.branch_id._id,
+      });
+
+      if (res.status === 200) {
+        fetchData(); // Refresh to ensure sync
+      }
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      alert('Failed to update task status');
+      fetchData(); // Revert on error
+    }
+  };
+
+  const onDragStart = (e, taskId) => {
+    e.dataTransfer.setData('taskId', taskId);
+  };
+
+  const onDragOver = e => {
+    e.preventDefault();
+  };
+
+  const onDrop = (e, status) => {
+    const taskId = e.dataTransfer.getData('taskId');
+    if (taskId) {
+      handleStatusChange(taskId, status);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       salesperson_id: '',
@@ -230,7 +276,7 @@ export default function TaskManagement() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-800 flex items-center gap-3">
             <FaTasks className="text-blue-600" />
             Salesperson Task Management
           </h1>
@@ -238,15 +284,41 @@ export default function TaskManagement() {
             Assign and track tasks for your sales team
           </p>
         </div>
-        <button
-          onClick={() => {
-            resetForm();
-            setShowModal(true);
-          }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-        >
-          <FaPlus /> Create Task
-        </button>
+        <div className="flex gap-2">
+          <div className="bg-white rounded-lg border border-gray-200 p-1 flex">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded ${
+                viewMode === 'list'
+                  ? 'bg-blue-100 text-blue-600'
+                  : 'text-gray-500 hover:bg-gray-50'
+              }`}
+              title="List View"
+            >
+              <FaList />
+            </button>
+            <button
+              onClick={() => setViewMode('board')}
+              className={`p-2 rounded ${
+                viewMode === 'board'
+                  ? 'bg-blue-100 text-blue-600'
+                  : 'text-gray-500 hover:bg-gray-50'
+              }`}
+              title="Board View"
+            >
+              <FaThLarge />
+            </button>
+          </div>
+          <button
+            onClick={() => {
+              resetForm();
+              setShowModal(true);
+            }}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+          >
+            <FaPlus /> Create Task
+          </button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
@@ -389,88 +461,182 @@ export default function TaskManagement() {
         </div>
       </div>
 
-      {/* Tasks Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Task
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Salesperson
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Branch
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Priority
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Deadline
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {tasks.length === 0 ? (
+      {/* Tasks Content */}
+      {viewMode === 'list' ? (
+        <div className="bg-white rounded-lg shadow overflow-hidden overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
               <tr>
-                <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
-                  No tasks found. Create your first task!
-                </td>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Task
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Salesperson
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Branch
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Priority
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Deadline
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Actions
+                </th>
               </tr>
-            ) : (
-              tasks.map(task => (
-                <tr key={task._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">
-                      {task.title}
-                    </div>
-                    <div className="text-sm text-gray-500 line-clamp-1">
-                      {task.description}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    {task.salesperson_id?.fullName || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    {task.branch_id?.name || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4">
-                    {getPriorityBadge(task.priority)}
-                  </td>
-                  <td className="px-6 py-4">{getStatusBadge(task.status)}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    <div className="flex items-center gap-1">
-                      <FaCalendarAlt className="text-gray-400" />
-                      {new Date(task.deadline).toLocaleDateString()}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm space-x-2">
-                    <button
-                      onClick={() => openEditModal(task)}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      <FaEdit />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteTask(task._id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <FaTrash />
-                    </button>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {tasks.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="7"
+                    className="px-6 py-8 text-center text-gray-500"
+                  >
+                    No tasks found. Create your first task!
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : (
+                tasks.map(task => (
+                  <tr key={task._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-gray-900">
+                        {task.title}
+                      </div>
+                      <div className="text-sm text-gray-500 line-clamp-1">
+                        {task.description}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {task.salesperson_id?.fullName || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {task.branch_id?.name || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4">
+                      {getPriorityBadge(task.priority)}
+                    </td>
+                    <td className="px-6 py-4">{getStatusBadge(task.status)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      <div className="flex items-center gap-1">
+                        <FaCalendarAlt className="text-gray-400" />
+                        {new Date(task.deadline).toLocaleDateString()}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm space-x-2">
+                      <button
+                        onClick={() => openEditModal(task)}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTask(task._id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <FaTrash />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 overflow-x-auto pb-4">
+          {['pending', 'in-progress', 'completed', 'cancelled'].map(status => (
+            <div
+              key={status}
+              className="bg-gray-100 rounded-xl p-4 min-w-[280px]"
+              onDragOver={onDragOver}
+              onDrop={e => onDrop(e, status)}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-gray-700 capitalize">
+                  {status.replace('-', ' ')}
+                </h3>
+                <span className="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs font-semibold">
+                  {tasks.filter(t => t.status === status).length}
+                </span>
+              </div>
+              <div className="space-y-3">
+                {tasks
+                  .filter(t => t.status === status)
+                  .map(task => (
+                    <div
+                      key={task._id}
+                      draggable
+                      onDragStart={e => onDragStart(e, task._id)}
+                      className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-move hover:shadow-md transition-shadow active:cursor-grabbing"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded font-medium ${
+                            task.priority === 'high'
+                              ? 'bg-red-100 text-red-700'
+                              : task.priority === 'medium'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          {task.priority}
+                        </span>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => openEditModal(task)}
+                            className="text-gray-400 hover:text-blue-600"
+                          >
+                            <FaEdit size={12} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTask(task._id)}
+                            className="text-gray-400 hover:text-red-600"
+                          >
+                            <FaTrash size={12} />
+                          </button>
+                        </div>
+                      </div>
+                      <h4 className="font-semibold text-gray-800 mb-1">
+                        {task.title}
+                      </h4>
+                      <p className="text-gray-500 text-xs mb-3 line-clamp-2">
+                        {task.description}
+                      </p>
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <div className="flex items-center gap-1">
+                          <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-[10px]">
+                            {task.salesperson_id?.fullName?.charAt(0) || 'U'}
+                          </div>
+                          <span className="truncate max-w-[80px]">
+                            {task.salesperson_id?.fullName?.split(' ')[0]}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <FaCalendarAlt />
+                          {new Date(task.deadline).toLocaleDateString(
+                            undefined,
+                            { month: 'short', day: 'numeric' }
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                {tasks.filter(t => t.status === status).length === 0 && (
+                  <div className="text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
+                    <p className="text-sm">No tasks</p>
+                    <p className="text-xs mt-1">Drop tasks here</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Create/Edit Modal */}
       {showModal && (
@@ -514,7 +680,7 @@ export default function TaskManagement() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Branch *
@@ -561,7 +727,7 @@ export default function TaskManagement() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Priority *

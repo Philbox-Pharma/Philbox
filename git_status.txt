@@ -1,0 +1,25 @@
+﻿ M client/src/portals/admin/layouts/components/AdminHeader.jsx
+ M client/src/portals/admin/layouts/components/AdminSidebar.jsx
+ M client/src/portals/admin/modules/branches/BranchStatistics.jsx
+ M client/src/portals/admin/modules/customers/CustomerList.jsx
+ M client/src/portals/admin/modules/doctors/DoctorApplications.jsx
+ M client/src/portals/admin/modules/doctors/DoctorList.jsx
+ M client/src/portals/admin/modules/profile/AdminProfile.jsx
+ M client/src/portals/admin/modules/settings/Settings.jsx
+ M client/src/portals/admin/modules/staff/admins/AdminList.jsx
+ M client/src/portals/admin/modules/staff/salespersons/AddSalesperson.jsx
+ M client/src/portals/admin/modules/staff/salespersons/SalespersonList.jsx
+ M client/src/portals/admin/modules/tasks/TaskManagement.jsx
+ M docs/qa_guides/Frontend_Bugs_and_Refactoring_Template(AutoRecovered).xlsx
+?? bugs_data.json
+?? bugs_output.txt
+?? docs/qa_guides/~$Frontend_Bugs_and_Refactoring_Template(AutoRecovered).xlsx
+?? extract_bugs.py
+?? git_bug_commits.txt
+?? git_diff_names.txt
+?? git_fix_commits.txt
+?? git_log_all.txt
+?? git_log_temp.txt
+?? git_log_temp2.txt
+?? git_status.txt
+?? read_bugs.py

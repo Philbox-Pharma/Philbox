@@ -716,7 +716,7 @@ For any queries, contact us at: support@philbox.pk
         ].map((s, index) => (
           <div key={s.num} className="flex items-center">
             <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center font-medium ${
+              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-medium ${
                 step >= s.num
                   ? 'bg-blue-500 text-white'
                   : 'bg-gray-200 text-gray-500'
@@ -733,7 +733,7 @@ For any queries, contact us at: support@philbox.pk
             </span>
             {index < 3 && (
               <div
-                className={`w-8 sm:w-16 h-1 mx-2 ${
+                className={`w-4 sm:w-16 h-1 mx-1 sm:mx-2 flex-shrink-0 ${
                   step > s.num ? 'bg-blue-500' : 'bg-gray-200'
                 }`}
               />
@@ -761,7 +761,7 @@ For any queries, contact us at: support@philbox.pk
               <select
                 value={specialtyFilter}
                 onChange={e => setSpecialtyFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
               >
                 <option value="all">All Specialties</option>
                 {specialties
@@ -775,7 +775,7 @@ For any queries, contact us at: support@philbox.pk
               <select
                 value={consultationType}
                 onChange={e => setConsultationType(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
               >
                 <option value="all">All Types</option>
                 <option value="video">Video Call</option>

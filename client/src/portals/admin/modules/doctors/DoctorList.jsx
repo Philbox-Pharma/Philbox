@@ -193,7 +193,7 @@ export default function DoctorList() {
       <div className="bg-gradient-to-r from-[#1a365d] to-[#2c5282] rounded-2xl p-6 text-white">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold flex items-center gap-3">
               <FaUserMd />
               Doctor Management
             </h1>
@@ -212,7 +212,7 @@ export default function DoctorList() {
       </div>
 
       {/* Stats Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
           <p className="text-gray-500 text-sm">Total Doctors</p>
           <p className="text-2xl font-bold text-gray-800">{totalDoctors}</p>

@@ -1,0 +1,32 @@
+﻿client/src/portals/admin/modules/notifications/Notifications.jsx
+docs/qa_guides/Frontend_Bugs_and_Refactoring_Template(AutoRecovered).xlsx
+docs/qa_guides/Frontend_Bugs_and_Refactoring_Template.xlsx
+docs/qa_guides/bugs/screenshots/Activity Logs Page.png
+docs/qa_guides/bugs/screenshots/Add-new-Salesperson.png
+docs/qa_guides/bugs/screenshots/Admin-Settings.png
+docs/qa_guides/bugs/screenshots/Appointment-Analytics-Page.png
+docs/qa_guides/bugs/screenshots/Branch Management Add New Branch.png
+docs/qa_guides/bugs/screenshots/Branch Management Sidebar 2.png
+docs/qa_guides/bugs/screenshots/Branch Management Sidebar.png
+docs/qa_guides/bugs/screenshots/Branch Management Statistics 2.png
+docs/qa_guides/bugs/screenshots/Branch Management Statistics.png
+docs/qa_guides/bugs/screenshots/Customer Management Page.png
+docs/qa_guides/bugs/screenshots/Doctors-Applications.png
+docs/qa_guides/bugs/screenshots/Feedback-Complaints-Analytics.png
+docs/qa_guides/bugs/screenshots/Notifications-Page.png
+docs/qa_guides/bugs/screenshots/Roles-Permissions-Admin.png
+docs/qa_guides/bugs/screenshots/Search-Bar-Admin-Dashboard.png
+docs/qa_guides/bugs/screenshots/Staff-Management-Salespersons-Page.png
+docs/qa_guides/bugs/screenshots/Staff-Management-SideBar-Salesperson.png
+docs/qa_guides/bugs/screenshots/User-Engagement-Page.png
+docs/qa_guides/bugs/screenshots/add-new-admin.png
+docs/qa_guides/bugs/screenshots/admin-Footer.png
+docs/qa_guides/bugs/screenshots/admins-cards-buttons.png
+docs/qa_guides/bugs/screenshots/all-admins-page-icons.png
+docs/qa_guides/bugs/screenshots/branch_management_page.png
+docs/qa_guides/bugs/screenshots/notifications-suspicios-activities.png
+docs/qa_guides/bugs/screenshots/notifications_dropdown.png
+docs/qa_guides/bugs/screenshots/revenue-analytics-waste-card.png
+docs/qa_guides/bugs/screenshots/revenue-analytics.png
+docs/qa_guides/bugs/screenshots/task-management.png
+docs/qa_guides/bugs/screenshots/tasks-table.png
