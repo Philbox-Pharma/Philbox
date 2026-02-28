@@ -9,8 +9,7 @@ import {
   FaUserMd,
   FaSyncAlt,
 } from 'react-icons/fa';
-import { userEngagementApi } from '../../../../core/api/admin/adminApi';
-
+import { userEngagementService } from '../../../../core/api/admin/userEngagement.service';
 export default function UserEngagement() {
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState(null);
@@ -37,7 +36,7 @@ export default function UserEngagement() {
           limit: 5,
         };
 
-        const overviewRes = await userEngagementApi
+        const overviewRes = await userEngagementService
           .getOverview(filters)
           .catch(() => ({ data: null }));
 
