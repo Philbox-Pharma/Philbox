@@ -17,7 +17,7 @@ import {
   FaPhone,
 } from 'react-icons/fa';
 import DataTable from '../../../../../shared/components/DataTable/DataTable';
-import { staffApi } from '../../../../../core/api/admin/adminApi';
+import { staffService } from '../../../../../core/api/admin/staff.service';
 
 export default function AdminList() {
   const location = useLocation();
@@ -69,7 +69,7 @@ export default function AdminList() {
       if (searchRef.current) filters.search = searchRef.current;
       if (statusFilter) filters.status = statusFilter;
 
-      const response = await staffApi.getAdmins(page, limit, filters);
+      const response = await staffService.getAdmins(page, limit, filters);
 
       if (response.status === 200 || response.data) {
         setAdmins(response.data?.admins || []);
@@ -354,27 +354,27 @@ export default function AdminList() {
         <div className="space-y-2 text-sm">
           {/* Email */}
           <div className="flex items-center gap-2 text-gray-600">
-            <FaEnvelope className="text-gray-400 w-4 flex-shrink-0" />
+            <FaEnvelope className="text-gray-400 w-4 shrink-0" />
             <span className="truncate">{row.email}</span>
           </div>
 
           {/* Phone */}
           {row.phone_number && (
             <div className="flex items-center gap-2 text-gray-600">
-              <FaPhone className="text-gray-400 w-4 flex-shrink-0" />
+              <FaPhone className="text-gray-400 w-4 shrink-0" />
               <span>{row.phone_number}</span>
             </div>
           )}
 
           {/* Branches */}
           <div className="flex items-center gap-2 text-gray-600">
-            <FaCodeBranch className="text-gray-400 w-4 flex-shrink-0" />
+            <FaCodeBranch className="text-gray-400 w-4 shrink-0" />
             {renderBranches(row)}
           </div>
 
           {/* Joined Date */}
           <div className="flex items-center gap-2 text-gray-600">
-            <FaCalendar className="text-gray-400 w-4 flex-shrink-0" />
+            <FaCalendar className="text-gray-400 w-4 shrink-0" />
             <span>
               Joined{' '}
               {new Date(row.created_at).toLocaleDateString('en-PK', {
@@ -431,7 +431,7 @@ export default function AdminList() {
       {/* Success Message */}
       {successMessage && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-green-700 flex items-center gap-2">
-          <FaCheckCircle className="flex-shrink-0" />
+          <FaCheckCircle className="shrink-0" />
           {successMessage}
         </div>
       )}
@@ -445,7 +445,7 @@ export default function AdminList() {
               : 'bg-red-50 border border-red-200 text-red-700'
           }`}
         >
-          <FaExclamationTriangle className="flex-shrink-0" />
+          <FaExclamationTriangle className="shrink-0" />
           <span>
             {error}
             {usingMockData && ' - Showing demo data'}
@@ -542,7 +542,7 @@ const StatsCard = ({ icon, label, value, color }) => {
     <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-3 sm:p-4">
       <div className="flex items-center gap-2 sm:gap-4">
         <div
-          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${c.bg} flex items-center justify-center flex-shrink-0`}
+          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${c.bg} flex items-center justify-center shrink-0`}
         >
           <Icon className={`text-base sm:text-xl ${c.text}`} />
         </div>

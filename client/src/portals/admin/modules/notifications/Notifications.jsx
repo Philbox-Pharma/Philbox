@@ -18,7 +18,7 @@ import {
   FaUserShield,
   FaUserTie,
 } from 'react-icons/fa';
-import { activityLogsApi } from '../../../../core/api/admin/adminApi';
+import { activityLogsService } from '../../../../core/api/admin/activityLogs.service';
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
@@ -43,7 +43,7 @@ export default function Notifications() {
       setLoading(true);
       setError(null);
       try {
-        const response = await activityLogsApi.getTimeline({
+        const response = await activityLogsService.getTimeline({
           startDate: new Date(dateRange.startDate).toISOString(),
           endDate: new Date(dateRange.endDate + 'T23:59:59').toISOString(),
           limit: 20,

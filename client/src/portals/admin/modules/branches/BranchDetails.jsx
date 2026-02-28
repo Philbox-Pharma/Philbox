@@ -1,7 +1,7 @@
 // src/portals/admin/modules/branches/BranchDetails.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-// eslint-disable-next-line no-unused-vars
+
 import { motion } from 'framer-motion';
 import {
   FaArrowLeft,
@@ -43,7 +43,8 @@ import {
 } from 'recharts';
 import ConfirmModal from '../../../../shared/components/Modal/ConfirmModal';
 import AssignAdminsModal from './components/AssignAdminsModal';
-import { branchApi, revenueApi } from '../../../../core/api/admin/adminApi';
+import { branchesService } from '../../../../core/api/admin/branches.service';
+import { revenueService } from '../../../../core/api/admin/revenue.service';
 
 // Chart Colors
 const COLORS = {
@@ -92,7 +93,7 @@ export default function BranchDetails() {
     setLoading(true);
     setError(null);
     try {
-      const branchRes = await branchApi.getById(id);
+      const branchRes = await branchesService.getById(id);
       if (branchRes.success || branchRes.status === 200) {
         setBranch(branchRes.data);
         // Fetch revenue after branch loads
@@ -121,11 +122,11 @@ export default function BranchDetails() {
       // Fetch all revenue data in parallel with branchId filter
       const [trendsRes, splitRes, refundsRes, avgRes, paymentRes] =
         await Promise.all([
-          revenueApi.getTrendsForBranch(id, startDate, endDate, period),
-          revenueApi.getSplitForBranch(id, startDate, endDate),
-          revenueApi.getRefundsForBranch(id, startDate, endDate),
-          revenueApi.getAvgPerCustomerForBranch(id, startDate, endDate),
-          revenueApi.getPaymentMethodsForBranch(id, startDate, endDate),
+          revenueService.getTrendsForBranch(id, startDate, endDate, period),
+          revenueService.getSplitForBranch(id, startDate, endDate),
+          revenueService.getRefundsForBranch(id, startDate, endDate),
+          revenueService.getAvgPerCustomerForBranch(id, startDate, endDate),
+          revenueService.getPaymentMethodsForBranch(id, startDate, endDate),
         ]);
 
       // Process Trends
@@ -198,7 +199,7 @@ export default function BranchDetails() {
   const handleDelete = async () => {
     setActionLoading(true);
     try {
-      const response = await branchApi.delete(id);
+      const response = await branchesService.delete(id);
       if (response.success || response.status === 200) {
         navigate('/admin/branches', {
           state: { message: 'Branch deleted successfully!' },
@@ -218,7 +219,7 @@ export default function BranchDetails() {
   const handleToggleStatus = async () => {
     setActionLoading(true);
     try {
-      const response = await branchApi.toggleStatus(id);
+      const response = await branchesService.toggleStatus(id);
       if (response.success || response.status === 200) {
         setBranch(prev => ({
           ...prev,
@@ -309,7 +310,7 @@ export default function BranchDetails() {
       </div>
 
       {/* Cover Image */}
-      <div className="h-48 md:h-64 rounded-xl overflow-hidden shadow-lg bg-gradient-to-r from-[#1a365d] to-[#2c5282] relative">
+      <div className="h-48 md:h-64 rounded-xl overflow-hidden shadow-lg bg-linear-to-r from-[#1a365d] to-[#2c5282] relative">
         {branch?.cover_img_url ? (
           <img
             src={branch.cover_img_url}
@@ -365,7 +366,7 @@ export default function BranchDetails() {
             />
             {address.google_map_link && (
               <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0 text-blue-600">
+                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center shrink-0 text-blue-600">
                   <FaGlobe />
                 </div>
                 <div>
@@ -812,12 +813,12 @@ const InfoRow = ({ icon, label, value }) => {
   const Icon = icon;
   return (
     <div className="flex items-start gap-4">
-      <div className="w-10 h-10 rounded-lg bg-[#1a365d]/10 flex items-center justify-center flex-shrink-0 text-[#1a365d]">
+      <div className="w-10 h-10 rounded-lg bg-[#1a365d]/10 flex items-center justify-center shrink-0 text-[#1a365d]">
         <Icon />
       </div>
       <div>
         <p className="text-sm text-gray-500">{label}</p>
-        <p className="font-medium text-gray-800 break-words">{value}</p>
+        <p className="font-medium text-gray-800 wrap-break-word">{value}</p>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { adminAuthApi } from '../../../../../core/api/admin/auth';
+import { adminAuthApi } from '../../../../../core/api/admin/auth.service';
 import { useAuth } from '../../../../../shared/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 

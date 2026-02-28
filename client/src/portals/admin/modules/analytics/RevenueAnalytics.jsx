@@ -8,9 +8,7 @@ import {
   FaArrowUp,
   FaArrowDown,
 } from 'react-icons/fa';
-import adminApi from '../../../../core/api/admin/adminApi';
-
-const { revenue: revenueApi } = adminApi;
+import { revenueService } from '../../../../core/api/admin/revenue.service';
 
 // KPI Card Component
 
@@ -75,7 +73,7 @@ const SimpleBarChart = ({ data, loading, title }) => {
         {data?.map((item, index) => (
           <div key={index} className="flex-1 flex flex-col items-center">
             <div
-              className="w-full bg-gradient-to-t from-[#1a365d] to-[#3182ce] rounded-t transition-all duration-500 hover:opacity-80"
+              className="w-full bg-linear-to-t from-[#1a365d] to-[#3182ce] rounded-t transition-all duration-500 hover:opacity-80"
               style={{
                 height: `${(item.value / maxValue) * 100}%`,
                 minHeight: '20px',
@@ -167,16 +165,16 @@ export default function RevenueAnalytics() {
       try {
         const [overviewRes, trendsRes, splitRes, topBranchesRes] =
           await Promise.all([
-            revenueApi
+            revenueService
               .getOverview(dateRange.startDate, dateRange.endDate)
               .catch(() => ({ data: null })),
-            revenueApi
+            revenueService
               .getTrends(dateRange.startDate, dateRange.endDate, 'daily')
               .catch(() => ({ data: [] })),
-            revenueApi
+            revenueService
               .getSplit(dateRange.startDate, dateRange.endDate)
               .catch(() => ({ data: [] })),
-            revenueApi
+            revenueService
               .getTopBranches(dateRange.startDate, dateRange.endDate, 5)
               .catch(() => ({ data: [] })),
           ]);
@@ -198,7 +196,7 @@ export default function RevenueAnalytics() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#1a365d] to-[#2c5282] rounded-2xl p-6 text-white">
+      <div className="bg-linear-to-r from-[#1a365d] to-[#2c5282] rounded-2xl p-6 text-white">
         <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
           <FaMoneyBillWave />
           Revenue Analytics

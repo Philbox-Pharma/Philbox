@@ -13,9 +13,7 @@ import {
   FaPills,
   FaCheckCircle,
 } from 'react-icons/fa';
-import adminApi from '../../../../core/api/admin/adminApi';
-
-const { ordersAnalytics: ordersAnalyticsApi } = adminApi;
+import { ordersAnalyticsService } from '../../../../core/api/admin/ordersAnalytics.service';
 
 export default function OrdersAnalytics() {
   const [loading, setLoading] = useState(true);
@@ -42,7 +40,7 @@ export default function OrdersAnalytics() {
         };
 
         // Fetch overview data which contains all analytics
-        const overviewRes = await ordersAnalyticsApi
+        const overviewRes = await ordersAnalyticsService
           .getOverview(filters)
           .catch(() => ({ data: null }));
 
@@ -131,7 +129,7 @@ export default function OrdersAnalytics() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#d69e2e] to-[#b7791f] rounded-2xl p-6 text-white">
+      <div className="bg-linear-to-r from-[#d69e2e] to-[#b7791f] rounded-2xl p-6 text-white">
         <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
           <FaShoppingBag />
           Orders Analytics

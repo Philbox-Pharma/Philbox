@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 // src/shared/components/Modal/ConfirmModal.jsx
 import { motion, AnimatePresence } from 'framer-motion';
 import {
