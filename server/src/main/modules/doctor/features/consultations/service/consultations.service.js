@@ -3,8 +3,6 @@ import Appointment from '../../../../../models/Appointment.js';
 import PrescriptionGeneratedByDoctor from '../../../../../models/PrescriptionGeneratedByDoctor.js';
 import AppointmentMessage from '../../../../../models/AppointmentMessage.js';
 import Patient from '../../../../../models/Patient.js';
-import PrescriptionItem from '../../../../../models/PrescriptionItem.js';
-import MedicineItem from '../../../../../models/MedicineItem.js';
 
 class DoctorConsultationsService {
   /**
