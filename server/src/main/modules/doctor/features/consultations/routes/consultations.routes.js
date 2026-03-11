@@ -4,8 +4,10 @@ import {
   getConsultationDetails,
   getPrescriptionDetails,
   getConsultationStats,
+  getPatientHistoryFromConsultation,
 } from '../controllers/consultations.controller.js';
 import { authenticate as requireDoctorAuth } from '../../../middleware/auth.middleware.js';
+import { getConsultationPatientHistorySchema } from '../../../../../dto/doctor/consultations.dto.js';
 
 const router = express.Router();
 
@@ -26,6 +28,44 @@ router.get('/statistics', getConsultationStats);
  * @access  Private (Doctor)
  */
 router.get('/prescription/:prescriptionId', getPrescriptionDetails);
+
+/**
+ * Custom validation middleware for consultation patient history
+ */
+const validateConsultationPatientHistory = (req, res, next) => {
+  const dataToValidate = {
+    consultationId: req.params.consultationId,
+    ...req.query,
+  };
+
+  const { error } = getConsultationPatientHistorySchema.validate(
+    dataToValidate,
+    { abortEarly: false }
+  );
+
+  if (error) {
+    const details = error.details.map(d => d.message);
+    return res.status(400).json({
+      success: false,
+      message: 'Validation error',
+      errors: details,
+    });
+  }
+
+  next();
+};
+
+/**
+ * @route   GET /api/doctor/consultations/:consultationId/patient-history
+ * @desc    Get patient medical history from consultation context
+ * @access  Private (Doctor)
+ * @query   startDate (optional), endDate (optional), page (optional), limit (optional)
+ */
+router.get(
+  '/:consultationId/patient-history',
+  validateConsultationPatientHistory,
+  getPatientHistoryFromConsultation
+);
 
 /**
  * @route   GET /api/doctor/consultations/:consultationId

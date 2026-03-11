@@ -193,3 +193,68 @@ export const getConsultationStats = async (req, res) => {
     );
   }
 };
+
+/**
+ * @desc    Get patient's medical history from consultation context
+ * @route   GET /api/doctor/consultations/:consultationId/patient-history
+ * @access  Private (Doctor)
+ */
+export const getPatientHistoryFromConsultation = async (req, res) => {
+  try {
+    const { consultationId } = req.params;
+    const { startDate, endDate } = req.query;
+
+    const result =
+      await doctorConsultationsService.getPatientHistoryFromConsultation(
+        req,
+        consultationId,
+        startDate,
+        endDate
+      );
+
+    return sendResponse(
+      res,
+      200,
+      'Patient medical history retrieved successfully',
+      result
+    );
+  } catch (error) {
+    console.error('Error in getPatientHistoryFromConsultation:', error);
+
+    // Handle specific error types
+    if (error.message.startsWith('UNAUTHORIZED_ACCESS')) {
+      return sendResponse(
+        res,
+        403,
+        error.message.replace('UNAUTHORIZED_ACCESS: ', ''),
+        null
+      );
+    }
+
+    if (error.message.startsWith('CONSULTATION_NOT_FOUND')) {
+      return sendResponse(
+        res,
+        404,
+        error.message.replace('CONSULTATION_NOT_FOUND: ', ''),
+        null
+      );
+    }
+
+    if (error.message.startsWith('PATIENT_NOT_FOUND')) {
+      return sendResponse(
+        res,
+        404,
+        error.message.replace('PATIENT_NOT_FOUND: ', ''),
+        null
+      );
+    }
+
+    return sendResponse(
+      res,
+      500,
+      'Failed to retrieve patient medical history',
+      null,
+      error.message
+    );
+  }
+};

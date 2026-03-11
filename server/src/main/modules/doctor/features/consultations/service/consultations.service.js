@@ -1,8 +1,33 @@
 import mongoose from 'mongoose';
 import Appointment from '../../../../../models/Appointment.js';
 import PrescriptionGeneratedByDoctor from '../../../../../models/PrescriptionGeneratedByDoctor.js';
+// eslint-disable-next-line no-unused-vars
+import PrescriptionItem from '../../../../../models/PrescriptionItem.js';
+import PrescriptionUploadedByCustomer from '../../../../../models/PrescriptionUploadedByCustomer.js';
+import Order from '../../../../../models/Order.js';
+// eslint-disable-next-line no-unused-vars
+import OrderItem from '../../../../../models/OrderItem.js';
 import AppointmentMessage from '../../../../../models/AppointmentMessage.js';
 import Patient from '../../../../../models/Patient.js';
+
+import Customer from '../../../../../models/Customer.js';
+// eslint-disable-next-line no-unused-vars
+import DoctorSlot from '../../../../../models/DoctorSlot.js';
+// eslint-disable-next-line no-unused-vars
+import Doctor from '../../../../../models/Doctor.js';
+// eslint-disable-next-line no-unused-vars
+import Branch from '../../../../../models/Branch.js';
+// eslint-disable-next-line no-unused-vars
+import Salesperson from '../../../../../models/Salesperson.js';
+// eslint-disable-next-line no-unused-vars
+import MedicineItem from '../../../../../models/MedicineItem.js';
+// eslint-disable-next-line no-unused-vars
+import Medicine from '../../../../../models/Medicine.js';
+// eslint-disable-next-line no-unused-vars
+import Manufacturer from '../../../../../models/Manufacturer.js';
+// eslint-disable-next-line no-unused-vars
+import ItemClass from '../../../../../models/ItemClass.js';
+import { logDoctorActivity } from '../../../utils/logDoctorActivities.js';
 
 class DoctorConsultationsService {
   /**
@@ -327,6 +352,175 @@ class DoctorConsultationsService {
       };
     } catch (error) {
       console.error('Error in getConsultationStats:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get patient medical history from consultation context
+   * @param {Object} req - Express request object
+   * @param {String} consultationId - The appointment/consultation ID
+   * @param {String} startDate - Optional start date filter
+   * @param {String} endDate - Optional end date filter
+   * @returns {Object} - Aggregated medical history
+   */
+  async getPatientHistoryFromConsultation(
+    req,
+    consultationId,
+    startDate,
+    endDate
+  ) {
+    try {
+      const doctorId = req.doctor._id;
+
+      // Step 1: Fetch the consultation/appointment to get patient ID
+      const consultation = await Appointment.findById(consultationId).lean();
+
+      if (!consultation) {
+        throw new Error('CONSULTATION_NOT_FOUND: Consultation not found');
+      }
+
+      // Step 2: Verify the doctor owns this consultation
+      if (consultation.doctor_id.toString() !== doctorId.toString()) {
+        throw new Error(
+          'UNAUTHORIZED_ACCESS: You do not have access to this consultation'
+        );
+      }
+
+      // Step 3: Get patient ID
+      const patientId = consultation.patient_id;
+
+      // Step 4: Build date filter
+      const dateFilter = {};
+      if (startDate || endDate) {
+        dateFilter.created_at = {};
+        if (startDate) {
+          dateFilter.created_at.$gte = new Date(startDate);
+        }
+        if (endDate) {
+          dateFilter.created_at.$lte = new Date(endDate);
+        }
+      }
+
+      // Step 5: Fetch patient information
+      const patientInfo = await Customer.findById(patientId)
+        .select(
+          'fullName email gender dateOfBirth contactNumber profile_img_url'
+        )
+        .lean();
+
+      if (!patientInfo) {
+        throw new Error('PATIENT_NOT_FOUND: Patient not found');
+      }
+
+      // Step 6: Fetch all medical data in parallel
+      const [appointments, doctorPrescriptions, uploadedPrescriptions, orders] =
+        await Promise.all([
+          // Fetch appointments
+          Appointment.find({
+            patient_id: patientId,
+            status: { $in: ['completed', 'missed'] },
+            ...dateFilter,
+          })
+            .populate('doctor_id', 'fullName email specialization')
+            .populate('slot_id')
+            .sort({ created_at: -1 })
+            .lean(),
+
+          // Fetch doctor prescriptions
+          PrescriptionGeneratedByDoctor.find({
+            patient_id: patientId,
+            ...dateFilter,
+          })
+            .populate('doctor_id', 'fullName email specialization')
+            .populate('appointment_id', 'appointment_type status')
+            .populate({
+              path: 'prescription_items_ids',
+              populate: {
+                path: 'medicine_id',
+                select: 'name manufacturer',
+              },
+            })
+            .sort({ created_at: -1 })
+            .lean(),
+
+          // Fetch uploaded prescriptions
+          PrescriptionUploadedByCustomer.find({
+            patient_id: patientId,
+            ...dateFilter,
+          })
+            .populate('order_id', 'status total')
+            .sort({ created_at: -1 })
+            .lean(),
+
+          // Fetch orders
+          Order.find({
+            customer_id: patientId,
+            ...dateFilter,
+          })
+            .populate({
+              path: 'order_items',
+              populate: {
+                path: 'medicine_id',
+                select: 'name manufacturer price',
+              },
+            })
+            .populate('branch_id', 'name address')
+            .populate('salesperson_id', 'fullName')
+            .sort({ created_at: -1 })
+            .lean(),
+        ]);
+
+      // Step 7: Extract medical notes from appointments
+      const medicalNotes = appointments
+        .filter(apt => apt.notes && apt.notes.trim() !== '')
+        .map(apt => ({
+          appointment_id: apt._id,
+          appointment_date: apt.created_at,
+          appointment_type: apt.appointment_type,
+          notes: apt.notes,
+          doctor: apt.doctor_id,
+        }));
+
+      // Step 8: Log the access for compliance
+      await logDoctorActivity(
+        req,
+        'view_medical_history_from_consultation',
+        `Viewed medical history for patient: ${patientInfo.fullName} via consultation: ${consultationId}`,
+        'customers',
+        patientId,
+        {
+          consultation_id: consultationId,
+          filters: { startDate, endDate },
+          data_accessed: {
+            appointments_count: appointments.length,
+            prescriptions_count: doctorPrescriptions.length,
+            uploaded_prescriptions_count: uploadedPrescriptions.length,
+            orders_count: orders.length,
+          },
+        }
+      );
+
+      // Step 9: Return aggregated data
+      return {
+        patient: patientInfo,
+        summary: {
+          total_appointments: appointments.length,
+          total_prescriptions_generated: doctorPrescriptions.length,
+          total_prescriptions_uploaded: uploadedPrescriptions.length,
+          total_orders: orders.length,
+          total_medical_notes: medicalNotes.length,
+        },
+        history: {
+          appointments,
+          prescriptions_generated_by_doctor: doctorPrescriptions,
+          prescriptions_uploaded_by_patient: uploadedPrescriptions,
+          orders,
+          medical_notes: medicalNotes,
+        },
+      };
+    } catch (error) {
+      console.error('Error in getPatientHistoryFromConsultation:', error);
       throw error;
     }
   }
