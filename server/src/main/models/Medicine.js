@@ -1,6 +1,12 @@
 import mongoose from 'mongoose';
 
-const medicineItemSchema = new mongoose.Schema(
+/**
+ * Medicine Model (Alias for MedicineItem)
+ * This model is registered as 'Medicine' to support legacy references in OrderItem schema
+ * It uses the same collection as MedicineItem: 'medicineitems'
+ */
+
+const medicineSchema = new mongoose.Schema(
   {
     Name: {
       type: String,
@@ -63,15 +69,16 @@ const medicineItemSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    collection: 'medicineitems', // Use the same collection as MedicineItem
   }
 );
 
 // Indexes for better query performance
-medicineItemSchema.index({ branch_id: 1 });
-medicineItemSchema.index({ salesperson_id: 1 });
-medicineItemSchema.index({ Name: 1 });
-medicineItemSchema.index({ medicine_category: 1 });
+medicineSchema.index({ branch_id: 1 });
+medicineSchema.index({ salesperson_id: 1 });
+medicineSchema.index({ Name: 1 });
+medicineSchema.index({ medicine_category: 1 });
 
-const MedicineItem = mongoose.model('MedicineItem', medicineItemSchema);
+const Medicine = mongoose.model('Medicine', medicineSchema);
 
-export default MedicineItem;
+export default Medicine;

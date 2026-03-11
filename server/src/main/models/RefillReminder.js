@@ -5,7 +5,7 @@ const refillReminderSchema = new mongoose.Schema(
     medicines: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'MedicineItem',
+        ref: 'Medicine',
         required: true,
       },
     ],
