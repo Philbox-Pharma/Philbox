@@ -14,7 +14,7 @@ const inventoryFilesLogSchema = new mongoose.Schema(
     },
     target_medicine: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'MedicineItem',
+      ref: 'Medicine',
     },
     stock: {
       type: mongoose.Schema.Types.ObjectId,

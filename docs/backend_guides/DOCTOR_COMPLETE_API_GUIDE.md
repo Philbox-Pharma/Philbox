@@ -8,6 +8,7 @@
 - **Slots Management:** `http://localhost:5000/api/doctor/slots`
 - **Appointment Requests:** `http://localhost:5000/api/doctor/appointments`
 - **Reviews Management:** `http://localhost:5000/api/doctor/reviews`
+- **Past Consultations:** `http://localhost:5000/api/doctor/consultations`
 
 ---
 
@@ -21,11 +22,12 @@
 6. [Slots Management Endpoints](#slots-management-endpoints)
 7. [Appointment Request Management](#appointment-request-management)
 8. [Reviews Management](#reviews-management)
-9. [File Upload Requirements](#file-upload-requirements)
-10. [Validation Rules](#validation-rules)
-11. [Error Responses](#error-responses)
-12. [Application Status Reference](#application-status-reference)
-13. [Testing Guide](#testing-guide)
+9. [Past Consultations Management](#past-consultations-management)
+10. [File Upload Requirements](#file-upload-requirements)
+11. [Validation Rules](#validation-rules)
+12. [Error Responses](#error-responses)
+13. [Application Status Reference](#application-status-reference)
+14. [Testing Guide](#testing-guide)
 
 ---
 
@@ -57,12 +59,17 @@ Manages patient appointment requests - allows doctors to view pending requests, 
 
 Provides doctors with read-only access to patient reviews and feedback. Doctors can view their average ratings, filter reviews by star rating (1-5), sentiment (positive/negative/neutral), and date ranges. Includes comprehensive statistics with rating distribution and sentiment analysis.
 
+### 7. Past Consultations Management (`/api/doctor/consultations`)
+
+Provides comprehensive access to completed appointments with full details including prescriptions, video recordings, patient messages, and notes. Doctors can review consultation history, track prescriptions with medicine details, analyze practice statistics, and filter by patient name or date range.
+
 ### Complete Journey:
 
 ```
 Register → Verify Email → Login → Submit Documents →
 Check Status → Wait for Approval (or Resubmit if Rejected) → Complete Profile →
-Manage Profile → Create Availability Slots → Manage Appointment Requests → View Patient Reviews → Start Practice
+Manage Profile → Create Availability Slots → Manage Appointment Requests →
+View Patient Reviews → Review Past Consultations → Start Practice
 ```
 
 ---
@@ -3327,7 +3334,625 @@ curl -X GET "http://localhost:5000/api/doctor/reviews?rating=5&sentiment=positiv
 
 ---
 
-## 📞 Support & Notes
+## � Past Consultations Management
+
+The consultations module provides doctors with comprehensive access to their completed appointments, including prescription details, video recordings, patient messages, and statistics. This enables doctors to review previous consultations, track prescription history, and analyze their practice patterns.
+
+**Base URL:** `http://localhost:5000/api/doctor/consultations`
+
+### Features
+
+- ✅ View all completed consultations with pagination
+- ✅ Filter by patient name and date range
+- ✅ Access full consultation details including prescriptions
+- ✅ View prescription items with medicine details
+- ✅ Access video recording URLs when available
+- ✅ Read consultation messages and notes
+- ✅ Get comprehensive consultation statistics
+- ✅ Track prescription generation rates
+- ✅ Analyze appointment type distribution
+
+---
+
+### 1. Get Past Consultations
+
+Retrieve a paginated list of all completed consultations.
+
+**Endpoint:** `GET /api/doctor/consultations`
+
+**Authentication:** Required (Doctor session)
+
+**Query Parameters:**
+
+| Parameter      | Type   | Required | Default      | Description                            |
+| -------------- | ------ | -------- | ------------ | -------------------------------------- |
+| `page`         | number | No       | 1            | Page number (minimum: 1)               |
+| `limit`        | number | No       | 10           | Items per page (1-100)                 |
+| `patient_name` | string | No       | -            | Filter by patient name (partial match) |
+| `start_date`   | date   | No       | -            | Filter consultations from this date    |
+| `end_date`     | date   | No       | -            | Filter consultations until this date   |
+| `sort_by`      | string | No       | `created_at` | Sort by: `created_at`, `updated_at`    |
+| `sort_order`   | string | No       | `desc`       | Sort order: `asc`, `desc`              |
+
+**Example Request:**
+
+```bash
+GET /api/doctor/consultations?page=1&limit=10&patient_name=John&sort_order=desc
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "message": "Past consultations retrieved successfully",
+  "data": {
+    "consultations": [
+      {
+        "_id": "60d5ec49eb1d8e3f4c8b4567",
+        "appointment_type": "online",
+        "appointment_request": "accepted",
+        "status": "completed",
+        "consultation_reason": "Follow-up checkup",
+        "recording_url": "https://recordings.philbox.com/session-123.mp4",
+        "notes": "Patient responded well to treatment",
+        "preferred_date": "2024-02-15T00:00:00.000Z",
+        "preferred_time": "10:00",
+        "patient_id": {
+          "_id": "60d5ec49eb1d8e3f4c8b4568",
+          "fullName": "John Doe",
+          "email": "john.doe@example.com",
+          "contactNumber": "+1234567890",
+          "profile_img_url": "https://example.com/profile.jpg",
+          "blood_group": "A+",
+          "weight": 75,
+          "height": 175,
+          "patient_status": "active"
+        },
+        "slot_id": {
+          "_id": "60d5ec49eb1d8e3f4c8b4569",
+          "date": "2024-02-15T00:00:00.000Z",
+          "start_time": "10:00",
+          "end_time": "10:30",
+          "slot_duration": 30
+        },
+        "prescription_generated": {
+          "_id": "60d5ec49eb1d8e3f4c8b456a",
+          "diagnosis_reason": "Seasonal allergies",
+          "file_url": "https://prescriptions.philbox.com/rx-123.pdf",
+          "digital_verification_id": "RX-2024-001234",
+          "special_instructions": "Take with food",
+          "valid_till": "2024-03-15T00:00:00.000Z",
+          "created_at": "2024-02-15T10:25:00.000Z"
+        },
+        "transaction_id": "60d5ec49eb1d8e3f4c8b456f",
+        "created_at": "2024-02-15T09:45:00.000Z",
+        "updated_at": "2024-02-15T10:30:00.000Z"
+      }
+    ],
+    "pagination": {
+      "current_page": 1,
+      "total_pages": 5,
+      "total_items": 48,
+      "items_per_page": 10,
+      "has_next": true,
+      "has_prev": false
+    }
+  }
+}
+```
+
+**Error Responses:**
+
+```json
+// Unauthorized (401)
+{
+  "status": "error",
+  "message": "Unauthorized"
+}
+
+// Invalid Query Parameters (400)
+{
+  "status": "error",
+  "message": "Limit must be at least 1"
+}
+
+// Server Error (500)
+{
+  "status": "error",
+  "message": "Failed to retrieve past consultations",
+  "error": "Error details"
+}
+```
+
+---
+
+### 2. Get Consultation Details
+
+Get comprehensive details about a specific consultation including prescription, messages, and patient information.
+
+**Endpoint:** `GET /api/doctor/consultations/:consultationId`
+
+**Authentication:** Required (Doctor session)
+
+**Path Parameters:**
+
+| Parameter        | Type   | Required | Description                      |
+| ---------------- | ------ | -------- | -------------------------------- |
+| `consultationId` | string | Yes      | ID of the consultation (MongoDB) |
+
+**Example Request:**
+
+```bash
+GET /api/doctor/consultations/60d5ec49eb1d8e3f4c8b4567
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "message": "Consultation details retrieved successfully",
+  "data": {
+    "appointment": {
+      "_id": "60d5ec49eb1d8e3f4c8b4567",
+      "appointment_type": "online",
+      "appointment_request": "accepted",
+      "status": "completed",
+      "consultation_reason": "Follow-up checkup for allergies",
+      "recording_url": "https://recordings.philbox.com/session-123.mp4",
+      "notes": "Patient shows significant improvement. Continue medication.",
+      "preferred_date": "2024-02-15T00:00:00.000Z",
+      "preferred_time": "10:00",
+      "patient_id": {
+        "_id": "60d5ec49eb1d8e3f4c8b4568",
+        "fullName": "John Doe",
+        "email": "john.doe@example.com",
+        "contactNumber": "+1234567890",
+        "profile_img_url": "https://example.com/profile.jpg",
+        "dateOfBirth": "1990-05-15T00:00:00.000Z",
+        "gender": "Male",
+        "blood_group": "A+",
+        "weight": 75,
+        "height": 175,
+        "patient_status": "active"
+      },
+      "slot_id": {
+        "_id": "60d5ec49eb1d8e3f4c8b4569",
+        "date": "2024-02-15T00:00:00.000Z",
+        "start_time": "10:00",
+        "end_time": "10:30",
+        "slot_duration": 30
+      },
+      "prescription_generated": {
+        "_id": "60d5ec49eb1d8e3f4c8b456a",
+        "diagnosis_reason": "Seasonal allergies",
+        "file_url": "https://prescriptions.philbox.com/rx-123.pdf",
+        "digital_verification_id": "RX-2024-001234",
+        "special_instructions": "Take antihistamine with meals",
+        "valid_till": "2024-03-15T00:00:00.000Z",
+        "created_at": "2024-02-15T10:25:00.000Z"
+      },
+      "transaction_id": "60d5ec49eb1d8e3f4c8b456f",
+      "created_at": "2024-02-15T09:45:00.000Z",
+      "updated_at": "2024-02-15T10:30:00.000Z"
+    },
+    "prescription": {
+      "_id": "60d5ec49eb1d8e3f4c8b456a",
+      "diagnosis_reason": "Seasonal allergies with mild respiratory symptoms",
+      "digital_verification_id": "RX-2024-001234",
+      "file_url": "https://prescriptions.philbox.com/rx-123.pdf",
+      "special_instructions": "Take antihistamine with food. Use inhaler as needed.",
+      "valid_till": "2024-03-15T00:00:00.000Z",
+      "patient_id": "60d5ec49eb1d8e3f4c8b4568",
+      "appointment_id": "60d5ec49eb1d8e3f4c8b4567",
+      "prescription_items_ids": [
+        {
+          "_id": "60d5ec49eb1d8e3f4c8b456b",
+          "medicine_id": {
+            "_id": "60d5ec49eb1d8e3f4c8b456c",
+            "name": "Cetirizine",
+            "generic_name": "Cetirizine Hydrochloride",
+            "manufacturer": "PharmaCorp",
+            "strength": "10mg"
+          },
+          "form": "tablet",
+          "frequency": "once-daily",
+          "duration_days": 14,
+          "quantity_prescribed": 14,
+          "dosage_instructions": "Take one tablet daily in the evening",
+          "created_at": "2024-02-15T10:25:00.000Z"
+        },
+        {
+          "_id": "60d5ec49eb1d8e3f4c8b456d",
+          "medicine_id": {
+            "_id": "60d5ec49eb1d8e3f4c8b456e",
+            "name": "Albuterol",
+            "generic_name": "Albuterol Sulfate",
+            "manufacturer": "RespiraMed",
+            "strength": "100mcg"
+          },
+          "form": "inhaler",
+          "frequency": "as-needed",
+          "duration_days": 30,
+          "quantity_prescribed": 1,
+          "dosage_instructions": "Use 1-2 puffs when needed for breathing difficulty",
+          "created_at": "2024-02-15T10:25:00.000Z"
+        }
+      ],
+      "special_instructions": "Take antihistamine with food. Use inhaler as needed.",
+      "valid_till": "2024-03-15T00:00:00.000Z",
+      "patient_id": "60d5ec49eb1d8e3f4c8b4568",
+      "appointment_id": "60d5ec49eb1d8e3f4c8b4567",
+      "created_at": "2024-02-15T10:25:00.000Z",
+      "updated_at": "2024-02-15T10:25:00.000Z"
+    },
+    "messages": [
+      {
+        "_id": "60d5ec49eb1d8e3f4c8b456f",
+        "appointment_id": "60d5ec49eb1d8e3f4c8b4567",
+        "sender_type": "doctor",
+        "sender_id": "60d5ec49eb1d8e3f4c8b4570",
+        "message": "Patient reports improved symptoms since last visit. Continuing with antihistamine therapy.",
+        "created_at": "2024-02-15T10:15:00.000Z"
+      },
+      {
+        "_id": "60d5ec49eb1d8e3f4c8b4571",
+        "appointment_id": "60d5ec49eb1d8e3f4c8b4567",
+        "sender_type": "patient",
+        "sender_id": "60d5ec49eb1d8e3f4c8b4568",
+        "message": "Thank you doctor. Should I continue avoiding outdoor activities?",
+        "created_at": "2024-02-15T10:18:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+**Error Responses:**
+
+```json
+// Consultation Not Found (404)
+{
+  "status": "error",
+  "message": "Consultation not found or does not belong to this doctor"
+}
+
+// Invalid Consultation ID (400)
+{
+  "status": "error",
+  "message": "Consultation ID is required"
+}
+
+// Unauthorized (401)
+{
+  "status": "error",
+  "message": "Unauthorized"
+}
+```
+
+---
+
+### 3. Get Prescription Details
+
+Retrieve detailed prescription information including all medicine items.
+
+**Endpoint:** `GET /api/doctor/consultations/prescription/:prescriptionId`
+
+**Authentication:** Required (Doctor session)
+
+**Path Parameters:**
+
+| Parameter        | Type   | Required | Description                      |
+| ---------------- | ------ | -------- | -------------------------------- |
+| `prescriptionId` | string | Yes      | ID of the prescription (MongoDB) |
+
+**Example Request:**
+
+```bash
+GET /api/doctor/consultations/prescription/60d5ec49eb1d8e3f4c8b456a
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "message": "Prescription details retrieved successfully",
+  "data": {
+    "_id": "60d5ec49eb1d8e3f4c8b456a",
+    "diagnosis_reason": "Seasonal allergies with mild respiratory symptoms",
+    "digital_verification_id": "RX-2024-001234",
+    "file_url": "https://prescriptions.philbox.com/rx-123.pdf",
+    "patient_id": {
+      "_id": "60d5ec49eb1d8e3f4c8b4568",
+      "fullName": "John Doe",
+      "email": "john.doe@example.com",
+      "contactNumber": "+1234567890",
+      "blood_group": "A+",
+      "weight": 75,
+      "height": 175,
+      "patient_status": "active"
+    },
+    "appointment_id": {
+      "_id": "60d5ec49eb1d8e3f4c8b4567",
+      "appointment_type": "online",
+      "consultation_reason": "Follow-up checkup for allergies"
+    },
+    "prescription_items_ids": [
+      {
+        "_id": "60d5ec49eb1d8e3f4c8b456b",
+        "medicine_id": {
+          "_id": "60d5ec49eb1d8e3f4c8b456c",
+          "name": "Cetirizine",
+          "generic_name": "Cetirizine Hydrochloride",
+          "manufacturer": "PharmaCorp",
+          "strength": "10mg",
+          "form": "tablet"
+        },
+        "form": "tablet",
+        "frequency": "once-daily",
+        "duration_days": 14,
+        "quantity_prescribed": 14,
+        "dosage_instructions": "Take one tablet daily in the evening",
+        "created_at": "2024-02-15T10:25:00.000Z"
+      }
+    ],
+    "special_instructions": "Take antihistamine with food. Avoid alcohol.\",
+    "valid_till": "2024-03-15T00:00:00.000Z",
+    "created_at": "2024-02-15T10:25:00.000Z",
+    "updated_at": "2024-02-15T10:25:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+
+```json
+// Prescription Not Found (404)
+{
+  "status": "error",
+  "message": "Prescription not found or does not belong to this doctor"
+}
+
+// Invalid Prescription ID (400)
+{
+  "status": "error",
+  "message": "Prescription ID is required"
+}
+```
+
+---
+
+### 4. Get Consultation Statistics
+
+Get comprehensive statistics about completed consultations.
+
+**Endpoint:** `GET /api/doctor/consultations/statistics`
+
+**Authentication:** Required (Doctor session)
+
+**Query Parameters:**
+
+| Parameter    | Type | Required | Description                          |
+| ------------ | ---- | -------- | ------------------------------------ |
+| `start_date` | date | No       | Calculate statistics from this date  |
+| `end_date`   | date | No       | Calculate statistics until this date |
+
+**Example Request:**
+
+```bash
+GET /api/doctor/consultations/statistics?start_date=2024-01-01&end_date=2024-12-31
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "status": "success",
+  "message": "Consultation statistics retrieved successfully",
+  "data": {
+    "total_consultations": 156,
+    "with_prescriptions": 142,
+    "with_recordings": 89,
+    "appointment_types": {
+      "in-person": 67,
+      "online": 89
+    }
+  }
+}
+```
+
+**Error Responses:**
+
+```json
+// Invalid Date Range (400)
+{
+  "status": "error",
+  "message": "End date must be after start date"
+}
+
+// Unauthorized (401)
+{
+  "status": "error",
+  "message": "Unauthorized"
+}
+```
+
+---
+
+### 📊 Data Models
+
+#### Consultation (Appointment)
+
+```javascript
+{
+  _id: ObjectId,
+  appointment_type: 'online' | 'in-person',
+  appointment_request: 'accepted',
+  status: 'completed',
+  consultation_reason: String,
+  recording_url: String (optional),
+  patient_id: ObjectId (ref: Customer),
+  doctor_id: ObjectId (ref: Doctor),
+  slot_id: ObjectId (ref: Slot),
+  prescription_generated: ObjectId (ref: PrescriptionGeneratedByDoctor),
+  created_at: Date,
+  updated_at: Date
+}
+```
+
+#### Prescription Generated By Doctor
+
+```javascript
+{
+  _id: ObjectId,
+  diagnosis_reason: String (required),
+  digital_verification_id: String (unique),
+  file_url: String (PDF link),
+  prescription_items_ids: [ObjectId] (ref: PrescriptionItem),
+  patient_id: ObjectId (ref: Customer),
+  doctor_id: ObjectId (ref: Doctor),
+  appointment_id: ObjectId (ref: Appointment),
+  created_at: Date,
+  updated_at: Date
+}
+```
+
+#### Prescription Item
+
+```javascript
+{
+  _id: ObjectId,
+  medicine_id: ObjectId (ref: MedicineItem),
+  prescription_id: ObjectId (ref: PrescriptionGeneratedByDoctor),
+  form: 'tablet' | 'syrup' | 'injection' | 'inhaler' | 'ointment',
+  frequency: 'once-daily' | 'twice-daily' | 'thrice-daily' | 'four-times-daily' | 'as-needed',
+  duration_days: Number,
+  quantity_prescribed: Number,
+  dosage_instructions: String,
+  created_at: Date,
+  updated_at: Date
+}
+```
+
+---
+
+### 🔍 Common Use Cases
+
+#### View Recent Consultations
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/consultations?page=1&limit=20&sort_order=desc" \
+  -H "Cookie: connect.sid=your-session-cookie"
+```
+
+#### Search Consultations by Patient Name
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/consultations?patient_name=John%20Doe" \
+  -H "Cookie: connect.sid=your-session-cookie"
+```
+
+#### Filter by Date Range
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/consultations?start_date=2024-01-01&end_date=2024-01-31" \
+  -H "Cookie: connect.sid=your-session-cookie"
+```
+
+#### Get Full Consultation Details
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/consultations/60d5ec49eb1d8e3f4c8b4567" \
+  -H "Cookie: connect.sid=your-session-cookie"
+```
+
+#### Review Prescription History
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/consultations/prescription/60d5ec49eb1d8e3f4c8b456a" \
+  -H "Cookie: connect.sid=your-session-cookie"
+```
+
+#### Analyze Practice Statistics
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/consultations/statistics?start_date=2024-01-01&end_date=2024-12-31" \
+  -H "Cookie: connect.sid=your-session-cookie"
+```
+
+---
+
+### 🧪 Testing Workflow
+
+**Step 1: Login as Doctor**
+
+```bash
+curl -X POST http://localhost:5000/api/doctor/auth/login \
+  -H "Content-Type: application/json" \
+  -c cookies.txt \
+  -d '{
+    "email": "doctor@example.com",
+    "password": "YourPassword123"
+  }'
+```
+
+**Step 2: Get Consultation Statistics**
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/consultations/statistics" \
+  -b cookies.txt
+```
+
+**Step 3: Get Past Consultations (Paginated)**
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/consultations?page=1&limit=10" \
+  -b cookies.txt
+```
+
+**Step 4: Filter by Patient Name**
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/consultations?patient_name=John" \
+  -b cookies.txt
+```
+
+**Step 5: Filter by Date Range**
+
+```bash
+curl -X GET "http://localhost:5000/api/doctor/consultations?start_date=2024-01-01&end_date=2024-12-31" \
+  -b cookies.txt
+```
+
+**Step 6: Get Consultation Details**
+
+```bash
+# Replace consultationId with actual ID from previous response
+curl -X GET "http://localhost:5000/api/doctor/consultations/60d5ec49eb1d8e3f4c8b4567" \
+  -b cookies.txt
+```
+
+**Step 7: Get Prescription Details**
+
+```bash
+# Replace prescriptionId with actual ID
+curl -X GET "http://localhost:5000/api/doctor/consultations/prescription/60d5ec49eb1d8e3f4c8b456a" \
+  -b cookies.txt
+```
+
+**Step 8: Combined Filters**
+
+```bash
+# Get recent consultations for a specific patient
+curl -X GET "http://localhost:5000/api/doctor/consultations?patient_name=John%20Doe&start_date=2024-01-01&end_date=2024-12-31&page=1&limit=20&sort_order=desc" \
+  -b cookies.txt
+```
+
+---
+
+## �📞 Support & Notes
 
 ### Important Notes
 
@@ -3340,7 +3965,8 @@ curl -X GET "http://localhost:5000/api/doctor/reviews?rating=5&sentiment=positiv
 7. **Profile Management**: Doctors can update their profile anytime after completing onboarding
 8. **OAuth Accounts**: Cannot change password for Google OAuth accounts
 9. **Reviews Access**: Doctors have read-only access to patient reviews and cannot reply or modify them
-10. **Email Notifications**: Doctors receive emails for:
+10. **Past Consultations**: Doctors can access completed appointments with full details including prescriptions, recordings, and messages
+11. **Email Notifications**: Doctors receive emails for:
 
 - Email verification
 - Application approval
@@ -3415,5 +4041,5 @@ For technical issues or questions:
 ---
 
 **Last Updated:** February 28, 2026
-**API Version:** 1.2.0
-**Modules:** Authentication, Onboarding, Profile Management, Slots Management, Appointments, Reviews
+**API Version:** 1.3.0
+**Modules:** Authentication, Onboarding, Profile Management, Slots Management, Appointments, Reviews, Past Consultations
