@@ -1,28 +1,14 @@
 import Appointment from '../../../../../models/Appointment.js';
 import PrescriptionGeneratedByDoctor from '../../../../../models/PrescriptionGeneratedByDoctor.js';
-// eslint-disable-next-line no-unused-vars
-import PrescriptionItem from '../../../../../models/PrescriptionItem.js';
+import '../../../../../models/PrescriptionItem.js';
+import '../../../../../models/OrderItem.js';
+import '../../../../../models/Medicine.js';
+
 import PrescriptionUploadedByCustomer from '../../../../../models/PrescriptionUploadedByCustomer.js';
 import Order from '../../../../../models/Order.js';
-// eslint-disable-next-line no-unused-vars
-import OrderItem from '../../../../../models/OrderItem.js';
+
 import Customer from '../../../../../models/Customer.js';
-// eslint-disable-next-line no-unused-vars
-import Doctor from '../../../../../models/Doctor.js';
-// eslint-disable-next-line no-unused-vars
-import DoctorSlot from '../../../../../models/DoctorSlot.js';
-// eslint-disable-next-line no-unused-vars
-import MedicineItem from '../../../../../models/MedicineItem.js';
-// eslint-disable-next-line no-unused-vars
-import Medicine from '../../../../../models/Medicine.js';
-// eslint-disable-next-line no-unused-vars
-import Manufacturer from '../../../../../models/Manufacturer.js';
-// eslint-disable-next-line no-unused-vars
-import ItemClass from '../../../../../models/ItemClass.js';
-// eslint-disable-next-line no-unused-vars
-import Branch from '../../../../../models/Branch.js';
-// eslint-disable-next-line no-unused-vars
-import Salesperson from '../../../../../models/Salesperson.js';
+
 import { logDoctorActivity } from '../../../utils/logDoctorActivities.js';
 
 /**
