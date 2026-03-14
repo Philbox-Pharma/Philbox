@@ -1,5 +1,5 @@
 import RefillReminder from '../../../../../models/RefillReminder.js';
-import MedicineItem from '../../../../../models/MedicineItem.js';
+import Medicine from '../../../../../models/Medicine.js';
 import { logCustomerActivity } from '../../../utils/logCustomerActivities.js';
 
 class RefillReminderService {
@@ -9,7 +9,7 @@ class RefillReminderService {
   async createReminder(customerId, reminderData, req) {
     try {
       // Validate that all medicine IDs exist
-      const medicines = await MedicineItem.find({
+      const medicines = await Medicine.find({
         _id: { $in: reminderData.medicines },
       });
 
@@ -131,7 +131,7 @@ class RefillReminderService {
 
       // Validate medicine IDs if provided
       if (updateData.medicines) {
-        const medicines = await MedicineItem.find({
+        const medicines = await Medicine.find({
           _id: { $in: updateData.medicines },
         });
 

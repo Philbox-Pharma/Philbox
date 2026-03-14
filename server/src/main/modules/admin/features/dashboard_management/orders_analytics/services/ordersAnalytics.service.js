@@ -3,7 +3,7 @@ import OrderItem from '../../../../../../models/OrderItem.js';
 import StockInHand from '../../../../../../models/StockInHand.js';
 import MedicineBatch from '../../../../../../models/MedicineBatch.js';
 import Transaction from '../../../../../../models/Transaction.js';
-import MedicineItem from '../../../../../../models/MedicineItem.js';
+import Medicine from '../../../../../../models/Medicine.js';
 import { logAdminActivity } from '../../../../utils/logAdminActivities.js';
 
 class OrdersAnalyticsService {
@@ -191,7 +191,7 @@ class OrdersAnalyticsService {
         { $limit: parseInt(limit) },
         {
           $lookup: {
-            from: 'medicineitems',
+            from: 'medicines',
             localField: '_id',
             foreignField: '_id',
             as: 'medicine',
@@ -333,7 +333,7 @@ class OrdersAnalyticsService {
         { $match: { order_id: { $in: orderIds } } },
         {
           $lookup: {
-            from: 'medicineitems',
+            from: 'medicines',
             localField: 'medicine_item_id',
             foreignField: '_id',
             as: 'medicine',
@@ -349,9 +349,9 @@ class OrdersAnalyticsService {
         },
       ]);
 
-      // Get all distinct categories from MedicineItem schema enum
+      // Get all distinct categories from Medicine schema enum
       const categoryEnum =
-        MedicineItem.schema.path('medicine_category').enumValues || [];
+        Medicine.schema.path('medicine_category').enumValues || [];
 
       // Initialize result object dynamically
       const result = {

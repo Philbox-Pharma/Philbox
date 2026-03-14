@@ -79,6 +79,8 @@ medicineSchema.index({ salesperson_id: 1 });
 medicineSchema.index({ Name: 1 });
 medicineSchema.index({ medicine_category: 1 });
 
-const Medicine = mongoose.model('Medicine', medicineSchema);
+const Medicine =
+  mongoose.models.Medicine || mongoose.model('Medicine', medicineSchema);
+mongoose.models.MedicineItem || mongoose.model('MedicineItem', medicineSchema);
 
 export default Medicine;
