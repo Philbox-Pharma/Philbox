@@ -1,7 +1,7 @@
 import Order from '../../../../../models/Order.js';
 import OrderItem from '../../../../../models/OrderItem.js';
 import Appointment from '../../../../../models/Appointment.js';
-import MedicineItem from '../../../../../models/MedicineItem.js';
+import Medicine from '../../../../../models/Medicine.js';
 import { logCustomerActivity } from '../../../utils/logCustomerActivities.js';
 
 class CustomerDashboardService {
@@ -134,7 +134,7 @@ class CustomerDashboardService {
 
     if (!customerOrders || customerOrders.length === 0) {
       // No orders yet, return some popular medicines
-      return await MedicineItem.find()
+      return await Medicine.find()
         .sort({ created_at: -1 })
         .limit(5)
         .select('Name img_url sale_price description mgs')
@@ -147,7 +147,7 @@ class CustomerDashboardService {
     );
 
     if (orderItemIds.length === 0) {
-      return await MedicineItem.find()
+      return await Medicine.find()
         .sort({ created_at: -1 })
         .limit(5)
         .select('Name img_url sale_price description mgs')
@@ -174,7 +174,7 @@ class CustomerDashboardService {
       .map(([medId]) => medId);
 
     // Fetch medicine details
-    const medicines = await MedicineItem.find({ _id: { $in: topMedicineIds } })
+    const medicines = await Medicine.find({ _id: { $in: topMedicineIds } })
       .select('Name img_url sale_price description mgs')
       .lean();
 
