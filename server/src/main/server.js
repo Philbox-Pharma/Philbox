@@ -47,6 +47,7 @@ import customerAppointmentsRoutes from './modules/customer/features/appointments
 
 import salespersonAuthRoutes from './modules/salesperson/features/auth/routes/auth.routes.js';
 import salespersonTaskManagementRoutes from './modules/salesperson/features/task_management/routes/task.routes.js';
+import salespersonDashboardRoutes from './modules/salesperson/features/dashboard/routes/dashboard.routes.js';
 
 import healthRouter from './shared/routes/health.route.js';
 
@@ -178,6 +179,7 @@ app.use(`/api/customer/refill-reminders`, customerRefillReminderRoutes);
 app.use(`/api/customer/appointments`, customerAppointmentsRoutes);
 app.use(`/api/${ROUTES.SALESPERSON_AUTH}`, salespersonAuthRoutes);
 app.use(`/api/salesperson/tasks`, salespersonTaskManagementRoutes);
+app.use(`/api/salesperson/dashboard`, salespersonDashboardRoutes);
 
 const start_server = async () => {
   try {
