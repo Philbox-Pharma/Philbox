@@ -66,6 +66,11 @@ const medicineSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    lowStockThreshold: {
+      type: Number,
+      default: 10,
+      min: 1,
+    },
   },
   {
     timestamps: true,
