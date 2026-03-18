@@ -62,11 +62,9 @@ The script seeds the following models in dependency order:
 
 ### 4. Inventory System
 
-- **Manufacturers**: 4 pharmaceutical manufacturers
 - **Item Classes**: 5 medicine classes (Tablet, Capsule, Syrup, Injection, Ointment)
 - **Medicine Items**: 5 medicines with pricing and availability
-- **Medicine Batches**: 5 batches with expiry dates
-- **Stock Records**: 5 stock-in-hand records
+- **Stock Records**: 5 stock-in-hand records with quantity values
 
 ### 5. Business Operations
 
@@ -177,9 +175,9 @@ The script follows this insertion order to maintain referential integrity:
 2. Addresses
 3. Users (Admins, Customers, Doctors, Salespersons)
 4. Branches
-5. Manufacturers & Item Classes
+5. Item Classes
 6. Medicine Items
-7. Medicine Batches & Stock
+7. Stock
 8. Appointments
 9. Transactions (for appointments)
 10. Orders & Order Items

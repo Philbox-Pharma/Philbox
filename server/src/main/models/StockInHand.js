@@ -6,9 +6,20 @@ const stockInHandSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'MedicineItem',
       required: true,
-      unique: true,
+    },
+    branch_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Branch',
     },
     quantity: {
+      type: Number,
+      default: 0,
+    },
+    stockValue: {
+      type: Number,
+      default: 0,
+    },
+    packQty: {
       type: Number,
       default: 0,
     },
@@ -28,7 +39,10 @@ const stockInHandSchema = new mongoose.Schema(
 const shouldAutoClearResolved = async (medicineId, quantity) => {
   if (!medicineId || typeof quantity !== 'number') return false;
 
-  const MedicineModel = mongoose.models.Medicine || mongoose.model('Medicine');
+  const MedicineModel =
+    mongoose.models.Medicine || mongoose.models.MedicineItem;
+  if (!MedicineModel) return false;
+
   const medicine = await MedicineModel.findById(medicineId)
     .select('lowStockThreshold')
     .lean();
@@ -97,6 +111,11 @@ const autoClearResolvedOnQueryUpdate = async function (next) {
 
 stockInHandSchema.pre('findOneAndUpdate', autoClearResolvedOnQueryUpdate);
 stockInHandSchema.pre('updateOne', autoClearResolvedOnQueryUpdate);
+
+stockInHandSchema.index(
+  { medicine_id: 1, branch_id: 1 },
+  { unique: true, sparse: true }
+);
 
 const StockInHand = mongoose.model('StockInHand', stockInHandSchema);
 

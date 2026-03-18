@@ -33,11 +33,8 @@ const medicineSchema = new mongoose.Schema(
     },
     medicine_category: {
       type: String,
-      enum: ['Narcotics', 'surgical'],
-    },
-    manufacturer: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Manufacturer',
+      trim: true,
+      default: null,
     },
     class: {
       type: mongoose.Schema.Types.ObjectId,
