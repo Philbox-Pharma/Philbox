@@ -126,12 +126,12 @@ export default function CustomerList() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-4 sm:space-y-6 w-full min-w-0">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-xl sm:text-3xl font-bold text-gray-800 flex items-center gap-3">
-            <FaUsers className="text-blue-600" />
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 flex items-center gap-3">
+            <FaUsers className="text-blue-600 shrink-0" />
             Customer Management
           </h1>
           <p className="text-gray-600 mt-1">
@@ -142,7 +142,7 @@ export default function CustomerList() {
 
       {/* Metrics Cards */}
       {metrics && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-linear-to-br from-blue-500 to-blue-600 text-white p-5 rounded-lg shadow">
             <div className="flex justify-between items-start">
               <div>
@@ -213,9 +213,9 @@ export default function CustomerList() {
 
         <form
           onSubmit={handleSearch}
-          className="grid grid-cols-1 md:grid-cols-6 gap-4"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4"
         >
-          <div className="col-span-2">
+          <div className="col-span-1 sm:col-span-2 lg:col-span-2">
             <input
               type="text"
               placeholder="Search by name, email, phone..."

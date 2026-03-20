@@ -100,7 +100,14 @@ const SimplePieChart = ({ data, loading, title }) => {
     return (
       <div className="animate-pulse">
         <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
-        <div className="w-40 h-40 bg-gray-200 rounded-full mx-auto"></div>
+        <div className="flex flex-col sm:flex-row items-center gap-6">
+          <div className="w-32 h-32 bg-gray-200 rounded-full shrink-0"></div>
+          <div className="w-full sm:flex-1 space-y-2">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-4 bg-gray-200 rounded w-full"></div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -111,7 +118,7 @@ const SimplePieChart = ({ data, loading, title }) => {
   return (
     <div>
       <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
-      <div className="flex items-center gap-6">
+      <div className="flex flex-col sm:flex-row items-center gap-6">
         <div
           className="w-32 h-32 rounded-full relative"
           style={{
@@ -129,7 +136,7 @@ const SimplePieChart = ({ data, loading, title }) => {
         >
           <div className="absolute inset-4 bg-white rounded-full"></div>
         </div>
-        <div className="flex-1 space-y-2">
+        <div className="w-full sm:flex-1 space-y-2">
           {data.map((item, i) => (
             <div key={i} className="flex items-center gap-2">
               <div
@@ -196,7 +203,7 @@ export default function RevenueAnalytics() {
   }, [dateRange]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 w-full min-w-0">
       {/* Header */}
       <div className="bg-gradient-to-r from-[#1a365d] to-[#2c5282] rounded-2xl p-6 text-white">
         <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
@@ -210,26 +217,28 @@ export default function RevenueAnalytics() {
 
       {/* Date Filter */}
       <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <FaFilter className="text-gray-400" />
-          <div className="flex items-center gap-2">
-            <FaCalendarAlt className="text-gray-400" />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex items-center gap-2 text-gray-700 font-semibold shrink-0">
+            <FaFilter className="text-gray-400" /> Filters
+          </div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+            <FaCalendarAlt className="text-gray-400 hidden sm:block" />
             <input
               type="date"
               value={dateRange.startDate}
               onChange={e =>
                 setDateRange(prev => ({ ...prev, startDate: e.target.value }))
               }
-              className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1a365d] outline-none"
+              className="w-full sm:w-auto px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1a365d] outline-none"
             />
-            <span className="text-gray-400">to</span>
+            <span className="text-gray-400 hidden sm:block">to</span>
             <input
               type="date"
               value={dateRange.endDate}
               onChange={e =>
                 setDateRange(prev => ({ ...prev, endDate: e.target.value }))
               }
-              className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1a365d] outline-none"
+              className="w-full sm:w-auto px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1a365d] outline-none"
             />
           </div>
         </div>

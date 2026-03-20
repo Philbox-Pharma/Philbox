@@ -69,12 +69,6 @@ export default function AdminLanding() {
       onClick: () => navigate('/admin/login'),
     },
     secondaryCTA: null,
-    stats: [
-      { number: '50+', label: 'Branches' },
-      { number: '500+', label: 'Staff Members' },
-      { number: '99.9%', label: 'Uptime' },
-      { number: '24/7', label: 'Monitoring' },
-    ],
   };
 
   // Services/Capabilities
@@ -134,30 +128,7 @@ export default function AdminLanding() {
     'Password Policies',
   ];
 
-  // Testimonials
-  const testimonials = [
-    {
-      name: 'Ahmed Raza',
-      role: 'Super Admin, Philbox HQ',
-      image: 'https://randomuser.me/api/portraits/men/45.jpg',
-      text: 'Managing 50+ branches was a nightmare before. Now I can monitor everything from one dashboard with complete visibility.',
-      rating: 5,
-    },
-    {
-      name: 'Sarah Khan',
-      role: 'Branch Manager',
-      image: 'https://randomuser.me/api/portraits/women/32.jpg',
-      text: 'The role-based permissions ensure my team only accesses what they need. Security has never been better.',
-      rating: 5,
-    },
-    {
-      name: 'Usman Ali',
-      role: 'IT Administrator',
-      image: 'https://randomuser.me/api/portraits/men/67.jpg',
-      text: 'The audit logs and 2FA give us peace of mind. We can track every action and ensure compliance.',
-      rating: 5,
-    },
-  ];
+  // Testimonials removed
 
   // Footer Links - All working routes
   const footerLinks = {
@@ -231,10 +202,6 @@ export default function AdminLanding() {
         theme={theme}
         imageSide="right"
         imageIcon={FaUserCog}
-        floatingStats={[
-          { label: 'Active Users', value: '500+' },
-          { label: 'Response Time', value: '<1s' },
-        ]}
         ctaButtons={[
           {
             label: 'Login to Dashboard',
@@ -247,27 +214,15 @@ export default function AdminLanding() {
       <LandingFeatures
         id="security"
         badge="Enterprise Security"
-        title="Bank-Level"
+        title="System"
         titleHighlight="Security"
         description="Your data is protected with industry-leading security measures and compliance standards."
         features={securityFeatures}
         theme={theme}
         imageSide="left"
         imageIcon={FaShieldAlt}
-        floatingStats={[
-          { label: 'Encryption', value: '256-bit' },
-          { label: 'Uptime', value: '99.9%' },
-        ]}
         ctaButtons={[]}
         bgGradient="from-gray-50 to-blue-50"
-      />
-
-      <LandingTestimonials
-        badge="Trusted by Admins"
-        title="What Our Team Says"
-        subtitle="Hear from the administrators who manage Philbox daily"
-        testimonials={testimonials}
-        theme={theme}
       />
 
       <LandingCTA

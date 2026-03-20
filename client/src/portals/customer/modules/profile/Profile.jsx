@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   FaUser,
   FaEnvelope,
@@ -13,33 +13,38 @@ import {
   FaEye,
   FaEyeSlash,
 } from 'react-icons/fa';
+import profileService from '../../../../core/api/customer/profile.service';
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock user data
+  // User details state
   const [userData, setUserData] = useState({
-    fullName: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '03001234567',
+    fullName: '',
+    email: '',
+    contactNumber: '',
     gender: 'Male',
-    dateOfBirth: '1990-05-15',
-    profileImage: 'https://via.placeholder.com/150x150?text=JD',
-    coverImage: 'https://via.placeholder.com/800x200?text=Cover',
+    dateOfBirth: '',
+    profile_img: 'https://via.placeholder.com/150',
+    cover_img: 'https://via.placeholder.com/800x200',
     address: {
-      street: 'House 12, Street 5, Block B',
-      city: 'Lahore',
-      province: 'Punjab',
-      zipCode: '54000',
-      country: 'Pakistan',
+      street: '',
+      town: '',
+      city: '',
+      province: '',
+      zip_code: '',
+      country: '',
     },
-    createdAt: '2023-06-15',
+    created_at: '',
   });
 
-  // Form state for editing
+  // Edit form state
   const [formData, setFormData] = useState({ ...userData });
+  const profileImgInputRef = useRef(null);
+  const coverImgInputRef = useRef(null);
 
   // Password change state
   const [passwordData, setPasswordData] = useState({
@@ -54,7 +59,46 @@ export default function Profile() {
   });
   const [passwordLoading, setPasswordLoading] = useState(false);
 
-  // Handle form input change
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    setIsLoading(true);
+    try {
+      const response = await profileService.getProfile();
+      const profile = response.data || response;
+      const parsedData = {
+        fullName: profile.fullName || '',
+        email: profile.email || '',
+        contactNumber: profile.contactNumber || '',
+        gender: profile.gender || 'Male',
+        dateOfBirth: profile.dateOfBirth
+          ? profile.dateOfBirth.substring(0, 10)
+          : '',
+        profile_img: profile.profile_img || 'https://via.placeholder.com/150',
+        cover_img: profile.cover_img || 'https://via.placeholder.com/800x200',
+        address: profile.address || {
+          street: '',
+          town: '',
+          city: '',
+          province: '',
+          zip_code: '',
+          country: '',
+        },
+        created_at: profile.created_at
+          ? new Date(profile.created_at).toLocaleDateString()
+          : 'N/A',
+      };
+      setUserData(parsedData);
+      setFormData(parsedData);
+    } catch (error) {
+      console.error('Failed to load profile details', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleChange = e => {
     const { name, value } = e.target;
     if (name.startsWith('address.')) {
@@ -74,67 +118,155 @@ export default function Profile() {
     }
   };
 
-  // Handle save
   const handleSave = async () => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setUserData({ ...formData });
-    setIsEditing(false);
-    alert('Profile updated successfully!');
+    // Basic Form Validations
+    if (formData.fullName.length < 3) {
+      alert('Name must be at least 3 characters.');
+      return;
+    }
+    if (formData.contactNumber && formData.contactNumber.length < 10) {
+      alert('Please provide a valid contact number.');
+      return;
+    }
+
+    try {
+      const payload = {
+        fullName: formData.fullName,
+        contactNumber: formData.contactNumber,
+        gender: formData.gender,
+        dateOfBirth: formData.dateOfBirth,
+        street: formData.address.street,
+        town: formData.address.town,
+        city: formData.address.city,
+        province: formData.address.province,
+        zip_code: formData.address.zip_code,
+        country: formData.address.country,
+      };
+
+      await profileService.updateProfile(payload);
+      setUserData({ ...formData });
+      setIsEditing(false);
+      alert('Profile updated successfully!');
+      window.dispatchEvent(new Event('profileUpdated'));
+    } catch (error) {
+      console.error(error);
+      alert('Failed to update profile!');
+    }
   };
 
-  // Handle cancel edit
   const handleCancel = () => {
     setFormData({ ...userData });
     setIsEditing(false);
   };
 
-  // Handle password change
   const handlePasswordChange = async e => {
     e.preventDefault();
-
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       alert('New passwords do not match!');
       return;
     }
-
     if (passwordData.newPassword.length < 6) {
       alert('Password must be at least 6 characters!');
       return;
     }
 
     setPasswordLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    alert('Password changed successfully!');
-    setPasswordData({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    });
-    setShowPasswordModal(false);
-    setPasswordLoading(false);
+    try {
+      await profileService.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+        confirmPassword: passwordData.confirmPassword,
+      });
+      alert('Password changed successfully!');
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      setShowPasswordModal(false);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to change password. Please check your current password.');
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
-  // Handle image upload
-  const handleImageUpload = type => {
-    // In real app: Open file picker and upload
-    alert(`Upload ${type} image - Feature coming soon!`);
+  const handleImageUpload = async (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const data = new FormData();
+    if (type === 'profile') {
+      data.append('profile_img', file);
+    } else {
+      data.append('cover_img', file);
+    }
+
+    try {
+      let response;
+      if (type === 'profile') {
+        response = await profileService.uploadProfilePicture(data);
+      } else {
+        response = await profileService.uploadCoverImage(data);
+      }
+
+      const updatedUrl =
+        response.data?.profile_img ||
+        response.data?.cover_img ||
+        response.data?.url ||
+        URL.createObjectURL(file);
+
+      setUserData(prev => ({
+        ...prev,
+        [type === 'profile' ? 'profile_img' : 'cover_img']: updatedUrl,
+      }));
+      setFormData(prev => ({
+        ...prev,
+        [type === 'profile' ? 'profile_img' : 'cover_img']: updatedUrl,
+      }));
+
+      alert(response.message || 'Image uploaded successfully!');
+      if (type === 'profile') {
+        window.dispatchEvent(new Event('profileUpdated'));
+      }
+    } catch (error) {
+      console.error('Failed to upload image', error);
+      alert('Failed to upload image!');
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center flex-col items-center h-screen space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <p className="text-gray-500 font-medium tracking-wide">
+          Loading Profile...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       {/* Cover Image */}
-      <div className="relative h-48 md:h-64 rounded-xl overflow-hidden mb-16">
+      <div className="relative h-48 md:h-64 rounded-xl overflow-hidden mb-16 bg-gradient-to-r from-blue-300 to-blue-500">
         <img
-          src={userData.coverImage}
+          src={userData.cover_img}
           alt="Cover"
           className="w-full h-full object-cover"
         />
+        <input
+          type="file"
+          ref={coverImgInputRef}
+          hidden
+          accept="image/*"
+          onChange={e => handleImageUpload(e, 'cover')}
+        />
         <button
-          onClick={() => handleImageUpload('cover')}
+          onClick={() => coverImgInputRef.current?.click()}
           className="absolute bottom-4 right-4 p-2 bg-black/50 text-white rounded-lg hover:bg-black/70 transition-colors"
+          title="Upload Cover Photo"
         >
           <FaCamera />
         </button>
@@ -143,13 +275,21 @@ export default function Profile() {
         <div className="absolute -bottom-12 left-6 md:left-10">
           <div className="relative">
             <img
-              src={userData.profileImage}
+              src={userData.profile_img}
               alt={userData.fullName}
               className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white object-cover bg-white"
             />
+            <input
+              type="file"
+              ref={profileImgInputRef}
+              hidden
+              accept="image/*"
+              onChange={e => handleImageUpload(e, 'profile')}
+            />
             <button
-              onClick={() => handleImageUpload('profile')}
+              onClick={() => profileImgInputRef.current?.click()}
               className="absolute bottom-0 right-0 p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
+              title="Upload Profile Photo"
             >
               <FaCamera size={12} />
             </button>
@@ -163,12 +303,12 @@ export default function Profile() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
             {userData.fullName}
           </h1>
-          <p className="text-gray-500">Member since {userData.createdAt}</p>
+          <p className="text-gray-500">Member since: {userData.created_at}</p>
         </div>
         {!isEditing ? (
           <button
             onClick={() => setIsEditing(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-sm"
           >
             <FaEdit />
             Edit Profile
@@ -194,7 +334,7 @@ export default function Profile() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b mb-6">
+      <div className="flex border-b mb-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
         {[
           { id: 'profile', label: 'Profile Info' },
           { id: 'address', label: 'Address' },
@@ -218,17 +358,16 @@ export default function Profile() {
       <div className="bg-white rounded-xl shadow-sm border p-6">
         {/* Profile Info Tab */}
         {activeTab === 'profile' && (
-          <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+          <div className="space-y-6 animate-fadeIn">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
               Personal Information
             </h2>
 
             <div className="grid md:grid-cols-2 gap-6">
               {/* Full Name */}
               <div>
-                <label className="input-label flex items-center gap-2">
-                  <FaUser className="text-gray-400" />
-                  Full Name
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1">
+                  <FaUser className="text-gray-400" /> Full Name
                 </label>
                 {isEditing ? (
                   <input
@@ -236,73 +375,66 @@ export default function Profile() {
                     name="fullName"
                     value={formData.fullName}
                     onChange={handleChange}
-                    className="input-field"
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                   />
                 ) : (
-                  <p className="text-gray-800 py-2">{userData.fullName}</p>
+                  <p className="text-gray-800 py-2 border-b border-transparent">
+                    {userData.fullName}
+                  </p>
                 )}
               </div>
 
               {/* Email */}
               <div>
-                <label className="input-label flex items-center gap-2">
-                  <FaEnvelope className="text-gray-400" />
-                  Email Address
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1">
+                  <FaEnvelope className="text-gray-400" /> Email Address
                 </label>
                 {isEditing ? (
                   <input
                     type="email"
-                    name="email"
                     value={formData.email}
-                    onChange={handleChange}
-                    className="input-field"
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed outline-none"
                     disabled
                   />
                 ) : (
                   <p className="text-gray-800 py-2">{userData.email}</p>
                 )}
-                {isEditing && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Email cannot be changed
-                  </p>
-                )}
               </div>
 
               {/* Phone */}
               <div>
-                <label className="input-label flex items-center gap-2">
-                  <FaPhone className="text-gray-400" />
-                  Phone Number
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1">
+                  <FaPhone className="text-gray-400" /> Contact Number
                 </label>
                 {isEditing ? (
                   <input
                     type="tel"
-                    name="phone"
-                    value={formData.phone}
+                    name="contactNumber"
+                    value={formData.contactNumber}
                     onChange={handleChange}
-                    className="input-field"
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                   />
                 ) : (
-                  <p className="text-gray-800 py-2">{userData.phone}</p>
+                  <p className="text-gray-800 py-2">
+                    {userData.contactNumber || 'Not provided'}
+                  </p>
                 )}
               </div>
 
               {/* Gender */}
               <div>
-                <label className="input-label flex items-center gap-2">
-                  <FaUser className="text-gray-400" />
-                  Gender
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1">
+                  <FaUser className="text-gray-400" /> Gender
                 </label>
                 {isEditing ? (
                   <select
                     name="gender"
                     value={formData.gender}
                     onChange={handleChange}
-                    className="input-field"
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                   >
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
-                    <option value="Other">Other</option>
                   </select>
                 ) : (
                   <p className="text-gray-800 py-2">{userData.gender}</p>
@@ -311,9 +443,8 @@ export default function Profile() {
 
               {/* Date of Birth */}
               <div>
-                <label className="input-label flex items-center gap-2">
-                  <FaCalendarAlt className="text-gray-400" />
-                  Date of Birth
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1">
+                  <FaCalendarAlt className="text-gray-400" /> Date of Birth
                 </label>
                 {isEditing ? (
                   <input
@@ -321,10 +452,12 @@ export default function Profile() {
                     name="dateOfBirth"
                     value={formData.dateOfBirth}
                     onChange={handleChange}
-                    className="input-field"
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                   />
                 ) : (
-                  <p className="text-gray-800 py-2">{userData.dateOfBirth}</p>
+                  <p className="text-gray-800 py-2">
+                    {userData.dateOfBirth || 'Not provided'}
+                  </p>
                 )}
               </div>
             </div>
@@ -333,17 +466,16 @@ export default function Profile() {
 
         {/* Address Tab */}
         {activeTab === 'address' && (
-          <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+          <div className="space-y-6 animate-fadeIn">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
               Delivery Address
             </h2>
 
             <div className="grid md:grid-cols-2 gap-6">
               {/* Street */}
               <div className="md:col-span-2">
-                <label className="input-label flex items-center gap-2">
-                  <FaMapMarkerAlt className="text-gray-400" />
-                  Street Address
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1">
+                  <FaMapMarkerAlt className="text-gray-400" /> Street Address
                 </label>
                 {isEditing ? (
                   <input
@@ -351,82 +483,112 @@ export default function Profile() {
                     name="address.street"
                     value={formData.address.street}
                     onChange={handleChange}
-                    className="input-field"
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                     placeholder="House/Apt, Street, Area"
                   />
                 ) : (
                   <p className="text-gray-800 py-2">
-                    {userData.address.street}
+                    {userData.address.street || 'Not provided'}
+                  </p>
+                )}
+              </div>
+
+              {/* Town */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">
+                  Town
+                </label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="address.town"
+                    value={formData.address.town}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  />
+                ) : (
+                  <p className="text-gray-800 py-2">
+                    {userData.address.town || 'N/A'}
                   </p>
                 )}
               </div>
 
               {/* City */}
               <div>
-                <label className="input-label">City</label>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">
+                  City
+                </label>
                 {isEditing ? (
                   <input
                     type="text"
                     name="address.city"
                     value={formData.address.city}
                     onChange={handleChange}
-                    className="input-field"
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                   />
                 ) : (
-                  <p className="text-gray-800 py-2">{userData.address.city}</p>
+                  <p className="text-gray-800 py-2">
+                    {userData.address.city || 'N/A'}
+                  </p>
                 )}
               </div>
 
               {/* Province */}
               <div>
-                <label className="input-label">Province/State</label>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">
+                  Province/State
+                </label>
                 {isEditing ? (
                   <input
                     type="text"
                     name="address.province"
                     value={formData.address.province}
                     onChange={handleChange}
-                    className="input-field"
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                   />
                 ) : (
                   <p className="text-gray-800 py-2">
-                    {userData.address.province}
+                    {userData.address.province || 'N/A'}
                   </p>
                 )}
               </div>
 
               {/* Zip Code */}
               <div>
-                <label className="input-label">Zip/Postal Code</label>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">
+                  Zip/Postal Code
+                </label>
                 {isEditing ? (
                   <input
                     type="text"
-                    name="address.zipCode"
-                    value={formData.address.zipCode}
+                    name="address.zip_code"
+                    value={formData.address.zip_code}
                     onChange={handleChange}
-                    className="input-field"
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                   />
                 ) : (
                   <p className="text-gray-800 py-2">
-                    {userData.address.zipCode}
+                    {userData.address.zip_code || 'N/A'}
                   </p>
                 )}
               </div>
 
               {/* Country */}
               <div>
-                <label className="input-label">Country</label>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">
+                  Country
+                </label>
                 {isEditing ? (
                   <input
                     type="text"
                     name="address.country"
                     value={formData.address.country}
                     onChange={handleChange}
-                    className="input-field"
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                   />
                 ) : (
                   <p className="text-gray-800 py-2">
-                    {userData.address.country}
+                    {userData.address.country || 'N/A'}
                   </p>
                 )}
               </div>
@@ -436,67 +598,32 @@ export default function Profile() {
 
         {/* Security Tab */}
         {activeTab === 'security' && (
-          <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+          <div className="space-y-6 animate-fadeIn">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
               Security Settings
             </h2>
 
             {/* Change Password */}
-            <div className="p-4 border rounded-lg">
+            <div className="p-4 border rounded-lg hover:border-blue-200 transition-colors">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
                     <FaLock className="text-blue-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-800">Password</p>
+                    <p className="font-medium text-gray-800">
+                      Account Password
+                    </p>
                     <p className="text-sm text-gray-500">
-                      Change your account password
+                      Change your account credentials regularly.
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowPasswordModal(true)}
-                  className="w-full sm:w-auto px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+                  className="w-full sm:w-auto px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium"
                 >
                   Change Password
-                </button>
-              </div>
-            </div>
-
-            {/* Two Factor Auth - Future */}
-            <div className="p-4 border rounded-lg opacity-60">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
-                    <FaLock className="text-gray-400" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-800">
-                      Two-Factor Authentication
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Add an extra layer of security
-                    </p>
-                  </div>
-                </div>
-                <span className="w-full sm:w-auto text-center px-3 py-1 bg-gray-100 text-gray-500 text-sm rounded-lg">
-                  Coming Soon
-                </span>
-              </div>
-            </div>
-
-            {/* Delete Account - Future */}
-            <div className="p-4 border border-red-200 rounded-lg bg-red-50">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <p className="font-medium text-red-800">Delete Account</p>
-                  <p className="text-sm text-red-600">
-                    Permanently delete your account and all data
-                  </p>
-                </div>
-                <button className="w-full sm:w-auto px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-100 transition-colors">
-                  Delete Account
                 </button>
               </div>
             </div>
@@ -506,10 +633,10 @@ export default function Profile() {
 
       {/* Change Password Modal */}
       {showPasswordModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-fadeIn">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-gray-800">
                 Change Password
               </h3>
               <button
@@ -521,16 +648,17 @@ export default function Profile() {
                     confirmPassword: '',
                   });
                 }}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 p-1"
               >
                 <FaTimes />
               </button>
             </div>
 
             <form onSubmit={handlePasswordChange} className="space-y-4">
-              {/* Current Password */}
               <div className="relative">
-                <label className="input-label">Current Password</label>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Current Password
+                </label>
                 <input
                   type={showPasswords.current ? 'text' : 'password'}
                   value={passwordData.currentPassword}
@@ -540,7 +668,7 @@ export default function Profile() {
                       currentPassword: e.target.value,
                     }))
                   }
-                  className="input-field pr-10"
+                  className="w-full pl-3 pr-10 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   required
                 />
                 <button
@@ -557,9 +685,10 @@ export default function Profile() {
                 </button>
               </div>
 
-              {/* New Password */}
               <div className="relative">
-                <label className="input-label">New Password</label>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  New Password
+                </label>
                 <input
                   type={showPasswords.new ? 'text' : 'password'}
                   value={passwordData.newPassword}
@@ -569,7 +698,7 @@ export default function Profile() {
                       newPassword: e.target.value,
                     }))
                   }
-                  className="input-field pr-10"
+                  className="w-full pl-3 pr-10 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   required
                 />
                 <button
@@ -583,9 +712,10 @@ export default function Profile() {
                 </button>
               </div>
 
-              {/* Confirm Password */}
               <div className="relative">
-                <label className="input-label">Confirm New Password</label>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Confirm New Password
+                </label>
                 <input
                   type={showPasswords.confirm ? 'text' : 'password'}
                   value={passwordData.confirmPassword}
@@ -595,7 +725,7 @@ export default function Profile() {
                       confirmPassword: e.target.value,
                     }))
                   }
-                  className="input-field pr-10"
+                  className="w-full pl-3 pr-10 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   required
                 />
                 <button
@@ -612,12 +742,7 @@ export default function Profile() {
                 </button>
               </div>
 
-              <p className="text-xs text-gray-500">
-                Password must be at least 6 characters long
-              </p>
-
-              {/* Actions */}
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-4 mt-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -628,16 +753,16 @@ export default function Profile() {
                       confirmPassword: '',
                     });
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={passwordLoading}
-                  className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 transition-colors"
+                  className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 disabled:bg-blue-300 transition-colors"
                 >
-                  {passwordLoading ? 'Changing...' : 'Change Password'}
+                  {passwordLoading ? 'Saving...' : 'Save Password'}
                 </button>
               </div>
             </form>

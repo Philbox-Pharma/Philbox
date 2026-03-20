@@ -1,5 +1,5 @@
 // src/portals/admin/layouts/components/AdminSidebar.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
@@ -31,6 +31,19 @@ export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
       [menuKey]: !prev[menuKey],
     }));
   };
+
+  // Lock body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (isOpen && window.innerWidth < 1024) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   const hasPermission = permission => {
     if (!admin?.role?.permissions) return true;
@@ -312,7 +325,7 @@ export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
       {/* Sidebar */}
       <aside
         className={`
-                    fixed lg:sticky top-0 left-0 min-h-screen w-64 bg-[#1a365d] z-50
+                    fixed lg:sticky top-0 left-0 h-[100dvh] w-64 bg-[#1a365d] z-50
                     transform transition-transform duration-300 ease-in-out border-r border-white/5
                     ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                     flex flex-col shadow-xl

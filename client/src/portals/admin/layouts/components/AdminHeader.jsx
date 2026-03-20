@@ -28,7 +28,6 @@ import {
 import {
   adminAuthApi,
   activityLogsApi,
-  globalSearchApi,
 } from '../../../../core/api/admin/adminApi';
 
 export default function AdminHeader({ toggleSidebar, admin }) {
@@ -71,8 +70,131 @@ export default function AdminHeader({ toggleSidebar, admin }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Debounced search
-  const handleSearch = useCallback(async query => {
+  // Available Dashboard Features for Local Search
+  const adminFeaturesList = [
+    {
+      id: 'f1',
+      name: 'Manage Branches',
+      description: 'View and manage all pharmacy branches',
+      path: '/admin/branches',
+      type: 'branch',
+    },
+    {
+      id: 'f2',
+      name: 'Add New Branch',
+      description: 'Create a new pharmacy branch',
+      path: '/admin/branches/add',
+      type: 'branch',
+    },
+    {
+      id: 'f3',
+      name: 'Manage Admins',
+      description: 'View and manage system administrators',
+      path: '/admin/staff/admins',
+      type: 'admin',
+    },
+    {
+      id: 'f4',
+      name: 'Manage Salespersons',
+      description: 'View and manage sales staff',
+      path: '/admin/staff/salespersons',
+      type: 'salesperson',
+    },
+    {
+      id: 'f5',
+      name: 'Task Management',
+      description: 'Assign and track tasks for salespersons',
+      path: '/admin/tasks',
+      type: 'task',
+    },
+    {
+      id: 'f6',
+      name: 'Customer Management',
+      description: 'View and manage customer accounts',
+      path: '/admin/customers',
+      type: 'customer',
+    },
+    {
+      id: 'f7',
+      name: 'Doctor Management',
+      description: 'View and verify doctor profiles',
+      path: '/admin/doctors',
+      type: 'doctor',
+    },
+    {
+      id: 'f8',
+      name: 'Inventory Management',
+      description: 'Monitor medicine stock across branches',
+      path: '/admin/inventory',
+      type: 'inventory',
+    },
+    {
+      id: 'f9',
+      name: 'Low Stock Alerts',
+      description: 'View medicines running out of stock',
+      path: '/admin/inventory/low-stock',
+      type: 'inventory',
+    },
+    {
+      id: 'f10',
+      name: 'Revenue Analytics',
+      description: 'Track financial performance',
+      path: '/admin/analytics/revenue',
+      type: 'analytics',
+    },
+    {
+      id: 'f11',
+      name: 'Orders Analytics',
+      description: 'Monitor pharmacy orders',
+      path: '/admin/analytics/orders',
+      type: 'analytics',
+    },
+    {
+      id: 'f12',
+      name: 'User Engagement',
+      description: 'View user activity metrics',
+      path: '/admin/analytics/engagement',
+      type: 'analytics',
+    },
+    {
+      id: 'f13',
+      name: 'Activity Logs',
+      description: 'Audit trail and system logs',
+      path: '/admin/analytics/activity-logs',
+      type: 'analytics',
+    },
+    {
+      id: 'f14',
+      name: 'System Settings',
+      description: 'Configure admin platform settings',
+      path: '/admin/settings',
+      type: 'setting',
+    },
+    {
+      id: 'f15',
+      name: 'Roles & Permissions',
+      description: 'Manage access control',
+      path: '/admin/roles-permissions',
+      type: 'setting',
+    },
+    {
+      id: 'f16',
+      name: 'Feedback & Ratings',
+      description: 'View user reviews',
+      path: '/admin/feedback',
+      type: 'feedback',
+    },
+    {
+      id: 'f17',
+      name: 'Subscription Plans',
+      description: 'Manage SaaS subscription tiers',
+      path: '/admin/subscriptions',
+      type: 'subscription',
+    },
+  ];
+
+  // Local static search
+  const handleSearch = useCallback(query => {
     if (!query || query.length < 2) {
       setSearchResults([]);
       setShowSearchResults(false);
@@ -82,16 +204,17 @@ export default function AdminHeader({ toggleSidebar, admin }) {
     setSearchLoading(true);
     setShowSearchResults(true);
 
-    try {
-      const results = await globalSearchApi.search(query, 5);
-      setSearchResults(results);
-      setSelectedIndex(-1);
-    } catch (err) {
-      console.error('Search failed:', err);
-      setSearchResults([]);
-    } finally {
-      setSearchLoading(false);
-    }
+    const q = query.toLowerCase();
+    const results = adminFeaturesList.filter(
+      feature =>
+        feature.name.toLowerCase().includes(q) ||
+        feature.description.toLowerCase().includes(q) ||
+        feature.type.toLowerCase().includes(q)
+    );
+
+    setSearchResults(results.slice(0, 8)); // Return top 8 results
+    setSelectedIndex(-1);
+    setSearchLoading(false);
   }, []);
 
   // Handle search input change with debounce
@@ -160,8 +283,20 @@ export default function AdminHeader({ toggleSidebar, admin }) {
         return <FaUserFriends className="text-orange-500" />;
       case 'doctor':
         return <FaUserMd className="text-teal-500" />;
+      case 'task':
+        return <FaCheck className="text-blue-600" />;
+      case 'inventory':
+        return <FaBoxes className="text-red-500" />;
+      case 'analytics':
+        return <FaChartLine className="text-indigo-500" />;
+      case 'setting':
+        return <FaCog className="text-gray-600" />;
+      case 'feedback':
+        return <FaEdit className="text-yellow-600" />;
+      case 'subscription':
+        return <FaCodeBranch className="text-pink-500" />;
       default:
-        return <FaUser className="text-gray-500" />;
+        return <FaSearch className="text-gray-500" />;
     }
   };
 
@@ -173,8 +308,14 @@ export default function AdminHeader({ toggleSidebar, admin }) {
       salesperson: 'Salesperson',
       customer: 'Customer',
       doctor: 'Doctor',
+      task: 'Task',
+      inventory: 'Inventory',
+      analytics: 'Analytics',
+      setting: 'Setting',
+      feedback: 'Feedback',
+      subscription: 'Subscription',
     };
-    return labels[type] || 'Item';
+    return labels[type] || 'Feature';
   };
 
   // Fetch notifications (from activity logs)
@@ -202,7 +343,11 @@ export default function AdminHeader({ toggleSidebar, admin }) {
       });
 
       if (response.status === 200 || response.data) {
-        const logs = response.data?.logs || response.data?.timeline || [];
+        const logs =
+          response.data?.suspiciousActivities ||
+          response.data?.logs ||
+          response.data?.timeline ||
+          [];
         const formattedNotifications = logs.slice(0, 10).map((log, index) => ({
           id: log._id || index,
           text: formatNotificationText(log),
@@ -476,7 +621,7 @@ export default function AdminHeader({ toggleSidebar, admin }) {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 10 }}
-                  className="absolute -right-8 sm:right-0 mt-2 w-[260px] sm:w-80 md:w-96 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden"
+                  className="fixed sm:absolute top-[64px] sm:top-full left-1/2 sm:left-auto -translate-x-1/2 sm:translate-x-0 mt-0 sm:mt-2 sm:right-0 w-[92vw] max-w-[340px] sm:max-w-none sm:w-80 md:w-96 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50"
                 >
                   {/* Header */}
                   <div className="p-4 bg-[#1a365d] text-white flex items-center justify-between">

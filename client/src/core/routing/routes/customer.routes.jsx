@@ -20,6 +20,7 @@ import AppointmentDetail from '../../../portals/customer/modules/appointments/Ap
 import Prescriptions from '../../../portals/customer/modules/prescriptions/Prescriptions';
 import Profile from '../../../portals/customer/modules/profile/Profile';
 import Notifications from '../../../portals/customer/modules/notifications/Notifications';
+import Reminders from '../../../portals/customer/modules/reminders/Reminders';
 
 export const customerRoutes = [
   // ============================================
@@ -158,6 +159,16 @@ export const customerRoutes = [
       {
         index: true,
         element: <Profile />,
+      },
+    ],
+  },
+  {
+    path: '/reminders',
+    element: <CustomerLayout />,
+    children: [
+      {
+        index: true,
+        element: <Reminders />,
       },
     ],
   },

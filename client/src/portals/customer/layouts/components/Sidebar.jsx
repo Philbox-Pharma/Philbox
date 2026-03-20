@@ -13,6 +13,7 @@ import {
   FaChevronRight,
   FaUserMd,
   FaHeadset,
+  FaClock,
 } from 'react-icons/fa';
 import ContactSupportModal from '../../../../shared/components/Modal/ContactSupportModal';
 
@@ -33,6 +34,7 @@ export default function Sidebar() {
       path: '/prescriptions',
       icon: FaFilePrescription,
     },
+    { label: 'Reminders', path: '/reminders', icon: FaClock },
     { label: 'Notifications', path: '/notifications', icon: FaBell },
     { label: 'My Profile', path: '/profile', icon: FaUser },
   ];

@@ -246,8 +246,8 @@ export default function Settings() {
           color="blue"
         >
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-gray-50 rounded-lg gap-4">
-              <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-3">
                 <div
                   className={`w-3 h-3 rounded-full ${admin?.isTwoFactorEnabled ? 'bg-green-500' : 'bg-gray-300'}`}
                 ></div>
@@ -262,25 +262,25 @@ export default function Settings() {
                   </p>
                 </div>
               </div>
-
-              <button
-                onClick={toggle2FA}
-                disabled={toggling2FA}
-                className={`w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors flex justify-center items-center gap-2 ${
-                  admin?.isTwoFactorEnabled
-                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                    : 'bg-green-100 text-green-700 hover:bg-green-200'
-                } disabled:opacity-50`}
-              >
-                {toggling2FA ? (
-                  <FaSpinner className="animate-spin" />
-                ) : admin?.isTwoFactorEnabled ? (
-                  'Disable'
-                ) : (
-                  'Enable'
-                )}
-              </button>
             </div>
+
+            <button
+              onClick={toggle2FA}
+              disabled={toggling2FA}
+              className={`w-full px-4 py-2 rounded-lg font-medium transition-colors flex justify-center items-center gap-2 ${
+                admin?.isTwoFactorEnabled
+                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                  : 'bg-green-100 text-green-700 hover:bg-green-200'
+              } disabled:opacity-50`}
+            >
+              {toggling2FA ? (
+                <FaSpinner className="animate-spin" />
+              ) : admin?.isTwoFactorEnabled ? (
+                'Disable'
+              ) : (
+                'Enable'
+              )}
+            </button>
 
             {twoFASuccess && (
               <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-lg flex items-center gap-2 text-sm">

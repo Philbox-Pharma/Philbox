@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FaSearch,
@@ -11,26 +11,40 @@ import {
   FaCalendarAlt,
 } from 'react-icons/fa';
 import { customerAuthApi } from '../../../../core/api/customer/auth';
+import profileService from '../../../../core/api/customer/profile.service';
+import SearchBar from './SearchBar';
 
 export default function Header() {
   const navigate = useNavigate();
 
-  const [searchQuery, setSearchQuery] = useState('');
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [profile, setProfile] = useState({
+    fullName: '',
+    email: '',
+    profile_img: '',
+  });
 
-  // Mock data - baad mein API se aayega
+  // Mock data for cart/notifications - baad mein API se aayega
   const cartCount = 3;
   const notificationCount = 5;
-  const userName = 'John Doe';
 
-  // Handle search
-  const handleSearch = e => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/medicines?search=${searchQuery}`);
-    }
-  };
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await profileService.getProfile();
+        setProfile(response.data || response);
+      } catch (error) {
+        console.error('Failed to load profile in header:', error);
+      }
+    };
+    fetchProfile();
+
+    const handleProfileUpdate = () => fetchProfile();
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    return () =>
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+  }, []);
 
   // Handle logout
   const handleLogout = async () => {
@@ -57,26 +71,7 @@ export default function Header() {
           </Link>
 
           {/* Search Bar - Desktop */}
-          <form
-            onSubmit={handleSearch}
-            className="hidden md:flex flex-1 max-w-xl mx-8"
-          >
-            <div className="relative w-full">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search medicines, healthcare products..."
-                className="w-full pl-4 pr-12 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-              />
-              <button
-                type="submit"
-                className="absolute right-0 top-0 h-full px-4 bg-blue-500 text-white rounded-r-full hover:bg-blue-600 transition-colors"
-              >
-                <FaSearch />
-              </button>
-            </div>
-          </form>
+          <SearchBar isMobile={false} />
 
           {/* Right Side Icons */}
           <div className="flex items-center gap-1 sm:gap-3">
@@ -112,13 +107,13 @@ export default function Header() {
 
               {/* Notifications Dropdown */}
               {showNotifications && (
-                <div className="absolute -right-10 sm:right-0 mt-2 w-[260px] sm:w-80 bg-white rounded-xl shadow-lg border py-2 z-50">
+                <div className="fixed sm:absolute top-[64px] sm:top-full left-1/2 sm:left-auto -translate-x-1/2 sm:translate-x-0 mt-0 sm:mt-2 sm:right-0 w-[92vw] max-w-[340px] sm:max-w-none sm:w-80 bg-white rounded-xl shadow-lg border py-2 z-50">
                   <div className="px-4 py-3 border-b">
                     <h3 className="font-semibold text-gray-800">
                       Notifications
                     </h3>
                   </div>
-                  <div className="max-h-72 overflow-y-auto">
+                  <div className="max-h-72 overflow-y-auto w-full">
                     <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-l-4 border-transparent hover:border-blue-500">
                       <p className="text-sm text-gray-800">
                         Your order #123 has been shipped!
@@ -158,21 +153,33 @@ export default function Header() {
                   setShowProfileDropdown(!showProfileDropdown);
                   setShowNotifications(false);
                 }}
-                className="flex items-center gap-2 p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <FaUserCircle size={24} />
+                {profile.profile_img ? (
+                  <img
+                    src={profile.profile_img}
+                    className="w-8 h-8 rounded-full border object-cover"
+                    alt="Profile"
+                  />
+                ) : (
+                  <FaUserCircle size={24} />
+                )}
                 <span className="hidden lg:block text-sm font-medium max-w-24 truncate">
-                  {userName}
+                  {profile.fullName || 'User'}
                 </span>
               </button>
 
               {/* Profile Dropdown Menu */}
               {showProfileDropdown && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border py-2 z-50">
+                <div className="fixed sm:absolute top-[64px] sm:top-full left-1/2 sm:left-auto -translate-x-1/2 sm:translate-x-0 mt-0 sm:mt-2 sm:right-0 w-[92vw] max-w-[280px] sm:max-w-none sm:w-56 bg-white rounded-xl shadow-lg border py-2 z-50">
                   {/* User Info */}
                   <div className="px-4 py-3 border-b">
-                    <p className="font-medium text-gray-800">{userName}</p>
-                    <p className="text-sm text-gray-500">john@example.com</p>
+                    <p className="font-medium text-gray-800">
+                      {profile.fullName || 'User'}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {profile.email || ''}
+                    </p>
                   </div>
 
                   <div className="py-2">
@@ -219,23 +226,7 @@ export default function Header() {
 
         {/* Mobile Search */}
         <div className="md:hidden pb-3">
-          <form onSubmit={handleSearch}>
-            <div className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search medicines..."
-                className="w-full pl-4 pr-12 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-              <button
-                type="submit"
-                className="absolute right-0 top-0 h-full px-4 bg-blue-500 text-white rounded-r-full"
-              >
-                <FaSearch />
-              </button>
-            </div>
-          </form>
+          <SearchBar isMobile={true} />
         </div>
       </div>
     </header>

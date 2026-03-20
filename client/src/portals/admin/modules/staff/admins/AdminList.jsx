@@ -387,7 +387,7 @@ export default function AdminList() {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-start sm:justify-end gap-2 mt-4 pt-3 border-t border-gray-100">
+        <div className="flex items-center justify-between sm:justify-end gap-2 mt-4 pt-3 border-t border-gray-100">
           <Link
             to={`/admin/staff/admins/${row._id}`}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"

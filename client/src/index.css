@@ -259,4 +259,175 @@
   .badge-gray {
     @apply bg-gray-100 text-gray-700;
   }
+
+  /* ============================================
+     ANIMATIONS
+  ============================================ */
+  .animate-fadeIn {
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  .animate-bounce-slow {
+    animation: bounceSlow 2s ease-in-out infinite;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounceSlow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* ============================================
+   FULLCALENDAR OVERRIDES
+============================================ */
+.slot-calendar .fc {
+  font-family: inherit;
+}
+
+.slot-calendar .fc .fc-button {
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s;
+}
+
+.slot-calendar .fc .fc-button:hover {
+  background-color: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.slot-calendar .fc .fc-button-active,
+.slot-calendar .fc .fc-button:active {
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.slot-calendar .fc .fc-toolbar-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.slot-calendar .fc .fc-col-header-cell {
+  background-color: #f9fafb;
+  border-color: #e5e7eb;
+  padding: 0.6rem 0;
+}
+
+.slot-calendar .fc .fc-col-header-cell-cushion {
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.slot-calendar .fc .fc-daygrid-day {
+  transition: background-color 0.15s;
+}
+
+.slot-calendar .fc .fc-daygrid-day:hover {
+  background-color: #f0f9ff;
+}
+
+.slot-calendar .fc .fc-day-today {
+  background-color: #eff6ff !important;
+}
+
+.slot-calendar .fc .fc-day-today .fc-daygrid-day-number {
+  background-color: #3b82f6;
+  color: white;
+  border-radius: 9999px;
+  width: 1.7rem;
+  height: 1.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.slot-calendar .fc .fc-daygrid-day-number {
+  color: #374151;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.3rem;
+}
+
+.slot-calendar .fc .fc-event {
+  border-radius: 0.35rem;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  border-width: 0 0 0 3px;
+}
+
+.slot-calendar .fc .fc-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.slot-calendar .fc .fc-more-link {
+  color: #3b82f6;
+  font-weight: 600;
+  font-size: 0.7rem;
+}
+
+.slot-calendar .fc .fc-timegrid-slot {
+  height: 2.5rem;
+}
+
+.slot-calendar .fc .fc-timegrid-slot-label-cushion {
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+.slot-calendar .fc .fc-scrollgrid {
+  border-color: #e5e7eb;
+}
+
+.slot-calendar .fc td,
+.slot-calendar .fc th {
+  border-color: #f3f4f6;
+}
+
+@media (max-width: 640px) {
+  .slot-calendar .fc .fc-toolbar {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .slot-calendar .fc .fc-toolbar-title {
+    font-size: 1rem;
+  }
+
+  .slot-calendar .fc .fc-button {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.5rem;
+  }
 }

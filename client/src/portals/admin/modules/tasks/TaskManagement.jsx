@@ -272,20 +272,20 @@ export default function TaskManagement() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-4 sm:space-y-6 w-full min-w-0">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-xl sm:text-3xl font-bold text-gray-800 flex items-center gap-3">
-            <FaTasks className="text-blue-600" />
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 flex items-center gap-3">
+            <FaTasks className="text-blue-600 shrink-0" />
             Salesperson Task Management
           </h1>
           <p className="text-gray-600 mt-1">
             Assign and track tasks for your sales team
           </p>
         </div>
-        <div className="flex gap-2">
-          <div className="bg-white rounded-lg border border-gray-200 p-1 flex">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <div className="bg-white rounded-lg border border-gray-200 p-1 flex shrink-0">
             <button
               onClick={() => setViewMode('list')}
               className={`p-2 rounded ${
@@ -314,7 +314,7 @@ export default function TaskManagement() {
               resetForm();
               setShowModal(true);
             }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            className="flex-1 sm:flex-none justify-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 shrink-0"
           >
             <FaPlus /> Create Task
           </button>
@@ -323,7 +323,7 @@ export default function TaskManagement() {
 
       {/* Statistics Cards */}
       {statistics && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-linear-to-br from-blue-500 to-blue-600 text-white p-5 rounded-lg shadow">
             <div className="flex justify-between items-start">
               <div>
@@ -376,10 +376,10 @@ export default function TaskManagement() {
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow space-y-4">
-        <div className="flex items-center gap-2 text-gray-700 font-semibold">
+        <div className="flex items-center gap-2 text-gray-700 font-semibold mb-2">
           <FaFilter /> Filters
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <select
             value={filters.branch_id}
             onChange={e =>
@@ -454,7 +454,7 @@ export default function TaskManagement() {
                 page: 1,
               })
             }
-            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+            className="w-full sm:w-auto bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 sm:col-span-2 md:col-span-3 lg:col-span-1"
           >
             Clear Filters
           </button>
@@ -463,7 +463,7 @@ export default function TaskManagement() {
 
       {/* Tasks Content */}
       {viewMode === 'list' ? (
-        <div className="bg-white rounded-lg shadow overflow-hidden overflow-x-auto">
+        <div className="bg-white rounded-lg shadow w-full overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
