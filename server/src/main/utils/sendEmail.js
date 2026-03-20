@@ -8,6 +8,10 @@ import {
   DOCTOR_APPLICATION_REJECTED_TEMPLATE,
   DOCTOR_STATUS_UPDATE_TEMPLATE,
   REFILL_REMINDER_TEMPLATE,
+  APPOINTMENT_REQUEST_SUBMITTED_TEMPLATE,
+  APPOINTMENT_REQUEST_ACCEPTED_TEMPLATE,
+  APPOINTMENT_REQUEST_REJECTED_TEMPLATE,
+  NEW_APPOINTMENT_REQUEST_NOTIFICATION_TEMPLATE,
 } from '../constants/global.mail.constants.js';
 
 /**
@@ -405,6 +409,241 @@ export const sendRefillReminderEmail = async (email, name, medicines) => {
     return { success: true, messageId: data.id };
   } catch (error) {
     console.error('Error sending refill reminder email:', error);
+    throw error;
+  }
+};
+
+/**
+ * Send Appointment Request Submitted Confirmation to Patient
+ * @param {string} email - Patient email
+ * @param {string} patientName - Patient's name
+ * @param {string} doctorName - Doctor's name
+ * @param {string} appointmentType - Type of appointment (in-person/online)
+ * @param {string} preferredDate - Preferred date and time
+ * @param {number} consultationFee - Consultation fee amount
+ */
+export const sendAppointmentRequestSubmitted = async (
+  email,
+  patientName,
+  doctorName,
+  appointmentType,
+  preferredDate,
+  consultationFee
+) => {
+  const greetingName = formatName(patientName);
+  const formattedDoctorName = formatName(doctorName);
+
+  const emailTemplate = APPOINTMENT_REQUEST_SUBMITTED_TEMPLATE.replace(
+    '{{PATIENT_NAME}}',
+    greetingName
+  )
+    .replace(/{{DOCTOR_NAME}}/g, formattedDoctorName)
+    .replace('{{APPOINTMENT_TYPE}}', appointmentType)
+    .replace('{{PREFERRED_DATE}}', preferredDate)
+    .replace('{{CONSULTATION_FEE}}', consultationFee.toLocaleString());
+
+  try {
+    const { data, error } = await brevo.emails.send({
+      from: fromEmail,
+      to: email,
+      replyTo: 'philboxpk@gmail.com',
+      subject: '✓ Appointment Request Submitted - Philbox',
+      html: emailTemplate,
+    });
+
+    if (error) {
+      console.error(
+        'Error sending appointment request submitted email:',
+        error
+      );
+      throw error;
+    }
+
+    console.log('Appointment request submitted email sent:', data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('Error sending appointment request submitted email:', error);
+    throw error;
+  }
+};
+
+/**
+ * Send New Appointment Request Notification to Doctor
+ * @param {string} email - Doctor email
+ * @param {string} doctorName - Doctor's name
+ * @param {string} patientName - Patient's name
+ * @param {string} appointmentType - Type of appointment
+ * @param {string} preferredDate - Preferred date and time
+ * @param {string} consultationReason - Reason for consultation
+ * @param {string} requestDate - When the request was made
+ * @param {string} dashboardLink - Link to doctor's dashboard
+ */
+export const sendNewAppointmentRequestNotification = async (
+  email,
+  doctorName,
+  patientName,
+  appointmentType,
+  preferredDate,
+  consultationReason,
+  requestDate,
+  dashboardLink
+) => {
+  const formattedDoctorName = formatName(doctorName);
+  const formattedPatientName = formatName(patientName);
+
+  const emailTemplate = NEW_APPOINTMENT_REQUEST_NOTIFICATION_TEMPLATE.replace(
+    /{{DOCTOR_NAME}}/g,
+    formattedDoctorName
+  )
+    .replace(/{{PATIENT_NAME}}/g, formattedPatientName)
+    .replace('{{APPOINTMENT_TYPE}}', appointmentType)
+    .replace('{{PREFERRED_DATE}}', preferredDate)
+    .replace('{{CONSULTATION_REASON}}', consultationReason)
+    .replace('{{REQUEST_DATE}}', requestDate)
+    .replace('{{DASHBOARD_LINK}}', dashboardLink);
+
+  try {
+    const { data, error } = await brevo.emails.send({
+      from: fromEmail,
+      to: email,
+      replyTo: 'philboxpk@gmail.com',
+      subject: '🔔 New Appointment Request - Philbox',
+      html: emailTemplate,
+    });
+
+    if (error) {
+      console.error(
+        'Error sending new appointment request notification:',
+        error
+      );
+      throw error;
+    }
+
+    console.log('New appointment request notification sent:', data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('Error sending new appointment request notification:', error);
+    throw error;
+  }
+};
+
+/**
+ * Send Appointment Request Accepted Notification to Patient
+ * @param {string} email - Patient email
+ * @param {string} patientName - Patient's name
+ * @param {string} doctorName - Doctor's name
+ * @param {string} appointmentType - Type of appointment
+ * @param {string} appointmentDate - Confirmed date and time
+ * @param {number} consultationFee - Consultation fee amount
+ * @param {string} notes - Optional notes from doctor
+ * @param {string} dashboardLink - Link to patient's dashboard
+ */
+export const sendAppointmentRequestAccepted = async (
+  email,
+  patientName,
+  doctorName,
+  appointmentType,
+  appointmentDate,
+  consultationFee,
+  notes,
+  dashboardLink
+) => {
+  const greetingName = formatName(patientName);
+  const formattedDoctorName = formatName(doctorName);
+
+  let emailTemplate = APPOINTMENT_REQUEST_ACCEPTED_TEMPLATE.replace(
+    /{{PATIENT_NAME}}/g,
+    greetingName
+  )
+    .replace(/{{DOCTOR_NAME}}/g, formattedDoctorName)
+    .replace('{{APPOINTMENT_TYPE}}', appointmentType)
+    .replace('{{APPOINTMENT_DATE}}', appointmentDate)
+    .replace('{{CONSULTATION_FEE}}', consultationFee.toLocaleString())
+    .replace('{{DASHBOARD_LINK}}', dashboardLink);
+
+  // Handle optional notes
+  if (notes) {
+    emailTemplate = emailTemplate
+      .replace('{{#if NOTES}}', '')
+      .replace('{{/if}}', '')
+      .replace('{{NOTES}}', notes);
+  } else {
+    // Remove the notes section if not provided
+    emailTemplate = emailTemplate.replace(/{{#if NOTES}}[\s\S]*?{{\/if}}/g, '');
+  }
+
+  try {
+    const { data, error } = await brevo.emails.send({
+      from: fromEmail,
+      to: email,
+      replyTo: 'philboxpk@gmail.com',
+      subject: '✓ Appointment Confirmed - Philbox',
+      html: emailTemplate,
+    });
+
+    if (error) {
+      console.error('Error sending appointment accepted email:', error);
+      throw error;
+    }
+
+    console.log('Appointment accepted email sent:', data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('Error sending appointment accepted email:', error);
+    throw error;
+  }
+};
+
+/**
+ * Send Appointment Request Rejected Notification to Patient
+ * @param {string} email - Patient email
+ * @param {string} patientName - Patient's name
+ * @param {string} doctorName - Doctor's name
+ * @param {string} requestedDate - Originally requested date
+ * @param {string} appointmentType - Type of appointment
+ * @param {string} rejectionReason - Reason for rejection
+ * @param {string} findDoctorsLink - Link to find other doctors
+ */
+export const sendAppointmentRequestRejected = async (
+  email,
+  patientName,
+  doctorName,
+  requestedDate,
+  appointmentType,
+  rejectionReason,
+  findDoctorsLink
+) => {
+  const greetingName = formatName(patientName);
+  const formattedDoctorName = formatName(doctorName);
+
+  const emailTemplate = APPOINTMENT_REQUEST_REJECTED_TEMPLATE.replace(
+    /{{PATIENT_NAME}}/g,
+    greetingName
+  )
+    .replace(/{{DOCTOR_NAME}}/g, formattedDoctorName)
+    .replace('{{REQUESTED_DATE}}', requestedDate)
+    .replace('{{APPOINTMENT_TYPE}}', appointmentType)
+    .replace('{{REJECTION_REASON}}', rejectionReason)
+    .replace('{{FIND_DOCTORS_LINK}}', findDoctorsLink);
+
+  try {
+    const { data, error } = await brevo.emails.send({
+      from: fromEmail,
+      to: email,
+      replyTo: 'philboxpk@gmail.com',
+      subject: 'Appointment Request Update - Philbox',
+      html: emailTemplate,
+    });
+
+    if (error) {
+      console.error('Error sending appointment rejected email:', error);
+      throw error;
+    }
+
+    console.log('Appointment rejected email sent:', data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('Error sending appointment rejected email:', error);
     throw error;
   }
 };

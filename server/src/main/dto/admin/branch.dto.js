@@ -135,6 +135,15 @@ export const updateBranchDTO = Joi.object({
       'array.base': 'under_administration_of must be an array of admin IDs',
       'string.length': 'Each admin ID must be a valid ObjectId',
     }),
+
+  salespersons_assigned: Joi.array()
+    .items(Joi.string().hex().length(24))
+    .optional()
+    .messages({
+      'array.base':
+        'salespersons_assigned must be an array of salespersons Ids IDs',
+      'string.length': 'Each salespersons ID must be a valid ObjectId',
+    }),
 });
 
 export const branchQueryDTO = Joi.object({

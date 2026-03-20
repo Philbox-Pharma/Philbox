@@ -38,6 +38,28 @@ const appointmentSchema = new mongoose.Schema(
       enum: ['in-person', 'online'],
       required: true,
     },
+    // Appointment request specific fields
+    consultation_reason: {
+      type: String,
+      required: function () {
+        return this.appointment_request === 'processing';
+      },
+    },
+    preferred_date: {
+      type: Date,
+    },
+    preferred_time: {
+      type: String, // Format: HH:mm
+    },
+    rejection_reason: {
+      type: String,
+    },
+    cancellation_reason: {
+      type: String,
+    },
+    notes: {
+      type: String,
+    },
     prescription_generated: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'PrescriptionGeneratedByDoctor',

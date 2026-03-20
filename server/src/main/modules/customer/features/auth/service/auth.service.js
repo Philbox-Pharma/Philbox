@@ -138,8 +138,8 @@ class CustomerAuthService {
     const customer = await Customer.findOne({ email: email.toLowerCase() });
     if (!customer) throw new Error('INVALID_CREDENTIALS');
 
-    // OAuth users might not have a password set initially
-    if (!customer.passwordHash) throw new Error('INVALID_CREDENTIALS');
+    // Check if account was created via OAuth
+    if (!customer.passwordHash) throw new Error('OAUTH_ACCOUNT');
 
     const isMatch = await bcrypt.compare(password, customer.passwordHash);
     if (!isMatch) throw new Error('INVALID_CREDENTIALS');
