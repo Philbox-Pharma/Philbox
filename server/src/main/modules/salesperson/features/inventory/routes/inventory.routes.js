@@ -16,22 +16,28 @@ router.use(authenticate);
 router.get('/', (req, res) => inventoryController.listInventory(req, res));
 
 /**
- * GET /api/salesperson/inventory/export
- * Export current inventory to Excel (.xlsx) file
- * Returns: downloadable Excel file with inventory data (all columns from schema)
+ * POST /api/salesperson/inventory
+ * Create a single medicine in a branch managed by salesperson
+ * Body must include: branch_id, Name
  */
-router.get('/export', (req, res) =>
-  inventoryController.exportInventory(req, res)
+router.post('/', (req, res) => inventoryController.createMedicine(req, res));
+
+/**
+ * DELETE /api/salesperson/inventory
+ * Soft delete entire branch inventory (marks medicines unavailable and zeroes stock)
+ * Query params: branch_id (required)
+ */
+router.delete('/', (req, res) =>
+  inventoryController.clearBranchInventory(req, res)
 );
 
 /**
- * GET /api/salesperson/inventory/:medicineId/audit-log
- * Get audit/history log for a specific medicine's stock changes
- * Query params: page, limit
- * Returns: paginated InventoryFilesLog entries for the medicine
+ * POST /api/salesperson/inventory/bulk-upsert
+ * Create or update complete inventory list for a branch in one request
+ * Body: { branch_id, medicines: [...] }
  */
-router.get('/:medicineId/audit-log', (req, res) =>
-  inventoryController.getMedicineAuditLogs(req, res)
+router.post('/bulk-upsert', (req, res) =>
+  inventoryController.bulkUpsertInventory(req, res)
 );
 
 /**
@@ -44,23 +50,11 @@ router.get('/:medicineId', (req, res) =>
 );
 
 /**
- * PATCH /api/salesperson/inventory/:medicineId/stock
- * Update stock quantity for a medicine
- * Body: { quantity: number (required, min: 0), reason: string (optional) }
- * Returns: updated stock record + flag indicating if log was created
+ * PATCH /api/salesperson/inventory/:medicineId
+ * Update medicine properties (and optional stock fields) for one medicine in a branch
  */
-router.patch('/:medicineId/stock', (req, res) =>
-  inventoryController.updateStock(req, res)
-);
-
-/**
- * PATCH /api/salesperson/inventory/:medicineId/discontinue
- * Mark a medicine as discontinued (soft disable)
- * Sets is_available = false (does not delete the document)
- * Returns: updated medicine document
- */
-router.patch('/:medicineId/discontinue', (req, res) =>
-  inventoryController.discontinueMedicine(req, res)
+router.patch('/:medicineId', (req, res) =>
+  inventoryController.updateMedicine(req, res)
 );
 
 /**

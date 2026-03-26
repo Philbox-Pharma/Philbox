@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import * as XLSX from 'xlsx';
+import mongoose from 'mongoose';
 import Medicine from '../../../../../models/Medicine.js';
 import ItemClass from '../../../../../models/ItemClass.js';
 import StockInHand from '../../../../../models/StockInHand.js';
@@ -184,20 +185,45 @@ const toRowErrorResponse = (row, message, field = 'row', logId = null) => ({
   data: row.data,
 });
 
-const getSalespersonBranchRef = async salespersonId => {
+const getSalespersonBranchRef = async (salespersonId, requestedBranchId) => {
   const salesperson = await Salesperson.findById(salespersonId)
     .select('branches_to_be_managed')
     .lean();
 
-  const salespersonBranchRef = salesperson?.branches_to_be_managed?.[0];
-  if (!salespersonBranchRef) {
+  const managedBranches = salesperson?.branches_to_be_managed || [];
+  if (!managedBranches.length) {
     throw {
       status: 400,
       message: 'No branch assigned to salesperson',
     };
   }
 
-  return salespersonBranchRef;
+  if (!requestedBranchId) {
+    throw {
+      status: 400,
+      message: 'branch_id is required',
+    };
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(requestedBranchId)) {
+    throw {
+      status: 400,
+      message: 'Invalid branch_id',
+    };
+  }
+
+  const requested = String(requestedBranchId);
+  const isAllowed = managedBranches.some(
+    branch => String(branch) === requested
+  );
+  if (!isAllowed) {
+    throw {
+      status: 403,
+      message: 'Salesperson is not allowed to upload inventory for this branch',
+    };
+  }
+
+  return requested;
 };
 
 const createInventoryLog = async ({
@@ -253,9 +279,6 @@ const upsertMedicineAndStock = async ({ row, salespersonId, branchId }) => {
   let existingMedicineUpdated = false;
 
   if (medicine) {
-    const missingImage = !String(medicine.img_url || '').trim();
-    const missingDescription = !String(medicine.description || '').trim();
-
     const updatePayload = {
       alias_name: data.aliasname || undefined,
       is_available: data.active,
@@ -268,22 +291,6 @@ const upsertMedicineAndStock = async ({ row, salespersonId, branchId }) => {
       branch_id: branchId,
     };
 
-    if (missingImage || missingDescription) {
-      const { imageUrl, description } = await fetchMedicineDetails(data.Name);
-
-      if (missingImage) {
-        if (imageUrl) {
-          updatePayload.img_url = imageUrl;
-        }
-      }
-
-      if (missingDescription) {
-        if (description) {
-          updatePayload.description = description;
-        }
-      }
-    }
-
     await Medicine.findByIdAndUpdate(medicine._id, {
       $set: updatePayload,
     });
@@ -291,7 +298,7 @@ const upsertMedicineAndStock = async ({ row, salespersonId, branchId }) => {
     medicine = await Medicine.findById(medicine._id);
     existingMedicineUpdated = true;
   } else {
-    const { imageUrl, description } = await fetchMedicineDetails(data.Name);
+    const { description, imageUrls } = await fetchMedicineDetails(data.Name);
 
     medicine = await Medicine.create({
       Name: data.Name,
@@ -302,7 +309,8 @@ const upsertMedicineAndStock = async ({ row, salespersonId, branchId }) => {
       medicine_category: data.Category || null,
       class: itemClass?._id || undefined,
       pack_unit: data.PackUnits ?? undefined,
-      img_url: imageUrl || undefined,
+      img_urls:
+        Array.isArray(imageUrls) && imageUrls.length >= 2 ? imageUrls : [],
       description: description || undefined,
       salesperson_id: salespersonId,
       branch_id: branchId,
@@ -501,8 +509,10 @@ export const processInventoryUpload = async (req, file) => {
     };
   }
 
+  const requestedBranchId = req?.body?.branch_id;
   const salespersonBranchRef = await getSalespersonBranchRef(
-    req.salesperson._id
+    req.salesperson._id,
+    requestedBranchId
   );
 
   const uploadedFileUrl = await uploadToCloudinary(

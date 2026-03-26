@@ -25,8 +25,9 @@ const medicineSchema = new mongoose.Schema(
       ref: 'Salesperson',
       required: true,
     },
-    img_url: {
-      type: String,
+    img_urls: {
+      type: [String],
+      default: [],
     },
     mgs: {
       type: String,
