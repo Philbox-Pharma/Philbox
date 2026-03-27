@@ -91,9 +91,7 @@
     │   │   ├── Feedback.js
     │   │   ├── InventoryFilesLog.js
     │   │   ├── ItemClass.js
-    │   │   ├── Manufacturer.js
     │   │   ├── Medicine.js
-    │   │   ├── MedicineBatch.js
     │   │   ├── MedicineItem.js
     │   │   ├── MedicineSalesAnalytics.js
     │   │   ├── Order.js

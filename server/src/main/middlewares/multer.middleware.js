@@ -9,11 +9,18 @@ const storage = multer.diskStorage({
 });
 
 // File filter to allow only images
-const fileFilter = (req, file, cb) => {
+const imageFileFilter = (req, file, cb) => {
   const allowed = /jpeg|jpg|png|webp/;
   const ext = path.extname(file.originalname).toLowerCase();
   if (allowed.test(ext)) cb(null, true);
   else cb(new Error('Only image files are allowed!'), false);
 };
 
-export const upload = multer({ storage, fileFilter });
+const excelFileFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (ext === '.xlsx' || ext === '.xls') cb(null, true);
+  else cb(new Error('Only .xlsx or .xls files are allowed!'), false);
+};
+
+export const upload = multer({ storage, fileFilter: imageFileFilter });
+export const uploadExcel = multer({ storage, fileFilter: excelFileFilter });
