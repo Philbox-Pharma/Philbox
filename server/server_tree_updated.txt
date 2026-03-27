@@ -47,6 +47,8 @@ server/
 |   |   |   |   \---slots.dto.js
 |   |   |   \---salesperson
 |   |   |       +---auth.dto.js
+|   |   |       +---dashboard.dto.js
+|   |   |       +---lowStockAlerts.dto.js
 |   |   |       \---task.dto.js
 |   |   +---middlewares
 |   |   |   +---multer.middleware.js
@@ -73,9 +75,7 @@ server/
 |   |   |   +---Feedback.js
 |   |   |   +---InventoryFilesLog.js
 |   |   |   +---ItemClass.js
-|   |   |   +---Manufacturer.js
 |   |   |   +---Medicine.js
-|   |   |   +---MedicineBatch.js
 |   |   |   +---MedicineSalesAnalytics.js
 |   |   |   +---Order.js
 |   |   |   +---OrderItem.js
@@ -340,6 +340,20 @@ server/
 |   |   |       |   |   |   \---auth.routes.js
 |   |   |       |   |   \---service
 |   |   |       |   |       \---auth.service.js
+|   |   |       |   +---dashboard
+|   |   |       |   |   +---controllers
+|   |   |       |   |   |   \---dashboard.controller.js
+|   |   |       |   |   +---routes
+|   |   |       |   |   |   \---dashboard.routes.js
+|   |   |       |   |   \---service
+|   |   |       |   |       \---dashboard.service.js
+|   |   |       |   +---low_stock_alerts
+|   |   |       |   |   +---controllers
+|   |   |       |   |   |   \---lowStockAlerts.controller.js
+|   |   |       |   |   +---routes
+|   |   |       |   |   |   \---lowStockAlerts.routes.js
+|   |   |       |   |   \---service
+|   |   |       |   |       \---lowStockAlerts.service.js
 |   |   |       |   \---task_management
 |   |   |       |       +---controllers
 |   |   |       |       |   \---task.controller.js
@@ -350,7 +364,8 @@ server/
 |   |   |       +---middleware
 |   |   |       |   \---auth.middleware.js
 |   |   |       \---utils
-|   |   |           \---logSalespersonActivity.js
+|   |   |           +---logSalespersonActivity.js
+|   |   |           \---lowStockDetection.js
 |   |   +---shared
 |   |   |   \---routes
 |   |   |       \---health.route.js

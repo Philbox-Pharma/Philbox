@@ -15,10 +15,8 @@ import Customer from '../main/models/Customer.js';
 import Doctor from '../main/models/Doctor.js';
 import Salesperson from '../main/models/Salesperson.js';
 import Branch from '../main/models/Branch.js';
-import Manufacturer from '../main/models/Manufacturer.js';
 import ItemClass from '../main/models/ItemClass.js';
 import MedicineItem from '../main/models/MedicineItem.js';
-import MedicineBatch from '../main/models/MedicineBatch.js';
 import StockInHand from '../main/models/StockInHand.js';
 import Appointment from '../main/models/Appointment.js';
 import Order from '../main/models/Order.js';
@@ -664,14 +662,6 @@ const seedData = async () => {
     // ==================== 7. INVENTORY ====================
     console.log('\n💊 Seeding inventory data...');
 
-    const manufacturers = await Manufacturer.insertMany([
-      { name: 'GlaxoSmithKline Pakistan' },
-      { name: 'Getz Pharma' },
-      { name: 'Abbott Laboratories' },
-      { name: 'Pfizer Pakistan' },
-    ]);
-    console.log('  ✓ Created 4 manufacturers');
-
     const itemClasses = await ItemClass.insertMany([
       { name: 'Tablet' },
       { name: 'Capsule' },
@@ -686,7 +676,6 @@ const seedData = async () => {
         Name: 'Panadol 500mg',
         branch_id: branches[0]._id,
         salesperson_id: salespersons[0]._id,
-        manufacturer: manufacturers[0]._id,
         class: itemClasses[0]._id,
         sale_price: 5.0,
         purchase_price: 3.0,
@@ -696,7 +685,6 @@ const seedData = async () => {
         Name: 'Augmentin 625mg',
         branch_id: branches[0]._id,
         salesperson_id: salespersons[0]._id,
-        manufacturer: manufacturers[0]._id,
         class: itemClasses[0]._id,
         sale_price: 280.0,
         purchase_price: 220.0,
@@ -706,7 +694,6 @@ const seedData = async () => {
         Name: 'Brufen 400mg',
         branch_id: branches[0]._id,
         salesperson_id: salespersons[0]._id,
-        manufacturer: manufacturers[1]._id,
         class: itemClasses[0]._id,
         sale_price: 8.0,
         purchase_price: 5.5,
@@ -716,7 +703,6 @@ const seedData = async () => {
         Name: 'Amoxil Syrup 125mg',
         branch_id: branches[1]._id,
         salesperson_id: salespersons[1]._id,
-        manufacturer: manufacturers[0]._id,
         class: itemClasses[2]._id,
         sale_price: 150.0,
         purchase_price: 110.0,
@@ -726,7 +712,6 @@ const seedData = async () => {
         Name: 'Lipitor 20mg',
         branch_id: branches[1]._id,
         salesperson_id: salespersons[1]._id,
-        manufacturer: manufacturers[3]._id,
         class: itemClasses[0]._id,
         sale_price: 320.0,
         purchase_price: 270.0,
@@ -734,35 +719,6 @@ const seedData = async () => {
       },
     ]);
     console.log('  ✓ Created 5 medicine items');
-
-    const medicineBatches = await MedicineBatch.insertMany([
-      {
-        medicine_id: medicineItems[0]._id,
-        expiry: new Date('2025-12-31'),
-        quantity: 1000,
-      },
-      {
-        medicine_id: medicineItems[1]._id,
-        expiry: new Date('2025-06-30'),
-        quantity: 500,
-      },
-      {
-        medicine_id: medicineItems[2]._id,
-        expiry: new Date('2026-03-31'),
-        quantity: 750,
-      },
-      {
-        medicine_id: medicineItems[3]._id,
-        expiry: new Date('2025-09-30'),
-        quantity: 300,
-      },
-      {
-        medicine_id: medicineItems[4]._id,
-        expiry: new Date('2025-11-30'),
-        quantity: 200,
-      },
-    ]);
-    console.log('  ✓ Created 5 medicine batches');
 
     const stockInHand = await StockInHand.insertMany([
       { medicine_id: medicineItems[0]._id, quantity: 1000 },
@@ -1776,10 +1732,8 @@ const seedData = async () => {
     console.log(`✓ Doctors: ${doctors.length}`);
     console.log(`✓ Salespersons: ${salespersons.length}`);
     console.log(`✓ Branches: ${branches.length}`);
-    console.log(`✓ Manufacturers: ${manufacturers.length}`);
     console.log(`✓ Item Classes: ${itemClasses.length}`);
     console.log(`✓ Medicine Items: ${medicineItems.length}`);
-    console.log(`✓ Medicine Batches: ${medicineBatches.length}`);
     console.log(`✓ Stock Records: ${stockInHand.length}`);
     console.log(`✓ Appointments: ${appointments.length}`);
     console.log(`✓ Prescriptions (by doctor): ${prescriptionsByDoctor.length}`);
