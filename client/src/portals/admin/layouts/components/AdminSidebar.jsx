@@ -182,6 +182,11 @@ export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
           permission: null,
         },
         {
+          label: 'Salesperson Performance',
+          path: '/admin/analytics/salesperson-performance',
+          permission: null,
+        },
+        {
           label: 'Orders',
           path: '/admin/orders',
           permission: null,

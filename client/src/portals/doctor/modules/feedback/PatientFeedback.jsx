@@ -280,11 +280,7 @@ export default function PatientFeedback() {
       }
     } catch (err) {
       console.error('Error fetching reviews:', err);
-      if (err.response?.status === 404) {
-        setError('Reviews API is not available yet. Backend endpoint needed: GET /api/doctor/reviews');
-      } else {
-        setError(err.response?.data?.message || 'Failed to load reviews.');
-      }
+      setError(err.response?.data?.message || 'Failed to load reviews.');
       setReviews([]);
     } finally {
       setLoading(false);
@@ -351,7 +347,7 @@ export default function PatientFeedback() {
           <div className="alert-warning mb-6 flex items-start gap-2">
             <FaExclamationTriangle className="text-yellow-500 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-medium">Backend API Required</p>
+              <p className="font-medium">Something went wrong</p>
               <p className="text-sm mt-0.5">{error}</p>
             </div>
           </div>

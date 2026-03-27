@@ -5,6 +5,7 @@ import {
   FaExclamationTriangle,
   FaTasks,
   FaBoxOpen,
+  FaBoxes,
   FaTimes,
   FaHeadset,
   FaUserTie,
@@ -32,6 +33,12 @@ export default function SalespersonSidebar({ isOpen, closeSidebar, salesperson }
       label: 'Dashboard',
       icon: FaTachometerAlt,
       path: '/salesperson/dashboard',
+    },
+    {
+      key: 'inventory',
+      label: 'Inventory',
+      icon: FaBoxes,
+      path: '/salesperson/inventory',
     },
     {
       key: 'tasks',

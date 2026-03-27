@@ -126,6 +126,9 @@ const FeedbackComplaints = lazy(
 const AppointmentAnalytics = lazy(
   () => import('../../../portals/admin/modules/analytics/AppointmentAnalytics')
 );
+const SalespersonPerformance = lazy(
+  () => import('../../../portals/admin/modules/analytics/SalespersonPerformance')
+);
 
 // Notifications
 const Notifications = lazy(
@@ -294,6 +297,10 @@ const adminRoutes = [
       {
         path: 'analytics/appointments',
         element: <AppointmentAnalytics />,
+      },
+      {
+        path: 'analytics/salesperson-performance',
+        element: <SalespersonPerformance />,
       },
 
       // --- Notifications ---

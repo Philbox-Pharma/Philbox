@@ -7,6 +7,8 @@ import SalespersonDashboard from '../../../portals/salesperson/modules/dashboard
 import LowStockAlerts from '../../../portals/salesperson/modules/lowStockAlerts/LowStockAlerts';
 import SalespersonTasks from '../../../portals/salesperson/modules/tasks/SalespersonTasks';
 import SalespersonProfile from '../../../portals/salesperson/modules/profile/SalespersonProfile';
+import InventoryManagement from '../../../portals/salesperson/modules/inventory/InventoryManagement';
+import InventoryUpload from '../../../portals/salesperson/modules/inventory/InventoryUpload';
 
 export const salespersonRoutes = [
   {
@@ -32,6 +34,14 @@ export const salespersonRoutes = [
       {
         path: 'dashboard',
         element: <SalespersonDashboard />,
+      },
+      {
+        path: 'inventory',
+        element: <InventoryManagement />,
+      },
+      {
+        path: 'inventory/upload',
+        element: <InventoryUpload />,
       },
       {
         path: 'alerts',
