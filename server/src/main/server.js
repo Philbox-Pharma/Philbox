@@ -49,7 +49,8 @@ import salespersonAuthRoutes from './modules/salesperson/features/auth/routes/au
 import salespersonTaskManagementRoutes from './modules/salesperson/features/task_management/routes/task.routes.js';
 import lowStockAlertsRoutes from './modules/salesperson/features/low_stock_alerts/routes/lowStockAlerts.routes.js';
 import salespersonDashboardRoutes from './modules/salesperson/features/dashboard/routes/dashboard.routes.js';
-
+import inventoryUploadRoutes from './modules/salesperson/features/inventory_upload/routes/inventoryUpload.routes.js';
+import salespersonInventoryRoutes from './modules/salesperson/features/inventory/routes/inventory.routes.js';
 
 import healthRouter from './shared/routes/health.route.js';
 
@@ -183,7 +184,8 @@ app.use(`/api/${ROUTES.SALESPERSON_AUTH}`, salespersonAuthRoutes);
 app.use(`/api/salesperson/tasks`, salespersonTaskManagementRoutes);
 app.use(`/api/salesperson/alerts`, lowStockAlertsRoutes);
 app.use(`/api/salesperson/dashboard`, salespersonDashboardRoutes);
-
+app.use(`/api/salesperson/inventory`, inventoryUploadRoutes);
+app.use(`/api/salesperson/inventory`, salespersonInventoryRoutes);
 
 const start_server = async () => {
   try {

@@ -1,7 +1,6 @@
 import Order from '../../../../../../models/Order.js';
 import OrderItem from '../../../../../../models/OrderItem.js';
 import StockInHand from '../../../../../../models/StockInHand.js';
-import MedicineBatch from '../../../../../../models/MedicineBatch.js';
 import Transaction from '../../../../../../models/Transaction.js';
 import Medicine from '../../../../../../models/Medicine.js';
 import { logAdminActivity } from '../../../../utils/logAdminActivities.js';
@@ -257,35 +256,7 @@ class OrdersAnalyticsService {
           imgUrl: item.medicine_id.img_url,
         }));
 
-      // Get expiring stock (expiry within 30 days)
-      const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + 30);
-
-      const expiringBatches = await MedicineBatch.find({
-        expiry: { $lte: expiryDate, $gte: new Date() },
-      })
-        .populate({
-          path: 'medicine_id',
-          match: branchId ? { branch_id: branchId } : {},
-          select: 'Name branch_id medicine_category img_url',
-        })
-        .limit(parseInt(limit))
-        .sort({ expiry: 1 });
-
-      const filteredExpiringStock = expiringBatches
-        .filter(batch => batch.medicine_id !== null)
-        .map(batch => ({
-          medicineId: batch.medicine_id._id,
-          medicineName: batch.medicine_id.Name,
-          category: batch.medicine_id.medicine_category,
-          currentStock: batch.quantity,
-          expiryDate: batch.expiry,
-          alertType: 'expiring_soon',
-          daysUntilExpiry: Math.ceil(
-            (batch.expiry - new Date()) / (1000 * 60 * 60 * 24)
-          ),
-          imgUrl: batch.medicine_id.img_url,
-        }));
+      const filteredExpiringStock = [];
 
       await logAdminActivity(
         req,

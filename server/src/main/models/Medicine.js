@@ -25,19 +25,17 @@ const medicineSchema = new mongoose.Schema(
       ref: 'Salesperson',
       required: true,
     },
-    img_url: {
-      type: String,
+    img_urls: {
+      type: [String],
+      default: [],
     },
     mgs: {
       type: String,
     },
     medicine_category: {
       type: String,
-      enum: ['Narcotics', 'surgical'],
-    },
-    manufacturer: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Manufacturer',
+      trim: true,
+      default: null,
     },
     class: {
       type: mongoose.Schema.Types.ObjectId,
