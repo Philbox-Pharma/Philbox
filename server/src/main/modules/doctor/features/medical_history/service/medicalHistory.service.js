@@ -84,7 +84,7 @@ const fetchDoctorPrescriptions = async (patientId, dateFilter) => {
       path: 'prescription_items_ids',
       populate: {
         path: 'medicine_id',
-        select: 'name manufacturer',
+        select: 'Name',
       },
     })
     .sort({ created_at: -1 })
@@ -122,7 +122,7 @@ const fetchOrderHistory = async (patientId, dateFilter) => {
       path: 'order_items',
       populate: {
         path: 'medicine_id',
-        select: 'name manufacturer price',
+        select: 'Name sale_price',
       },
     })
     .populate('branch_id', 'name address')
