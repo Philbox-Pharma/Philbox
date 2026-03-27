@@ -37,27 +37,7 @@ export default function AssignAdminsModal({
       }
     } catch (err) {
       console.error('Failed to fetch admins:', err);
-      // Mock data for now
-      setAdmins([
-        {
-          _id: '1',
-          name: 'Admin One',
-          email: 'admin1@philbox.com',
-          admin_category: 'super_admin',
-        },
-        {
-          _id: '2',
-          name: 'Admin Two',
-          email: 'admin2@philbox.com',
-          admin_category: 'branch_admin',
-        },
-        {
-          _id: '3',
-          name: 'Admin Three',
-          email: 'admin3@philbox.com',
-          admin_category: 'branch_admin',
-        },
-      ]);
+      setError('Failed to load admins. Please try again.');
     } finally {
       setLoading(false);
     }

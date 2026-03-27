@@ -100,32 +100,6 @@ export default function EditSalesperson() {
       console.error('Failed to fetch data:', err);
       setError(err.message || 'Failed to load salesperson data');
 
-      // Mock data for development
-      setBranchOptions([
-        {
-          value: '507f1f77bcf86cd799439011',
-          label: 'Lahore Main Branch (PHIL25#001)',
-        },
-        {
-          value: '507f1f77bcf86cd799439012',
-          label: 'Karachi Branch (PHIL25#002)',
-        },
-      ]);
-      setFormData({
-        fullName: 'Ali Raza',
-        contactNumber: '03001111111',
-        gender: 'Male',
-        dateOfBirth: '1995-05-15',
-        branches_to_be_managed: ['507f1f77bcf86cd799439011'],
-      });
-      setOriginalData({
-        fullName: 'Ali Raza',
-        email: 'ali.raza@philbox.com',
-        contactNumber: '03001111111',
-        gender: 'Male',
-        dateOfBirth: '1995-05-15',
-        branches_to_be_managed: ['507f1f77bcf86cd799439011'],
-      });
       setBranchLoading(false);
     } finally {
       setLoading(false);
@@ -357,10 +331,10 @@ export default function EditSalesperson() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-yellow-700 flex items-center gap-2"
+          className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 flex items-center gap-2"
         >
           <FaExclamationTriangle className="shrink-0" />
-          <span>{error} - Showing demo data</span>
+          <span>{error}</span>
         </motion.div>
       )}
 

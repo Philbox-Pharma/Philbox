@@ -56,11 +56,11 @@ export default function CustomerList() {
       ]);
 
       if (customersRes.status === 200) {
-        setCustomers(customersRes.data.data || []);
+        setCustomers(customersRes.data?.list || []);
         setPagination(prev => ({
           ...prev,
-          total: customersRes.data.pagination?.total || 0,
-          pages: customersRes.data.pagination?.pages || 0,
+          total: customersRes.data?.total || 0,
+          pages: customersRes.data?.totalPages || 0,
         }));
       }
 

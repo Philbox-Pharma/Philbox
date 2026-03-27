@@ -24,6 +24,7 @@ import {
   staffApi,
   doctorApi,
   ordersAnalyticsApi,
+  activityLogsApi,
 } from '../../../../core/api/admin/adminApi';
 
 // Stats Card Component
@@ -165,6 +166,68 @@ export default function AdminDashboard() {
     orders: { total: 0, todayOrders: 0, revenue: 0 },
   });
   const [branches, setBranches] = useState([]);
+  const [activities, setActivities] = useState([]);
+
+  // Format time ago helper
+  const formatTimeAgo = (dateString) => {
+    if (!dateString) return 'Just now';
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} mins ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString();
+  };
+
+  // Format notification text helper
+  const formatNotificationText = (log) => {
+    const actionType = log.action_type || '';
+    const description = log.description || '';
+    if (description) return description;
+
+    const actionMap = {
+      create_admin: 'New admin was created',
+      update_admin: 'Admin profile was updated',
+      delete_admin: 'Admin was deleted',
+      create_salesperson: 'New salesperson was added',
+      update_salesperson: 'Salesperson profile was updated',
+      delete_salesperson: 'Salesperson was removed',
+      create_branch: 'New branch was created',
+      update_branch: 'Branch was updated',
+      delete_branch: 'Branch was deleted',
+      login: 'Admin logged in',
+      logout: 'Admin logged out',
+      approve_doctor: 'Doctor application approved',
+      reject_doctor: 'Doctor application rejected',
+    };
+    return actionMap[actionType] || actionType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  // Get notification type helper
+  const getNotificationType = (actionType) => {
+    if (!actionType) return 'info';
+    if (actionType.includes('create') || actionType.includes('add') || actionType.includes('approve')) return 'success';
+    if (actionType.includes('delete') || actionType.includes('remove') || actionType.includes('reject')) return 'error';
+    if (actionType.includes('update') || actionType.includes('edit')) return 'warning';
+    return 'pending'; // equivalent to info/pending style
+  };
+
+  // Get notification icon helper
+  const getNotificationIcon = (actionType) => {
+    if (!actionType) return FaClock;
+    if (actionType.includes('branch')) return FaCodeBranch;
+    if (actionType.includes('admin') || actionType.includes('salesperson')) return FaUserTie;
+    if (actionType.includes('doctor')) return FaUserMd;
+    if (actionType.includes('delete') || actionType.includes('remove') || actionType.includes('reject')) return FaExclamationTriangle;
+    if (actionType.includes('create') || actionType.includes('add') || actionType.includes('approve')) return FaCheckCircle;
+    return FaClock;
+  };
 
   // Fetch dashboard data
   useEffect(() => {
@@ -182,6 +245,7 @@ export default function AdminDashboard() {
           doctorApplicationsResponse,
           doctorsListResponse,
           ordersOverviewResponse,
+          activitiesResponse,
         ] = await Promise.all([
           branchApi.getStatistics().catch(() => ({ data: null })),
           branchApi.getAll(1, 6).catch(() => ({ data: { branches: [] } })),
@@ -198,6 +262,7 @@ export default function AdminDashboard() {
             .getAllDoctors({ limit: 1 })
             .catch(() => ({ data: { pagination: { total: 0 } } })),
           ordersAnalyticsApi.getOverview({}).catch(() => ({ data: null })),
+          activityLogsApi.getTimeline({ limit: 5, page: 1 }).catch(() => ({ data: { timeline: [] } })),
         ]);
 
         setStats({
@@ -219,8 +284,14 @@ export default function AdminDashboard() {
               0,
           },
           doctors: {
-            total: doctorsListResponse.data?.pagination?.total || 0,
-            pending: doctorApplicationsResponse.data?.pagination?.total || 0,
+            total:
+              doctorsListResponse.data?.pagination?.total ||
+              doctorsListResponse.data?.total ||
+              0,
+            pending:
+              doctorApplicationsResponse.data?.pagination?.total ||
+              doctorApplicationsResponse.data?.total ||
+              0,
           },
           orders: {
             total: ordersOverviewResponse.data?.totalOrders || 0,
@@ -230,6 +301,18 @@ export default function AdminDashboard() {
         });
 
         setBranches(branchesResponse.data?.branches || []);
+        
+        // Format activities
+        const rawActivities = activitiesResponse?.data?.timeline || [];
+        const formattedActivities = rawActivities.map(log => ({
+          id: log._id,
+          icon: getNotificationIcon(log.action_type),
+          text: formatNotificationText(log),
+          time: formatTimeAgo(log.created_at || log.createdAt),
+          status: getNotificationType(log.action_type),
+        }));
+        setActivities(formattedActivities);
+
       } catch (err) {
         console.error('Failed to fetch dashboard data:', err);
         setError(err.message || 'Failed to load dashboard data');
@@ -243,6 +326,7 @@ export default function AdminDashboard() {
           orders: { total: 0, todayOrders: 0, revenue: 0 },
         });
         setBranches([]);
+        setActivities([]);
       } finally {
         setLoading(false);
       }
@@ -279,39 +363,7 @@ export default function AdminDashboard() {
     },
   ];
 
-  // Recent activities (mock)
-  const activities = [
-    {
-      icon: FaCodeBranch,
-      text: 'New branch "Faisalabad" added',
-      time: '5 minutes ago',
-      status: 'success',
-    },
-    {
-      icon: FaUserTie,
-      text: 'Salesperson assigned to Lahore Branch',
-      time: '1 hour ago',
-      status: 'success',
-    },
-    {
-      icon: FaExclamationTriangle,
-      text: 'Low stock alert for Panadol',
-      time: '2 hours ago',
-      status: 'warning',
-    },
-    {
-      icon: FaClock,
-      text: 'Order #ORD-2025-001 pending',
-      time: '3 hours ago',
-      status: 'pending',
-    },
-    {
-      icon: FaCheckCircle,
-      text: 'Doctor application approved',
-      time: '5 hours ago',
-      status: 'success',
-    },
-  ];
+  // Activities are now mapped from server response
 
   return (
     <div className="space-y-6">
@@ -445,9 +497,22 @@ export default function AdminDashboard() {
               </h2>
             </div>
             <div className="max-h-96 overflow-y-auto">
-              {activities.map((activity, index) => (
-                <ActivityItem key={index} {...activity} />
-              ))}
+              {loading ? (
+                <div className="p-4 flex flex-col gap-4">
+                   {[...Array(5)].map((_, i) => (
+                     <div key={i} className="bg-gray-100 animate-pulse h-16 rounded-xl"></div>
+                   ))}
+                </div>
+              ) : activities.length > 0 ? (
+                activities.map((activity, index) => (
+                  <ActivityItem key={index} {...activity} />
+                ))
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  <FaClock className="text-4xl mx-auto mb-3 opacity-20" />
+                  <p>No recent activity</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

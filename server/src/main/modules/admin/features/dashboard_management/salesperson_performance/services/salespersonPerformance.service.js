@@ -68,11 +68,8 @@ export const getTasksCompletionStats = async (
     {
       $project: {
         salesperson_id: '$_id',
-        salesperson: {
-          _id: '$salesperson._id',
-          fullName: '$salesperson.fullName',
-          email: '$salesperson.email',
-        },
+        fullName: '$salesperson.fullName',
+        email: '$salesperson.email',
         totalAssigned: 1,
         completed: 1,
         pending: 1,
@@ -161,12 +158,9 @@ export const getSalespersonLeaderboard = async (
     {
       $project: {
         salesperson_id: '$_id',
-        salesperson: {
-          _id: '$salesperson._id',
-          fullName: '$salesperson.fullName',
-          email: '$salesperson.email',
-          contactNumber: '$salesperson.contactNumber',
-        },
+        fullName: '$salesperson.fullName',
+        email: '$salesperson.email',
+        contactNumber: '$salesperson.contactNumber',
         totalTasks: 1,
         completedTasks: 1,
         pendingTasks: 1,

@@ -82,10 +82,10 @@ const ActionModal = ({
 
         <div className="bg-gray-50 rounded-lg p-4 mb-4">
           <p className="text-sm text-gray-600">
-            <strong>Applicant:</strong> Dr. {application?.name || 'Unknown'}
+            <strong>Applicant:</strong> Dr. {application?.doctor_id?.fullName || 'Unknown'}
           </p>
           <p className="text-sm text-gray-600">
-            <strong>Email:</strong> {application?.email || 'N/A'}
+            <strong>Email:</strong> {application?.doctor_id?.email || 'N/A'}
           </p>
         </div>
 
@@ -153,7 +153,7 @@ const ApplicationCard = ({ application, onApprove, onReject }) => (
     <div className="flex items-start gap-4">
       {/* Avatar */}
       <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#d69e2e] to-[#b7891f] flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
-        {application.name?.charAt(0) || 'D'}
+        {application.doctor_id?.fullName?.charAt(0) || 'D'}
       </div>
 
       {/* Info */}
@@ -161,34 +161,34 @@ const ApplicationCard = ({ application, onApprove, onReject }) => (
         <div className="flex items-start justify-between gap-2 flex-wrap">
           <div>
             <h3 className="font-semibold text-gray-800">
-              Dr. {application.name || 'Unknown'}
+              Dr. {application.doctor_id?.fullName || 'Unknown'}
             </h3>
             <p className="text-sm text-gray-500 flex items-center gap-1.5">
               <FaGraduationCap className="text-xs" />
-              {application.specialty || 'General'}
+              {application.doctor_id?.specialization || 'General'}
             </p>
           </div>
-          <StatusBadge status={application.applicationStatus || 'pending'} />
+          <StatusBadge status={application.status || 'pending'} />
         </div>
 
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
           <p className="text-sm text-gray-600 flex items-center gap-2">
             <FaEnvelope className="text-gray-400 text-xs" />
-            <span className="truncate">{application.email || 'N/A'}</span>
+            <span className="truncate">{application.doctor_id?.email || 'N/A'}</span>
           </p>
           <p className="text-sm text-gray-600 flex items-center gap-2">
             <FaPhone className="text-gray-400 text-xs" />
-            {application.phone || 'N/A'}
+            {application.doctor_id?.contactNumber || 'N/A'}
           </p>
           <p className="text-sm text-gray-600 flex items-center gap-2">
             <FaIdCard className="text-gray-400 text-xs" />
-            License: {application.licenseNumber || 'N/A'}
+            License: {application.doctor_id?.license_number || 'N/A'}
           </p>
           <p className="text-sm text-gray-600 flex items-center gap-2">
             <FaClock className="text-gray-400 text-xs" />
             Applied:{' '}
-            {application.createdAt
-              ? new Date(application.createdAt).toLocaleDateString()
+            {application.created_at
+              ? new Date(application.created_at).toLocaleDateString()
               : 'N/A'}
           </p>
         </div>
@@ -196,7 +196,7 @@ const ApplicationCard = ({ application, onApprove, onReject }) => (
     </div>
 
     {/* Actions */}
-    {application.applicationStatus === 'pending' && (
+    {application.status === 'pending' && (
       <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap">
         <Link
           to={`/admin/doctors/applications/${application._id}`}
@@ -271,8 +271,8 @@ export default function DoctorApplications() {
         search,
       });
 
-      setApplications(response.data?.applications || []);
-      setTotalPages(response.data?.pagination?.totalPages || 1);
+      setApplications(response.data?.list || []);
+      setTotalPages(response.data?.totalPages || 1);
     } catch (err) {
       console.error('Failed to fetch applications:', err);
       setError(err.message || 'Failed to load applications');
@@ -311,7 +311,7 @@ export default function DoctorApplications() {
   };
 
   const pendingCount = applications.filter(
-    a => a.applicationStatus === 'pending'
+    a => a.status === 'pending'
   ).length;
 
   return (

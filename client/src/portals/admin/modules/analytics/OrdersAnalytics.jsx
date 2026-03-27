@@ -55,11 +55,11 @@ export default function OrdersAnalytics() {
 
           // Set overview with calculated total orders and revenue
           const totalOrders = statusData.total || 0;
-          const revenueData = data.refundRate || {};
+          const categoryData = data.revenueByCategory || {};
 
           setOverview({
             totalOrders,
-            totalRevenue: revenueData.totalOrders * 1000 || 0, // Approximate
+            totalRevenue: categoryData.total?.revenue || 0,
           });
 
           // Parse top medicines
@@ -71,7 +71,6 @@ export default function OrdersAnalytics() {
           setTopMedicines(medicines);
 
           // Parse revenue by category
-          const categoryData = data.revenueByCategory || {};
           const categories = Object.keys(categoryData)
             .filter(key => key !== 'total' && categoryData[key].revenue > 0)
             .map(category => ({

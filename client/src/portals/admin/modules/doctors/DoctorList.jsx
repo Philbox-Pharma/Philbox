@@ -26,13 +26,13 @@ const StatusBadge = ({ status }) => {
       icon: FaCheckCircle,
       label: 'Active',
     },
-    suspended: {
+    under_consideration: {
       bg: 'bg-yellow-100',
       text: 'text-yellow-700',
       icon: FaClock,
-      label: 'Suspended',
+      label: 'Onboarding',
     },
-    blocked: {
+    'blocked/removed': {
       bg: 'bg-red-100',
       text: 'text-red-700',
       icon: FaBan,
@@ -63,9 +63,8 @@ const StatusBadge = ({ status }) => {
 const DoctorCard = ({ doctor }) => (
   <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5 hover:shadow-lg transition-all duration-300">
     <div className="flex items-start gap-4">
-      {/* Avatar */}
       <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#1a365d] to-[#2c5282] flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-        {doctor.name?.charAt(0) || 'D'}
+        {doctor.fullName?.charAt(0) || 'D'}
       </div>
 
       {/* Info */}
@@ -73,14 +72,14 @@ const DoctorCard = ({ doctor }) => (
         <div className="flex items-start justify-between gap-2">
           <div>
             <h3 className="font-semibold text-gray-800 truncate">
-              Dr. {doctor.name || 'Unknown'}
+              Dr. {doctor.fullName || 'Unknown'}
             </h3>
             <p className="text-sm text-gray-500 flex items-center gap-1.5 mt-0.5">
               <FaStethoscope className="text-xs" />
-              {doctor.specialty || 'General'}
+              {Array.isArray(doctor.specialization) ? doctor.specialization[0] : (doctor.specialization || 'General')}
             </p>
           </div>
-          <StatusBadge status={doctor.accountStatus || doctor.status} />
+          <StatusBadge status={doctor.account_status || doctor.status} />
         </div>
 
         <div className="mt-3 space-y-1.5">
@@ -90,7 +89,7 @@ const DoctorCard = ({ doctor }) => (
           </p>
           <p className="text-sm text-gray-600 flex items-center gap-2">
             <FaPhone className="text-gray-400 text-xs" />
-            {doctor.phone || 'N/A'}
+            {doctor.contactNumber || 'N/A'}
           </p>
         </div>
       </div>
@@ -100,8 +99,8 @@ const DoctorCard = ({ doctor }) => (
     <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
       <div className="text-xs text-gray-400">
         Joined:{' '}
-        {doctor.createdAt
-          ? new Date(doctor.createdAt).toLocaleDateString()
+        {doctor.created_at
+          ? new Date(doctor.created_at).toLocaleDateString()
           : 'N/A'}
       </div>
       <Link
@@ -156,9 +155,9 @@ export default function DoctorList() {
         ...filters,
       });
 
-      setDoctors(response.data?.doctors || []);
-      setTotalPages(response.data?.pagination?.totalPages || 1);
-      setTotalDoctors(response.data?.pagination?.total || 0);
+      setDoctors(response.data?.list || []);
+      setTotalPages(response.data?.totalPages || 1);
+      setTotalDoctors(response.data?.total || 0);
     } catch (err) {
       console.error('Failed to fetch doctors:', err);
       setError(err.message || 'Failed to load doctors');
@@ -217,25 +216,38 @@ export default function DoctorList() {
           <p className="text-gray-500 text-sm">Total Doctors</p>
           <p className="text-2xl font-bold text-gray-800">{totalDoctors}</p>
         </div>
-        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
-          <p className="text-gray-500 text-sm">Active</p>
-          <p className="text-2xl font-bold text-green-600">
-            {doctors.filter(d => d.accountStatus === 'active').length}
-          </p>
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5 p-4 sm:p-5">
+            <p className="text-sm text-gray-500 mb-1">Active Doctors</p>
+            <p className="text-2xl font-bold text-gray-800">
+              {doctors.filter(d => d.account_status === 'active').length}
+            </p>
+            <div className="mt-2 text-xs text-green-600 flex items-center gap-1">
+              <FaCheckCircle /> Verifed & Active
+            </div>
+          </div>
+          <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5 p-4 sm:p-5">
+            <p className="text-sm text-gray-500 mb-1">Onboarding</p>
+            <p className="text-2xl font-bold text-gray-800">
+              {
+                doctors.filter(d => d.account_status === 'under_consideration')
+                  .length
+              }
+            </p>
+            <div className="mt-2 text-xs text-yellow-600 flex items-center gap-1">
+              <FaClock /> Reviewing Documents
+            </div>
+          </div>
+          <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5 p-4 sm:p-5">
+            <p className="text-sm text-gray-500 mb-1">Blocked</p>
+            <p className="text-2xl font-bold text-gray-800">
+              {doctors.filter(d => d.account_status === 'blocked/removed').length}
+            </p>
+            <div className="mt-2 text-xs text-red-600 flex items-center gap-1">
+              <FaBan /> Account restricted
+            </div>
+          </div>
         </div>
-        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
-          <p className="text-gray-500 text-sm">Suspended</p>
-          <p className="text-2xl font-bold text-yellow-600">
-            {doctors.filter(d => d.accountStatus === 'suspended').length}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
-          <p className="text-gray-500 text-sm">Blocked</p>
-          <p className="text-2xl font-bold text-red-600">
-            {doctors.filter(d => d.accountStatus === 'blocked').length}
-          </p>
-        </div>
-      </div>
+
 
       {/* Search & Filters */}
       <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4">
@@ -288,8 +300,8 @@ export default function DoctorList() {
               >
                 <option value="">All Statuses</option>
                 <option value="active">Active</option>
-                <option value="suspended">Suspended</option>
-                <option value="blocked">Blocked</option>
+                <option value="under_consideration">Onboarding</option>
+                <option value="blocked/removed">Blocked</option>
               </select>
             </div>
 

@@ -325,7 +325,7 @@ export default function AdminHeader({ toggleSidebar, admin }) {
         Date.now() - 7 * 24 * 60 * 60 * 1000
       ).toISOString(); // Last 7 days
 
-      const response = await activityLogsApi.getSuspiciousActivities({
+      const response = await activityLogsApi.getTimeline({
         startDate,
         endDate,
         limit: 10,
@@ -334,9 +334,8 @@ export default function AdminHeader({ toggleSidebar, admin }) {
 
       if (response.status === 200 || response.data) {
         const logs =
-          response.data?.suspiciousActivities ||
-          response.data?.logs ||
           response.data?.timeline ||
+          response.data?.logs ||
           [];
         const formattedNotifications = logs.slice(0, 10).map((log, index) => ({
           id: log._id || index,
@@ -345,18 +344,33 @@ export default function AdminHeader({ toggleSidebar, admin }) {
           type: getNotificationType(log.action_type),
           unread: index < 3, // First 3 are unread
         }));
-        setNotifications(formattedNotifications);
-        setUnreadCount(formattedNotifications.filter(n => n.unread).length);
+        
+        if (formattedNotifications.length > 0) {
+          setNotifications(formattedNotifications);
+          setUnreadCount(formattedNotifications.filter(n => n.unread).length);
+        } else {
+          // If no activities yet, show a placeholder gracefully instead of mock data
+          setNotifications([
+            {
+              id: 1,
+              text: 'No recent activities',
+              time: 'Just now',
+              type: 'info',
+              unread: false,
+            },
+          ]);
+          setUnreadCount(0);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch notifications:', err);
-      // Fallback mock data
+      // Fallback
       setNotifications([
         {
           id: 1,
-          text: 'No recent notifications',
+          text: 'Failed to load notifications',
           time: 'Just now',
-          type: 'info',
+          type: 'error',
           unread: false,
         },
       ]);

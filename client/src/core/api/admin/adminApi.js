@@ -725,8 +725,8 @@ export const doctorApi = {
     if (filters.page) params.append('page', filters.page);
     if (filters.limit) params.append('limit', filters.limit);
     if (filters.search) params.append('search', filters.search);
-    if (filters.status) params.append('status', filters.status);
-    if (filters.specialty) params.append('specialty', filters.specialty);
+    if (filters.status) params.append('account_status', filters.status);
+    if (filters.specialty) params.append('specialization', filters.specialty);
     return fetchWithAuth(`/admin/doctors?${params}`);
   },
 
@@ -794,25 +794,25 @@ export const customerApi = {
     if (filters.startDate) params.append('startDate', filters.startDate);
     if (filters.endDate) params.append('endDate', filters.endDate);
     if (filters.branchId) params.append('branchId', filters.branchId);
-    return fetchWithAuth(`/super-admin/customers?${params}`);
+    return fetchWithAuth(`/admin/customers?${params}`);
   },
 
-  // GET /api/super-admin/customers/:id
+  // GET /api/admin/customers/:id
   getCustomerById: customerId =>
-    fetchWithAuth(`/super-admin/customers/${customerId}`),
+    fetchWithAuth(`/admin/customers/${customerId}`),
 
-  // PATCH /api/super-admin/customers/:id/status
+  // PATCH /api/admin/customers/:id/status
   toggleCustomerStatus: (customerId, statusData) =>
-    fetchWithAuth(`/super-admin/customers/${customerId}/status`, {
+    fetchWithAuth(`/admin/customers/${customerId}/status`, {
       method: 'PATCH',
       body: JSON.stringify(statusData),
     }),
 
-  // GET /api/super-admin/customers/metrics/analytics
+  // GET /api/admin/customers/metrics/analytics
   getMetrics: (filters = {}) => {
     const params = new URLSearchParams();
     if (filters.branchId) params.append('branchId', filters.branchId);
-    return fetchWithAuth(`/super-admin/customers/metrics/analytics?${params}`);
+    return fetchWithAuth(`/admin/customers/metrics/analytics?${params}`);
   },
 };
 

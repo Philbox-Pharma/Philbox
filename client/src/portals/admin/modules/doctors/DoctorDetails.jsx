@@ -85,7 +85,7 @@ const StatusModal = ({ isOpen, onClose, doctor, onSubmit, loading }) => {
 
   useEffect(() => {
     if (doctor) {
-      setNewStatus(doctor.accountStatus || 'active');
+      setNewStatus(doctor.account_status || 'active');
     }
   }, [doctor]);
 
@@ -210,7 +210,7 @@ export default function DoctorDetails() {
     setStatusLoading(true);
     try {
       await doctorApi.updateDoctorStatus(id, data);
-      setDoctor(prev => ({ ...prev, accountStatus: data.status }));
+      setDoctor(prev => ({ ...prev, account_status: data.status }));
       setStatusModal(false);
     } catch (err) {
       alert(err.message || 'Failed to update status');
@@ -275,22 +275,22 @@ export default function DoctorDetails() {
         <div className="flex flex-col md:flex-row md:items-center gap-6">
           {/* Avatar */}
           <div className="w-24 h-24 rounded-2xl bg-white/20 flex items-center justify-center text-4xl font-bold flex-shrink-0">
-            {doctor.name?.charAt(0) || 'D'}
+            {doctor.fullName?.charAt(0) || 'D'}
           </div>
 
           {/* Info */}
           <div className="flex-1">
             <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
               <h1 className="text-2xl md:text-3xl font-bold">
-                Dr. {doctor.name || 'Unknown'}
+                Dr. {doctor.fullName || 'Unknown'}
               </h1>
-              <StatusBadge status={doctor.accountStatus} />
+              <StatusBadge status={doctor.account_status} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-white/80">
               <p className="flex items-center gap-2">
                 <FaStethoscope />
-                {doctor.specialty || 'General'}
+                {Array.isArray(doctor.specialization) ? doctor.specialization.join(', ') : (doctor.specialization || 'General')}
               </p>
               <p className="flex items-center gap-2">
                 <FaEnvelope />
@@ -298,7 +298,7 @@ export default function DoctorDetails() {
               </p>
               <p className="flex items-center gap-2">
                 <FaPhone />
-                {doctor.phone || 'N/A'}
+                {doctor.contactNumber || 'N/A'}
               </p>
               <p className="flex items-center gap-2">
                 <FaIdCard />
@@ -364,7 +364,7 @@ export default function DoctorDetails() {
             <div>
               <label className="text-sm text-gray-500">Full Name</label>
               <p className="font-medium text-gray-800">
-                Dr. {doctor.name || 'N/A'}
+                Dr. {doctor.fullName || 'N/A'}
               </p>
             </div>
             <div>
@@ -376,13 +376,13 @@ export default function DoctorDetails() {
             <div>
               <label className="text-sm text-gray-500">Phone</label>
               <p className="font-medium text-gray-800">
-                {doctor.phone || 'N/A'}
+                {doctor.contactNumber || 'N/A'}
               </p>
             </div>
             <div>
               <label className="text-sm text-gray-500">Specialty</label>
               <p className="font-medium text-gray-800">
-                {doctor.specialty || 'General'}
+                {Array.isArray(doctor.specialization) ? doctor.specialization.join(', ') : (doctor.specialization || 'General')}
               </p>
             </div>
             <div>
@@ -408,8 +408,8 @@ export default function DoctorDetails() {
               <label className="text-sm text-gray-500">Joined On</label>
               <p className="font-medium text-gray-800 flex items-center gap-2">
                 <FaCalendarAlt className="text-gray-400" />
-                {doctor.createdAt
-                  ? new Date(doctor.createdAt).toLocaleDateString('en-US', {
+                {doctor.created_at
+                  ? new Date(doctor.created_at).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',

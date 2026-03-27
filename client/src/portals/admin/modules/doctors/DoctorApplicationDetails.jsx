@@ -50,6 +50,30 @@ const StatusBadge = ({ status }) => {
   );
 };
 
+// Document Row Component
+const DocumentRow = ({ name, url }) => {
+  if (!url) return null;
+  return (
+    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+      <div className="flex items-center gap-3">
+        <FaFileAlt className="text-gray-400" />
+        <div>
+          <p className="font-medium text-gray-700 font-medium">{name}</p>
+          <p className="text-xs text-gray-400">PDF / Image</p>
+        </div>
+      </div>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-[#1a365d] hover:text-[#d69e2e] transition-colors"
+      >
+        <FaDownload />
+      </a>
+    </div>
+  );
+};
+
 // Action Modal
 const ActionModal = ({
   isOpen,
@@ -227,7 +251,7 @@ export default function DoctorApplicationDetails() {
     );
   }
 
-  const isPending = application.applicationStatus === 'pending';
+  const isPending = application.status === 'pending';
 
   return (
     <div className="space-y-6">
@@ -244,32 +268,32 @@ export default function DoctorApplicationDetails() {
         <div className="flex flex-col md:flex-row md:items-center gap-6">
           {/* Avatar */}
           <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center text-3xl font-bold flex-shrink-0">
-            {application.name?.charAt(0) || 'D'}
+            {(application.doctor_id?.fullName || 'D').charAt(0)}
           </div>
 
           {/* Info */}
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2 flex-wrap">
               <h1 className="text-2xl md:text-3xl font-bold">
-                Dr. {application.name || 'Unknown'}
+                Dr. {application.doctor_id?.fullName || 'Unknown'}
               </h1>
-              <StatusBadge status={application.applicationStatus} />
+              <StatusBadge status={application.status} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-white/80">
               <p className="flex items-center gap-2">
                 <FaStethoscope />
-                {application.specialty || 'General'}
+                {Array.isArray(application.doctor_id?.specialization) ? application.doctor_id.specialization.join(', ') : (application.doctor_id?.specialization || 'General')}
               </p>
               <p className="flex items-center gap-2">
                 <FaEnvelope />
-                {application.email || 'N/A'}
+                {application.doctor_id?.email || 'N/A'}
               </p>
               <p className="flex items-center gap-2">
                 <FaClock />
                 Applied:{' '}
-                {application.createdAt
-                  ? new Date(application.createdAt).toLocaleDateString()
+                {application.created_at
+                  ? new Date(application.created_at).toLocaleDateString()
                   : 'N/A'}
               </p>
             </div>
@@ -311,28 +335,28 @@ export default function DoctorApplicationDetails() {
               <div>
                 <label className="text-sm text-gray-500">Full Name</label>
                 <p className="font-medium text-gray-800">
-                  Dr. {application.name || 'N/A'}
+                  Dr. {application.doctor_id?.fullName || 'N/A'}
                 </p>
               </div>
               <div>
                 <label className="text-sm text-gray-500">Email</label>
                 <p className="font-medium text-gray-800 flex items-center gap-2">
                   <FaEnvelope className="text-gray-400 text-xs" />
-                  {application.email || 'N/A'}
+                  {application.doctor_id?.email || 'N/A'}
                 </p>
               </div>
               <div>
                 <label className="text-sm text-gray-500">Phone</label>
                 <p className="font-medium text-gray-800 flex items-center gap-2">
                   <FaPhone className="text-gray-400 text-xs" />
-                  {application.phone || 'N/A'}
+                  {application.doctor_id?.contactNumber || 'N/A'}
                 </p>
               </div>
               <div>
                 <label className="text-sm text-gray-500">Date of Birth</label>
                 <p className="font-medium text-gray-800">
-                  {application.dateOfBirth
-                    ? new Date(application.dateOfBirth).toLocaleDateString()
+                  {application.doctor_id?.dateOfBirth
+                    ? new Date(application.doctor_id.dateOfBirth).toLocaleDateString()
                     : 'N/A'}
                 </p>
               </div>
@@ -360,20 +384,20 @@ export default function DoctorApplicationDetails() {
               <div>
                 <label className="text-sm text-gray-500">Specialty</label>
                 <p className="font-medium text-gray-800">
-                  {application.specialty || 'General'}
+                  {Array.isArray(application.doctor_id?.specialization) ? application.doctor_id.specialization.join(', ') : (application.doctor_id?.specialization || 'General')}
                 </p>
               </div>
               <div>
                 <label className="text-sm text-gray-500">License Number</label>
                 <p className="font-medium text-gray-800 flex items-center gap-2">
                   <FaIdCard className="text-gray-400 text-xs" />
-                  {application.licenseNumber || 'N/A'}
+                  {application.doctor_id?.license_number || 'N/A'}
                 </p>
               </div>
               <div>
                 <label className="text-sm text-gray-500">Experience</label>
                 <p className="font-medium text-gray-800">
-                  {application.experience || 0} years
+                  {application.doctor_id?.experience || 0} years
                 </p>
               </div>
               <div>
@@ -381,7 +405,7 @@ export default function DoctorApplicationDetails() {
                   Consultation Fee
                 </label>
                 <p className="font-medium text-gray-800">
-                  Rs. {application.consultationFee || 0}
+                  Rs. {application.doctor_id?.consultation_fee || 0}
                 </p>
               </div>
             </div>
@@ -403,33 +427,14 @@ export default function DoctorApplicationDetails() {
           </h2>
 
           <div className="space-y-3">
-            {application.documents?.length > 0 ? (
-              application.documents.map((doc, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <FaFileAlt className="text-gray-400" />
-                    <div>
-                      <p className="font-medium text-gray-700">
-                        {doc.name || `Document ${index + 1}`}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {doc.type || 'PDF'}
-                      </p>
-                    </div>
-                  </div>
-                  <a
-                    href={doc.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#1a365d] hover:text-[#d69e2e] transition-colors"
-                  >
-                    <FaDownload />
-                  </a>
-                </div>
-              ))
+            {application.applications_documents_id ? (
+              <>
+                <DocumentRow name="CNIC" url={application.applications_documents_id.CNIC} />
+                <DocumentRow name="Medical License" url={application.applications_documents_id.medical_license} />
+                <DocumentRow name="Specialist License" url={application.applications_documents_id.specialist_license} />
+                <DocumentRow name="MBBS/MD Degree" url={application.applications_documents_id.mbbs_md_degree} />
+                <DocumentRow name="Experience Letters" url={application.applications_documents_id.experience_letters} />
+              </>
             ) : (
               <p className="text-gray-400 text-center py-4">
                 No documents uploaded
@@ -442,43 +447,43 @@ export default function DoctorApplicationDetails() {
         <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">About</h2>
           <p className="text-gray-700">
-            {application.bio || 'No bio provided by the applicant.'}
+            {application.doctor_id?.bio || 'No bio provided by the applicant.'}
           </p>
         </div>
       </div>
 
       {/* Rejection Reason (if rejected) */}
-      {application.applicationStatus === 'rejected' &&
-        application.rejectionReason && (
+      {application.status === 'rejected' &&
+        application.admin_comment && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-6">
             <h3 className="font-semibold text-red-700 mb-2 flex items-center gap-2">
               <FaTimes />
               Rejection Reason
             </h3>
-            <p className="text-red-600">{application.rejectionReason}</p>
-            {application.rejectedAt && (
+            <p className="text-red-600">{application.admin_comment}</p>
+            {application.reviewed_at && (
               <p className="text-sm text-red-400 mt-2">
                 Rejected on:{' '}
-                {new Date(application.rejectedAt).toLocaleDateString()}
+                {new Date(application.reviewed_at).toLocaleDateString()}
               </p>
             )}
           </div>
         )}
 
       {/* Approval Info (if approved) */}
-      {application.applicationStatus === 'approved' && (
+      {application.status === 'approved' && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-6">
           <h3 className="font-semibold text-green-700 mb-2 flex items-center gap-2">
             <FaCheck />
             Application Approved
           </h3>
-          {application.approvalComment && (
-            <p className="text-green-600">{application.approvalComment}</p>
+          {application.admin_comment && (
+            <p className="text-green-600">{application.admin_comment}</p>
           )}
-          {application.approvedAt && (
+          {application.reviewed_at && (
             <p className="text-sm text-green-500 mt-2">
               Approved on:{' '}
-              {new Date(application.approvedAt).toLocaleDateString()}
+              {new Date(application.reviewed_at).toLocaleDateString()}
             </p>
           )}
         </div>

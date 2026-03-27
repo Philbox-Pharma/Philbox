@@ -24,7 +24,7 @@ export default function AdminList() {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [usingMockData, setUsingMockData] = useState(false);
+
   const [pagination, setPagination] = useState(null);
   const [successMessage, setSuccessMessage] = useState(
     location.state?.message || ''
@@ -62,7 +62,7 @@ export default function AdminList() {
   const fetchAdmins = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setUsingMockData(false);
+
 
     try {
       const filters = {};
@@ -80,54 +80,8 @@ export default function AdminList() {
     } catch (err) {
       console.error('Failed to fetch admins:', err);
       setError(err.message || 'Failed to load admins');
-      setUsingMockData(true);
-
-      // Mock data matching backend response structure
-      setAdmins([
-        {
-          _id: '1',
-          name: 'Ahmed Khan',
-          email: 'ahmed@philbox.com',
-          phone_number: '+92-300-1234567',
-          category: 'super-admin',
-          status: 'active',
-          branches_managed: [],
-          created_at: '2025-01-01',
-        },
-        {
-          _id: '2',
-          name: 'Sara Ali',
-          email: 'sara@philbox.com',
-          phone_number: '+92-300-2345678',
-          category: 'branch-admin',
-          status: 'active',
-          branches_managed: [
-            { _id: 'b1', name: 'Lahore Branch', code: 'PHIL25#001' },
-          ],
-          created_at: '2025-01-05',
-        },
-        {
-          _id: '3',
-          name: 'Usman Malik',
-          email: 'usman@philbox.com',
-          phone_number: '+92-300-3456789',
-          category: 'branch-admin',
-          status: 'suspended',
-          branches_managed: [
-            { _id: 'b2', name: 'Karachi Branch', code: 'PHIL25#002' },
-            { _id: 'b3', name: 'Islamabad Branch', code: 'PHIL25#003' },
-          ],
-          created_at: '2025-01-10',
-        },
-      ]);
-      setPagination({
-        page: 1,
-        limit: 10,
-        total: 3,
-        pages: 1,
-        hasNextPage: false,
-        hasPrevPage: false,
-      });
+      setAdmins([]);
+      setPagination(null);
     } finally {
       setLoading(false);
     }
@@ -438,18 +392,9 @@ export default function AdminList() {
 
       {/* Error/Warning Banner */}
       {error && (
-        <div
-          className={`rounded-xl p-4 flex items-center gap-2 ${
-            usingMockData
-              ? 'bg-yellow-50 border border-yellow-200 text-yellow-700'
-              : 'bg-red-50 border border-red-200 text-red-700'
-          }`}
-        >
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 flex items-center gap-2">
           <FaExclamationTriangle className="flex-shrink-0" />
-          <span>
-            {error}
-            {usingMockData && ' - Showing demo data'}
-          </span>
+          <span>{error}</span>
         </div>
       )}
 

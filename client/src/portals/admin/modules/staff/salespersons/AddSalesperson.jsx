@@ -67,21 +67,6 @@ export default function AddSalesperson() {
         }
       } catch (err) {
         console.error('Failed to fetch branches:', err);
-        // Mock data for development
-        setBranchOptions([
-          {
-            value: '507f1f77bcf86cd799439011',
-            label: 'Lahore Main Branch (PHIL25#001)',
-          },
-          {
-            value: '507f1f77bcf86cd799439012',
-            label: 'Karachi Branch (PHIL25#002)',
-          },
-          {
-            value: '507f1f77bcf86cd799439013',
-            label: 'Islamabad Branch (PHIL25#003)',
-          },
-        ]);
       } finally {
         setBranchLoading(false);
       }

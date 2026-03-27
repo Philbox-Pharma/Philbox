@@ -78,7 +78,7 @@ export default function AppointmentAnalytics() {
           setCompletionStats({
             completed: completionData.completed || 0,
             missed: completionData.missed || 0,
-            cancelled: 0, // Backend doesn't track cancelled separately
+            cancelled: completionData.cancelled || 0,
           });
 
           // Set top doctors (use appointments count)

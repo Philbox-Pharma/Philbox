@@ -55,39 +55,6 @@ export default function RolesPermissions() {
     } catch (err) {
       console.error('Failed to fetch data:', err);
       setError(err.message || 'Failed to load roles and permissions');
-      // Mock data for development
-      setRoles([
-        {
-          _id: '1',
-          name: 'super_admin',
-          description: 'Super Administrator - Full system access',
-          permissions: [],
-        },
-        {
-          _id: '2',
-          name: 'branch_admin',
-          description: 'Branch Administrator - Manage branch operations',
-          permissions: [],
-        },
-        {
-          _id: '3',
-          name: 'salesperson',
-          description: 'Salesperson - Handle inventory and orders',
-          permissions: [],
-        },
-        {
-          _id: '4',
-          name: 'doctor',
-          description: 'Doctor - Manage consultations and prescriptions',
-          permissions: [],
-        },
-        {
-          _id: '5',
-          name: 'customer',
-          description: 'Customer - Browse and place orders',
-          permissions: [],
-        },
-      ]);
     } finally {
       setLoading(false);
     }

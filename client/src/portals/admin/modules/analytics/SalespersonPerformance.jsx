@@ -15,36 +15,24 @@ import {
   FaHourglass,
   FaExclamationTriangle,
 } from 'react-icons/fa';
-
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-const fetchWithAuth = async (endpoint) => {
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  const data = await response.json();
-  if (!response.ok) throw { status: response.status, message: data.message || 'Request failed' };
-  return data;
-};
+import apiClient from '../../../../core/api/client';
 
 // ==========================================
 // STAT CARD
 // ==========================================
-function StatCard({ icon, label, value, trend, color, bgColor, borderColor }) {
-  const IconComp = icon;
+function StatCard({ icon: IconComp, label, value, trend, color, bgColor, borderColor }) {
   return (
     <div className={`bg-white rounded-xl border ${borderColor || 'border-gray-200'} p-5 shadow-sm hover:shadow-md transition-all`}>
       <div className="flex items-start justify-between mb-3">
         <div className={`w-11 h-11 rounded-lg ${bgColor || 'bg-blue-100'} flex items-center justify-center`}>
-          <IconComp className={`text-lg ${color || 'text-blue-600'}`} />
+          {IconComp && <IconComp className={`text-lg ${color || 'text-blue-600'}`} />}
         </div>
         {trend !== undefined && trend !== null && (
           <span className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${
-            trend >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+            Number(trend) >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
           }`}>
-            {trend >= 0 ? <FaArrowUp size={8} /> : <FaArrowDown size={8} />}
-            {Math.abs(trend)}%
+            {Number(trend) >= 0 ? <FaArrowUp size={8} /> : <FaArrowDown size={8} />}
+            {Math.abs(Number(trend))}%
           </span>
         )}
       </div>
@@ -58,7 +46,7 @@ function StatCard({ icon, label, value, trend, color, bgColor, borderColor }) {
 // LEADERBOARD TABLE
 // ==========================================
 function LeaderboardTable({ data }) {
-  if (!data || data.length === 0) {
+  if (!Array.isArray(data) || data.length === 0) {
     return (
       <div className="text-center py-8 text-gray-400 text-sm">No leaderboard data available</div>
     );
@@ -84,33 +72,36 @@ function LeaderboardTable({ data }) {
           </tr>
         </thead>
         <tbody>
-          {data.map((person, i) => (
-            <tr key={person._id || i} className="border-b border-gray-100 hover:bg-blue-50/30 transition-colors">
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-2">
-                  {i < 3 ? (
-                    <FaMedal className={getMedalColor(i + 1)} size={16} />
-                  ) : (
-                    <span className="w-6 text-center text-gray-400 font-bold text-sm">{i + 1}</span>
-                  )}
-                </div>
-              </td>
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                    {(person.fullName || person.name || 'S').charAt(0).toUpperCase()}
+          {data.map((person, i) => {
+            if (!person) return null;
+            return (
+              <tr key={person._id || i} className="border-b border-gray-100 hover:bg-blue-50/30 transition-colors">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    {i < 3 ? (
+                      <FaMedal className={getMedalColor(i + 1)} size={16} />
+                    ) : (
+                      <span className="w-6 text-center text-gray-400 font-bold text-sm">{i + 1}</span>
+                    )}
                   </div>
-                  <div>
-                    <p className="font-semibold text-gray-800 text-sm">{person.fullName || person.name || 'Unknown'}</p>
-                    <p className="text-xs text-gray-400">{person.branch?.name || person.branchName || ''}</p>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                      {(person.fullName || person.name || 'S').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-800 text-sm">{person.fullName || person.name || 'Unknown'}</p>
+                      <p className="text-xs text-gray-400">{person.branch?.name || person.branchName || ''}</p>
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td className="px-4 py-3 text-center font-semibold text-gray-700">{person.completedTasks ?? person.tasksCompleted ?? 0}</td>
-              <td className="px-4 py-3 text-center font-semibold text-gray-700">{person.totalOrders ?? person.orders ?? 0}</td>
-              <td className="px-4 py-3 text-right font-bold text-green-600">Rs. {(person.totalRevenue ?? person.revenue ?? 0).toLocaleString()}</td>
-            </tr>
-          ))}
+                </td>
+                <td className="px-4 py-3 text-center font-semibold text-gray-700">{person.completedTasks ?? person.tasksCompleted ?? 0}</td>
+                <td className="px-4 py-3 text-center font-semibold text-gray-700">{person.totalOrders ?? person.orders ?? 0}</td>
+                <td className="px-4 py-3 text-right font-bold text-green-600">Rs. {(person.totalRevenue ?? person.revenue ?? 0).toLocaleString()}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -121,15 +112,17 @@ function LeaderboardTable({ data }) {
 // TASK COMPLETION CHART (Bar visual)
 // ==========================================
 function TaskCompletionBars({ data }) {
-  if (!data || data.length === 0) {
+  if (!Array.isArray(data) || data.length === 0) {
     return <div className="text-center py-8 text-gray-400 text-sm">No task completion data available</div>;
   }
 
-  const maxVal = Math.max(...data.map(d => d.total || d.completed || 0), 1);
+  const values = data.map(d => Number(d.total || d.completed || 0));
+  const maxVal = Math.max(...values, 1) || 1;
 
   return (
     <div className="space-y-3">
       {data.slice(0, 8).map((item, i) => {
+        if (!item) return null;
         const completed = item.completed ?? item.completedTasks ?? 0;
         const total = item.total ?? item.totalTasks ?? 0;
         const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -140,11 +133,11 @@ function TaskCompletionBars({ data }) {
             <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden relative">
               <div
                 className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-700"
-                style={{ width: `${(total / maxVal) * 100}%` }}
+                style={{ width: `${Math.min((total / maxVal) * 100, 100)}%` }}
               />
               <div
                 className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-700"
-                style={{ width: `${(completed / maxVal) * 100}%` }}
+                style={{ width: `${Math.min((completed / maxVal) * 100, 100)}%` }}
               />
             </div>
             <div className="text-xs font-bold text-gray-600 w-16 text-right">{completed}/{total} <span className="text-gray-400">({rate}%)</span></div>
@@ -163,22 +156,24 @@ function TaskCompletionBars({ data }) {
 // TRENDS CHART (Simple line visual)
 // ==========================================
 function TrendsVisual({ data }) {
-  if (!data || data.length === 0) {
+  if (!Array.isArray(data) || data.length === 0) {
     return <div className="text-center py-8 text-gray-400 text-sm">No trend data available</div>;
   }
 
-  const maxVal = Math.max(...data.map(d => d.completed ?? d.value ?? 0), 1);
+  const values = data.map(d => Number(d.completed ?? d.value ?? 0));
+  const maxVal = Math.max(...values, 1) || 1;
 
   return (
     <div className="space-y-2">
       {data.map((point, i) => {
+        if (!point) return null;
         const val = point.completed ?? point.value ?? 0;
         const pct = (val / maxVal) * 100;
         return (
           <div key={i} className="flex items-center gap-3">
             <span className="text-xs text-gray-500 w-20 truncate">{point.period || point.date || point.label || `Week ${i + 1}`}</span>
             <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-purple-400 to-pink-500 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+              <div className="h-full bg-gradient-to-r from-purple-400 to-pink-500 rounded-full transition-all duration-700" style={{ width: `${Math.min(pct, 100)}%` }} />
             </div>
             <span className="text-xs font-bold text-gray-600 w-10 text-right">{val}</span>
           </div>
@@ -192,7 +187,7 @@ function TrendsVisual({ data }) {
 // AVG COMPLETION TIME CARD
 // ==========================================
 function CompletionTimeCard({ data }) {
-  if (!data || data.length === 0) {
+  if (!Array.isArray(data) || data.length === 0) {
     return <div className="text-center py-8 text-gray-400 text-sm">No completion time data available</div>;
   }
 
@@ -205,15 +200,16 @@ function CompletionTimeCard({ data }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
       {data.map((item, i) => {
-        const priority = (item.priority || item._id || 'medium').toLowerCase();
+        if (!item) return null;
+        const priority = String(item.priority || item._id || 'medium').toLowerCase();
         const config = priorityConfig[priority] || priorityConfig.medium;
         const Icon = config.icon;
-        const hours = item.averageCompletionTime ?? item.avgTime ?? 0;
+        const hours = Number(item.averageCompletionTime ?? item.avgTime ?? 0);
         const displayTime = hours < 1 ? `${Math.round(hours * 60)}m` : `${hours.toFixed(1)}h`;
 
         return (
           <div key={i} className={`${config.bg} border ${config.border} rounded-xl p-4 text-center`}>
-            <Icon className={`${config.color} mx-auto mb-2`} size={20} />
+            {Icon && <Icon className={`${config.color} mx-auto mb-2`} size={20} />}
             <p className="text-2xl font-bold text-gray-800">{displayTime}</p>
             <p className="text-xs font-semibold text-gray-600 uppercase mt-1 capitalize">{priority} Priority</p>
           </div>
@@ -243,48 +239,40 @@ export default function SalespersonPerformance() {
   const [branchId, setBranchId] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
-  const buildQuery = useCallback((extraParams = {}) => {
-    const params = new URLSearchParams();
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-    if (branchId) params.append('branchId', branchId);
-    Object.entries(extraParams).forEach(([k, v]) => {
-      if (v) params.append(k, v);
-    });
-    return params.toString() ? `?${params}` : '';
-  }, [startDate, endDate, branchId]);
-
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
-      const query = buildQuery();
+      const params = {};
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      if (branchId) params.branchId = branchId;
 
       const [overviewRes, leaderboardRes, tasksRes, trendsRes, timeRes] = await Promise.allSettled([
-        fetchWithAuth(`/admin/salesperson-performance/overview${query}`),
-        fetchWithAuth(`/admin/salesperson-performance/leaderboard${query}`),
-        fetchWithAuth(`/admin/salesperson-performance/tasks-completion${query}`),
-        fetchWithAuth(`/admin/salesperson-performance/trends${query}`),
-        fetchWithAuth(`/admin/salesperson-performance/completion-time${query}`),
+        apiClient.get('/admin/salesperson-performance/overview', { params }),
+        apiClient.get('/admin/salesperson-performance/leaderboard', { params }),
+        apiClient.get('/admin/salesperson-performance/tasks-completion', { params }),
+        apiClient.get('/admin/salesperson-performance/trends', { params }),
+        apiClient.get('/admin/salesperson-performance/completion-time', { params }),
       ]);
 
-      if (overviewRes.status === 'fulfilled') setOverview(overviewRes.value.data || overviewRes.value);
-      if (leaderboardRes.status === 'fulfilled') setLeaderboard(leaderboardRes.value.data?.leaderboard || leaderboardRes.value.data || []);
-      if (tasksRes.status === 'fulfilled') setTaskCompletion(tasksRes.value.data?.salespersons || tasksRes.value.data || []);
-      if (trendsRes.status === 'fulfilled') setTrends(trendsRes.value.data?.trends || trendsRes.value.data || []);
-      if (timeRes.status === 'fulfilled') setCompletionTime(timeRes.value.data?.completionTimes || timeRes.value.data || []);
+      if (overviewRes.status === 'fulfilled') setOverview(overviewRes.value.data?.data || overviewRes.value.data);
+      if (leaderboardRes.status === 'fulfilled') setLeaderboard(leaderboardRes.value.data?.data?.leaderboard || leaderboardRes.value.data?.data || leaderboardRes.value.data?.leaderboard || []);
+      if (tasksRes.status === 'fulfilled') setTaskCompletion(tasksRes.value.data?.data?.salespersons || tasksRes.value.data?.salespersons || tasksRes.value.data?.data || []);
+      if (trendsRes.status === 'fulfilled') setTrends(trendsRes.value.data?.data?.trends || trendsRes.value.data?.trends || trendsRes.value.data?.data || []);
+      if (timeRes.status === 'fulfilled') setCompletionTime(timeRes.value.data?.data?.completionTimes || timeRes.value.data?.completionTimes || timeRes.value.data?.data || []);
 
-      // Check if all failed
       const allFailed = [overviewRes, leaderboardRes, tasksRes, trendsRes, timeRes].every(r => r.status === 'rejected');
       if (allFailed) {
-        setError('Failed to load performance data. Please try again.');
+        setError('Failed to load performance data. All requests failed.');
       }
     } catch (err) {
-      setError(err.message || 'Failed to load data');
+      console.error('Performance Page Error:', err);
+      setError(err?.response?.data?.message || err.message || 'Failed to load performance data');
     } finally {
       setLoading(false);
     }
-  }, [buildQuery]);
+  }, [startDate, endDate, branchId]);
 
   useEffect(() => {
     fetchData();
@@ -297,6 +285,18 @@ export default function SalespersonPerformance() {
   };
 
   const hasActiveFilters = startDate || endDate || branchId;
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 min-h-[400px]">
+        <svg className="animate-spin h-10 w-10 text-indigo-500 mb-4" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
+        <p className="text-gray-500 font-medium">Loading performance data...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 py-4 animate-fadeIn">
@@ -345,110 +345,98 @@ export default function SalespersonPerformance() {
         </div>
       )}
 
-      {/* Loading */}
-      {loading && (
-        <div className="flex flex-col items-center justify-center py-20">
-          <svg className="animate-spin h-10 w-10 text-indigo-500 mb-4" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-          <p className="text-gray-500">Loading performance data...</p>
-        </div>
-      )}
-
       {/* Error */}
-      {error && !loading && (
+      {error && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm flex items-center gap-2">
-          <FaExclamationTriangle /> {error}
+          <FaExclamationTriangle className="flex-shrink-0" /> {error}
         </div>
       )}
 
       {/* Content */}
-      {!loading && !error && (
-        <>
-          {/* KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              icon={FaUserTie}
-              label="Total Salespersons"
-              value={overview?.totalSalespersons ?? overview?.totalCount ?? leaderboard.length}
-              color="text-indigo-600"
-              bgColor="bg-indigo-100"
-              borderColor="border-indigo-200"
-            />
-            <StatCard
-              icon={FaTasks}
-              label="Tasks Completed"
-              value={overview?.totalTasksCompleted ?? overview?.completedTasks ?? '—'}
-              trend={overview?.taskCompletionTrend}
-              color="text-green-600"
-              bgColor="bg-green-100"
-              borderColor="border-green-200"
-            />
-            <StatCard
-              icon={FaStar}
-              label="Avg Completion Rate"
-              value={overview?.avgCompletionRate ? `${overview.avgCompletionRate}%` : '—'}
-              color="text-yellow-600"
-              bgColor="bg-yellow-100"
-              borderColor="border-yellow-200"
-            />
-            <StatCard
-              icon={FaClock}
-              label="Avg Completion Time"
-              value={overview?.avgCompletionTime ? `${overview.avgCompletionTime}h` : '—'}
-              color="text-purple-600"
-              bgColor="bg-purple-100"
-              borderColor="border-purple-200"
-            />
+      <>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            icon={FaUserTie}
+            label="Total Salespersons"
+            value={overview?.totalSalespersons ?? overview?.totalCount ?? leaderboard.length}
+            color="text-indigo-600"
+            bgColor="bg-indigo-100"
+            borderColor="border-indigo-200"
+          />
+          <StatCard
+            icon={FaTasks}
+            label="Tasks Completed"
+            value={overview?.totalTasksCompleted ?? overview?.completedTasks ?? '—'}
+            trend={overview?.taskCompletionTrend}
+            color="text-green-600"
+            bgColor="bg-green-100"
+            borderColor="border-green-200"
+          />
+          <StatCard
+            icon={FaStar}
+            label="Avg Completion Rate"
+            value={overview?.avgCompletionRate ? `${overview.avgCompletionRate}%` : '—'}
+            color="text-yellow-600"
+            bgColor="bg-yellow-100"
+            borderColor="border-yellow-200"
+          />
+          <StatCard
+            icon={FaClock}
+            label="Avg Completion Time"
+            value={overview?.avgCompletionTime ? `${overview.avgCompletionTime}h` : '—'}
+            color="text-purple-600"
+            bgColor="bg-purple-100"
+            borderColor="border-purple-200"
+          />
+        </div>
+
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Leaderboard */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+              <FaTrophy className="text-yellow-500" />
+              <h3 className="font-bold text-gray-800">Salesperson Leaderboard</h3>
+            </div>
+            <LeaderboardTable data={leaderboard} />
           </div>
 
-          {/* Main Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Leaderboard */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-                <FaTrophy className="text-yellow-500" />
-                <h3 className="font-bold text-gray-800">Salesperson Leaderboard</h3>
-              </div>
-              <LeaderboardTable data={leaderboard} />
+          {/* Task Completion */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+              <FaCheckCircle className="text-green-500" />
+              <h3 className="font-bold text-gray-800">Task Completion by Salesperson</h3>
             </div>
-
-            {/* Task Completion */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-                <FaCheckCircle className="text-green-500" />
-                <h3 className="font-bold text-gray-800">Task Completion by Salesperson</h3>
-              </div>
-              <div className="p-5">
-                <TaskCompletionBars data={taskCompletion} />
-              </div>
-            </div>
-
-            {/* Trends */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-                <FaChartLine className="text-purple-500" />
-                <h3 className="font-bold text-gray-800">Performance Trends</h3>
-              </div>
-              <div className="p-5">
-                <TrendsVisual data={trends} />
-              </div>
-            </div>
-
-            {/* Avg Completion Time by Priority */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-                <FaClock className="text-blue-500" />
-                <h3 className="font-bold text-gray-800">Avg Completion Time by Priority</h3>
-              </div>
-              <div className="p-5">
-                <CompletionTimeCard data={completionTime} />
-              </div>
+            <div className="p-5">
+              <TaskCompletionBars data={taskCompletion} />
             </div>
           </div>
-        </>
-      )}
+
+          {/* Trends */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+              <FaChartLine className="text-purple-500" />
+              <h3 className="font-bold text-gray-800">Performance Trends</h3>
+            </div>
+            <div className="p-5">
+              <TrendsVisual data={trends} />
+            </div>
+          </div>
+
+          {/* Avg Completion Time by Priority */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+              <FaClock className="text-blue-500" />
+              <h3 className="font-bold text-gray-800">Avg Completion Time by Priority</h3>
+            </div>
+            <div className="p-5">
+              <CompletionTimeCard data={completionTime} />
+            </div>
+          </div>
+        </div>
+      </>
     </div>
   );
 }
+

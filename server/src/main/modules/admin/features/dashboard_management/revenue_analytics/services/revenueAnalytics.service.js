@@ -80,6 +80,25 @@ class RevenueAnalyticsService {
         { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
       ]);
 
+      const formattedTrends = trends.map(t => {
+        let dateLabel;
+        if (period === 'daily') {
+          dateLabel = `${t._id.year}-${String(t._id.month).padStart(2, '0')}-${String(t._id.day).padStart(2, '0')}`;
+        } else if (period === 'weekly') {
+          dateLabel = `${t._id.year}-W${t._id.week}`;
+        } else {
+          dateLabel = `${t._id.year}-${String(t._id.month).padStart(2, '0')}`;
+        }
+
+        return {
+          date: dateLabel,
+          revenue: t.totalRevenue,
+          transactionCount: t.transactionCount,
+          appointmentRevenue: t.appointmentRevenue,
+          orderRevenue: t.orderRevenue,
+        };
+      });
+
       // Log activity
       await logAdminActivity(
         req,
@@ -89,7 +108,12 @@ class RevenueAnalyticsService {
         null
       );
 
-      return { trends, period, startDate: start, endDate: end };
+      return {
+        trends: formattedTrends,
+        period,
+        startDate: start,
+        endDate: end,
+      };
     } catch (error) {
       console.error('Error in getRevenueTrends:', error);
       throw error;
@@ -160,6 +184,11 @@ class RevenueAnalyticsService {
           ? ((result.order.revenue / result.total.revenue) * 100).toFixed(2)
           : 0;
 
+      const splitArray = [
+        { source: 'Appointments', amount: result.appointment.revenue },
+        { source: 'Orders', amount: result.order.revenue },
+      ];
+
       await logAdminActivity(
         req,
         'view_revenue_split',
@@ -168,7 +197,7 @@ class RevenueAnalyticsService {
         null
       );
 
-      return result;
+      return { ...result, split: splitArray };
     } catch (error) {
       console.error('Error in getRevenueSplit:', error);
       throw error;
@@ -223,6 +252,7 @@ class RevenueAnalyticsService {
             branchRevenues.push({
               branchId: branch._id,
               branchName: branch.name,
+              code: branch.code,
               address: branch.address_id,
               totalRevenue: revenue[0].totalRevenue,
               transactionCount: revenue[0].transactionCount,
@@ -244,7 +274,7 @@ class RevenueAnalyticsService {
         null
       );
 
-      return topBranches;
+      return { branches: topBranches };
     } catch (error) {
       console.error('Error in getTopBranchesByRevenue:', error);
       throw error;
@@ -496,12 +526,16 @@ class RevenueAnalyticsService {
       ]);
 
       return {
-        trends,
-        revenueSplit,
-        topBranches,
-        refundStats,
-        avgRevenuePerCustomer,
-        paymentMethodBreakdown,
+        totalRevenue: revenueSplit.total.revenue,
+        ordersRevenue: revenueSplit.order.revenue,
+        appointmentsRevenue: revenueSplit.appointment.revenue,
+        avgPerCustomer: avgRevenuePerCustomer.averageRevenue,
+        trends: trends.trends,
+        revenueSplit: revenueSplit,
+        topBranches: topBranches.branches,
+        refundStats: refundStats,
+        avgRevenuePerCustomer: avgRevenuePerCustomer,
+        paymentMethodBreakdown: paymentMethodBreakdown,
       };
     } catch (error) {
       console.error('Error in getDashboardOverview:', error);

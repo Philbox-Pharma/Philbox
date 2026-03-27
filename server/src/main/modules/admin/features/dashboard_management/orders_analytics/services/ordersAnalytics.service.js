@@ -470,6 +470,13 @@ class OrdersAnalyticsService {
       ]);
 
       return {
+        totalOrders: statusBreakdown.total,
+        todayOrders: trends.trends.find(t => 
+          t._id.day === new Date().getDate() && 
+          t._id.month === (new Date().getMonth() + 1) && 
+          t._id.year === new Date().getFullYear()
+        )?.totalOrders || 0,
+        totalRevenue: revenueByCategory.total.revenue,
         trends,
         statusBreakdown,
         topMedicines,

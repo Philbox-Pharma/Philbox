@@ -33,7 +33,6 @@ export default function SalespersonList() {
   const [salespersons, setSalespersons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [usingMockData, setUsingMockData] = useState(false); // NEW: Track mock data
   const [pagination, setPagination] = useState(null);
   const [successMessage, setSuccessMessage] = useState(
     location.state?.message || ''
@@ -69,7 +68,6 @@ export default function SalespersonList() {
   const fetchSalespersons = async () => {
     setLoading(true);
     setError(null);
-    setUsingMockData(false);
 
     try {
       const filters = {};
@@ -87,52 +85,8 @@ export default function SalespersonList() {
     } catch (err) {
       console.error('Failed to fetch salespersons:', err);
       setError(err.message || 'Failed to load salespersons');
-      setUsingMockData(true);
-
-      // Mock data - Only used when API fails
-      setSalespersons([
-        {
-          _id: '1',
-          fullName: 'Ali Raza',
-          email: 'ali.raza@philbox.com',
-          contactNumber: '+92-300-1111111',
-          gender: 'Male',
-          status: 'active',
-          branches_to_be_managed: [{ _id: '1', name: 'Lahore Branch' }],
-          address: { city: 'Lahore', province: 'Punjab' },
-          created_at: '2025-01-01',
-        },
-        {
-          _id: '2',
-          fullName: 'Fatima Khan',
-          email: 'fatima.khan@philbox.com',
-          contactNumber: '+92-300-2222222',
-          gender: 'Female',
-          status: 'active',
-          branches_to_be_managed: [{ _id: '2', name: 'Karachi Branch' }],
-          address: { city: 'Karachi', province: 'Sindh' },
-          created_at: '2025-01-05',
-        },
-        {
-          _id: '3',
-          fullName: 'Hassan Ali',
-          email: 'hassan.ali@philbox.com',
-          contactNumber: '+92-300-3333333',
-          gender: 'Male',
-          status: 'suspended',
-          branches_to_be_managed: [],
-          address: { city: 'Islamabad', province: 'Islamabad' },
-          created_at: '2025-01-10',
-        },
-      ]);
-      setPagination({
-        page: 1,
-        limit: 10,
-        total: 3,
-        pages: 1,
-        hasNextPage: false,
-        hasPrevPage: false,
-      });
+      setSalespersons([]);
+      setPagination(null);
     } finally {
       setLoading(false);
     }
@@ -457,17 +411,10 @@ export default function SalespersonList() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`rounded-xl p-4 flex items-center gap-2 ${
-            usingMockData
-              ? 'bg-yellow-50 border border-yellow-200 text-yellow-700'
-              : 'bg-red-50 border border-red-200 text-red-700'
-          }`}
+          className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 flex items-center gap-2"
         >
           <FaExclamationTriangle />
-          <span>
-            {error}
-            {usingMockData && ' - Showing demo data'}
-          </span>
+          <span>{error}</span>
         </motion.div>
       )}
 

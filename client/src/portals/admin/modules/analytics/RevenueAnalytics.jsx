@@ -172,26 +172,18 @@ export default function RevenueAnalytics() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [overviewRes, trendsRes, splitRes, topBranchesRes] =
-          await Promise.all([
-            revenueApi
-              .getOverview(dateRange.startDate, dateRange.endDate)
-              .catch(() => ({ data: null })),
-            revenueApi
-              .getTrends(dateRange.startDate, dateRange.endDate, 'daily')
-              .catch(() => ({ data: [] })),
-            revenueApi
-              .getSplit(dateRange.startDate, dateRange.endDate)
-              .catch(() => ({ data: [] })),
-            revenueApi
-              .getTopBranches(dateRange.startDate, dateRange.endDate, 5)
-              .catch(() => ({ data: [] })),
-          ]);
+        const response = await revenueApi.getOverview(
+          dateRange.startDate,
+          dateRange.endDate
+        );
 
-        setOverview(overviewRes.data);
-        setTrends(trendsRes.data?.trends || []);
-        setSplit(splitRes.data?.split || []);
-        setTopBranches(topBranchesRes.data?.branches || []);
+        if (response.data) {
+          const data = response.data;
+          setOverview(data);
+          setTrends(data.trends || []);
+          setSplit(data.revenueSplit?.split || []);
+          setTopBranches(data.topBranches || []);
+        }
       } catch (err) {
         console.error('Failed to fetch revenue data:', err);
       } finally {
@@ -281,10 +273,17 @@ export default function RevenueAnalytics() {
         {/* Revenue Trends */}
         <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
           <SimpleBarChart
-            data={trends.slice(-7).map(t => ({
-              label: t.date?.split('-').slice(1).join('/'),
-              value: t.revenue || 0,
-            }))}
+            data={trends.slice(-7).map(t => {
+              const parts = t.date?.split('-');
+              const label =
+                parts?.length > 2
+                  ? `${parts[1]}/${parts[2]}`
+                  : t.date || 'N/A';
+              return {
+                label: label,
+                value: t.revenue || 0,
+              };
+            })}
             loading={loading}
             title="Revenue Trends (Last 7 Days)"
           />

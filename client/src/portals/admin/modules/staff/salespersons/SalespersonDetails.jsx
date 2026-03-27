@@ -34,7 +34,6 @@ export default function SalespersonDetails() {
   const [person, setPerson] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [usingMockData, setUsingMockData] = useState(false);
   const [successMessage, setSuccessMessage] = useState(
     location.state?.message || ''
   );
@@ -74,7 +73,6 @@ export default function SalespersonDetails() {
   const fetchSalespersonDetails = async () => {
     setLoading(true);
     setError(null);
-    setUsingMockData(false);
 
     try {
       const response = await staffApi.getSalespersonById(id);
@@ -86,28 +84,6 @@ export default function SalespersonDetails() {
     } catch (err) {
       console.error('Fetch error:', err);
       setError(err.message || 'Failed to load salesperson details');
-      setUsingMockData(true);
-
-      // Mock data for development
-      setPerson({
-        _id: id,
-        fullName: 'Ali Raza',
-        email: 'ali.raza@philbox.com',
-        contactNumber: '03001111111',
-        gender: 'Male',
-        dateOfBirth: '1995-05-15',
-        status: 'active',
-        isTwoFactorEnabled: false,
-        branches_to_be_managed: [
-          {
-            _id: '1',
-            name: 'Lahore Main Branch',
-            code: 'PHIL25#001',
-            status: 'Active',
-          },
-        ],
-        created_at: '2025-01-01T00:00:00.000Z',
-      });
     } finally {
       setLoading(false);
     }
@@ -125,44 +101,7 @@ export default function SalespersonDetails() {
       }
     } catch (err) {
       console.warn('Task performance fetch failed:', err);
-      // Mock data
-      setTaskPerformance({
-        metrics: {
-          totalTasks: 45,
-          statusBreakdown: {
-            pending: 5,
-            in_progress: 8,
-            completed: 30,
-            cancelled: 2,
-          },
-          priorityBreakdown: {
-            low: 10,
-            medium: 25,
-            high: 10,
-          },
-          completionRate: '66.67%',
-          overdueTasks: 2,
-          averageCompletionDays: 3.5,
-        },
-        tasks: {
-          docs: [
-            {
-              _id: '1',
-              title: 'Complete inventory check',
-              priority: 'high',
-              status: 'in_progress',
-              deadline: '2025-01-20',
-            },
-            {
-              _id: '2',
-              title: 'Process pending orders',
-              priority: 'medium',
-              status: 'pending',
-              deadline: '2025-01-22',
-            },
-          ],
-        },
-      });
+      setTaskPerformance(null);
     } finally {
       setTaskLoading(false);
     }
@@ -369,17 +308,7 @@ export default function SalespersonDetails() {
         </motion.div>
       )}
 
-      {/* Warning Banner (Mock Data) */}
-      {error && usingMockData && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-yellow-700 flex items-center gap-2"
-        >
-          <FaExclamationTriangle className="shrink-0" />
-          <span>{error} - Showing demo data</span>
-        </motion.div>
-      )}
+
 
       {/* Profile Card */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
