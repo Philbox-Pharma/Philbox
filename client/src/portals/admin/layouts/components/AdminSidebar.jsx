@@ -16,15 +16,17 @@ import {
   FaBoxes,
   FaUserMd,
   FaBell,
-  FaQuestionCircle,
+  FaHeadset,
   FaUserShield,
   FaTasks,
   FaUserFriends,
 } from 'react-icons/fa';
+import ContactSupportModal from '../../../../shared/components/Modal/ContactSupportModal';
 
 export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
   const location = useLocation();
   const [expandedMenus, setExpandedMenus] = useState({});
+  const [showContactModal, setShowContactModal] = useState(false);
 
   const toggleMenu = menuKey => {
     setExpandedMenus(prev => ({
@@ -367,18 +369,21 @@ export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
 
         {/* Footer - Gradient Blue-Green */}
         <div className="p-4 border-t border-white/10 bg-gradient-to-r from-[#2f855a] to-[#1a365d]">
-          <div className="flex items-center gap-3 text-white/80 text-sm">
-            <FaQuestionCircle />
-            <span>Need Help?</span>
-          </div>
-          <a
-            href="mailto:support@philbox.com"
-            className="text-[#d69e2e] text-sm hover:underline mt-1 block pl-7"
+          <button
+            onClick={() => setShowContactModal(true)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#d69e2e] bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium"
           >
-            Contact Support
-          </a>
+            <FaHeadset size={16} />
+            <span>Help & Support</span>
+          </button>
         </div>
       </aside>
+
+      {/* Contact Support Modal */}
+      <ContactSupportModal
+        isOpen={showContactModal}
+        onClose={() => setShowContactModal(false)}
+      />
     </>
   );
 }

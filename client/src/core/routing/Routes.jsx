@@ -49,6 +49,7 @@ const publicPaths = [
   '/salesperson/login',
   '/salesperson/forgot-password',
   '/salesperson/reset-password',
+  '/salesperson',
 ];
 
 export default function AppRoutes() {

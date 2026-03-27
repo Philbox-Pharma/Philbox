@@ -5,8 +5,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 import {
   FaBars,
-  FaBell,
-  FaUserCircle,
   FaSignOutAlt,
   FaCog,
   FaUser,
@@ -14,32 +12,30 @@ import {
   FaSearch,
   FaShieldAlt,
   FaSpinner,
-  FaUserPlus,
   FaCodeBranch,
   FaEdit,
-  FaTrash,
   FaCheck,
-  FaExclamationCircle,
   FaUsers,
   FaUserMd,
   FaUserFriends,
   FaTimes,
+  FaBoxes,
+  FaChartLine,
 } from 'react-icons/fa';
 import {
   adminAuthApi,
   activityLogsApi,
 } from '../../../../core/api/admin/adminApi';
+import NotificationDropdown from '../../../../shared/components/Dropdown/NotificationDropdown';
 
 export default function AdminHeader({ toggleSidebar, admin }) {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const profileRef = useRef(null);
-  const notificationRef = useRef(null);
 
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,12 +51,6 @@ export default function AdminHeader({ toggleSidebar, admin }) {
     const handleClickOutside = event => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setProfileOpen(false);
-      }
-      if (
-        notificationRef.current &&
-        !notificationRef.current.contains(event.target)
-      ) {
-        setNotificationsOpen(false);
       }
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowSearchResults(false);
@@ -440,19 +430,6 @@ export default function AdminHeader({ toggleSidebar, admin }) {
     return date.toLocaleDateString();
   };
 
-  // Get notification icon
-  const getNotificationIcon = type => {
-    switch (type) {
-      case 'success':
-        return <FaCheck className="text-green-500" />;
-      case 'danger':
-        return <FaTrash className="text-red-500" />;
-      case 'warning':
-        return <FaEdit className="text-yellow-500" />;
-      default:
-        return <FaExclamationCircle className="text-blue-500" />;
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -598,96 +575,15 @@ export default function AdminHeader({ toggleSidebar, admin }) {
           >
             <FaSearch className="text-xl" />
           </button>
-          {/* Notifications */}
-          <div className="relative" ref={notificationRef}>
-            <button
-              onClick={() => {
-                setNotificationsOpen(!notificationsOpen);
-                if (!notificationsOpen) fetchNotifications();
-              }}
-              className="p-2 rounded-lg hover:bg-white/10 transition-colors relative"
-            >
-              <FaBell className="text-xl" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center animate-pulse">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </button>
-
-            <AnimatePresence>
-              {notificationsOpen && (
-                <Motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="fixed sm:absolute top-[64px] sm:top-full left-1/2 sm:left-auto -translate-x-1/2 sm:translate-x-0 mt-0 sm:mt-2 sm:right-0 w-[92vw] max-w-[340px] sm:max-w-none sm:w-80 md:w-96 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50"
-                >
-                  {/* Header */}
-                  <div className="p-4 bg-[#1a365d] text-white flex items-center justify-between">
-                    <h3 className="font-semibold">Notifications</h3>
-                    {unreadCount > 0 && (
-                      <button
-                        onClick={markAllAsRead}
-                        className="text-xs text-white/70 hover:text-white"
-                      >
-                        Mark all read
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Notifications List */}
-                  <div className="max-h-80 overflow-y-auto">
-                    {notificationsLoading ? (
-                      <div className="flex items-center justify-center py-8">
-                        <FaSpinner className="animate-spin text-gray-400 text-xl" />
-                      </div>
-                    ) : notifications.length > 0 ? (
-                      notifications.map(notif => (
-                        <div
-                          key={notif.id}
-                          className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer flex items-start gap-3 ${
-                            notif.unread ? 'bg-blue-50/50' : ''
-                          }`}
-                        >
-                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                            {getNotificationIcon(notif.type)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-gray-800 text-sm">
-                              {notif.text}
-                            </p>
-                            <p className="text-gray-500 text-xs mt-1">
-                              {notif.time}
-                            </p>
-                          </div>
-                          {notif.unread && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full shrink-0 mt-2"></div>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="py-8 text-center text-gray-500">
-                        <FaBell className="text-3xl mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">No notifications</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Footer */}
-                  <div className="p-3 bg-gray-50 text-center border-t">
-                    <Link
-                      to="/admin/analytics/activity-logs"
-                      className="text-[#1a365d] text-sm font-medium hover:underline"
-                      onClick={() => setNotificationsOpen(false)}
-                    >
-                      View All Activity
-                    </Link>
-                  </div>
-                </Motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          {/* Notifications Dropdown */}
+          <NotificationDropdown 
+            notifications={notifications}
+            loading={notificationsLoading}
+            unreadCount={unreadCount}
+            onMarkAllRead={markAllAsRead}
+            viewAllPath="/admin/analytics/activity-logs"
+            portalColor="indigo"
+          />
 
           {/* Profile Dropdown */}
           <div className="relative" ref={profileRef}>

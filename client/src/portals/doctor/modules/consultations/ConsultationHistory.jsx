@@ -19,7 +19,11 @@ import {
   FaDownload,
   FaStethoscope,
   FaExclamationTriangle,
+  FaPlus,
+  FaNotesMedical,
 } from 'react-icons/fa';
+import CreatePrescriptionModal from './CreatePrescriptionModal';
+import MedicalHistoryModal from '../../components/MedicalHistoryModal';
 import { doctorConsultationsApi } from '../../../../core/api/doctor/consultations.service';
 
 // ==========================================
@@ -114,7 +118,7 @@ function ConsultationCard({ consultation, onViewDetails }) {
 // ==========================================
 // CONSULTATION DETAIL MODAL
 // ==========================================
-function ConsultationDetailModal({ consultation, isOpen, onClose }) {
+function ConsultationDetailModal({ consultation, isOpen, onClose, onCreatePrescription, onViewHistory }) {
   if (!isOpen || !consultation) return null;
 
   const patient = consultation.patient_id || {};
@@ -246,7 +250,7 @@ function ConsultationDetailModal({ consultation, isOpen, onClose }) {
           )}
 
           {/* Prescription */}
-          {consultation.prescription_generated && (
+          {consultation.prescription_generated ? (
             <div className="bg-green-50 border border-green-100 rounded-xl p-4">
               <h4 className="text-sm font-semibold text-green-700 mb-3 flex items-center gap-1.5">
                 <FaPrescriptionBottleAlt size={13} /> Prescription Issued
@@ -272,6 +276,19 @@ function ConsultationDetailModal({ consultation, isOpen, onClose }) {
                 <p className="text-sm text-green-700">Prescription has been generated for this consultation.</p>
               )}
             </div>
+          ) : (
+            ['completed', 'in-progress'].includes(consultation.status) && (
+              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center">
+                <FaPrescriptionBottleAlt className="text-emerald-300 text-2xl mx-auto mb-2" />
+                <p className="text-sm text-emerald-700 mb-3">No prescription issued yet.</p>
+                <button
+                  onClick={() => onCreatePrescription(consultation)}
+                  className="btn-primary !w-auto px-5 py-2 text-sm !bg-emerald-600 hover:!bg-emerald-700 mx-auto flex items-center gap-2"
+                >
+                  <FaPlus size={12} /> Create Prescription
+                </button>
+              </div>
+            )
           )}
 
           {/* Transaction Info */}
@@ -293,6 +310,12 @@ function ConsultationDetailModal({ consultation, isOpen, onClose }) {
             Close
           </button>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => onViewHistory(patient._id)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 rounded-lg text-sm font-medium transition-colors"
+            >
+              <FaNotesMedical size={12} /> Medical History
+            </button>
             {consultation.recording_url && (
               <a
                 href={consultation.recording_url}
@@ -335,8 +358,16 @@ export default function ConsultationHistory() {
   const [selectedConsultation, setSelectedConsultation] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
+  // Prescription modal
+  const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false);
+  const [prescriptionConsultation, setPrescriptionConsultation] = useState(null);
+
   // Export
   const [exporting, setExporting] = useState(false);
+
+  // Medical History Modal
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [historyPatientId, setHistoryPatientId] = useState(null);
 
   // ==========================================
   // FETCH CONSULTATIONS
@@ -733,6 +764,40 @@ export default function ConsultationHistory() {
         consultation={selectedConsultation}
         isOpen={isDetailOpen}
         onClose={() => { setIsDetailOpen(false); setSelectedConsultation(null); }}
+        onCreatePrescription={(consultation) => {
+          setIsDetailOpen(false);
+          setPrescriptionConsultation(consultation);
+          setIsPrescriptionModalOpen(true);
+        }}
+        onViewHistory={(pid) => {
+          setHistoryPatientId(pid);
+          setHistoryModalOpen(true);
+        }}
+      />
+
+      {/* Prescription Modal */}
+      <CreatePrescriptionModal
+        consultation={prescriptionConsultation}
+        isOpen={isPrescriptionModalOpen}
+        onClose={() => {
+          setIsPrescriptionModalOpen(false);
+          setPrescriptionConsultation(null);
+        }}
+        onSuccess={() => {
+          setIsPrescriptionModalOpen(false);
+          setPrescriptionConsultation(null);
+          fetchConsultations(); // refresh list
+        }}
+      />
+
+      {/* Medical History Modal */}
+      <MedicalHistoryModal
+        patientId={historyPatientId}
+        isOpen={historyModalOpen}
+        onClose={() => {
+          setHistoryModalOpen(false);
+          setHistoryPatientId(null);
+        }}
       />
     </div>
   );

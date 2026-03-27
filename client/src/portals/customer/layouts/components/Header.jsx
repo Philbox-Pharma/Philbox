@@ -13,12 +13,12 @@ import {
 import { customerAuthApi } from '../../../../core/api/customer/auth';
 import profileService from '../../../../core/api/customer/profile.service';
 import SearchBar from './SearchBar';
+import NotificationDropdown from '../../../../shared/components/Dropdown/NotificationDropdown';
 
 export default function Header() {
   const navigate = useNavigate();
 
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [profile, setProfile] = useState({
     fullName: '',
     email: '',
@@ -88,70 +88,23 @@ export default function Header() {
               )}
             </Link>
 
-            {/* Notifications */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setShowNotifications(!showNotifications);
-                  setShowProfileDropdown(false);
-                }}
-                className="relative p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <FaBell size={20} />
-                {notificationCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                    {notificationCount > 9 ? '9+' : notificationCount}
-                  </span>
-                )}
-              </button>
-
-              {/* Notifications Dropdown */}
-              {showNotifications && (
-                <div className="fixed sm:absolute top-[64px] sm:top-full left-1/2 sm:left-auto -translate-x-1/2 sm:translate-x-0 mt-0 sm:mt-2 sm:right-0 w-[92vw] max-w-[340px] sm:max-w-none sm:w-80 bg-white rounded-xl shadow-lg border py-2 z-50">
-                  <div className="px-4 py-3 border-b">
-                    <h3 className="font-semibold text-gray-800">
-                      Notifications
-                    </h3>
-                  </div>
-                  <div className="max-h-72 overflow-y-auto w-full">
-                    <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-l-4 border-transparent hover:border-blue-500">
-                      <p className="text-sm text-gray-800">
-                        Your order #123 has been shipped!
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">2 hours ago</p>
-                    </div>
-                    <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-l-4 border-transparent hover:border-blue-500">
-                      <p className="text-sm text-gray-800">
-                        Appointment confirmed with Dr. Smith
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">1 day ago</p>
-                    </div>
-                    <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-l-4 border-blue-500 bg-blue-50">
-                      <p className="text-sm text-gray-800">
-                        New prescription available from Dr. Khan
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">2 days ago</p>
-                    </div>
-                  </div>
-                  <div className="px-4 py-3 border-t">
-                    <Link
-                      to="/notifications"
-                      className="text-sm text-blue-600 hover:underline font-medium"
-                      onClick={() => setShowNotifications(false)}
-                    >
-                      View all notifications
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Notifications Dropdown */}
+            <NotificationDropdown 
+              notifications={[
+                { id: 1, text: 'Your order #123 has been shipped!', time: '2 hours ago', type: 'info', unread: true },
+                { id: 2, text: 'Appointment confirmed with Dr. Smith', time: '1 day ago', type: 'success', unread: true },
+                { id: 3, text: 'New prescription available from Dr. Khan', time: '2 days ago', type: 'info', unread: false },
+              ]}
+              unreadCount={notificationCount}
+              viewAllPath="/notifications"
+              portalColor="blue"
+            />
 
             {/* Profile Dropdown */}
             <div className="relative">
               <button
                 onClick={() => {
                   setShowProfileDropdown(!showProfileDropdown);
-                  setShowNotifications(false);
                 }}
                 className="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
               >
