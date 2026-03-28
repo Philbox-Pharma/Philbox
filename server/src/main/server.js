@@ -44,6 +44,7 @@ import customerDashboardRoutes from './modules/customer/features/dashboard/route
 import customerSearchHistoryRoutes from './modules/customer/features/search_history/routes/searchHistory.routes.js';
 import customerRefillReminderRoutes from './modules/customer/features/refill_reminder/routes/refillReminder.routes.js';
 import customerAppointmentsRoutes from './modules/customer/features/appointments/routes/appointments.routes.js';
+import customerMedicineCatalogRoutes from './modules/customer/features/medicine_catalog/routes/catalog.routes.js';
 
 import salespersonAuthRoutes from './modules/salesperson/features/auth/routes/auth.routes.js';
 import salespersonTaskManagementRoutes from './modules/salesperson/features/task_management/routes/task.routes.js';
@@ -180,6 +181,7 @@ app.use(`/api/customer/dashboard`, customerDashboardRoutes);
 app.use(`/api/customer/search-history`, customerSearchHistoryRoutes);
 app.use(`/api/customer/refill-reminders`, customerRefillReminderRoutes);
 app.use(`/api/customer/appointments`, customerAppointmentsRoutes);
+app.use(`/api/customer/medicines`, customerMedicineCatalogRoutes);
 app.use(`/api/${ROUTES.SALESPERSON_AUTH}`, salespersonAuthRoutes);
 app.use(`/api/salesperson/tasks`, salespersonTaskManagementRoutes);
 app.use(`/api/salesperson/alerts`, lowStockAlertsRoutes);
