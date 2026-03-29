@@ -159,6 +159,53 @@ class MedicineCatalogController {
   }
 
   /**
+   * Get medicines related to a specific medicine
+   */
+  async getRelatedMedicines(req, res) {
+    try {
+      const customerId = req.user.id;
+      const { medicineId } = req.params;
+      const { limit = 8 } = req.query;
+
+      if (!medicineId) {
+        return sendResponse(res, 400, 'Medicine ID is required');
+      }
+
+      const result = await MedicineCatalogService.getRelatedMedicines(
+        medicineId,
+        customerId,
+        { limit: parseInt(limit) }
+      );
+
+      await logCustomerActivity(
+        req,
+        'VIEWED_RELATED_MEDICINES',
+        `Viewed related medicines for ${medicineId}`,
+        'medicines',
+        medicineId
+      );
+
+      return sendResponse(
+        res,
+        200,
+        'Related medicines fetched successfully',
+        result.data
+      );
+    } catch (error) {
+      console.error('Error fetching related medicines:', error);
+
+      if (error.message === 'MEDICINE_NOT_FOUND') {
+        return sendResponse(res, 404, 'Medicine not found');
+      }
+      if (error.message === 'CUSTOMER_NOT_FOUND') {
+        return sendResponse(res, 404, 'Customer not found');
+      }
+
+      return sendResponse(res, 500, 'Server Error', null, error.message);
+    }
+  }
+
+  /**
    * Search medicines by name/category/brand with cart-aware + proximity ranking.
    * Duplicate medicines from farther branches are removed if nearest branch already has one.
    */

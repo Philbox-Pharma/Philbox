@@ -65,6 +65,15 @@ router.get(
 );
 
 /**
+ * GET /api/customer/medicines/:medicineId/related
+ * Get medicines related to a specific medicine
+ */
+router.get(
+  '/:medicineId/related',
+  MedicineCatalogController.getRelatedMedicines.bind(MedicineCatalogController)
+);
+
+/**
  * GET /api/customer/medicines/:medicineId
  * Get detailed information about a specific medicine
  *
