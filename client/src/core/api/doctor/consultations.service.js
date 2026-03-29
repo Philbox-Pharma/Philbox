@@ -14,11 +14,29 @@ export const doctorConsultationsApi = {
   },
 
   /**
-   * Get single consultation details by appointment ID
-   * Backend needed: GET /api/doctor/consultations/:appointmentId
+   * Get single consultation details by consultation ID
+   * Backend needed: GET /api/doctor/consultations/:consultationId
    */
-  getConsultationById: async (appointmentId) => {
-    const response = await apiClient.get(`${BASE_URL}/${appointmentId}`);
+  getConsultationById: async (consultationId) => {
+    const response = await apiClient.get(`${BASE_URL}/${consultationId}`);
+    return response.data;
+  },
+
+  /**
+   * Get prescription for a specific consultation
+   * Backend route: GET /api/doctor/consultations/prescription/:prescriptionId
+   */
+  getPrescriptionDetails: async (prescriptionId) => {
+    const response = await apiClient.get(`${BASE_URL}/prescription/${prescriptionId}`);
+    return response.data;
+  },
+
+  /**
+   * Get patient medical history associated with a consultation
+   * Backend route: GET /api/doctor/consultations/:consultationId/patient-history
+   */
+  getPatientHistory: async (consultationId) => {
+    const response = await apiClient.get(`${BASE_URL}/${consultationId}/patient-history`);
     return response.data;
   },
 

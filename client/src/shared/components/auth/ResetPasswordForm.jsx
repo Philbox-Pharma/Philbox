@@ -47,7 +47,8 @@ export default function ResetPasswordForm({
                 navigate(loginPath);
             }, 3000);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to reset password. Link may be expired.');
+            const serverError = err.response?.data;
+            setError(serverError?.error || serverError?.message || 'Failed to reset password. Link may be expired.');
         } finally {
             setLoading(false);
         }

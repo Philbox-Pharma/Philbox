@@ -36,8 +36,6 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
-  const [resendLoading, setResendLoading] = useState(false);
-  const [resendMessage, setResendMessage] = useState({ text: '', type: '' });
   // eslint-disable-next-line no-unused-vars
   const [success, setSuccess] = useState(false);
 
@@ -165,11 +163,19 @@ export default function Register() {
                       .replace('password', 'Password');
         });
         setError(friendlyErrors.join('. '));
-      } else if (serverError?.message === 'Email already exists') {
-        setError('This email is already registered. If you forgot your password or didn\'t get a verification email, please contact support as the resend feature is pending.');
+      } else if (serverError?.message === 'Email already exists' || err.response?.status === 409) {
+        setError('This email is already registered. Please try logging in or use a different email.');
+      } else if (err.response?.status === 500) {
+        // Specifically handle the "Email sending failed but user created" scenario
+        const errorDetail = serverError?.error?.message || serverError?.error || '';
+        if (errorDetail.toLowerCase().includes('email') || errorDetail.toLowerCase().includes('verification')) {
+          setError('Account created, but we couldn\'t send the verification email. Please try to Sign In and Resend the email link.');
+        } else {
+          setError(`Server Error: ${serverError?.message || 'Internal processing error'}. Details: ${errorDetail}`);
+        }
       } else {
         setError(
-          serverError?.message || 'Registration failed. Please try again.'
+          serverError?.error || serverError?.message || 'Registration failed. Please try again.'
         );
       }
     } finally {
@@ -177,29 +183,6 @@ export default function Register() {
     }
   };
 
-  const handleResendLink = async () => {
-    setResendLoading(true);
-    setResendMessage({ text: '', type: '' });
-
-    try {
-      const response = await doctorAuthApi.resendVerificationEmail(formData.email);
-      setResendMessage({
-        text:
-          response.message ||
-          'Verification email resent! Please check your inbox.',
-        type: 'success',
-      });
-    } catch (err) {
-      setResendMessage({
-        text:
-          err.response?.data?.message ||
-          'Failed to resend email. Please try again.',
-        type: 'error',
-      });
-    } finally {
-      setResendLoading(false);
-    }
-  };
 
   // Google OAuth handler
   const handleGoogleSignup = () => {
@@ -417,7 +400,6 @@ export default function Register() {
             <option value="">Select Gender</option>
             <option value="Male">Male</option>
             <option value="Female">Female</option>
-            <option value="Other">Other</option>
           </select>
           {fieldErrors.gender && (
             <p className="input-error">{fieldErrors.gender}</p>
@@ -513,28 +495,11 @@ export default function Register() {
           Please verify your email to continue with the application process.
         </p>
 
-        <button
-          type="button"
-          onClick={handleResendLink}
-          disabled={resendLoading}
-          className="mt-3 text-sm font-bold underline hover:no-underline disabled:opacity-50 text-green-700"
-        >
-          {resendLoading ? 'Sending...' : "Didn't get email? Resend"}
-        </button>
+        <p className="mt-3 text-sm text-green-700 italic">
+          If you haven&apos;t received the email within 10 minutes, please contact support.
+        </p>
       </div>
 
-      {/* Resend Status Message */}
-      {resendMessage.text && (
-        <div
-          className={`mt-4 p-3 rounded-lg text-sm ${
-            resendMessage.type === 'success'
-              ? 'bg-green-100 text-green-700 border border-green-200'
-              : 'bg-red-100 text-red-700 border border-red-200'
-          }`}
-        >
-          {resendMessage.text}
-        </div>
-      )}
 
       {/* What's Next Info */}
       <div className="alert-info text-left mt-4">

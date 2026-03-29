@@ -21,7 +21,8 @@ export default function ForgotPasswordForm({
             await onSubmit(email);
             setSuccess(true);
         } catch (err) {
-            setError(err.response?.data?.message || 'Something went wrong. Please try again.');
+            const serverError = err.response?.data;
+            setError(serverError?.error || serverError?.message || 'Something went wrong. Please try again.');
         } finally {
             setLoading(false);
         }

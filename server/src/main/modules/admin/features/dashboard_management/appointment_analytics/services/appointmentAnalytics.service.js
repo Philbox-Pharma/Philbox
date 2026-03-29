@@ -60,9 +60,6 @@ class AppointmentAnalyticsService {
             pending: {
               $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] },
             },
-            cancelled: {
-              $sum: { $cond: [{ $eq: ['$appointment_request', 'cancelled'] }, 1, 0] },
-            },
           },
         },
         { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
@@ -112,9 +109,6 @@ class AppointmentAnalyticsService {
             missed: {
               $sum: { $cond: [{ $eq: ['$status', 'missed'] }, 1, 0] },
             },
-            cancelled: {
-              $sum: { $cond: [{ $eq: ['$appointment_request', 'cancelled'] }, 1, 0] },
-            },
           },
         },
       ]);
@@ -140,7 +134,6 @@ class AppointmentAnalyticsService {
       return {
         completed: result.completed,
         missed: result.missed,
-        cancelled: result.cancelled || 0,
         total: result.total,
         completionRate: parseFloat(completionRate),
         missedRate: parseFloat(missedRate),

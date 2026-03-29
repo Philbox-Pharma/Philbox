@@ -205,8 +205,6 @@ class BranchService {
         page: result.currentPage,
         pages: result.totalPages,
         limit: result.limit,
-        hasNextPage: result.hasNextPage,
-        hasPrevPage: result.hasPrevPage,
       },
     };
   }

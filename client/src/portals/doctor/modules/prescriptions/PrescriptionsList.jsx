@@ -172,12 +172,14 @@ function PrescriptionDetailModal({ prescription, isOpen, onClose }) {
               {prescription.medicines?.map((med, idx) => (
                 <div key={idx} className="bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-800">{med.name || med.medicine_name}</p>
+                    <p className="text-sm font-medium text-gray-800">{med.medicineName || med.name || med.medicine_name}</p>
                     <p className="text-xs text-gray-500">
-                      {med.dosage} — {med.frequency} — {med.duration}
+                      {med.dosage} — {med.frequency} — {med.durationDays || med.duration} days
                     </p>
+                    {med.instructions && (
+                      <p className="text-[10px] text-gray-400 mt-0.5">Note: {med.instructions}</p>
+                    )}
                   </div>
-                  <span className="text-xs text-gray-400">{med.route || ''}</span>
                 </div>
               )) || (
                 <p className="text-sm text-gray-500">No medicines listed</p>

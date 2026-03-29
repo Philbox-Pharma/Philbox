@@ -21,11 +21,7 @@ export const paginate = async (
     list,
     total,
     totalPages: Math.ceil(total / limit),
-    pages: Math.ceil(total / limit), // Alias for consistency
     currentPage: parseInt(page),
-    page: parseInt(page), // Alias for consistency
     limit: parseInt(limit),
-    hasNextPage: parseInt(page) < Math.ceil(total / limit),
-    hasPrevPage: parseInt(page) > 1,
   };
 };

@@ -26,4 +26,9 @@ export const salespersonAuthApi = {
     const response = await apiClient.post(`${BASE_URL}/reset-password`, { token, newPassword });
     return response.data;
   },
+
+  getMe: async () => {
+    const response = await apiClient.get(`${BASE_URL}/me`);
+    return response.data;
+  },
 };

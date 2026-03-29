@@ -12,8 +12,6 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [resendLoading, setResendLoading] = useState(false);
-  const [resendMessage, setResendMessage] = useState({ text: '', type: '' });
   const [error, setError] = useState('');
 
   // Handle nextStep navigation
@@ -42,7 +40,6 @@ export default function Login() {
   const handleSubmit = async e => {
     e.preventDefault();
     setError('');
-    setResendMessage({ text: '', type: '' });
     setLoading(true);
 
     try {
@@ -52,19 +49,22 @@ export default function Login() {
       const nextStep = response.data?.nextStep || response.nextStep;
 
       // Save user data to auth context
-      loginSuccess(doctorData);
+      loginSuccess({ ...doctorData, role: 'doctor' });
 
       // Handle navigation based on nextStep
       handleNextStep(nextStep);
     } catch (err) {
-      const message =
-        err.response?.data?.message || 'Login failed. Please try again.';
+      const serverError = err.response?.data;
+      const message = serverError?.message || 'Login failed. Please try again.';
+      const detail = typeof serverError?.error === 'string' ? serverError.error : (serverError?.error?.message || '');
 
       // Check specific error cases
-      if (message.toLowerCase().includes('verify')) {
+      if (message.toLowerCase().includes('verify') || detail.toLowerCase().includes('verify')) {
         setError('Please verify your email first. Check your inbox.');
-      } else if (message.toLowerCase().includes('blocked')) {
+      } else if (message.toLowerCase().includes('blocked') || detail.toLowerCase().includes('blocked')) {
         setError('Your account has been blocked. Please contact support.');
+      } else if (err.response?.status === 500) {
+        setError(`Server Error: ${message}. ${detail ? `Details: ${detail}` : ''}`);
       } else {
         setError(message);
       }
@@ -73,35 +73,6 @@ export default function Login() {
     }
   };
 
-  const handleResendLink = async () => {
-    if (!email) {
-      setError('Please enter your email address first.');
-      return;
-    }
-
-    setResendLoading(true);
-    setResendMessage({ text: '', type: '' });
-
-    try {
-      const response = await doctorAuthApi.resendVerificationEmail(email);
-      setResendMessage({
-        text:
-          response.message ||
-          'Verification email resent! Please check your inbox.',
-        type: 'success',
-      });
-      setError('');
-    } catch (err) {
-      setResendMessage({
-        text:
-          err.response?.data?.message ||
-          'Failed to resend email. Please try again.',
-        type: 'error',
-      });
-    } finally {
-      setResendLoading(false);
-    }
-  };
 
   // Google OAuth handler
   const handleGoogleLogin = () => {
@@ -125,30 +96,13 @@ export default function Login() {
             <div className="alert-error mb-4">
               {error}
               {error.toLowerCase().includes('verify') && (
-                <button
-                  type="button"
-                  onClick={handleResendLink}
-                  disabled={resendLoading}
-                  className="block mt-2 text-xs font-bold underline hover:no-underline disabled:opacity-50"
-                >
-                  {resendLoading ? 'Sending...' : 'Resend Verification Email'}
-                </button>
+                <p className="block mt-2 text-xs text-red-700 italic">
+                  Don&apos;t see the email? Please contact support as verification resend is currently disabled.
+                </p>
               )}
             </div>
           )}
 
-          {/* Resend Success/Error Message */}
-          {resendMessage.text && (
-            <div
-              className={`mb-4 p-3 rounded-lg text-sm ${
-                resendMessage.type === 'success'
-                  ? 'bg-green-100 text-green-700 border border-green-200'
-                  : 'bg-red-100 text-red-700 border border-red-200'
-              }`}
-            >
-              {resendMessage.text}
-            </div>
-          )}
 
           {/* Email */}
           <div className="mb-4">

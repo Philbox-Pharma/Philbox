@@ -40,34 +40,6 @@ export const doctorAuthApi = {
     return response.data;
   },
 
-  // Submit Application (Step 1 - Documents)
-  submitApplication: async formData => {
-    const response = await apiClient.post(
-      `${BASE_URL}/submit-application`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
-    return response.data;
-  },
-
-  // Complete Profile (Step 2)
-  completeProfile: async formData => {
-    const response = await apiClient.post(
-      `${BASE_URL}/complete-profile`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
-    return response.data;
-  },
-
   // Forgot Password
   forgotPassword: async email => {
     const response = await apiClient.post(`${BASE_URL}/forget-password`, {
@@ -82,6 +54,12 @@ export const doctorAuthApi = {
       token,
       newPassword,
     });
+    return response.data;
+  },
+
+  // Get Current Doctor
+  getMe: async () => {
+    const response = await apiClient.get(`${BASE_URL}/me`);
     return response.data;
   },
 

@@ -578,9 +578,8 @@ export default function SlotManagement() {
       setActionLoading(true);
 
       if (data.isEdit && data.slotId) {
-        // Update
+        // Update (Note: date is not allowed in update as per DTO)
         await doctorSlotsApi.updateSlot(data.slotId, {
-          date: data.date,
           start_time: data.start_time,
           end_time: data.end_time,
           slot_duration: data.slot_duration,

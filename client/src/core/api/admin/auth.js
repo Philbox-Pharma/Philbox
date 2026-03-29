@@ -32,4 +32,9 @@ export const adminAuthApi = {
     });
     return response.data;
   },
+
+  getMe: async () => {
+    const response = await apiClient.get(`${BASE_URL}/me`);
+    return response.data;
+  },
 };

@@ -34,6 +34,7 @@ export default function CreatePrescriptionModal({
       frequency: 'once a day',
       durationDays: 7,
       quantityPrescribed: 10,
+      instructions: '',
     },
   ]);
   const [loading, setLoading] = useState(false);
@@ -54,6 +55,7 @@ export default function CreatePrescriptionModal({
         frequency: 'once a day',
         durationDays: 7,
         quantityPrescribed: 10,
+        instructions: '',
       },
     ]);
   };
@@ -171,6 +173,7 @@ export default function CreatePrescriptionModal({
           frequency: m.frequency,
           durationDays: Number(m.durationDays),
           quantityPrescribed: Number(m.quantityPrescribed),
+          instructions: m.instructions || '',
         })),
       };
 
@@ -363,6 +366,20 @@ export default function CreatePrescriptionModal({
                           required
                         />
                       </div>
+                    </div>
+                    <div className="md:col-span-6 mt-1">
+                      <label className="text-xs text-gray-500 block mb-1">
+                        Medicine-Specific Instructions (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={med.instructions}
+                        onChange={(e) =>
+                          handleChangeMedicine(index, 'instructions', e.target.value)
+                        }
+                        placeholder="e.g. Take with food"
+                        className="w-full text-sm p-2 border border-gray-300 rounded focus:ring-1 focus:ring-emerald-500 outline-none"
+                      />
                     </div>
                   </div>
                 ))}

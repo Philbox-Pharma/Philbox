@@ -51,8 +51,11 @@ export default function DoctorProfile() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [educationForm, setEducationForm] = useState([]);
+  const [experienceForm, setExperienceForm] = useState([]);
 
   const profileImageRef = useRef(null);
+  const coverImageRef = useRef(null);
 
   // ==========================================
   // FETCH PROFILE
@@ -79,6 +82,8 @@ export default function DoctorProfile() {
       });
       setConsultationType(data.consultation_type || 'both');
       setConsultationFee(data.consultation_fee || '');
+      setEducationForm(data.educational_details || []);
+      setExperienceForm(data.experience_details || []);
     } catch (err) {
       console.error('Failed to fetch profile:', err);
       setError(err.response?.data?.message || 'Failed to load profile.');
@@ -141,6 +146,34 @@ export default function DoctorProfile() {
     }
   };
 
+  const handleUpdateProfessionalDetails = async () => {
+    try {
+      setSaving(true);
+      const payload = {
+        educational_details: educationForm.map(edu => ({
+          degree: edu.degree,
+          institution: edu.institution,
+          yearOfCompletion: Number(edu.yearOfCompletion || edu.year),
+          specialization: edu.specialization
+        })),
+        experience_details: experienceForm.map(exp => ({
+          institution: exp.institution || exp.hospital,
+          starting_date: exp.starting_date || exp.from_date || exp.from_year,
+          ending_date: exp.ending_date || exp.to_date || exp.to_year,
+          is_going_on: !!exp.is_going_on
+        }))
+      };
+
+      await doctorProfileApi.updateProfile(payload);
+      showMessage('Professional details updated!');
+      fetchProfile();
+    } catch (err) {
+      showMessage(err.response?.data?.message || 'Failed to update details.', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleUpdateConsultationType = async () => {
     try {
       setSaving(true);
@@ -182,6 +215,25 @@ export default function DoctorProfile() {
       }
     } catch (err) {
       showMessage(err.response?.data?.message || 'Failed to upload image.', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCoverImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setSaving(true);
+      const response = await doctorProfileApi.updateCoverImage(file);
+      showMessage('Cover image updated!');
+      fetchProfile();
+      if (setDoctor && response.data?.cover_img_url) {
+        setDoctor({ ...doctor, cover_img_url: response.data.cover_img_url });
+      }
+    } catch (err) {
+      showMessage(err.response?.data?.message || 'Failed to upload cover.', 'error');
     } finally {
       setSaving(false);
     }
@@ -243,7 +295,24 @@ export default function DoctorProfile() {
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
         {/* Cover */}
         <div className="h-36 sm:h-44 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 relative">
+          {profile?.cover_img_url && (
+            <img src={profile.cover_img_url} alt="Cover" className="w-full h-full object-cover" />
+          )}
           <div className="absolute inset-0 bg-black/10" />
+          <button
+            onClick={() => coverImageRef.current?.click()}
+            disabled={saving}
+            className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 border border-white/30 transition-all"
+          >
+            <FaCamera size={12} /> {saving ? 'Uploading...' : 'Change Cover'}
+          </button>
+          <input
+            ref={coverImageRef}
+            type="file"
+            accept="image/*"
+            onChange={handleCoverImageUpload}
+            className="hidden"
+          />
         </div>
 
         {/* Profile Info */}
@@ -569,7 +638,180 @@ export default function DoctorProfile() {
         </div>
       </div>
 
-      {/* Change Password */}
+      {/* Professional Details Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Education */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+              <FaGraduationCap className="text-emerald-500" size={14} /> Education
+            </h2>
+            <button
+              onClick={() => setEducationForm([...educationForm, { degree: '', institution: '', yearOfCompletion: '', specialization: '' }])}
+              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+            >
+              + Add
+            </button>
+          </div>
+          <div className="p-4 flex-1 space-y-4 max-h-[400px] overflow-y-auto">
+            {educationForm.map((edu, idx) => (
+              <div key={idx} className="p-3 bg-gray-50 rounded-lg relative group">
+                <button
+                  onClick={() => setEducationForm(educationForm.filter((_, i) => i !== idx))}
+                  className="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <FaTimes size={12} />
+                </button>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <input
+                      placeholder="Degree"
+                      className="text-sm font-semibold bg-transparent border-b border-gray-300 focus:border-emerald-500 outline-none w-full"
+                      value={edu.degree}
+                      onChange={e => {
+                        const newForm = [...educationForm];
+                        newForm[idx].degree = e.target.value;
+                        setEducationForm(newForm);
+                      }}
+                    />
+                  </div>
+                  <input
+                    placeholder="Institution"
+                    className="text-xs text-gray-600 bg-transparent border-b border-gray-200 focus:border-emerald-500 outline-none w-full"
+                    value={edu.institution}
+                    onChange={e => {
+                      const newForm = [...educationForm];
+                      newForm[idx].institution = e.target.value;
+                      setEducationForm(newForm);
+                    }}
+                  />
+                  <input
+                    placeholder="Year"
+                    type="number"
+                    className="text-xs text-gray-600 bg-transparent border-b border-gray-200 focus:border-emerald-500 outline-none w-full"
+                    value={edu.yearOfCompletion || edu.year || ''}
+                    onChange={e => {
+                      const newForm = [...educationForm];
+                      newForm[idx].yearOfCompletion = e.target.value;
+                      setEducationForm(newForm);
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+            {educationForm.length === 0 && (
+              <p className="text-gray-400 text-sm text-center py-8">No education details added.</p>
+            )}
+          </div>
+          <div className="p-4 bg-gray-50 border-t border-gray-100 mt-auto">
+            <button
+              onClick={handleUpdateProfessionalDetails}
+              disabled={saving}
+              className="w-full py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {saving ? 'Updating...' : 'Update Education'}
+            </button>
+          </div>
+        </div>
+
+        {/* Experience */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">
+              <FaBriefcase className="text-blue-500" size={14} /> Experience
+            </h2>
+            <button
+              onClick={() => setExperienceForm([...experienceForm, { institution: '', starting_date: '', ending_date: '', is_going_on: false }])}
+              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+            >
+              + Add
+            </button>
+          </div>
+          <div className="p-4 flex-1 space-y-4 max-h-[400px] overflow-y-auto">
+            {experienceForm.map((exp, idx) => (
+              <div key={idx} className="p-3 bg-gray-50 rounded-lg relative group">
+                <button
+                  onClick={() => setExperienceForm(experienceForm.filter((_, i) => i !== idx))}
+                  className="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <FaTimes size={12} />
+                </button>
+                <div className="space-y-2">
+                  <input
+                    placeholder="Hospital / Institution"
+                    className="text-sm font-semibold bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full"
+                    value={exp.institution || exp.hospital || ''}
+                    onChange={e => {
+                      const newForm = [...experienceForm];
+                      newForm[idx].institution = e.target.value;
+                      setExperienceForm(newForm);
+                    }}
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col">
+                      <label className="text-[10px] text-gray-400 uppercase">From</label>
+                      <input
+                        type="date"
+                        className="text-xs text-gray-600 bg-transparent outline-none"
+                        value={exp.starting_date ? new Date(exp.starting_date).toISOString().split('T')[0] : ''}
+                        onChange={e => {
+                          const newForm = [...experienceForm];
+                          newForm[idx].starting_date = e.target.value;
+                          setExperienceForm(newForm);
+                        }}
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="text-[10px] text-gray-400 uppercase">To</label>
+                      {exp.is_going_on ? (
+                        <span className="text-xs text-blue-600 font-medium py-1">Present</span>
+                      ) : (
+                        <input
+                          type="date"
+                          className="text-xs text-gray-600 bg-transparent outline-none"
+                          value={exp.ending_date ? new Date(exp.ending_date).toISOString().split('T')[0] : ''}
+                          onChange={e => {
+                            const newForm = [...experienceForm];
+                            newForm[idx].ending_date = e.target.value;
+                            setExperienceForm(newForm);
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer mt-1">
+                    <input
+                      type="checkbox"
+                      className="w-3 h-3 rounded text-blue-500"
+                      checked={exp.is_going_on}
+                      onChange={e => {
+                        const newForm = [...experienceForm];
+                        newForm[idx].is_going_on = e.target.checked;
+                        if (e.target.checked) newForm[idx].ending_date = null;
+                        setExperienceForm(newForm);
+                      }}
+                    />
+                    <span className="text-xs text-gray-500">Currently working here</span>
+                  </label>
+                </div>
+              </div>
+            ))}
+            {experienceForm.length === 0 && (
+              <p className="text-gray-400 text-sm text-center py-8">No experience listed.</p>
+            )}
+          </div>
+          <div className="p-4 bg-gray-50 border-t border-gray-100 mt-auto">
+            <button
+              onClick={handleUpdateProfessionalDetails}
+              disabled={saving}
+              className="w-full py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            >
+              {saving ? 'Updating...' : 'Update Experience'}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">

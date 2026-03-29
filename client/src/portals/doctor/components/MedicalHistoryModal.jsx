@@ -34,7 +34,8 @@ export default function MedicalHistoryModal({ patientId, isOpen, onClose }) {
       if (endDate) filters.endDate = endDate;
       
       const response = await doctorPatientsApi.getMedicalHistory(patientId, filters);
-      setData(response.data);
+      // Backend uses sendResponse utility which wraps everything in a 'data' key
+      setData(response.data?.data || response.data);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || 'Failed to load medical history.');

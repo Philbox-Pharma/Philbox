@@ -81,8 +81,7 @@ export default function DoctorOnboarding() {
   // STEP 1: Document Upload State
   // ==========================================
   const [files, setFiles] = useState({
-    cnic_front: null,
-    cnic_back: null,
+    cnic: null,
     medical_license: null,
     mbbs_md_degree: null,
     specialist_license: null,
@@ -171,15 +170,15 @@ export default function DoctorOnboarding() {
     setFiles(prev => ({ ...prev, [fieldName]: null }));
   };
 
-  const requiredDocFiles = ['cnic_front', 'cnic_back', 'medical_license', 'mbbs_md_degree'];
   const fileLabels = {
-    cnic_front: 'CNIC Front Side',
-    cnic_back: 'CNIC Back Side',
+    cnic: 'CNIC / National ID',
     medical_license: 'Medical License / PMDC',
     mbbs_md_degree: 'MBBS / MD Degree',
     specialist_license: 'Specialist License (Optional)',
     experience_letters: 'Experience Letters (Optional)',
   };
+
+  const requiredDocFiles = ['cnic', 'medical_license', 'mbbs_md_degree'];
 
   const handleDocumentSubmit = async (e) => {
     e.preventDefault();
@@ -218,10 +217,15 @@ export default function DoctorOnboarding() {
       setActiveStep(2);
       await fetchStatus();
     } catch (err) {
-      const message = err.response?.data?.message || 'Failed to submit application.';
-      if (err.response?.data?.data?.missingFiles) {
-        const missingFiles = err.response.data.data.missingFiles.join(', ');
+      const serverError = err.response?.data;
+      const message = serverError?.message || 'Failed to submit application.';
+      const detail = serverError?.error || '';
+
+      if (serverError?.data?.missingFiles) {
+        const missingFiles = serverError.data.missingFiles.join(', ');
         setError(`Missing required documents: ${missingFiles}`);
+      } else if (err.response?.status === 500) {
+        setError(`Server Error: ${message}. ${detail ? `Details: ${detail}` : ''}`);
       } else {
         setError(message);
       }
@@ -364,7 +368,16 @@ export default function DoctorOnboarding() {
         navigate('/doctor/dashboard');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to complete profile.');
+      console.error('Profile complete error:', err);
+      const serverError = err.response?.data;
+      const message = serverError?.message || 'Failed to complete profile.';
+      const detail = serverError?.error || '';
+
+      if (err.response?.status === 500) {
+        setError(`Server Error: ${message}. ${detail ? `Details: ${detail}` : ''}`);
+      } else {
+        setError(message);
+      }
     } finally {
       setProfileLoading(false);
     }
@@ -423,8 +436,6 @@ export default function DoctorOnboarding() {
   // ==========================================
   const renderDocumentUpload = () => {
     const isRejected = applicationData?.status === 'rejected';
-    const cnicFields = ['cnic_front', 'cnic_back'];
-    const otherFields = ['medical_license', 'mbbs_md_degree', 'specialist_license', 'experience_letters'];
 
     return (
       <form onSubmit={handleDocumentSubmit} className="animate-fadeIn">
@@ -450,43 +461,23 @@ export default function DoctorOnboarding() {
           </div>
         )}
 
-        {/* CNIC Section */}
-        <div className="mb-5">
-          <label className="input-label">
-            CNIC / National ID <span className="text-red-500">*</span>
-          </label>
-          <div className="grid grid-cols-2 gap-4">
-            {cnicFields.map((fieldName) => (
-              <div key={fieldName}>
-                <p className="text-xs text-gray-500 mb-2">
-                  {fieldName === 'cnic_front' ? 'Front Side' : 'Back Side'}
-                </p>
-                <FileUploadBox
-                  file={files[fieldName]}
-                  onFileChange={(file) => handleFileChange(fieldName, file)}
-                  onRemove={() => handleRemoveFile(fieldName)}
-                  label="Click to upload"
-                />
-              </div>
-            ))}
-          </div>
+        {/* Document Fields */}
+        <div className="space-y-4 mb-6">
+          {Object.keys(fileLabels).map((fieldName) => (
+            <div key={fieldName}>
+              <label className="input-label">
+                {fileLabels[fieldName]}
+                {requiredDocFiles.includes(fieldName) && <span className="text-red-500 ml-1">*</span>}
+              </label>
+              <FileUploadBox
+                file={files[fieldName]}
+                onFileChange={(file) => handleFileChange(fieldName, file)}
+                onRemove={() => handleRemoveFile(fieldName)}
+                label={`Upload ${fileLabels[fieldName]}`}
+              />
+            </div>
+          ))}
         </div>
-
-        {/* Other Documents */}
-        {otherFields.map((fieldName) => (
-          <div key={fieldName} className="mb-4">
-            <label className="input-label">
-              {fileLabels[fieldName]}
-              {requiredDocFiles.includes(fieldName) && <span className="text-red-500 ml-1">*</span>}
-            </label>
-            <FileUploadBox
-              file={files[fieldName]}
-              onFileChange={(file) => handleFileChange(fieldName, file)}
-              onRemove={() => handleRemoveFile(fieldName)}
-              label="Click to upload"
-            />
-          </div>
-        ))}
 
         {/* Submit Button */}
         <button
