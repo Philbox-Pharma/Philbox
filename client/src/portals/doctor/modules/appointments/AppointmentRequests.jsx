@@ -22,8 +22,18 @@ import { doctorAppointmentsApi } from '../../../../core/api/doctor/appointments.
 // ==========================================
 // REQUEST CARD
 // ==========================================
+// Helper to get patient display name from either fullName or first_name+last_name
+const getPatientName = (patient) => {
+  if (patient.fullName) return patient.fullName;
+  if (patient.first_name || patient.last_name) {
+    return [patient.first_name, patient.last_name].filter(Boolean).join(' ');
+  }
+  return 'Patient';
+};
+
 function RequestCard({ appointment, onAccept, onReject, onView, actionLoading }) {
   const patient = appointment.patient_id || appointment.patient || {};
+  const patientName = getPatientName(patient);
   const createdAt = appointment.created_at ? new Date(appointment.created_at) : new Date();
 
   return (
@@ -36,11 +46,11 @@ function RequestCard({ appointment, onAccept, onReject, onView, actionLoading })
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-              {(patient.fullName || 'P').charAt(0).toUpperCase()}
+              {patientName.charAt(0).toUpperCase()}
             </div>
             <div>
               <h3 className="text-sm font-semibold text-gray-800">
-                {patient.fullName || 'Patient'}
+                {patientName}
               </h3>
               <p className="text-xs text-gray-500">{patient.email || '—'}</p>
             </div>
@@ -160,7 +170,7 @@ function RejectModal({ appointment, isOpen, onClose, onConfirm, loading }) {
           <p className="text-sm text-gray-600 mb-4">
             Please provide a reason for rejecting this appointment request from{' '}
             <span className="font-semibold">
-              {appointment?.patient_id?.fullName || 'the patient'}
+              {getPatientName(appointment?.patient_id || {})}
             </span>
             .
           </p>
@@ -220,15 +230,15 @@ function DetailModal({ appointment, isOpen, onClose }) {
           {/* Patient Info */}
           <div className="flex items-center gap-3">
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">
-              {(patient.fullName || 'P').charAt(0).toUpperCase()}
+              {getPatientName(patient).charAt(0).toUpperCase()}
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-800">
-                {patient.fullName || 'Patient'}
+                {getPatientName(patient)}
               </h3>
               <p className="text-sm text-gray-500">{patient.email || '—'}</p>
-              {patient.contactNumber && (
-                <p className="text-sm text-gray-500">{patient.contactNumber}</p>
+              {(patient.contactNumber || patient.phone_number) && (
+                <p className="text-sm text-gray-500">{patient.contactNumber || patient.phone_number}</p>
               )}
             </div>
           </div>
@@ -335,12 +345,11 @@ export default function AppointmentRequests() {
       const response = await doctorAppointmentsApi.getPendingRequests({
         page,
         limit,
-        status: 'pending',
       });
       const data = response.data || {};
-      setAppointments(data.appointments || data.requests || []);
-      setTotalPages(data.totalPages || 1);
-      setTotalCount(data.totalCount || data.total || 0);
+      setAppointments(data.appointments || []);
+      setTotalPages(data.pagination?.total_pages || 1);
+      setTotalCount(data.pagination?.total_items || 0);
     } catch (err) {
       console.error('Error fetching requests:', err);
       setError(err.response?.data?.message || 'Failed to load appointment requests.');

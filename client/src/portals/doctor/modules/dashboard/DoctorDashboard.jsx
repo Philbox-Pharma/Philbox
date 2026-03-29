@@ -17,6 +17,15 @@ import {
 } from 'react-icons/fa';
 import { doctorDashboardApi } from '../../../../core/api/doctor/dashboard.service';
 
+// Helper to get patient display name from either fullName or first_name+last_name
+const getPatientName = (patient) => {
+  if (patient.fullName) return patient.fullName;
+  if (patient.first_name || patient.last_name) {
+    return [patient.first_name, patient.last_name].filter(Boolean).join(' ');
+  }
+  return 'Patient';
+};
+
 export default function DoctorDashboard() {
   const { doctor } = useOutletContext();
   const [loading, setLoading] = useState(true);
@@ -55,18 +64,18 @@ export default function DoctorDashboard() {
       const reviewStats = reviewStatsRes.status === 'fulfilled' ? reviewStatsRes.value?.data : {};
       const slots = slotsRes.status === 'fulfilled' ? slotsRes.value?.data : {};
 
-      setPendingList(pending?.appointments || pending?.requests || []);
+      setPendingList(pending?.appointments || []);
       setUpcomingList(upcoming?.appointments || []);
 
       const slotsList = slots?.slots || [];
 
       setStats({
-        pendingRequests: pending?.totalCount || pending?.total || pendingList.length || 0,
-        upcomingAppointments: upcoming?.totalCount || upcoming?.total || 0,
-        totalConsultations: consultationStats?.totalConsultations || consultationStats?.total || 0,
-        completedConsultations: consultationStats?.completedCount || consultationStats?.completed || 0,
-        averageRating: reviewStats?.averageRating || 0,
-        totalReviews: reviewStats?.totalReviews || 0,
+        pendingRequests: pending?.pagination?.total_items || 0,
+        upcomingAppointments: upcoming?.pagination?.total_items || 0,
+        totalConsultations: consultationStats?.total_consultations || 0,
+        completedConsultations: consultationStats?.with_prescriptions || 0,
+        averageRating: reviewStats?.average_rating || 0,
+        totalReviews: reviewStats?.total_reviews || 0,
         totalSlots: slotsList.length,
         availableSlots: slotsList.filter((s) => s.status === 'available').length,
       });
@@ -223,11 +232,11 @@ export default function DoctorDashboard() {
                     className="px-5 py-3.5 flex items-center gap-3 hover:bg-gray-50 transition-colors"
                   >
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
-                      {(patient.fullName || 'P').charAt(0).toUpperCase()}
+                      {getPatientName(patient).charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-800 truncate">
-                        {patient.fullName || 'Patient'}
+                        {getPatientName(patient)}
                       </p>
                       <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
                         <span className="flex items-center gap-1">
@@ -293,11 +302,11 @@ export default function DoctorDashboard() {
                     className="px-5 py-3.5 flex items-center gap-3 hover:bg-gray-50 transition-colors"
                   >
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
-                      {(patient.fullName || 'P').charAt(0).toUpperCase()}
+                      {getPatientName(patient).charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-800 truncate">
-                        {patient.fullName || 'Patient'}
+                        {getPatientName(patient)}
                       </p>
                       <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
                         <span className="flex items-center gap-1">

@@ -351,7 +351,6 @@ export default function ConsultationHistory() {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
   // Detail modal
@@ -383,15 +382,14 @@ export default function ConsultationHistory() {
         ...(searchQuery && { patient_name: searchQuery }),
         ...(dateFrom && { start_date: dateFrom }),
         ...(dateTo && { end_date: dateTo }),
-        ...(statusFilter && { status: statusFilter }),
       };
 
       const response = await doctorConsultationsApi.getConsultations(filters);
       const data = response.data || {};
 
-      setConsultations(data.consultations || data.appointments || []);
-      setTotalPages(data.totalPages || 1);
-      setTotalCount(data.totalCount || data.total || 0);
+      setConsultations(data.consultations || []);
+      setTotalPages(data.pagination?.total_pages || 1);
+      setTotalCount(data.pagination?.total_items || 0);
     } catch (err) {
       console.error('Error fetching consultations:', err);
       if (err.response?.status === 404) {
@@ -403,7 +401,7 @@ export default function ConsultationHistory() {
     } finally {
       setLoading(false);
     }
-  }, [page, searchQuery, dateFrom, dateTo, statusFilter]);
+  }, [page, searchQuery, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchConsultations();
@@ -421,8 +419,8 @@ export default function ConsultationHistory() {
   const handleClearFilters = () => {
     setSearchQuery('');
     setDateFrom('');
+    setDateFrom('');
     setDateTo('');
-    setStatusFilter('');
     setPage(1);
   };
 
@@ -444,7 +442,6 @@ export default function ConsultationHistory() {
       const blob = await doctorConsultationsApi.exportToPDF({
         ...(dateFrom && { start_date: dateFrom }),
         ...(dateTo && { end_date: dateTo }),
-        ...(statusFilter && { status: statusFilter }),
       });
 
       // Create download link
@@ -464,7 +461,7 @@ export default function ConsultationHistory() {
     }
   };
 
-  const hasActiveFilters = searchQuery || dateFrom || dateTo || statusFilter;
+  const hasActiveFilters = searchQuery || dateFrom || dateTo;
 
   // ==========================================
   // STATS
@@ -568,19 +565,10 @@ export default function ConsultationHistory() {
                   />
                 </div>
 
-                {/* Status Filter */}
+                {/* Status Info */}
                 <div>
-                  <label className="input-label">Status</label>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="input-field"
-                  >
-                    <option value="">All Status</option>
-                    <option value="completed">Completed</option>
-                    <option value="missed">Missed</option>
-                    <option value="in-progress">In Progress</option>
-                  </select>
+                  <label className="input-label">Note</label>
+                  <p className="text-xs text-gray-500 mt-1">Only completed consultations are shown.</p>
                 </div>
               </div>
 

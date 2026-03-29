@@ -88,11 +88,19 @@ export const doctorRoutes = [
     element: <VerifyEmail />,
   },
   {
+    path: '/doctor/auth/verify-email/:token', // Compatibility for broken backend link
+    element: <VerifyEmail />,
+  },
+  {
     path: '/doctor/forgot-password',
     element: <ForgotPassword />,
   },
   {
     path: '/doctor/reset-password/:token',
+    element: <ResetPassword />,
+  },
+  {
+    path: '/doctor/auth/reset-password/:token', // Compatibility for broken backend link
     element: <ResetPassword />,
   },
 

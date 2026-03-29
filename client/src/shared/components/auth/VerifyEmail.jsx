@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 export default function VerifyEmail({
     onVerify,           // API call function
     loginPath,          // Redirect path
+    registerPath = '/register', // Register path for retry
     title = 'Email Verification'
 }) {
     const { token } = useParams();
@@ -80,7 +81,7 @@ export default function VerifyEmail({
 
                         <p className="text-center text-gray-500 text-sm mt-4">
                             Need a new verification link?{' '}
-                            <Link to="/register" className="btn-link">
+                            <Link to={registerPath} className="btn-link">
                                 Register Again
                             </Link>
                         </p>

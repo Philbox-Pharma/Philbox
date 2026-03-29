@@ -10,6 +10,7 @@ export default function DoctorVerifyEmail() {
         <VerifyEmail
             onVerify={handleVerify}
             loginPath="/doctor/login"
+            registerPath="/doctor/register"
             title="Doctor Email Verification"
         />
     );

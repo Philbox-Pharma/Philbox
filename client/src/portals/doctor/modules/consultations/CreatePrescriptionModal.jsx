@@ -163,6 +163,7 @@ export default function CreatePrescriptionModal({
         validTill: new Date(validTill).toISOString(),
         medicines: medicines.map((m) => ({
           medicineId: m.medicineId, // Mocked object id representing the medicine name
+          medicineName: m.medicineName, // <-- ADDED: Required by backend DTO
           // Since the backend expects existing medicine ids, but we have none, 
           // we pass random OIDs. Mongoose validation behavior dictates if this will crash.
           form: m.form,

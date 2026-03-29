@@ -6,7 +6,7 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   // Initialize user from localStorage if available (to persist on refresh)
   const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('adminUser');
+    const savedUser = localStorage.getItem('authUser');
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
   // Function to save user data after successful OTP verification
   const loginSuccess = userData => {
     setUser(userData);
-    localStorage.setItem('adminUser', JSON.stringify(userData));
+    localStorage.setItem('authUser', JSON.stringify(userData));
   };
 
   const logout = async () => {
@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Logout failed on server', error);
     } finally {
       setUser(null);
-      localStorage.removeItem('adminUser');
+      localStorage.removeItem('authUser');
     }
   };
 

@@ -29,11 +29,21 @@ const STATUS_CONFIG = {
   'in-progress': { label: 'In Progress', bg: 'bg-yellow-100', text: 'text-yellow-700', icon: FaClock },
 };
 
+// Helper to get patient display name from either fullName or first_name+last_name
+const getPatientName = (patient) => {
+  if (patient.fullName) return patient.fullName;
+  if (patient.first_name || patient.last_name) {
+    return [patient.first_name, patient.last_name].filter(Boolean).join(' ');
+  }
+  return 'Patient';
+};
+
 // ==========================================
 // SCHEDULE CARD
 // ==========================================
 function ScheduleCard({ appointment, onViewHistory }) {
   const patient = appointment.patient_id || appointment.patient || {};
+  const patientName = getPatientName(patient);
   const slot = appointment.slot_id || {};
   const statusInfo = STATUS_CONFIG[appointment.status] || STATUS_CONFIG.accepted;
   const StatusIcon = statusInfo.icon;
@@ -64,11 +74,11 @@ function ScheduleCard({ appointment, onViewHistory }) {
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-              {(patient.fullName || 'P').charAt(0).toUpperCase()}
+              {patientName.charAt(0).toUpperCase()}
             </div>
             <div>
               <h3 className="text-sm font-semibold text-gray-800">
-                {patient.fullName || 'Patient'}
+                {patientName}
               </h3>
               <p className="text-xs text-gray-500">{patient.email || '—'}</p>
             </div>
@@ -177,8 +187,8 @@ export default function AppointmentSchedule() {
       const response = await doctorAppointmentsApi.getAcceptedAppointments(filters);
       const data = response.data || {};
       setAppointments(data.appointments || []);
-      setTotalPages(data.totalPages || 1);
-      setTotalCount(data.totalCount || data.total || 0);
+      setTotalPages(data.pagination?.total_pages || 1);
+      setTotalCount(data.pagination?.total_items || 0);
     } catch (err) {
       console.error('Error fetching schedule:', err);
       setError(err.response?.data?.message || 'Failed to load schedule.');

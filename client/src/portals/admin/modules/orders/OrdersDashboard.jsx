@@ -105,8 +105,8 @@ export default function OrdersDashboard() {
       if (trendsRes.status === 200) setTrends(trendsRes.data);
       if (statusRes.status === 200) setStatusBreakdown(statusRes.data);
       if (topMedRes.status === 200)
-        setTopMedicines(topMedRes.data?.topMedicines || []);
-      if (stockRes.status === 200) setStockAlerts(stockRes.data?.alerts || []);
+        setTopMedicines(topMedRes.data || []);
+      if (stockRes.status === 200) setStockAlerts(stockRes.data?.lowStock || []);
       if (revCatRes.status === 200) setRevenueByCategory(revCatRes.data);
       if (refundRes.status === 200) setRefundRate(refundRes.data);
     } catch (err) {
@@ -148,10 +148,12 @@ export default function OrdersDashboard() {
 
   const statusChartData = statusBreakdown
     ? {
-        labels: Object.keys(statusBreakdown.statusBreakdown || {}),
+        labels: Object.keys(statusBreakdown).filter(k => !k.endsWith('Percentage') && k !== 'total'),
         datasets: [
           {
-            data: Object.values(statusBreakdown.statusBreakdown || {}),
+            data: Object.keys(statusBreakdown)
+              .filter(k => !k.endsWith('Percentage') && k !== 'total')
+              .map(k => statusBreakdown[k]),
             backgroundColor: [
               'rgba(255, 206, 86, 0.8)',
               'rgba(54, 162, 235, 0.8)',
@@ -165,12 +167,13 @@ export default function OrdersDashboard() {
 
   const revenueByCategoryData = revenueByCategory
     ? {
-        labels: revenueByCategory.categoryRevenue?.map(c => c.category) || [],
+        labels: Object.keys(revenueByCategory).filter(k => k !== 'total'),
         datasets: [
           {
             label: 'Revenue (PKR)',
-            data:
-              revenueByCategory.categoryRevenue?.map(c => c.totalRevenue) || [],
+            data: Object.keys(revenueByCategory)
+              .filter(k => k !== 'total')
+              .map(k => revenueByCategory[k].revenue),
             backgroundColor: 'rgba(26, 54, 93, 0.7)',
           },
         ],
@@ -313,7 +316,7 @@ export default function OrdersDashboard() {
             </span>
           </div>
           <h3 className="text-3xl font-bold">
-            {refundRate?.refundRate || '0%'}
+            {typeof refundRate?.refundRate === 'number' ? `${refundRate.refundRate.toFixed(2)}%` : '0%'}
           </h3>
           <p className="text-red-100 text-sm mt-1">Refund Rate</p>
         </div>
@@ -378,9 +381,9 @@ export default function OrdersDashboard() {
                 className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
               >
                 <div className="flex-1">
-                  <p className="font-medium text-gray-800">{med.medicine}</p>
+                  <p className="font-medium text-gray-800">{med.medicineName || med.medicine}</p>
                   <p className="text-sm text-gray-500">
-                    Sold: {med.totalQuantity} units
+                    Sold: {med.totalQuantitySold || med.totalQuantity} units
                   </p>
                 </div>
                 <div className="text-right">

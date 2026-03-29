@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaEye, FaEyeSlash, FaUser, FaLock, FaCheckCircle, FaArrowRight, FaArrowLeft } from 'react-icons/fa';
+import {
+  FaEye,
+  FaEyeSlash,
+  FaUser,
+  FaLock,
+  FaCheckCircle,
+  FaArrowRight,
+  FaArrowLeft,
+} from 'react-icons/fa';
 import { doctorAuthApi } from '../../../../core/api/doctor/auth';
 
 const STEPS = [
@@ -28,11 +36,13 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState({ text: '', type: '' });
   // eslint-disable-next-line no-unused-vars
   const [success, setSuccess] = useState(false);
 
   // Handle input changes
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -40,7 +50,11 @@ export default function Register() {
     }));
     // Clear field error on change
     if (fieldErrors[name]) {
-      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
     }
     if (error) setError('');
   };
@@ -63,8 +77,11 @@ export default function Register() {
 
     if (!formData.contactNumber.trim()) {
       errors.contactNumber = 'Contact number is required';
-    } else if (formData.contactNumber.length < 10 || formData.contactNumber.length > 15) {
-      errors.contactNumber = 'Contact number must be 10-15 digits';
+    } else if (
+      !/^(\+92|92|0)(3\d{2})[- ]?\d{7}$/.test(formData.contactNumber.trim())
+    ) {
+      errors.contactNumber =
+        'Please provide a valid Pakistan contact number (e.g. 03001234567)';
     }
 
     setFieldErrors(errors);
@@ -77,8 +94,8 @@ export default function Register() {
 
     if (!formData.password) {
       errors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+    } else if (formData.password.length < 8) {
+      errors.password = 'Password must be at least 8 characters';
     }
 
     if (!formData.confirmPassword) {
@@ -117,7 +134,7 @@ export default function Register() {
   };
 
   // Handle form submit on Step 2
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setError('');
 
@@ -129,16 +146,58 @@ export default function Register() {
       const { confirmPassword: _confirmPassword, ...dataToSend } = formData;
       const response = await doctorAuthApi.register(dataToSend);
 
-      if (response.data?.nextStep === 'verify-email') {
+      if (response.data?.nextStep === 'verify-email' || response.nextStep === 'verify-email') {
         setSuccess(true);
         setCurrentStep(3);
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message || 'Registration failed. Please try again.'
-      );
+      const serverError = err.response?.data;
+      if (
+        serverError?.message === 'Validation error' &&
+        Array.isArray(serverError.error)
+      ) {
+        // Map backend field names to friendly names for better display
+        const friendlyErrors = serverError.error.map(msg => {
+            return msg.replace(/"/g, '')
+                      .replace('fullName', 'Full Name')
+                      .replace('contactNumber', 'Contact Number')
+                      .replace('dateOfBirth', 'Date of Birth')
+                      .replace('password', 'Password');
+        });
+        setError(friendlyErrors.join('. '));
+      } else if (serverError?.message === 'Email already exists') {
+        setError('This email is already registered. If you forgot your password or didn\'t get a verification email, please contact support as the resend feature is pending.');
+      } else {
+        setError(
+          serverError?.message || 'Registration failed. Please try again.'
+        );
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendLink = async () => {
+    setResendLoading(true);
+    setResendMessage({ text: '', type: '' });
+
+    try {
+      const response = await doctorAuthApi.resendVerificationEmail(formData.email);
+      setResendMessage({
+        text:
+          response.message ||
+          'Verification email resent! Please check your inbox.',
+        type: 'success',
+      });
+    } catch (err) {
+      setResendMessage({
+        text:
+          err.response?.data?.message ||
+          'Failed to resend email. Please try again.',
+        type: 'error',
+      });
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -162,23 +221,24 @@ export default function Register() {
               <div
                 className={`
                   w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border-2
-                  ${isCompleted
-                    ? 'bg-green-500 border-green-500 text-white shadow-md shadow-green-200'
-                    : isActive
-                      ? 'bg-blue-500 border-blue-500 text-white shadow-md shadow-blue-200'
-                      : 'bg-gray-100 border-gray-300 text-gray-400'
+                  ${
+                    isCompleted
+                      ? 'bg-green-500 border-green-500 text-white shadow-md shadow-green-200'
+                      : isActive
+                        ? 'bg-blue-500 border-blue-500 text-white shadow-md shadow-blue-200'
+                        : 'bg-gray-100 border-gray-300 text-gray-400'
                   }
                 `}
               >
-                {isCompleted ? (
-                  <FaCheckCircle size={16} />
-                ) : (
-                  <Icon size={14} />
-                )}
+                {isCompleted ? <FaCheckCircle size={16} /> : <Icon size={14} />}
               </div>
               <span
                 className={`text-xs mt-1 font-medium transition-colors duration-300 ${
-                  isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-400'
+                  isActive
+                    ? 'text-blue-600'
+                    : isCompleted
+                      ? 'text-green-600'
+                      : 'text-gray-400'
                 }`}
               >
                 {step.title}
@@ -328,7 +388,11 @@ export default function Register() {
             className="absolute right-3 top-9 cursor-pointer text-gray-500 hover:text-gray-700"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
           >
-            {showConfirmPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+            {showConfirmPassword ? (
+              <FaEyeSlash size={16} />
+            ) : (
+              <FaEye size={16} />
+            )}
           </span>
           {fieldErrors.confirmPassword && (
             <p className="input-error">{fieldErrors.confirmPassword}</p>
@@ -395,9 +459,25 @@ export default function Register() {
         >
           {loading ? (
             <>
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              <svg
+                className="animate-spin h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
               </svg>
               Creating Account...
             </>
@@ -419,7 +499,9 @@ export default function Register() {
         </div>
       </div>
 
-      <h2 className="text-xl font-bold text-gray-800 mb-2">Registration Successful! 🎉</h2>
+      <h2 className="text-xl font-bold text-gray-800 mb-2">
+        Registration Successful! 🎉
+      </h2>
 
       <div className="alert-success text-left">
         <p className="font-medium">Check your email!</p>
@@ -430,7 +512,29 @@ export default function Register() {
         <p className="text-sm mt-1">
           Please verify your email to continue with the application process.
         </p>
+
+        <button
+          type="button"
+          onClick={handleResendLink}
+          disabled={resendLoading}
+          className="mt-3 text-sm font-bold underline hover:no-underline disabled:opacity-50 text-green-700"
+        >
+          {resendLoading ? 'Sending...' : "Didn't get email? Resend"}
+        </button>
       </div>
+
+      {/* Resend Status Message */}
+      {resendMessage.text && (
+        <div
+          className={`mt-4 p-3 rounded-lg text-sm ${
+            resendMessage.type === 'success'
+              ? 'bg-green-100 text-green-700 border border-green-200'
+              : 'bg-red-100 text-red-700 border border-red-200'
+          }`}
+        >
+          {resendMessage.text}
+        </div>
+      )}
 
       {/* What's Next Info */}
       <div className="alert-info text-left mt-4">
@@ -444,10 +548,7 @@ export default function Register() {
         </ol>
       </div>
 
-      <Link
-        to="/doctor/login"
-        className="btn-primary block text-center mt-6"
-      >
+      <Link to="/doctor/login" className="btn-primary block text-center mt-6">
         Go to Login
       </Link>
     </div>

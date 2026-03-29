@@ -227,10 +227,10 @@ export default function PatientFeedback() {
       const response = await doctorReviewsApi.getReviewStats();
       const data = response.data || {};
       setStats({
-        averageRating: data.averageRating || 0,
-        totalReviews: data.totalReviews || 0,
-        distribution: data.distribution || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-        sentimentBreakdown: data.sentimentBreakdown || { positive: 0, negative: 0, neutral: 0 },
+        averageRating: data.average_rating || 0,
+        totalReviews: data.total_reviews || 0,
+        distribution: data.rating_distribution || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+        sentimentBreakdown: data.sentiment_distribution?.counts || { positive: 0, negative: 0, neutral: 0 },
       });
     } catch (err) {
       console.error('Failed to fetch stats:', err);
@@ -259,7 +259,7 @@ export default function PatientFeedback() {
       const data = response.data || {};
 
       setReviews(data.reviews || []);
-      setTotalPages(data.totalPages || 1);
+      setTotalPages(data.pagination?.total_pages || 1);
 
       // If stats endpoint failed, compute from all reviews
       if (stats.totalReviews === 0 && data.reviews?.length > 0) {
@@ -273,7 +273,7 @@ export default function PatientFeedback() {
         });
         setStats({
           averageRating: avg,
-          totalReviews: data.totalCount || allReviews.length,
+          totalReviews: data.pagination?.total_items || allReviews.length,
           distribution: dist,
           sentimentBreakdown: sent,
         });

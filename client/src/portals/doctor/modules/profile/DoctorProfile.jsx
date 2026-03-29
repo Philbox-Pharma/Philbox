@@ -18,7 +18,8 @@ import {
   FaVideo,
   FaClinicMedical,
   FaGlobe,
-  FaMapMarkerAlt,
+  FaBuilding,
+  FaLink,
 } from 'react-icons/fa';
 import { doctorProfileApi } from '../../../../core/api/doctor/profile.service';
 
@@ -39,10 +40,9 @@ export default function DoctorProfile() {
   const [basicForm, setBasicForm] = useState({
     name: '',
     specialization: '',
-    bio: '',
     phone_number: '',
-    qualifications: '',
-    experience_years: '',
+    affiliated_hospital: '',
+    onlineProfileURL: '',
   });
   const [consultationType, setConsultationType] = useState('both');
   const [consultationFee, setConsultationFee] = useState('');
@@ -62,17 +62,20 @@ export default function DoctorProfile() {
       setLoading(true);
       const response = await doctorProfileApi.getProfile();
       const data = response.data || {};
-      setProfile(data);
+      setProfile({
+        ...data,
+        name: data.fullName,
+        phone_number: data.contactNumber,
+      });
 
       setBasicForm({
-        name: data.name || data.fullName || '',
-        specialization: data.specialization || '',
-        bio: data.bio || '',
-        phone_number: data.phone_number || '',
-        qualifications: Array.isArray(data.qualifications)
-          ? data.qualifications.join(', ')
-          : data.qualifications || '',
-        experience_years: data.experience_years || '',
+        name: data.fullName || '',
+        specialization: Array.isArray(data.specialization)
+          ? data.specialization.join(', ')
+          : data.specialization || '',
+        phone_number: data.contactNumber || '',
+        affiliated_hospital: data.affiliated_hospital || '',
+        onlineProfileURL: data.onlineProfileURL || '',
       });
       setConsultationType(data.consultation_type || 'both');
       setConsultationFee(data.consultation_fee || '');
@@ -107,20 +110,14 @@ export default function DoctorProfile() {
     try {
       setSaving(true);
       const payload = {
-        name: basicForm.name,
-        specialization: basicForm.specialization,
-        bio: basicForm.bio,
-        phone_number: basicForm.phone_number,
-        experience_years: basicForm.experience_years
-          ? Number(basicForm.experience_years)
-          : undefined,
+        fullName: basicForm.name,
+        contactNumber: basicForm.phone_number,
+        specialization: basicForm.specialization
+          ? basicForm.specialization.split(',').map(s => s.trim()).filter(Boolean)
+          : [],
+        affiliated_hospital: basicForm.affiliated_hospital,
+        onlineProfileURL: basicForm.onlineProfileURL,
       };
-      if (basicForm.qualifications) {
-        payload.qualifications = basicForm.qualifications
-          .split(',')
-          .map((q) => q.trim())
-          .filter(Boolean);
-      }
 
       await doctorProfileApi.updateProfile(payload);
       showMessage('Profile updated successfully!');
@@ -131,8 +128,10 @@ export default function DoctorProfile() {
       if (setDoctor) {
         setDoctor({
           ...doctor,
-          name: basicForm.name,
-          specialization: basicForm.specialization,
+          fullName: basicForm.name,
+          specialization: basicForm.specialization
+            ? basicForm.specialization.split(',').map(s => s.trim()).filter(Boolean)
+            : [],
         });
       }
     } catch (err) {
@@ -387,66 +386,72 @@ export default function DoctorProfile() {
                 />
               </div>
               <div>
-                <label className="input-label">Experience (Years)</label>
-                <input
-                  type="number"
-                  value={basicForm.experience_years}
-                  onChange={(e) =>
-                    setBasicForm({ ...basicForm, experience_years: e.target.value })
-                  }
-                  className="input-field"
-                  min="0"
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="input-label">Qualifications (comma-separated)</label>
+                <label className="input-label">Affiliated Hospital</label>
                 <input
                   type="text"
-                  value={basicForm.qualifications}
+                  value={basicForm.affiliated_hospital}
                   onChange={(e) =>
-                    setBasicForm({ ...basicForm, qualifications: e.target.value })
+                    setBasicForm({ ...basicForm, affiliated_hospital: e.target.value })
                   }
                   className="input-field"
-                  placeholder="MBBS, MD, FCPS..."
+                  placeholder="e.g., City Hospital"
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="input-label">Bio</label>
-                <textarea
-                  value={basicForm.bio}
-                  onChange={(e) => setBasicForm({ ...basicForm, bio: e.target.value })}
-                  className="input-field resize-none"
-                  rows={3}
-                  placeholder="Tell patients about yourself..."
+                <label className="input-label">Online Profile / Website Link</label>
+                <input
+                  type="url"
+                  value={basicForm.onlineProfileURL}
+                  onChange={(e) =>
+                    setBasicForm({ ...basicForm, onlineProfileURL: e.target.value })
+                  }
+                  className="input-field"
+                  placeholder="https://..."
                 />
               </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <InfoRow icon={FaUserMd} label="Full Name" value={profile?.name || '—'} />
-              <InfoRow icon={FaStethoscope} label="Specialization" value={profile?.specialization || '—'} />
+              <InfoRow icon={FaUserMd} label="Full Name" value={profile?.fullName || profile?.name || '—'} />
+              <InfoRow
+                icon={FaStethoscope}
+                label="Specialization"
+                value={
+                  Array.isArray(profile?.specialization)
+                    ? profile.specialization.join(', ')
+                    : profile?.specialization || '—'
+                }
+              />
               <InfoRow icon={FaEnvelope} label="Email" value={profile?.email || '—'} />
-              <InfoRow icon={FaPhone} label="Phone" value={profile?.phone_number || '—'} />
+              <InfoRow icon={FaPhone} label="Phone" value={profile?.contactNumber || profile?.phone_number || '—'} />
               <InfoRow
                 icon={FaBriefcase}
                 label="Experience"
-                value={profile?.experience_years ? `${profile.experience_years} years` : '—'}
+                value={
+                  Array.isArray(profile?.experience_details) && profile.experience_details.length > 0
+                    ? `${profile.experience_details.length} positions listed`
+                    : '—'
+                }
               />
               <InfoRow
                 icon={FaGraduationCap}
                 label="Qualifications"
                 value={
-                  Array.isArray(profile?.qualifications)
-                    ? profile.qualifications.join(', ')
-                    : profile?.qualifications || '—'
+                  Array.isArray(profile?.educational_details) && profile.educational_details.length > 0
+                    ? profile.educational_details.map(edu => edu.degree).filter(Boolean).join(', ')
+                    : '—'
                 }
               />
-              {profile?.bio && (
-                <div className="sm:col-span-2">
-                  <p className="text-xs text-gray-500 mb-1">Bio</p>
-                  <p className="text-sm text-gray-700 leading-relaxed">{profile.bio}</p>
-                </div>
-              )}
+              <InfoRow
+                icon={FaBuilding}
+                label="Affiliated Hospital"
+                value={profile?.affiliated_hospital || '—'}
+              />
+              <InfoRow
+                icon={FaLink}
+                label="Profile URL"
+                value={profile?.onlineProfileURL || '—'}
+              />
             </div>
           )}
         </div>
@@ -495,20 +500,23 @@ export default function DoctorProfile() {
                   { value: 'online', label: 'Online Only', icon: FaVideo, color: 'blue' },
                   { value: 'in-person', label: 'In-Person Only', icon: FaClinicMedical, color: 'purple' },
                   { value: 'both', label: 'Both', icon: FaGlobe, color: 'emerald' },
-                ].map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setConsultationType(opt.value)}
-                    className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all flex flex-col items-center gap-1.5 ${
-                      consultationType === opt.value
-                        ? `border-${opt.color}-500 bg-${opt.color}-50 text-${opt.color}-700`
-                        : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                    }`}
-                  >
-                    <opt.icon size={16} />
-                    {opt.label}
-                  </button>
-                ))}
+                ].map((opt) => {
+                  const Icon = opt.icon;
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => setConsultationType(opt.value)}
+                      className={`flex-1 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-all flex flex-col items-center gap-1.5 ${
+                        consultationType === opt.value
+                          ? `border-${opt.color}-500 bg-${opt.color}-50 text-${opt.color}-700`
+                          : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                      }`}
+                    >
+                      <Icon size={16} />
+                      {opt.label}
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -658,6 +666,7 @@ export default function DoctorProfile() {
 // INFO ROW COMPONENT
 // ==========================================
 function InfoRow({ icon: Icon, label, value }) {
+  if (!Icon) return null;
   return (
     <div className="flex items-start gap-3">
       <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">

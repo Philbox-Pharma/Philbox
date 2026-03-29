@@ -1,23 +1,36 @@
-import apiClient from "../client";
+import apiClient from '../client';
 
-const BASE_URL = "/doctor/auth";
+const BASE_URL = '/doctor/auth';
 
 export const doctorAuthApi = {
   // Register
-  register: async (data) => {
+  register: async data => {
     const response = await apiClient.post(`${BASE_URL}/register`, data);
     return response.data;
   },
 
   // Verify Email
-  verifyEmail: async (token) => {
-    const response = await apiClient.post(`${BASE_URL}/verify-email`, { token });
+  verifyEmail: async token => {
+    const response = await apiClient.post(`${BASE_URL}/verify-email`, {
+      token,
+    });
+    return response.data;
+  },
+
+  // Resend Verification Email
+  resendVerificationEmail: async email => {
+    const response = await apiClient.post(`${BASE_URL}/resend-verification`, {
+      email,
+    });
     return response.data;
   },
 
   // Login
   login: async (email, password) => {
-    const response = await apiClient.post(`${BASE_URL}/login`, { email, password });
+    const response = await apiClient.post(`${BASE_URL}/login`, {
+      email,
+      password,
+    });
     return response.data;
   },
 
@@ -28,34 +41,47 @@ export const doctorAuthApi = {
   },
 
   // Submit Application (Step 1 - Documents)
-  submitApplication: async (formData) => {
-    const response = await apiClient.post(`${BASE_URL}/submit-application`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  submitApplication: async formData => {
+    const response = await apiClient.post(
+      `${BASE_URL}/submit-application`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
     return response.data;
   },
 
   // Complete Profile (Step 2)
-  completeProfile: async (formData) => {
-    const response = await apiClient.post(`${BASE_URL}/complete-profile`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  completeProfile: async formData => {
+    const response = await apiClient.post(
+      `${BASE_URL}/complete-profile`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
     return response.data;
   },
 
   // Forgot Password
-  forgotPassword: async (email) => {
-    const response = await apiClient.post(`${BASE_URL}/forget-password`, { email });
+  forgotPassword: async email => {
+    const response = await apiClient.post(`${BASE_URL}/forget-password`, {
+      email,
+    });
     return response.data;
   },
 
   // Reset Password
   resetPassword: async (token, newPassword) => {
-    const response = await apiClient.post(`${BASE_URL}/reset-password`, { token, newPassword });
+    const response = await apiClient.post(`${BASE_URL}/reset-password`, {
+      token,
+      newPassword,
+    });
     return response.data;
   },
 
