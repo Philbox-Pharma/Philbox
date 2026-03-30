@@ -1,5 +1,10 @@
 import mongoose from 'mongoose';
 
+const isPrescriptionRequiredForCategory = category =>
+  String(category || '')
+    .trim()
+    .toLowerCase() === 'narcotics';
+
 /**
  * Medicine Model (Alias for MedicineItem)
  * This model is registered as 'Medicine' to support legacy references in OrderItem schema
@@ -36,6 +41,12 @@ const medicineSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: null,
+    },
+    prescription_required: {
+      type: Boolean,
+      default: function () {
+        return isPrescriptionRequiredForCategory(this.medicine_category);
+      },
     },
     class: {
       type: mongoose.Schema.Types.ObjectId,
@@ -76,11 +87,58 @@ const medicineSchema = new mongoose.Schema(
   }
 );
 
+medicineSchema.pre('validate', function (next) {
+  this.prescription_required = isPrescriptionRequiredForCategory(
+    this.medicine_category
+  );
+  next();
+});
+
+const applyPrescriptionFlagForUpdate = update => {
+  if (!update || Array.isArray(update)) return update;
+
+  const setPayload = update.$set || update;
+  if (!Object.prototype.hasOwnProperty.call(setPayload, 'medicine_category')) {
+    return update;
+  }
+
+  const prescriptionRequired = isPrescriptionRequiredForCategory(
+    setPayload.medicine_category
+  );
+
+  if (update.$set) {
+    update.$set.prescription_required = prescriptionRequired;
+  } else {
+    update.prescription_required = prescriptionRequired;
+  }
+
+  return update;
+};
+
+medicineSchema.pre('findOneAndUpdate', function (next) {
+  const update = this.getUpdate() || {};
+  this.setUpdate(applyPrescriptionFlagForUpdate(update));
+  next();
+});
+
+medicineSchema.pre('updateOne', function (next) {
+  const update = this.getUpdate() || {};
+  this.setUpdate(applyPrescriptionFlagForUpdate(update));
+  next();
+});
+
+medicineSchema.pre('updateMany', function (next) {
+  const update = this.getUpdate() || {};
+  this.setUpdate(applyPrescriptionFlagForUpdate(update));
+  next();
+});
+
 // Indexes for better query performance
 medicineSchema.index({ branch_id: 1 });
 medicineSchema.index({ salesperson_id: 1 });
 medicineSchema.index({ Name: 1 });
 medicineSchema.index({ medicine_category: 1 });
+medicineSchema.index({ prescription_required: 1 });
 
 const Medicine =
   mongoose.models.Medicine || mongoose.model('Medicine', medicineSchema);

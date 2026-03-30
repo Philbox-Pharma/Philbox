@@ -1,16 +1,21 @@
-server/
+server
++---.tmp
+|   +---smoke-inventory.xlsx
 +---docs
-|   \---SEED_DATA_GUIDE.md
+|   +---MEDICINE_CATALOG_API.md
+|   +---MEDICINE_CATALOG_QUICK_REFERENCE.md
+|   +---MEDICINE_CATALOG_TESTING.md
+|   +---SEED_DATA_GUIDE.md
 +---src
 |   +---main
 |   |   +---config
 |   |   |   +---brevo.config.js
 |   |   |   +---cloudinary.config.js
 |   |   |   +---db.config.js
-|   |   |   \---socket.config.js
+|   |   |   +---socket.config.js
 |   |   +---constants
 |   |   |   +---global.mail.constants.js
-|   |   |   \---global.routes.constants.js
+|   |   |   +---global.routes.constants.js
 |   |   +---dto
 |   |   |   +---admin
 |   |   |   |   +---activityLogsAnalytics.dto.js
@@ -29,14 +34,14 @@ server/
 |   |   |   |   +---salesperson.dto.js
 |   |   |   |   +---salespersonPerformance.dto.js
 |   |   |   |   +---salespersonTask.dto.js
-|   |   |   |   \---userEngagementAnalytics.dto.js
+|   |   |   |   +---userEngagementAnalytics.dto.js
 |   |   |   +---customer
 |   |   |   |   +---appointments.dto.js
 |   |   |   |   +---auth.dto.js
 |   |   |   |   +---dashboard.dto.js
 |   |   |   |   +---profile.dto.js
 |   |   |   |   +---refillReminder.dto.js
-|   |   |   |   \---searchHistory.dto.js
+|   |   |   |   +---searchHistory.dto.js
 |   |   |   +---doctor
 |   |   |   |   +---appointments.dto.js
 |   |   |   |   +---auth.dto.js
@@ -44,15 +49,17 @@ server/
 |   |   |   |   +---medicalHistory.dto.js
 |   |   |   |   +---prescription.dto.js
 |   |   |   |   +---reviews.dto.js
-|   |   |   |   \---slots.dto.js
-|   |   |   \---salesperson
-|   |   |       +---auth.dto.js
-|   |   |       +---dashboard.dto.js
-|   |   |       +---lowStockAlerts.dto.js
-|   |   |       \---task.dto.js
+|   |   |   |   +---slots.dto.js
+|   |   |   +---salesperson
+|   |   |   |   +---auth.dto.js
+|   |   |   |   +---dashboard.dto.js
+|   |   |   |   +---inventory.dto.js
+|   |   |   |   +---inventoryUpload.dto.js
+|   |   |   |   +---lowStockAlerts.dto.js
+|   |   |   |   +---task.dto.js
 |   |   +---middlewares
 |   |   |   +---multer.middleware.js
-|   |   |   \---rbac.middleware.js
+|   |   |   +---rbac.middleware.js
 |   |   +---models
 |   |   |   +---Address.js
 |   |   |   +---Admin.js
@@ -93,302 +100,327 @@ server/
 |   |   |   +---SearchHistory.js
 |   |   |   +---StockInHand.js
 |   |   |   +---Transaction.js
-|   |   |   \---UploadedInventoryFile.js
+|   |   |   +---UploadedInventoryFile.js
 |   |   +---modules
 |   |   |   +---admin
 |   |   |   |   +---features
 |   |   |   |   |   +---auth
 |   |   |   |   |   |   +---controller
-|   |   |   |   |   |   |   \---auth.controller.js
+|   |   |   |   |   |   |   +---auth.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---auth.routes.js
-|   |   |   |   |   |   \---services
-|   |   |   |   |   |       \---auth.service.js
+|   |   |   |   |   |   |   +---auth.routes.js
+|   |   |   |   |   |   +---services
+|   |   |   |   |   |   |   +---auth.service.js
 |   |   |   |   |   +---branch_management
 |   |   |   |   |   |   +---controller
-|   |   |   |   |   |   |   \---branch.controller.js
+|   |   |   |   |   |   |   +---branch.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---branch.routes.js
-|   |   |   |   |   |   \---services
-|   |   |   |   |   |       \---branch.service.js
+|   |   |   |   |   |   |   +---branch.routes.js
+|   |   |   |   |   |   +---services
+|   |   |   |   |   |   |   +---branch.service.js
 |   |   |   |   |   +---customer_management
 |   |   |   |   |   |   +---controller
-|   |   |   |   |   |   |   \---customer.controller.js
+|   |   |   |   |   |   |   +---customer.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---customer.routes.js
-|   |   |   |   |   |   \---services
-|   |   |   |   |   |       \---customer.service.js
+|   |   |   |   |   |   |   +---customer.routes.js
+|   |   |   |   |   |   +---services
+|   |   |   |   |   |   |   +---customer.service.js
 |   |   |   |   |   +---dashboard_management
 |   |   |   |   |   |   +---activity_logs_analytics
 |   |   |   |   |   |   |   +---controller
-|   |   |   |   |   |   |   |   \---activityLogsAnalytics.controller.js
+|   |   |   |   |   |   |   |   +---activityLogsAnalytics.controller.js
 |   |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   |   \---activityLogsAnalytics.routes.js
-|   |   |   |   |   |   |   \---services
-|   |   |   |   |   |   |       \---activityLogsAnalytics.service.js
+|   |   |   |   |   |   |   |   +---activityLogsAnalytics.routes.js
+|   |   |   |   |   |   |   +---services
+|   |   |   |   |   |   |   |   +---activityLogsAnalytics.service.js
 |   |   |   |   |   |   +---appointment_analytics
 |   |   |   |   |   |   |   +---controller
-|   |   |   |   |   |   |   |   \---appointmentAnalytics.controller.js
+|   |   |   |   |   |   |   |   +---appointmentAnalytics.controller.js
 |   |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   |   \---appointmentAnalytics.routes.js
-|   |   |   |   |   |   |   \---services
-|   |   |   |   |   |   |       \---appointmentAnalytics.service.js
+|   |   |   |   |   |   |   |   +---appointmentAnalytics.routes.js
+|   |   |   |   |   |   |   +---services
+|   |   |   |   |   |   |   |   +---appointmentAnalytics.service.js
 |   |   |   |   |   |   +---feedback_complaints_analytics
 |   |   |   |   |   |   |   +---controller
-|   |   |   |   |   |   |   |   \---feedbackComplaintsAnalytics.controller.js
+|   |   |   |   |   |   |   |   +---feedbackComplaintsAnalytics.controller.js
 |   |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   |   \---feedbackComplaintsAnalytics.routes.js
-|   |   |   |   |   |   |   \---services
-|   |   |   |   |   |   |       \---feedbackComplaintsAnalytics.service.js
+|   |   |   |   |   |   |   |   +---feedbackComplaintsAnalytics.routes.js
+|   |   |   |   |   |   |   +---services
+|   |   |   |   |   |   |   |   +---feedbackComplaintsAnalytics.service.js
 |   |   |   |   |   |   +---orders_analytics
 |   |   |   |   |   |   |   +---controller
-|   |   |   |   |   |   |   |   \---ordersAnalytics.controller.js
+|   |   |   |   |   |   |   |   +---ordersAnalytics.controller.js
 |   |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   |   \---ordersAnalytics.routes.js
-|   |   |   |   |   |   |   \---services
-|   |   |   |   |   |   |       \---ordersAnalytics.service.js
+|   |   |   |   |   |   |   |   +---ordersAnalytics.routes.js
+|   |   |   |   |   |   |   +---services
+|   |   |   |   |   |   |   |   +---ordersAnalytics.service.js
 |   |   |   |   |   |   +---revenue_analytics
 |   |   |   |   |   |   |   +---controller
-|   |   |   |   |   |   |   |   \---revenueAnalytics.controller.js
+|   |   |   |   |   |   |   |   +---revenueAnalytics.controller.js
 |   |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   |   \---revenueAnalytics.routes.js
-|   |   |   |   |   |   |   \---services
-|   |   |   |   |   |   |       \---revenueAnalytics.service.js
+|   |   |   |   |   |   |   |   +---revenueAnalytics.routes.js
+|   |   |   |   |   |   |   +---services
+|   |   |   |   |   |   |   |   +---revenueAnalytics.service.js
 |   |   |   |   |   |   +---salesperson_performance
 |   |   |   |   |   |   |   +---controller
-|   |   |   |   |   |   |   |   \---salespersonPerformance.controller.js
+|   |   |   |   |   |   |   |   +---salespersonPerformance.controller.js
 |   |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   |   \---salespersonPerformance.routes.js
-|   |   |   |   |   |   |   \---services
-|   |   |   |   |   |   |       \---salespersonPerformance.service.js
-|   |   |   |   |   |   \---user_engagement_analytics
-|   |   |   |   |   |       +---controller
-|   |   |   |   |   |       |   \---userEngagementAnalytics.controller.js
-|   |   |   |   |   |       +---routes
-|   |   |   |   |   |       |   \---userEngagementAnalytics.routes.js
-|   |   |   |   |   |       \---services
-|   |   |   |   |   |           \---userEngagementAnalytics.service.js
+|   |   |   |   |   |   |   |   +---salespersonPerformance.routes.js
+|   |   |   |   |   |   |   +---services
+|   |   |   |   |   |   |   |   +---salespersonPerformance.service.js
+|   |   |   |   |   |   +---user_engagement_analytics
+|   |   |   |   |   |   |   +---controller
+|   |   |   |   |   |   |   |   +---userEngagementAnalytics.controller.js
+|   |   |   |   |   |   |   +---routes
+|   |   |   |   |   |   |   |   +---userEngagementAnalytics.routes.js
+|   |   |   |   |   |   |   +---services
+|   |   |   |   |   |   |   |   +---userEngagementAnalytics.service.js
 |   |   |   |   |   +---doctor_management
 |   |   |   |   |   |   +---controller
-|   |   |   |   |   |   |   \---doctor.controller.js
+|   |   |   |   |   |   |   +---doctor.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---doctor.routes.js
-|   |   |   |   |   |   \---services
-|   |   |   |   |   |       \---doctor.service.js
+|   |   |   |   |   |   |   +---doctor.routes.js
+|   |   |   |   |   |   +---services
+|   |   |   |   |   |   |   +---doctor.service.js
 |   |   |   |   |   +---permissions_management
 |   |   |   |   |   |   +---controller
-|   |   |   |   |   |   |   \---permissions.controller.js
+|   |   |   |   |   |   |   +---permissions.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---permissions.routes.js
-|   |   |   |   |   |   \---services
-|   |   |   |   |   |       \---permissions.service.js
+|   |   |   |   |   |   |   +---permissions.routes.js
+|   |   |   |   |   |   +---services
+|   |   |   |   |   |   |   +---permissions.service.js
 |   |   |   |   |   +---profile_management
 |   |   |   |   |   |   +---controller
-|   |   |   |   |   |   |   \---profile.controller.js
+|   |   |   |   |   |   |   +---profile.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---profile.routes.js
-|   |   |   |   |   |   \---service
-|   |   |   |   |   |       \---profile.service.js
+|   |   |   |   |   |   |   +---profile.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---profile.service.js
 |   |   |   |   |   +---salesperson_task_management
 |   |   |   |   |   |   +---controller
-|   |   |   |   |   |   |   \---salespersonTask.controller.js
+|   |   |   |   |   |   |   +---salespersonTask.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---salespersonTask.routes.js
-|   |   |   |   |   |   \---services
-|   |   |   |   |   |       \---salespersonTask.service.js
-|   |   |   |   |   \---user_management
-|   |   |   |   |       +---controller
-|   |   |   |   |       |   \---user.controller.js
-|   |   |   |   |       +---routes
-|   |   |   |   |       |   \---user.routes.js
-|   |   |   |   |       \---services
-|   |   |   |   |           \---user.service.js
+|   |   |   |   |   |   |   +---salespersonTask.routes.js
+|   |   |   |   |   |   +---services
+|   |   |   |   |   |   |   +---salespersonTask.service.js
+|   |   |   |   |   +---user_management
+|   |   |   |   |   |   +---controller
+|   |   |   |   |   |   |   +---user.controller.js
+|   |   |   |   |   |   +---routes
+|   |   |   |   |   |   |   +---user.routes.js
+|   |   |   |   |   |   +---services
+|   |   |   |   |   |   |   +---user.service.js
 |   |   |   |   +---middleware
-|   |   |   |   |   \---auth.middleware.js
-|   |   |   |   \---utils
-|   |   |   |       +---logAdminActivities.js
-|   |   |   |       \---seedAddress.js
+|   |   |   |   |   +---auth.middleware.js
+|   |   |   |   +---utils
+|   |   |   |   |   +---logAdminActivities.js
+|   |   |   |   |   +---seedAddress.js
 |   |   |   +---customer
 |   |   |   |   +---features
 |   |   |   |   |   +---appointments
 |   |   |   |   |   |   +---controllers
-|   |   |   |   |   |   |   \---appointments.controller.js
+|   |   |   |   |   |   |   +---appointments.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---appointments.routes.js
-|   |   |   |   |   |   \---service
-|   |   |   |   |   |       \---appointments.service.js
+|   |   |   |   |   |   |   +---appointments.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---appointments.service.js
 |   |   |   |   |   +---auth
 |   |   |   |   |   |   +---config
-|   |   |   |   |   |   |   \---passport.config.js
+|   |   |   |   |   |   |   +---passport.config.js
 |   |   |   |   |   |   +---controllers
-|   |   |   |   |   |   |   \---auth.controller.js
+|   |   |   |   |   |   |   +---auth.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---auth.routes.js
+|   |   |   |   |   |   |   +---auth.routes.js
 |   |   |   |   |   |   +---service
-|   |   |   |   |   |   |   \---auth.service.js
-|   |   |   |   |   |   \---utils
-|   |   |   |   |   |       \---auth.utils.js
+|   |   |   |   |   |   |   +---auth.service.js
+|   |   |   |   |   |   +---utils
+|   |   |   |   |   |   |   +---auth.utils.js
 |   |   |   |   |   +---dashboard
 |   |   |   |   |   |   +---controllers
-|   |   |   |   |   |   |   \---dashboard.controller.js
+|   |   |   |   |   |   |   +---dashboard.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---dashboard.routes.js
-|   |   |   |   |   |   \---service
-|   |   |   |   |   |       \---dashboard.service.js
+|   |   |   |   |   |   |   +---dashboard.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---dashboard.service.js
+|   |   |   |   |   +---medicine_catalog
+|   |   |   |   |   |   +---controllers
+|   |   |   |   |   |   |   +---catalog.controller.js
+|   |   |   |   |   |   +---routes
+|   |   |   |   |   |   |   +---catalog.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---catalog.service.js
 |   |   |   |   |   +---profile
 |   |   |   |   |   |   +---controllers
-|   |   |   |   |   |   |   \---profile.controller.js
+|   |   |   |   |   |   |   +---profile.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---profile.routes.js
-|   |   |   |   |   |   \---service
-|   |   |   |   |   |       \---profile.service.js
+|   |   |   |   |   |   |   +---profile.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---profile.service.js
 |   |   |   |   |   +---refill_reminder
 |   |   |   |   |   |   +---controllers
-|   |   |   |   |   |   |   \---refillReminder.controller.js
+|   |   |   |   |   |   |   +---refillReminder.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---refillReminder.routes.js
-|   |   |   |   |   |   \---service
-|   |   |   |   |   |       \---refillReminder.service.js
-|   |   |   |   |   \---search_history
-|   |   |   |   |       +---controllers
-|   |   |   |   |       |   \---searchHistory.controller.js
-|   |   |   |   |       +---routes
-|   |   |   |   |       |   \---searchHistory.routes.js
-|   |   |   |   |       \---service
-|   |   |   |   |           \---searchHistory.service.js
+|   |   |   |   |   |   |   +---refillReminder.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---refillReminder.service.js
+|   |   |   |   |   +---search_history
+|   |   |   |   |   |   +---controllers
+|   |   |   |   |   |   |   +---searchHistory.controller.js
+|   |   |   |   |   |   +---routes
+|   |   |   |   |   |   |   +---searchHistory.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---searchHistory.service.js
 |   |   |   |   +---middleware
-|   |   |   |   |   \---auth.middleware.js
-|   |   |   |   \---utils
-|   |   |   |       \---logCustomerActivities.js
+|   |   |   |   |   +---auth.middleware.js
+|   |   |   |   +---utils
+|   |   |   |   |   +---logCustomerActivities.js
 |   |   |   +---doctor
 |   |   |   |   +---features
 |   |   |   |   |   +---appointments
 |   |   |   |   |   |   +---controllers
-|   |   |   |   |   |   |   \---appointments.controller.js
+|   |   |   |   |   |   |   +---appointments.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---appointments.routes.js
-|   |   |   |   |   |   \---service
-|   |   |   |   |   |       \---appointments.service.js
+|   |   |   |   |   |   |   +---appointments.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---appointments.service.js
 |   |   |   |   |   +---auth
 |   |   |   |   |   |   +---config
-|   |   |   |   |   |   |   \---passport.config.js
+|   |   |   |   |   |   |   +---passport.config.js
 |   |   |   |   |   |   +---controllers
-|   |   |   |   |   |   |   \---auth.controller.js
+|   |   |   |   |   |   |   +---auth.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---auth.routes.js
-|   |   |   |   |   |   \---service
-|   |   |   |   |   |       \---auth.service.js
+|   |   |   |   |   |   |   +---auth.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---auth.service.js
 |   |   |   |   |   +---consultations
 |   |   |   |   |   |   +---controllers
-|   |   |   |   |   |   |   \---consultations.controller.js
+|   |   |   |   |   |   |   +---consultations.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---consultations.routes.js
-|   |   |   |   |   |   \---service
-|   |   |   |   |   |       \---consultations.service.js
+|   |   |   |   |   |   |   +---consultations.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---consultations.service.js
 |   |   |   |   |   +---medical_history
 |   |   |   |   |   |   +---controllers
-|   |   |   |   |   |   |   \---medicalHistory.controller.js
+|   |   |   |   |   |   |   +---medicalHistory.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---medicalHistory.routes.js
-|   |   |   |   |   |   \---service
-|   |   |   |   |   |       \---medicalHistory.service.js
+|   |   |   |   |   |   |   +---medicalHistory.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---medicalHistory.service.js
 |   |   |   |   |   +---onboarding
 |   |   |   |   |   |   +---controllers
-|   |   |   |   |   |   |   \---onboarding.controller.js
+|   |   |   |   |   |   |   +---onboarding.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---onboarding.routes.js
-|   |   |   |   |   |   \---service
-|   |   |   |   |   |       \---onboarding.service.js
+|   |   |   |   |   |   |   +---onboarding.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---onboarding.service.js
 |   |   |   |   |   +---prescriptions
 |   |   |   |   |   |   +---controllers
-|   |   |   |   |   |   |   \---prescription.controller.js
+|   |   |   |   |   |   |   +---prescription.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---prescription.routes.js
-|   |   |   |   |   |   \---service
-|   |   |   |   |   |       \---prescriptions.service.js
+|   |   |   |   |   |   |   +---prescription.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---prescriptions.service.js
 |   |   |   |   |   +---profile
 |   |   |   |   |   |   +---controllers
-|   |   |   |   |   |   |   \---profile.controller.js
+|   |   |   |   |   |   |   +---profile.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---profile.routes.js
-|   |   |   |   |   |   \---service
-|   |   |   |   |   |       \---profile.service.js
+|   |   |   |   |   |   |   +---profile.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---profile.service.js
 |   |   |   |   |   +---reviews
 |   |   |   |   |   |   +---controllers
-|   |   |   |   |   |   |   \---reviews.controller.js
+|   |   |   |   |   |   |   +---reviews.controller.js
 |   |   |   |   |   |   +---routes
-|   |   |   |   |   |   |   \---reviews.routes.js
-|   |   |   |   |   |   \---service
-|   |   |   |   |   |       \---reviews.service.js
-|   |   |   |   |   \---slots
-|   |   |   |   |       +---controllers
-|   |   |   |   |       |   \---slots.controller.js
-|   |   |   |   |       +---routes
-|   |   |   |   |       |   \---slots.routes.js
-|   |   |   |   |       \---service
-|   |   |   |   |           \---slots.service.js
+|   |   |   |   |   |   |   +---reviews.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---reviews.service.js
+|   |   |   |   |   +---slots
+|   |   |   |   |   |   +---controllers
+|   |   |   |   |   |   |   +---slots.controller.js
+|   |   |   |   |   |   +---routes
+|   |   |   |   |   |   |   +---slots.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---slots.service.js
 |   |   |   |   +---middleware
-|   |   |   |   |   \---auth.middleware.js
-|   |   |   |   \---utils
-|   |   |   |       \---logDoctorActivities.js
-|   |   |   \---salesperson
-|   |   |       +---features
-|   |   |       |   +---auth
-|   |   |       |   |   +---controllers
-|   |   |       |   |   |   \---auth.controller.js
-|   |   |       |   |   +---routes
-|   |   |       |   |   |   \---auth.routes.js
-|   |   |       |   |   \---service
-|   |   |       |   |       \---auth.service.js
-|   |   |       |   +---dashboard
-|   |   |       |   |   +---controllers
-|   |   |       |   |   |   \---dashboard.controller.js
-|   |   |       |   |   +---routes
-|   |   |       |   |   |   \---dashboard.routes.js
-|   |   |       |   |   \---service
-|   |   |       |   |       \---dashboard.service.js
-|   |   |       |   +---low_stock_alerts
-|   |   |       |   |   +---controllers
-|   |   |       |   |   |   \---lowStockAlerts.controller.js
-|   |   |       |   |   +---routes
-|   |   |       |   |   |   \---lowStockAlerts.routes.js
-|   |   |       |   |   \---service
-|   |   |       |   |       \---lowStockAlerts.service.js
-|   |   |       |   \---task_management
-|   |   |       |       +---controllers
-|   |   |       |       |   \---task.controller.js
-|   |   |       |       +---routes
-|   |   |       |       |   \---task.routes.js
-|   |   |       |       \---services
-|   |   |       |           \---task.service.js
-|   |   |       +---middleware
-|   |   |       |   \---auth.middleware.js
-|   |   |       \---utils
-|   |   |           +---logSalespersonActivity.js
-|   |   |           \---lowStockDetection.js
+|   |   |   |   |   +---auth.middleware.js
+|   |   |   |   +---utils
+|   |   |   |   |   +---logDoctorActivities.js
+|   |   |   +---salesperson
+|   |   |   |   +---features
+|   |   |   |   |   +---auth
+|   |   |   |   |   |   +---controllers
+|   |   |   |   |   |   |   +---auth.controller.js
+|   |   |   |   |   |   +---routes
+|   |   |   |   |   |   |   +---auth.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---auth.service.js
+|   |   |   |   |   +---dashboard
+|   |   |   |   |   |   +---controllers
+|   |   |   |   |   |   |   +---dashboard.controller.js
+|   |   |   |   |   |   +---routes
+|   |   |   |   |   |   |   +---dashboard.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---dashboard.service.js
+|   |   |   |   |   +---inventory
+|   |   |   |   |   |   +---controllers
+|   |   |   |   |   |   |   +---inventory.controller.js
+|   |   |   |   |   |   +---routes
+|   |   |   |   |   |   |   +---inventory.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---inventory.service.js
+|   |   |   |   |   +---inventory_upload
+|   |   |   |   |   |   +---controllers
+|   |   |   |   |   |   |   +---inventoryUpload.controller.js
+|   |   |   |   |   |   +---routes
+|   |   |   |   |   |   |   +---inventoryUpload.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---inventoryUpload.service.js
+|   |   |   |   |   +---low_stock_alerts
+|   |   |   |   |   |   +---controllers
+|   |   |   |   |   |   |   +---lowStockAlerts.controller.js
+|   |   |   |   |   |   +---routes
+|   |   |   |   |   |   |   +---lowStockAlerts.routes.js
+|   |   |   |   |   |   +---service
+|   |   |   |   |   |   |   +---lowStockAlerts.service.js
+|   |   |   |   |   +---task_management
+|   |   |   |   |   |   +---controllers
+|   |   |   |   |   |   |   +---task.controller.js
+|   |   |   |   |   |   +---routes
+|   |   |   |   |   |   |   +---task.routes.js
+|   |   |   |   |   |   +---services
+|   |   |   |   |   |   |   +---task.service.js
+|   |   |   |   +---middleware
+|   |   |   |   |   +---auth.middleware.js
+|   |   |   |   +---utils
+|   |   |   |   |   +---fetchMedicineDetails.js
+|   |   |   |   |   +---logSalespersonActivity.js
+|   |   |   |   |   +---lowStockDetection.js
 |   |   +---shared
-|   |   |   \---routes
-|   |   |       \---health.route.js
+|   |   |   +---routes
+|   |   |   |   +---health.route.js
 |   |   +---utils
 |   |   |   +---authRoutesLimiter.js
 |   |   |   +---generateOTP.js
 |   |   |   +---notificationService.js
 |   |   |   +---paginate.js
 |   |   |   +---permissionHelpers.js
+|   |   |   +---proximityCalculator.js
 |   |   |   +---reminderScheduler.js
 |   |   |   +---sendEmail.js
 |   |   |   +---sendResponse.js
-|   |   |   \---uploadToCloudinary.js
+|   |   |   +---uploadToCloudinary.js
 |   |   +---validator
-|   |   |   \---joiValidate.middleware.js
-|   |   \---server.js
+|   |   |   +---joiValidate.middleware.js
+|   |   +---server.js
 |   +---scripts
-|   |   \---seedData.js
+|   |   +---seedData.js
 |   +---temp
-|   \---tests
-|       +---Sockets_Testing_Guide.md
-|       +---socket-test-client.html
-|       \---testNotifications.js
+|   +---tests
+|   |   +---Sockets_Testing_Guide.md
+|   |   +---socket-test-client.html
+|   |   +---testNotifications.js
++---temp
+|   +---ddg_check.mjs
 +---.env
 +---.eslintrc.json
 +---.prettierignore
@@ -400,4 +432,4 @@ server/
 +---server_tree.txt
 +---server_tree_clean.txt
 +---server_tree_updated.txt
-\---vercel.json
++---vercel.json
