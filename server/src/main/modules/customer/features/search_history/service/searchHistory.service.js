@@ -1,7 +1,29 @@
+import mongoose from 'mongoose';
+
+import Medicine from '../../../../../models/Medicine.js';
 import SearchHistory from '../../../../../models/SearchHistory.js';
 import { logCustomerActivity } from '../../../utils/logCustomerActivities.js';
 
 class CustomerSearchHistoryService {
+  _escapeRegex(value = '') {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  _normalizeSuggestion(value = '') {
+    return String(value).trim().toLowerCase();
+  }
+
+  _pushSuggestion(suggestions, seen, suggestion) {
+    const key = this._normalizeSuggestion(suggestion.value);
+    if (!key || seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    suggestions.push(suggestion);
+    return true;
+  }
+
   /**
    * Save a search query to history
    */
@@ -137,6 +159,128 @@ class CustomerSearchHistoryService {
     } catch (error) {
       throw error;
     }
+  }
+
+  /**
+   * Get autocomplete suggestions from personal history, other users' history,
+   * and medicine catalog matches.
+   */
+  async getSuggestions(customerId, searchTerm, limit = 10) {
+    const normalizedQuery = String(searchTerm || '').trim();
+    if (normalizedQuery.length < 1) {
+      return [];
+    }
+
+    const escapedQuery = this._escapeRegex(normalizedQuery);
+    const suggestions = [];
+    const seen = new Set();
+    const personalLimit = Math.max(2, Math.ceil(limit / 2));
+    const historyScanLimit = Math.max(limit * 4, 20);
+    const medicineScanLimit = Math.max(limit * 3, 15);
+    const customerObjectId = new mongoose.Types.ObjectId(customerId);
+
+    const personalHistory = await SearchHistory.find({
+      customer_id: customerId,
+      query: { $regex: `^${escapedQuery}`, $options: 'i' },
+    })
+      .sort({ searched_at: -1 })
+      .limit(historyScanLimit)
+      .lean();
+
+    for (const item of personalHistory) {
+      this._pushSuggestion(suggestions, seen, {
+        value: item.query,
+        label: item.query,
+        source: 'personal_history',
+      });
+
+      if (suggestions.length >= personalLimit) {
+        break;
+      }
+    }
+
+    const popularHistory = await SearchHistory.aggregate([
+      {
+        $match: {
+          customer_id: { $ne: customerObjectId },
+          query: { $regex: `^${escapedQuery}`, $options: 'i' },
+        },
+      },
+      {
+        $project: {
+          normalizedQuery: {
+            $toLower: { $trim: { input: '$query' } },
+          },
+          query: 1,
+          searched_at: 1,
+        },
+      },
+      {
+        $group: {
+          _id: '$normalizedQuery',
+          query: { $first: '$query' },
+          count: { $sum: 1 },
+          lastSearchedAt: { $max: '$searched_at' },
+        },
+      },
+      {
+        $sort: { count: -1, lastSearchedAt: -1 },
+      },
+      {
+        $limit: historyScanLimit,
+      },
+    ]);
+
+    for (const item of popularHistory) {
+      this._pushSuggestion(suggestions, seen, {
+        value: item.query,
+        label: item.query,
+        source: 'popular_history',
+        score: item.count,
+      });
+
+      if (suggestions.length >= limit) {
+        break;
+      }
+    }
+
+    if (suggestions.length < limit) {
+      const medicineMatches = await Medicine.find({
+        is_available: true,
+        $or: [
+          { Name: { $regex: escapedQuery, $options: 'i' } },
+          { alias_name: { $regex: escapedQuery, $options: 'i' } },
+          { medicine_category: { $regex: escapedQuery, $options: 'i' } },
+          { mgs: { $regex: escapedQuery, $options: 'i' } },
+        ],
+      })
+        .select('Name alias_name medicine_category mgs class')
+        .populate('class', 'name')
+        .sort({ Name: 1 })
+        .limit(medicineScanLimit)
+        .lean();
+
+      for (const medicine of medicineMatches) {
+        const label = medicine.Name || medicine.alias_name;
+        if (!label) continue;
+
+        this._pushSuggestion(suggestions, seen, {
+          value: label,
+          label,
+          source: 'medicine',
+          medicineId: medicine._id,
+          medicineCategory: medicine.medicine_category || null,
+          dosageForm: medicine.mgs || null,
+          className: medicine.class?.name || null,
+        });
+
+        if (suggestions.length >= limit) {
+          break;
+        }
+      }
+    }
+
+    return suggestions.slice(0, limit);
   }
 }
 
