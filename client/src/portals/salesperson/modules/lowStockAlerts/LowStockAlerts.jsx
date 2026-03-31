@@ -7,29 +7,33 @@ import {
   FaBuilding,
   FaBoxes,
   FaTimes,
+  FaArrowLeft,
+  FaChevronLeft,
+  FaChevronRight,
 } from 'react-icons/fa';
 import { salespersonAlertsApi } from '../../../../core/api/salesperson/alerts.service';
+import { useAuth } from '../../../../shared/context/AuthContext';
+import { salespersonTasksApi } from '../../../../core/api/salesperson/tasks.service';
 
 // ==========================================
 // LOW STOCK CARD
 // ==========================================
-function AlertCard({ alert, onResolve, onUpdateThreshold }) {
+function AlertCard({ alert, onResolve, onUpdateThreshold, branchMap = {} }) {
   const [editingThreshold, setEditingThreshold] = useState(false);
-  const [newThreshold, setNewThreshold] = useState(alert.threshold_level || 10);
+  const [newThreshold, setNewThreshold] = useState(alert.threshold || 10);
   const [resolving, setResolving] = useState(false);
 
-  const medicine = alert.medicine_id || {};
-  const isCritical = alert.last_reported_stock < 5; // Configurable or fixed to 5 based on criteria
-  const isResolved = alert.status === 'resolved';
+  const isCritical = alert.isCritical || alert.currentStock < 5;
+  const isResolved = false; // Backend only returns active ones anyway
 
   const handleResolve = async () => {
     setResolving(true);
-    await onResolve(alert._id);
+    await onResolve(alert.stockId);
     setResolving(false);
   };
 
   const handleSaveThreshold = async () => {
-    await onUpdateThreshold(medicine._id, newThreshold);
+    await onUpdateThreshold(alert.medicineId, newThreshold);
     setEditingThreshold(false);
   };
 
@@ -53,10 +57,10 @@ function AlertCard({ alert, onResolve, onUpdateThreshold }) {
           </div>
           <div>
             <h3 className="font-bold text-gray-800 text-lg leading-tight group-hover:text-blue-600 transition-colors">
-              {medicine.name || 'Unknown Medicine'}
+              {alert.medicineName || 'Unknown Medicine'}
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              {medicine.manufacturer || 'General'} • {medicine.form || 'Tablet'}
+              Available Unit • Managed Stock
             </p>
           </div>
         </div>
@@ -71,7 +75,7 @@ function AlertCard({ alert, onResolve, onUpdateThreshold }) {
         <div className="text-center flex-1 border-r border-gray-200">
           <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Current Stock</p>
           <p className={`text-2xl font-black ${isResolved ? 'text-gray-600' : isCritical ? 'text-red-600' : 'text-orange-600'}`}>
-            {alert.last_reported_stock}
+            {alert.currentStock}
           </p>
         </div>
         <div className="text-center flex-1">
@@ -90,7 +94,7 @@ function AlertCard({ alert, onResolve, onUpdateThreshold }) {
             </div>
           ) : (
             <div className="flex items-center justify-center gap-2 group cursor-pointer" onClick={() => !isResolved && setEditingThreshold(true)}>
-              <p className="text-2xl font-bold text-gray-700">{alert.threshold_level || 10}</p>
+              <p className="text-2xl font-bold text-gray-700">{alert.threshold || 10}</p>
               {!isResolved && <FaCog size={12} className="text-gray-300 group-hover:text-blue-500 transition-colors" />}
             </div>
           )}
@@ -99,7 +103,7 @@ function AlertCard({ alert, onResolve, onUpdateThreshold }) {
 
       <div className="flex items-center justify-between mt-auto border-t border-gray-100 pt-3">
         <p className="text-xs text-gray-400 flex items-center gap-1.5">
-          <FaBuilding /> Branch: <span className="font-semibold text-gray-600 truncate max-w-[100px]" title={alert.branch_id?.name}>{alert.branch_id?.name || 'Main Branch'}</span>
+          <FaBuilding /> Branch: <span className="font-semibold text-gray-600 truncate max-w-[100px]" title={alert.branchId}>{branchMap[alert.branchId] || alert.branchId || 'Main Branch'}</span>
         </p>
         
         {!isResolved ? (
@@ -122,13 +126,37 @@ function AlertCard({ alert, onResolve, onUpdateThreshold }) {
 // MAIN COMPONENT
 // ==========================================
 export default function LowStockAlerts() {
+  const { user } = useAuth();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [branchMap, setBranchMap] = useState({});
+
+  // Discover Branch Names (Reuse discovered logic)
+  useEffect(() => {
+    const discoverNames = async () => {
+      const map = {};
+      const branches = user?.branches_to_be_managed || [];
+      branches.forEach(b => { if (b?._id && b?.name) map[b._id] = b.name; });
+
+      try {
+        const taskRes = await salespersonTasksApi.getMyTasks({ limit: 50 });
+        const tasks = taskRes.data?.data?.tasks || taskRes.data?.tasks || [];
+        if (Array.isArray(tasks)) {
+           tasks.forEach(t => {
+             if (t.branch_id && t.branch_id._id && t.branch_id.name) {
+               map[t.branch_id._id] = t.branch_id.name;
+             }
+           });
+        }
+      } catch { /* silent fallback */ }
+      setBranchMap(map);
+    };
+    if (user) discoverNames();
+  }, [user]);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('active'); // active, resolved, all
   
   // Pagination
   const [page, setPage] = useState(1);
@@ -143,19 +171,21 @@ export default function LowStockAlerts() {
       const filters = {
         page,
         limit,
-        status: statusFilter !== 'all' ? statusFilter : undefined,
       };
 
       const res = await salespersonAlertsApi.getLowStockAlerts(filters);
-      setAlerts(res.data?.data?.alerts || []);
-      setTotalPages(res.data?.data?.totalPages || 1);
+      const result = res.data?.data?.data;
+      setAlerts(result?.alerts || []);
+      
+      const total = result?.pagination?.total || 0;
+      setTotalPages(Math.ceil(total / limit) || 1);
     } catch (err) {
       console.error(err);
       setError('Failed to load alerts.');
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter]);
+  }, [page]);
 
   useEffect(() => {
     fetchAlerts();
@@ -164,11 +194,8 @@ export default function LowStockAlerts() {
   const handleResolveAlert = async (stockId) => {
     try {
       await salespersonAlertsApi.resolveLowStockAlert(stockId);
-      // Update locally
-      setAlerts(prev => prev.map(a => a._id === stockId ? { ...a, status: 'resolved' } : a));
-      if (statusFilter === 'active') {
-        setTimeout(fetchAlerts, 1000); // refresh after brief delay
-      }
+      // Since only active alerts are shown, refresh the list after resolving
+      setTimeout(fetchAlerts, 1000); 
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to resolve alert');
     }
@@ -178,7 +205,7 @@ export default function LowStockAlerts() {
     try {
       await salespersonAlertsApi.updateThreshold(medicineId, Number(threshold));
       // Update locally
-      setAlerts(prev => prev.map(a => a.medicine_id?._id === medicineId ? { ...a, threshold_level: threshold } : a));
+      setAlerts(prev => prev.map(a => a.medicineId === medicineId ? { ...a, threshold: threshold } : a));
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to update threshold');
     }
@@ -217,18 +244,6 @@ export default function LowStockAlerts() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-600 whitespace-nowrap">Status:</label>
-          <select
-            value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="bg-gray-50 border border-gray-200 rounded-lg text-sm px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500"
-          >
-            <option value="active">Active Alerts</option>
-            <option value="resolved">Resolved</option>
-            <option value="all">All Alerts</option>
-          </select>
-        </div>
       </div>
 
       {/* Loading & Error */}
@@ -249,10 +264,11 @@ export default function LowStockAlerts() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredAlerts.map(alert => (
             <AlertCard
-              key={alert._id}
+              key={alert.stockId}
               alert={alert}
               onResolve={handleResolveAlert}
               onUpdateThreshold={handleUpdateThreshold}
+              branchMap={branchMap}
             />
           ))}
         </div>
@@ -264,11 +280,9 @@ export default function LowStockAlerts() {
           <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <FaCheck className="text-3xl text-green-500" />
           </div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Inventory Looks Good!</h2>
+           <h2 className="text-xl font-bold text-gray-800 mb-2">Inventory Looks Good!</h2>
           <p className="text-gray-500 max-w-sm mx-auto">
-            {statusFilter === 'active' 
-              ? "You have 0 active low stock alerts right now. We'll notify you when medicine stocks run low."
-              : "No alerts match your current filters."}
+             You have 0 active low stock alerts right now. We'll notify you when medicine stocks run low.
           </p>
         </div>
       )}

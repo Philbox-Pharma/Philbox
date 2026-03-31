@@ -232,12 +232,31 @@ export default function DoctorSidebar({ isOpen, closeSidebar, doctor }) {
         {doctor && (
           <div className="px-4 py-3 border-b border-white/10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                {doctor.name ? doctor.name.charAt(0).toUpperCase() : 'D'}
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden ring-2 ring-emerald-400/30">
+                {doctor?.profile_img_url ? (
+                  <>
+                    <img
+                      src={doctor.profile_img_url}
+                      alt={doctor.fullName || 'Doctor'}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    <div className="hidden items-center justify-center w-full h-full">
+                      {(doctor.fullName || doctor.name || 'D').charAt(0).toUpperCase()}
+                    </div>
+                  </>
+                ) : (
+                  (doctor.fullName || doctor.name || 'D').charAt(0).toUpperCase()
+                )}
               </div>
               <div className="min-w-0">
                 <p className="text-white text-sm font-medium truncate">
-                  Dr. {doctor.name || 'Doctor'}
+                  {(doctor.fullName || doctor.name || 'Doctor').toLowerCase().startsWith('dr') 
+                    ? (doctor.fullName || doctor.name || 'Doctor') 
+                    : `Dr. ${doctor.fullName || doctor.name || 'Doctor'}`}
                 </p>
                 <p className="text-emerald-400/70 text-xs truncate">
                   {doctor.specialization || 'Physician'}

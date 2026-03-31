@@ -3,45 +3,39 @@ import { Outlet } from 'react-router-dom';
 import DoctorHeader from './components/Header';
 import DoctorSidebar from './components/DoctorSidebar';
 import DoctorFooter from './components/Footer';
+import { useAuth } from '../../../shared/context/AuthContext';
 
 export default function DoctorLayout() {
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [doctor, setDoctor] = useState(null);
 
-  // Load doctor data from localStorage on mount
+  // Sync state with auth context user
   useEffect(() => {
-    const storedDoctor = localStorage.getItem('doctorData');
-    if (storedDoctor) {
-      try {
-        const parsed = JSON.parse(storedDoctor);
-        setDoctor({
-          _id: parsed._id || parsed.id,
-          name: parsed.name || parsed.fullName || 'Doctor',
-          email: parsed.email,
-          specialization: parsed.specialization || 'Physician',
-          profile_img_url: parsed.profile_img_url || parsed.profileImage || null,
-          phone_number: parsed.phone_number || parsed.contactNumber,
-          consultation_type: parsed.consultation_type || 'both',
-          consultation_fee: parsed.consultation_fee || 0,
-          status: parsed.status || 'approved',
-        });
-      } catch (e) {
-        console.error('Failed to parse doctor data:', e);
-        setDefaultDoctor();
-      }
+    if (user) {
+      setDoctor({
+        _id: user._id || user.id,
+        fullName: user.fullName || user.name || 'Doctor',
+        email: user.email,
+        specialization: Array.isArray(user.specialization) 
+          ? user.specialization[0] 
+          : (user.specialization || 'Physician'),
+        profile_img_url: user.profile_img_url || user.profileImage || null,
+        phone_number: user.phone_number || user.contactNumber,
+        consultation_type: user.consultation_type || 'both',
+        consultation_fee: user.consultation_fee || 0,
+        status: user.status || 'approved',
+      });
     } else {
-      setDefaultDoctor();
+      // Fallback only if no auth user (should be guarded by private route)
+      setDoctor({
+        _id: '1',
+        fullName: 'Doctor',
+        email: 'doctor@philbox.com',
+        specialization: 'General Physician',
+      });
     }
-  }, []);
-
-  const setDefaultDoctor = () => {
-    setDoctor({
-      _id: '1',
-      name: 'Doctor',
-      email: 'doctor@philbox.com',
-      specialization: 'General Physician',
-    });
-  };
+  }, [user]);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);

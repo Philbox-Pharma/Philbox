@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   FaBoxes,
   FaSearch,
@@ -17,21 +17,23 @@ import {
   FaChevronRight,
 } from 'react-icons/fa';
 import { salespersonInventoryApi } from '../../../../core/api/salesperson/inventory.service';
+import { salespersonTasksApi } from '../../../../core/api/salesperson/tasks.service';
+import { useAuth } from '../../../../shared/context/AuthContext';
 
 // ==========================================
 // ADD/EDIT MEDICINE MODAL
 // ==========================================
-function MedicineModal({ isOpen, onClose, onSave, medicine, branchId }) {
+function MedicineModal({ isOpen, onClose, onSave, medicine, branchId, availableBranches = [], branchMap = {} }) {
   const [form, setForm] = useState({
     Name: '',
-    manufacturer: '',
-    category: '',
-    form: 'Tablet',
-    unit_price: '',
-    quantity_in_stock: '',
-    reorder_level: '',
-    description: '',
-    requires_prescription: false,
+    alias_name: '',
+    medicine_category: '',
+    sale_price: '',
+    purchase_price: '',
+    pack_unit: '',
+    quantity: '',
+    packQty: '',
+    stockValue: '',
     branch_id: branchId || '',
   });
   const [saving, setSaving] = useState(false);
@@ -40,27 +42,27 @@ function MedicineModal({ isOpen, onClose, onSave, medicine, branchId }) {
     if (medicine) {
       setForm({
         Name: medicine.Name || medicine.name || '',
-        manufacturer: medicine.manufacturer || '',
-        category: medicine.category || '',
-        form: medicine.form || 'Tablet',
-        unit_price: medicine.unit_price || medicine.price || '',
-        quantity_in_stock: medicine.quantity_in_stock ?? medicine.stock?.quantity_in_stock ?? '',
-        reorder_level: medicine.reorder_level ?? medicine.stock?.reorder_level ?? '',
-        description: medicine.description || '',
-        requires_prescription: medicine.requires_prescription || false,
+        alias_name: medicine.alias_name || '',
+        medicine_category: medicine.medicine_category || medicine.category || '',
+        sale_price: medicine.sale_price !== undefined ? medicine.sale_price : (medicine.unit_price || medicine.price || ''),
+        purchase_price: medicine.purchase_price || '',
+        pack_unit: medicine.pack_unit || '',
+        quantity: medicine.stock?.quantity !== undefined ? medicine.stock.quantity : (medicine.quantity || ''),
+        packQty: medicine.stock?.packQty !== undefined ? medicine.stock.packQty : (medicine.packQty || ''),
+        stockValue: medicine.stock?.stockValue !== undefined ? medicine.stock.stockValue : (medicine.stockValue || ''),
         branch_id: medicine.branch_id?._id || medicine.branch_id || branchId || '',
       });
     } else {
       setForm({
         Name: '',
-        manufacturer: '',
-        category: '',
-        form: 'Tablet',
-        unit_price: '',
-        quantity_in_stock: '',
-        reorder_level: '',
-        description: '',
-        requires_prescription: false,
+        alias_name: '',
+        medicine_category: '',
+        sale_price: '',
+        purchase_price: '',
+        pack_unit: '',
+        quantity: '',
+        packQty: '',
+        stockValue: '',
         branch_id: branchId || '',
       });
     }
@@ -69,11 +71,35 @@ function MedicineModal({ isOpen, onClose, onSave, medicine, branchId }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
+    
+    // Convert numeric fields from string to proper numbers
+    const payload = {
+      ...form,
+      sale_price: form.sale_price !== '' ? Number(form.sale_price) : undefined,
+      purchase_price: form.purchase_price !== '' ? Number(form.purchase_price) : undefined,
+      pack_unit: form.pack_unit !== '' ? Number(form.pack_unit) : undefined,
+      quantity: form.quantity !== '' ? Number(form.quantity) : undefined,
+      packQty: form.packQty !== '' ? Number(form.packQty) : undefined,
+      stockValue: form.stockValue !== '' ? Number(form.stockValue) : undefined,
+    };
+
     try {
-      await onSave(form);
+      await onSave(payload);
       onClose();
     } catch (err) {
-      alert(err.response?.data?.message || err.message || 'Failed to save medicine');
+      // Ensure we display detailed validation errors from backend's 'error' field
+      const data = err.response?.data;
+      let errorMsg = data?.message || err.message || 'Failed to save medicine';
+      
+      if (data?.error) {
+        if (Array.isArray(data.error)) {
+          errorMsg += ':\n• ' + data.error.join('\n• ');
+        } else {
+          errorMsg += ':\n' + data.error;
+        }
+      }
+      
+      alert(errorMsg);
     } finally {
       setSaving(false);
     }
@@ -97,6 +123,33 @@ function MedicineModal({ isOpen, onClose, onSave, medicine, branchId }) {
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Branch *</label>
+              {availableBranches.length > 0 ? (
+                <select
+                  value={form.branch_id}
+                  onChange={(e) => setForm({ ...form, branch_id: e.target.value })}
+                  required
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="" disabled>Select Branch</option>
+                  {availableBranches.map((b, idx) => {
+                    const bId = b?._id || b;
+                    const bName = branchMap[bId] || b?.name || `Branch ${idx + 1}`;
+                    return <option key={bId} value={bId}>{bName} ({bId.substring(0,8)})</option>;
+                  })}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={form.branch_id}
+                  onChange={(e) => setForm({ ...form, branch_id: e.target.value })}
+                  required
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Paste Branch ID..."
+                />
+              )}
+            </div>
+            <div className="sm:col-span-2">
               <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Medicine Name *</label>
               <input
                 type="text"
@@ -104,99 +157,96 @@ function MedicineModal({ isOpen, onClose, onSave, medicine, branchId }) {
                 onChange={(e) => setForm({ ...form, Name: e.target.value })}
                 required
                 className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="e.g. Paracetamol 500mg"
+                placeholder="e.g. Panadol"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Manufacturer</label>
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Alias Name</label>
               <input
                 type="text"
-                value={form.manufacturer}
-                onChange={(e) => setForm({ ...form, manufacturer: e.target.value })}
+                value={form.alias_name}
+                onChange={(e) => setForm({ ...form, alias_name: e.target.value })}
                 className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g. PharmaCo"
+                placeholder="e.g. Paracetamol"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Category</label>
               <input
                 type="text"
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                value={form.medicine_category}
+                onChange={(e) => setForm({ ...form, medicine_category: e.target.value })}
                 className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g. Pain Relief"
+                placeholder="e.g. Analgesic"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Form</label>
-              <select
-                value={form.form}
-                onChange={(e) => setForm({ ...form, form: e.target.value })}
-                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="Tablet">Tablet</option>
-                <option value="Capsule">Capsule</option>
-                <option value="Syrup">Syrup</option>
-                <option value="Injection">Injection</option>
-                <option value="Cream">Cream</option>
-                <option value="Drops">Drops</option>
-                <option value="Inhaler">Inhaler</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Unit Price (PKR)</label>
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Sale Price (PKR)</label>
               <input
                 type="number"
                 min="0"
                 step="0.01"
-                value={form.unit_price}
-                onChange={(e) => setForm({ ...form, unit_price: e.target.value })}
+                value={form.sale_price}
+                onChange={(e) => setForm({ ...form, sale_price: e.target.value })}
                 className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="0.00"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Quantity in Stock</label>
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Purchase Price (PKR)</label>
               <input
                 type="number"
                 min="0"
-                value={form.quantity_in_stock}
-                onChange={(e) => setForm({ ...form, quantity_in_stock: e.target.value })}
+                step="0.01"
+                value={form.purchase_price}
+                onChange={(e) => setForm({ ...form, purchase_price: e.target.value })}
+                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Quantity</label>
+              <input
+                type="number"
+                min="0"
+                value={form.quantity}
+                onChange={(e) => setForm({ ...form, quantity: e.target.value })}
                 className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="0"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Reorder Level</label>
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Pack Unit</label>
               <input
                 type="number"
                 min="0"
-                value={form.reorder_level}
-                onChange={(e) => setForm({ ...form, reorder_level: e.target.value })}
+                value={form.pack_unit}
+                onChange={(e) => setForm({ ...form, pack_unit: e.target.value })}
                 className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="10"
               />
             </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Description</label>
-              <textarea
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                rows="2"
-                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                placeholder="Brief description..."
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Pack Qty</label>
+              <input
+                type="number"
+                min="0"
+                value={form.packQty}
+                onChange={(e) => setForm({ ...form, packQty: e.target.value })}
+                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="5"
               />
             </div>
-            <div className="sm:col-span-2 flex items-center gap-2">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Stock Value</label>
               <input
-                type="checkbox"
-                id="rx"
-                checked={form.requires_prescription}
-                onChange={(e) => setForm({ ...form, requires_prescription: e.target.checked })}
-                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                type="number"
+                min="0"
+                value={form.stockValue}
+                onChange={(e) => setForm({ ...form, stockValue: e.target.value })}
+                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="0"
               />
-              <label htmlFor="rx" className="text-sm text-gray-700">Requires Prescription</label>
             </div>
           </div>
 
@@ -222,14 +272,14 @@ function MedicineModal({ isOpen, onClose, onSave, medicine, branchId }) {
 // ==========================================
 // MEDICINE DETAIL MODAL
 // ==========================================
-function MedicineDetailModal({ isOpen, onClose, medicineId }) {
+function MedicineDetailModal({ isOpen, onClose, medicineId, branchId }) {
   const [medicine, setMedicine] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isOpen || !medicineId) return;
     setLoading(true);
-    salespersonInventoryApi.getMedicineDetails(medicineId)
+    salespersonInventoryApi.getMedicineDetails(medicineId, branchId)
       .then(res => {
         setMedicine(res.data || res);
       })
@@ -237,7 +287,7 @@ function MedicineDetailModal({ isOpen, onClose, medicineId }) {
         console.error('Failed to fetch medicine details:', err);
       })
       .finally(() => setLoading(false));
-  }, [isOpen, medicineId]);
+  }, [isOpen, medicineId, branchId]);
 
   if (!isOpen) return null;
 
@@ -263,27 +313,27 @@ function MedicineDetailModal({ isOpen, onClose, medicineId }) {
             <div className="space-y-4">
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
                 <h3 className="text-xl font-bold text-gray-800">{medicine.Name || medicine.name}</h3>
-                <p className="text-sm text-gray-500 mt-1">{medicine.manufacturer || 'N/A'} • {medicine.form || 'Tablet'}</p>
+                <p className="text-sm text-gray-500 mt-1">{medicine.alias_name || 'N/A'} • {medicine.form || 'Tablet'}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
                   <p className="text-xs font-semibold text-gray-500 uppercase">Category</p>
-                  <p className="text-sm font-bold text-gray-800 mt-1">{medicine.category || 'General'}</p>
+                  <p className="text-sm font-bold text-gray-800 mt-1">{medicine.medicine_category || medicine.category || 'General'}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
                   <p className="text-xs font-semibold text-gray-500 uppercase">Unit Price</p>
-                  <p className="text-sm font-bold text-gray-800 mt-1">Rs. {medicine.unit_price || medicine.price || '0'}</p>
+                  <p className="text-sm font-bold text-gray-800 mt-1">Rs. {medicine.sale_price || medicine.price || '0'}</p>
                 </div>
-                <div className={`rounded-lg p-3 border ${(medicine.stock?.quantity_in_stock ?? medicine.quantity_in_stock ?? 0) < (medicine.stock?.reorder_level ?? medicine.reorder_level ?? 10) ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+                <div className={`rounded-lg p-3 border ${(medicine.quantity || medicine.quantity_in_stock || 0) < (medicine.reorder_level || 10) ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
                   <p className="text-xs font-semibold text-gray-500 uppercase">Stock</p>
-                  <p className={`text-lg font-black mt-1 ${(medicine.stock?.quantity_in_stock ?? medicine.quantity_in_stock ?? 0) < (medicine.stock?.reorder_level ?? medicine.reorder_level ?? 10) ? 'text-red-600' : 'text-green-600'}`}>
-                    {medicine.stock?.quantity_in_stock ?? medicine.quantity_in_stock ?? 0}
+                  <p className={`text-lg font-black mt-1 ${(medicine.quantity || medicine.quantity_in_stock || 0) < (medicine.reorder_level || 10) ? 'text-red-600' : 'text-green-600'}`}>
+                    {medicine.quantity || medicine.quantity_in_stock || 0}
                   </p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
                   <p className="text-xs font-semibold text-gray-500 uppercase">Reorder Level</p>
-                  <p className="text-sm font-bold text-gray-800 mt-1">{medicine.stock?.reorder_level ?? medicine.reorder_level ?? 10}</p>
+                  <p className="text-sm font-bold text-gray-800 mt-1">{medicine.reorder_level || 10}</p>
                 </div>
               </div>
 
@@ -329,6 +379,59 @@ function MedicineDetailModal({ isOpen, onClose, medicineId }) {
 // MAIN INVENTORY MANAGEMENT
 // ==========================================
 export default function InventoryManagement() {
+  const { user } = useAuth();
+  
+  // Salespersons manage an array of branches
+  const availableBranches = React.useMemo(() => {
+    return user?.branches_to_be_managed || [];
+  }, [user?.branches_to_be_managed]);
+
+  const defaultBranchId = availableBranches.length > 0 
+    ? (availableBranches[0]?._id || availableBranches[0]) 
+    : (user?.branch_id?._id || user?.branch_id || '');
+
+  const [currentBranchId] = useState(defaultBranchId);
+  const [branchMap, setBranchMap] = useState({});
+
+  useEffect(() => {
+    // Silently attempt to fetch branch names mapping to override default IDs
+    const fetchBranchNames = async () => {
+        // Since the backend does not expose a public/salesperson branch dictionary endpoint 
+        // without tripping a 401 Unauthorized, we skip the network call to keep logs clean.
+        // If the backend `getMe` is updated to populate `branches_to_be_managed` as objects in the future, 
+        // this mapping will seamlessly adapt.
+        const map = {};
+        
+        // 1. Direct contextual mapping if already populated
+        availableBranches.forEach(b => { 
+          if (b?._id && b?.name) map[b._id] = b.name; 
+        });
+
+        // 2. Fallback: Piggyback off the task mapping which natively populates `branch_id.name` in backend
+        try {
+          const taskRes = await salespersonTasksApi.getMyTasks({ limit: 50 });
+          const tasks = taskRes.data?.data?.tasks || taskRes.data?.tasks || taskRes.data || [];
+          if (Array.isArray(tasks)) {
+            tasks.forEach(t => {
+              if (t.branch_id && t.branch_id._id && t.branch_id.name) {
+                map[t.branch_id._id] = t.branch_id.name;
+              }
+            });
+          }
+        } catch (err) {
+          console.warn('Silent branch name extraction through Tasks API skipped.', err);
+        }
+
+        // 3. Last resort tracking for primary
+        if (user?.branch_id && user.branch_id._id && user.branch_id.name) {
+          map[user.branch_id._id] = user.branch_id.name;
+        }
+
+        setBranchMap(map);
+    };
+    if (availableBranches.length > 0) fetchBranchNames();
+  }, [availableBranches, user?.branch_id]);
+
   const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -362,27 +465,38 @@ export default function InventoryManagement() {
         sortBy,
         sortOrder,
       };
+      
+      if (currentBranchId) params.branch_id = currentBranchId;
       if (searchQuery) params.search = searchQuery;
       if (categoryFilter) params.category = categoryFilter;
 
       const res = await salespersonInventoryApi.listInventory(params);
-      const data = res.data || res;
-      setMedicines(data.medicines || data.items || []);
-      setTotalPages(data.totalPages || 1);
-      setTotalCount(data.totalCount || data.total || 0);
+      
+      // Handle the triple nesting: res(response body).data(success wrapper).data(actual payload)
+      const payload = res.data?.data;
+      const parsedMedicines = payload?.medicines || [];
+      const pagination = payload?.pagination;
+      
+      const parsedTotalPages = pagination?.totalPages || pagination?.pages || 1;
+      const parsedTotalCount = pagination?.total || 0;
+
+      setMedicines(parsedMedicines);
+      setTotalPages(parsedTotalPages);
+      setTotalCount(parsedTotalCount);
     } catch (err) {
       console.error('Failed to load inventory:', err);
       setError(err.response?.data?.message || 'Failed to load inventory.');
     } finally {
       setLoading(false);
     }
-  }, [page, searchQuery, categoryFilter, sortBy, sortOrder]);
+  }, [page, searchQuery, categoryFilter, sortBy, sortOrder, currentBranchId]);
 
   useEffect(() => {
     fetchInventory();
   }, [fetchInventory]);
 
   const handleAddMedicine = async (formData) => {
+    // branch_id is now selected safely in the MedicineModal and emitted via formData
     await salespersonInventoryApi.createMedicine(formData);
     fetchInventory();
   };
@@ -397,7 +511,7 @@ export default function InventoryManagement() {
 
   const handleDeleteMedicine = async (id) => {
     try {
-      await salespersonInventoryApi.softDeleteMedicine(id);
+      await salespersonInventoryApi.softDeleteMedicine(id, currentBranchId);
       setDeleteConfirm(null);
       fetchInventory();
     } catch (err) {
@@ -448,7 +562,7 @@ export default function InventoryManagement() {
           <input
             type="text"
             className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Search by medicine name..."
+            placeholder="Search all medicines overall..."
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
           />
@@ -496,11 +610,11 @@ export default function InventoryManagement() {
                   </th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Category</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Form</th>
-                  <th onClick={() => toggleSort('unit_price')} className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase cursor-pointer hover:text-blue-600 select-none">
-                    <span className="flex items-center gap-1">Price <SortIcon field="unit_price" /></span>
+                  <th onClick={() => toggleSort('sale_price')} className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase cursor-pointer hover:text-blue-600 select-none">
+                    <span className="flex items-center gap-1">Price <SortIcon field="sale_price" /></span>
                   </th>
-                  <th onClick={() => toggleSort('quantity_in_stock')} className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase cursor-pointer hover:text-blue-600 select-none">
-                    <span className="flex items-center justify-center gap-1">Stock <SortIcon field="quantity_in_stock" /></span>
+                  <th onClick={() => toggleSort('quantity')} className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase cursor-pointer hover:text-blue-600 select-none">
+                    <span className="flex items-center justify-center gap-1">Stock <SortIcon field="quantity" /></span>
                   </th>
                   <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
                   <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
@@ -508,10 +622,9 @@ export default function InventoryManagement() {
               </thead>
               <tbody>
                 {medicines.map((med) => {
-                  const stock = med.stock?.quantity_in_stock ?? med.quantity_in_stock ?? 0;
-                  const reorder = med.stock?.reorder_level ?? med.reorder_level ?? 10;
-                  const isLow = stock <= reorder;
-                  const isCritical = stock < 5;
+                  const stock = med.stock?.quantity || 0;
+                  const isLow = med.isLowStock || false;
+                  const isCritical = med.isCritical || false;
 
                   return (
                     <tr key={med._id} className="border-b border-gray-100 hover:bg-blue-50/30 transition-colors">
@@ -522,13 +635,13 @@ export default function InventoryManagement() {
                           </div>
                           <div>
                             <p className="font-semibold text-gray-800">{med.Name || med.name}</p>
-                            <p className="text-xs text-gray-400">{med.manufacturer || 'N/A'}</p>
+                            <p className="text-xs text-gray-400">{med.alias_name || 'N/A'}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3.5 text-gray-600">{med.category || '—'}</td>
-                      <td className="px-5 py-3.5 text-gray-600">{med.form || 'Tablet'}</td>
-                      <td className="px-5 py-3.5 text-gray-800 font-medium">Rs. {med.unit_price || med.price || '0'}</td>
+                      <td className="px-5 py-3.5 text-gray-600">{med.medicine_category || med.category || '—'}</td>
+                      <td className="px-5 py-3.5 text-gray-600">{med.pack_unit ? `${med.pack_unit} Pack (${med.packQty})` : 'Tablet'}</td>
+                      <td className="px-5 py-3.5 text-gray-800 font-medium">Rs. {med.sale_price || med.price || '0'}</td>
                       <td className="px-5 py-3.5 text-center">
                         <span className={`text-lg font-bold ${isCritical ? 'text-red-600' : isLow ? 'text-orange-600' : 'text-green-600'}`}>
                           {stock}
@@ -640,6 +753,9 @@ export default function InventoryManagement() {
         onClose={() => setShowAddModal(false)}
         onSave={handleAddMedicine}
         medicine={null}
+        branchId={currentBranchId}
+        availableBranches={availableBranches}
+        branchMap={branchMap}
       />
 
       {/* Edit Modal */}
@@ -648,6 +764,9 @@ export default function InventoryManagement() {
         onClose={() => setEditingMedicine(null)}
         onSave={handleEditMedicine}
         medicine={editingMedicine}
+        branchId={currentBranchId}
+        availableBranches={availableBranches}
+        branchMap={branchMap}
       />
 
       {/* Detail Modal */}
@@ -655,6 +774,7 @@ export default function InventoryManagement() {
         isOpen={!!viewingMedicineId}
         onClose={() => setViewingMedicineId(null)}
         medicineId={viewingMedicineId}
+        branchId={currentBranchId}
       />
 
       {/* Delete Confirmation */}

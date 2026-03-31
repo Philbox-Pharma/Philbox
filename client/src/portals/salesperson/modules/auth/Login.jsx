@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { useAuth } from '../../../../shared/context/AuthContext';
 import { salespersonAuthApi } from '../../../../core/api/salesperson/auth';
 
 export default function Login() {
     const navigate = useNavigate();
+    const { loginSuccess } = useAuth();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -18,10 +20,25 @@ export default function Login() {
         setLoading(true);
 
         try {
-            await salespersonAuthApi.login(email, password);
-            navigate('/salesperson/dashboard');
+            const response = await salespersonAuthApi.login(email, password);
+            
+            // Extract data correctly from sendResponse structure
+            const userData = response.data?.salesperson || response.salesperson;
+            const nextStep = response.data?.nextStep || response.nextStep;
+            const isTwoFactorEnabled = response.data?.isTwoFactorEnabled || response.isTwoFactorEnabled;
+
+            if (isTwoFactorEnabled || nextStep === 'verify-otp') {
+                // If 2FA is needed, the verify-otp page is not implemented for salespeople yet
+                setError('Two-factor authentication is required, but the verification page is not yet implemented.');
+                return;
+            }
+
+            loginSuccess({ ...userData, role: 'salesperson' });
+            navigate('/salesperson/dashboard', { replace: true });
         } catch (err) {
-            setError(err.response?.data?.message || 'Login failed. Please try again.');
+            console.error('Login Error:', err);
+            const message = err.response?.data?.message || 'Login failed. Please try again.';
+            setError(message);
         } finally {
             setLoading(false);
         }

@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { salespersonInventoryUploadApi } from '../../../../core/api/salesperson/inventoryUpload.service';
+import { useAuth } from '../../../../shared/context/AuthContext';
 
 // ==========================================
 // UPLOAD STEP INDICATOR
@@ -96,10 +97,12 @@ function ErrorRow({ error, onResolve }) {
 export default function InventoryUpload() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const { user } = useAuth();
+  const defaultBranchId = user?.branch_id?._id || user?.branch_id || '';
 
   const [step, setStep] = useState(1);
   const [file, setFile] = useState(null);
-  const [branchId, setBranchId] = useState('');
+  const [branchId, setBranchId] = useState(defaultBranchId);
   const [uploading, setUploading] = useState(false);
   const [downloadingTemplate, setDownloadingTemplate] = useState(false);
 
@@ -223,7 +226,7 @@ export default function InventoryUpload() {
   const resetUpload = () => {
     setStep(1);
     setFile(null);
-    setBranchId('');
+    setBranchId(defaultBranchId);
     setPreviewData(null);
     setPreviewErrors([]);
     setUploadResult(null);

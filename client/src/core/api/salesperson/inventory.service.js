@@ -27,8 +27,10 @@ export const salespersonInventoryApi = {
    * GET /api/salesperson/inventory/:medicineId
    * Get full details of a single medicine
    */
-  getMedicineDetails: async (medicineId) => {
-    const response = await apiClient.get(`${BASE_URL}/${medicineId}`);
+  getMedicineDetails: async (medicineId, branchId) => {
+    const response = await apiClient.get(`${BASE_URL}/${medicineId}`, {
+      params: { branch_id: branchId }
+    });
     return response.data;
   },
 
@@ -45,8 +47,10 @@ export const salespersonInventoryApi = {
    * DELETE /api/salesperson/inventory/:medicineId
    * Soft delete a medicine
    */
-  softDeleteMedicine: async (medicineId) => {
-    const response = await apiClient.delete(`${BASE_URL}/${medicineId}`);
+  softDeleteMedicine: async (medicineId, branchId) => {
+    const response = await apiClient.delete(`${BASE_URL}/${medicineId}`, {
+      params: { branch_id: branchId }
+    });
     return response.data;
   },
 

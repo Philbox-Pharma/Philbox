@@ -1,6 +1,6 @@
 import apiClient from '../client';
 
-const BASE_URL = '/salesperson/inventory-upload';
+const BASE_URL = '/salesperson/inventory';
 
 export const salespersonInventoryUploadApi = {
   /**

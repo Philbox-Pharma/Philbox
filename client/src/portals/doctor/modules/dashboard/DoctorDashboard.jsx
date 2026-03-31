@@ -127,7 +127,9 @@ export default function DoctorDashboard() {
         <div className="relative z-10">
           <p className="text-emerald-100 text-sm font-medium mb-1">{greeting()}</p>
           <h1 className="text-2xl sm:text-3xl font-bold mb-2">
-            Dr. {doctor?.name || 'Doctor'} 👋
+            {(doctor?.fullName || doctor?.name || 'Doctor').toLowerCase().startsWith('dr') 
+              ? (doctor?.fullName || doctor?.name || 'Doctor') 
+              : `Dr. ${doctor?.fullName || doctor?.name || 'Doctor'}`} 👋
           </h1>
           <p className="text-emerald-100 text-sm sm:text-base max-w-xl">
             Here's an overview of your practice today. You have{' '}

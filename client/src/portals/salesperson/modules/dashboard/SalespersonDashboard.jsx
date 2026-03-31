@@ -28,14 +28,15 @@ export default function SalespersonDashboard() {
       try {
         setLoading(true);
         const res = await salespersonDashboardApi.getDashboard();
-        if (res?.data) {
+        if (res?.data?.data?.data) {
+          const dashboardData = res.data.data.data;
           setData({
             stats: {
-              pendingTasks: res.data.data?.pendingTasks || 0,
-              lowStockAlerts: res.data.data?.lowStockAlerts || 0,
-              recentOrders: res.data.data?.pendingOrders || 0,
+              pendingTasks: dashboardData.stats?.pendingTasksCount || 0,
+              lowStockAlerts: dashboardData.stats?.lowStockAlertsCount || 0,
+              recentOrders: dashboardData.stats?.ordersToProcessCount || 0,
             },
-            activities: res.data.data?.recentActivity || [],
+            activities: dashboardData.recentActivity || [],
           });
         }
       } catch (err) {
@@ -188,12 +189,12 @@ export default function SalespersonDashboard() {
                         <FaCheckCircle size={10} />
                       </div>
                       <div className="w-[calc(100%-2.5rem)] md:w-[calc(50%-1.5rem)] p-4 rounded-xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow">
-                        <p className="text-sm font-semibold text-gray-800">{activity.title || 'Task Completed'}</p>
+                        <p className="text-sm font-semibold text-gray-800">{activity.action || 'Task Completed'}</p>
                         <p className="text-xs text-gray-500 mt-1">{activity.description}</p>
                         <span className="text-[10px] uppercase font-bold text-gray-400 mt-2 block tracking-wider">
-                          {new Date(activity.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} 
+                          {new Date(activity.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} 
                           {', '} 
-                          {new Date(activity.timestamp).toLocaleDateString()}
+                          {new Date(activity.createdAt).toLocaleDateString()}
                         </span>
                       </div>
                     </div>

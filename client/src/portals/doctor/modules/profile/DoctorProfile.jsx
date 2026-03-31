@@ -349,10 +349,14 @@ export default function DoctorProfile() {
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold text-gray-800">
-                Dr. {profile?.name || profile?.fullName || 'Doctor'}
+                {(profile?.name || profile?.fullName || 'Doctor').toLowerCase().startsWith('dr') 
+                  ? (profile?.name || profile?.fullName || 'Doctor') 
+                  : `Dr. ${profile?.name || profile?.fullName || 'Doctor'}`}
               </h1>
               <p className="text-sm text-emerald-600 font-medium mt-0.5">
-                {profile?.specialization || 'General Physician'}
+                {Array.isArray(profile?.specialization) 
+                  ? profile.specialization.join(', ') 
+                  : (profile?.specialization || 'General Physician')}
               </p>
               <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-500">
                 {profile?.email && (

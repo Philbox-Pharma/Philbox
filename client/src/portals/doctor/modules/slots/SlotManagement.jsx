@@ -83,9 +83,20 @@ function SlotModal({ isOpen, onClose, onSubmit, editingSlot, loading, selectedDa
     }
   }, [editingSlot, selectedDate, isOpen]);
 
+  // Auto-calculate duration whenever start or end time changes
+  useEffect(() => {
+    if (formData.start_time && formData.end_time) {
+      const [startH, startM] = formData.start_time.split(':').map(Number);
+      const [endH, endM] = formData.end_time.split(':').map(Number);
+      const diffMinutes = (endH * 60 + endM) - (startH * 60 + startM);
+      
+      setFormData(prev => ({ ...prev, slot_duration: diffMinutes }));
+    }
+  }, [formData.start_time, formData.end_time]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: name === 'slot_duration' ? Number(value) : value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleRecurringChange = (e) => {
@@ -102,8 +113,22 @@ function SlotModal({ isOpen, onClose, onSubmit, editingSlot, loading, selectedDa
     }));
   };
 
+  const [validationError, setValidationError] = useState('');
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    setValidationError('');
+
+    if (formData.slot_duration <= 0) {
+      setValidationError('End time must be after start time');
+      return;
+    }
+
+    if (formData.slot_duration > 20) {
+      setValidationError('Slot duration cannot exceed 20 minutes');
+      return;
+    }
+
     if (mode === 'single') {
       onSubmit({ ...formData, mode: 'single', isEdit: !!editingSlot, slotId: editingSlot?._id });
     } else {
@@ -142,6 +167,14 @@ function SlotModal({ isOpen, onClose, onSubmit, editingSlot, loading, selectedDa
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
+          {/* Validation Error */}
+          {validationError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg flex items-center gap-2">
+              <FaExclamationTriangle className="flex-shrink-0" />
+              {validationError}
+            </div>
+          )}
+
           {/* Mode Toggle (only for create) */}
           {!editingSlot && (
             <div className="flex bg-gray-100 rounded-lg p-1 mb-5">
@@ -210,26 +243,23 @@ function SlotModal({ isOpen, onClose, onSubmit, editingSlot, loading, selectedDa
             </div>
           </div>
 
-          {/* Slot Duration */}
+          {/* Slot Duration (Auto-calculated) */}
           <div className="mb-4">
-            <label className="input-label">Slot Duration <span className="text-red-500">*</span></label>
-            <div className="flex gap-3">
-              {SLOT_DURATIONS.map(({ value, label }) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, slot_duration: value }))}
-                  className={`flex-1 py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
-                    formData.slot_duration === value
-                      ? 'border-blue-500 bg-blue-50 text-blue-600'
-                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                  }`}
-                >
-                  <FaClock className="inline mr-1" size={12} />
-                  {label}
-                </button>
-              ))}
+            <label className="input-label">Slot Duration</label>
+            <div className={`p-3 rounded-lg border-2 text-sm font-semibold flex items-center justify-between ${
+              formData.slot_duration > 20 || formData.slot_duration <= 0
+                ? 'border-red-200 bg-red-50 text-red-600'
+                : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+            }`}>
+              <div className="flex items-center gap-2">
+                <FaClock size={14} />
+                <span>Computed Duration:</span>
+              </div>
+              <span>{Math.max(0, formData.slot_duration)} minutes</span>
             </div>
+            <p className="text-[10px] text-gray-500 mt-1 italic">
+              * Max duration allowed is 20 minutes.
+            </p>
           </div>
 
           {/* Recurring Options */}
@@ -346,7 +376,7 @@ function SlotModal({ isOpen, onClose, onSubmit, editingSlot, loading, selectedDa
 // ==========================================
 // SLOT DETAIL POPUP
 // ==========================================
-function SlotDetailPopup({ slot, position, onClose, onEdit, onDelete, onMarkUnavailable, actionLoading }) {
+function SlotDetailPopup({ slot, position, onClose, onEdit, onDelete, actionLoading }) {
   if (!slot) return null;
 
   const statusInfo = STATUS_COLORS[slot.status] || STATUS_COLORS.available;
@@ -409,15 +439,6 @@ function SlotDetailPopup({ slot, position, onClose, onEdit, onDelete, onMarkUnav
           >
             <FaEdit size={12} /> Edit
           </button>
-          {slot.status === 'available' && (
-            <button
-              onClick={() => onMarkUnavailable(slot._id)}
-              disabled={actionLoading}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-yellow-50 text-yellow-600 rounded-lg text-xs font-medium hover:bg-yellow-100 transition-colors"
-            >
-              <FaBan size={12} /> Block
-            </button>
-          )}
           <button
             onClick={() => onDelete(slot._id)}
             disabled={actionLoading}
@@ -641,25 +662,6 @@ export default function SlotManagement() {
     setIsModalOpen(true);
   };
 
-  // Mark unavailable
-  const handleMarkUnavailable = async (slotId) => {
-    try {
-      setActionLoading(true);
-      await doctorSlotsApi.markSlotUnavailable(slotId);
-      showMessage('Slot marked as unavailable.');
-      setSelectedSlot(null);
-
-      const calApi = calendarRef.current?.getApi();
-      if (calApi) {
-        const view = calApi.view;
-        fetchSlots(view.activeStart.toISOString().split('T')[0], view.activeEnd.toISOString().split('T')[0]);
-      }
-    } catch (err) {
-      showMessage(err.response?.data?.message || 'Failed to mark unavailable.', 'error');
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   // Delete slot
   const handleDeleteSlot = async (slotId) => {
@@ -831,7 +833,6 @@ export default function SlotManagement() {
             onClose={() => setSelectedSlot(null)}
             onEdit={handleEditSlot}
             onDelete={handleDeleteSlot}
-            onMarkUnavailable={handleMarkUnavailable}
             actionLoading={actionLoading}
           />
         </>

@@ -75,7 +75,10 @@ export default function DoctorHeader({ toggleSidebar, doctor }) {
     }
   };
 
-  const doctorName = doctor?.name || 'Doctor';
+  const doctorName = (doctor?.fullName || doctor?.name || 'Doctor').toLowerCase().startsWith('dr')
+    ? (doctor?.fullName || doctor?.name || 'Doctor')
+    : `Dr. ${doctor?.fullName || doctor?.name || 'Doctor'}`;
+  const initials = (doctor?.fullName || doctor?.name || 'D').charAt(0).toUpperCase();
   const specialization = doctor?.specialization || 'Physician';
 
   return (
@@ -131,11 +134,13 @@ export default function DoctorHeader({ toggleSidebar, doctor }) {
                 }`}
               >
                 <span className="text-white text-sm font-bold">
-                  {doctorName.charAt(0).toUpperCase()}
+                  {initials}
                 </span>
               </div>
               <div className="hidden sm:block text-left">
-                <p className="text-sm font-medium">Dr. {doctorName}</p>
+                <p className="text-sm font-medium">
+                  {doctorName}
+                </p>
                 <p className="text-xs text-white/70">{specialization}</p>
               </div>
               <FaChevronDown
@@ -157,20 +162,31 @@ export default function DoctorHeader({ toggleSidebar, doctor }) {
                   <div className="p-4 bg-gradient-to-r from-[#0f2b3d] to-emerald-800 text-white">
                     <div className="flex items-center gap-3">
                       {doctor?.profile_img_url ? (
-                        <img
-                          src={doctor.profile_img_url}
-                          alt={doctorName}
-                          className="w-12 h-12 rounded-full object-cover border-2 border-white/30"
-                        />
+                        <>
+                          <img
+                            src={doctor.profile_img_url}
+                            alt={doctorName}
+                            className="w-12 h-12 rounded-full object-cover border-2 border-white/30"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                          <div className="hidden items-center justify-center w-12 h-12 rounded-full bg-emerald-500 border-2 border-white/30">
+                            <span className="text-white text-lg font-bold">
+                              {initials}
+                            </span>
+                          </div>
+                        </>
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center border-2 border-white/30">
                           <span className="text-white text-lg font-bold">
-                            {doctorName.charAt(0).toUpperCase()}
+                            {initials}
                           </span>
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate">Dr. {doctorName}</p>
+                        <p className="font-semibold truncate">{doctorName}</p>
                         <p className="text-sm text-white/80 truncate">
                           {doctor?.email || ''}
                         </p>
