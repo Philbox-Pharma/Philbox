@@ -282,48 +282,6 @@ export const deleteSlot = async (req, res) => {
 };
 
 /**
- * @desc    Mark a slot as unavailable
- * @route   PATCH /api/doctor/slots/:slotId/unavailable
- * @access  Private (Doctor)
- */
-export const markSlotUnavailable = async (req, res) => {
-  try {
-    const doctorId = req.session.doctorId || req.user?.id;
-    const { slotId } = req.params;
-
-    if (!doctorId) {
-      return sendResponse(res, 401, 'Unauthorized');
-    }
-
-    const slot = await doctorSlotsService.markSlotUnavailable(
-      doctorId,
-      slotId,
-      req
-    );
-
-    return sendResponse(res, 200, 'Slot marked as unavailable', slot);
-  } catch (error) {
-    console.error('Error in markSlotUnavailable:', error);
-
-    if (error.message === 'SLOT_NOT_FOUND') {
-      return sendResponse(res, 404, 'Time slot not found');
-    }
-
-    if (error.message === 'CANNOT_MODIFY_BOOKED_SLOT') {
-      return sendResponse(res, 400, 'Cannot modify a booked time slot');
-    }
-
-    return sendResponse(
-      res,
-      500,
-      'Failed to mark slot as unavailable',
-      null,
-      error.message
-    );
-  }
-};
-
-/**
  * @desc    Get calendar view of slots (monthly)
  * @route   GET /api/doctor/slots/calendar/:year/:month
  * @access  Private (Doctor)

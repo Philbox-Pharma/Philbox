@@ -1,5 +1,5 @@
-import Order from '../../../../../models/Order.js';
-import OrderItem from '../../../../../models/OrderItem.js';
+import Cart from '../../../../../models/Cart.js';
+import CartItem from '../../../../../models/CartItem.js';
 import Medicine from '../../../../../models/Medicine.js';
 import StockInHand from '../../../../../models/StockInHand.js';
 import Branch from '../../../../../models/Branch.js';
@@ -39,7 +39,7 @@ class CustomerCartService {
 
   _buildEquivalentMedicineQuery(medicine) {
     const query = {
-      is_available: true,
+      active: true,
       Name: {
         $regex: `^${this._escapeRegex(medicine.Name || '')}$`,
         $options: 'i',
@@ -60,11 +60,8 @@ class CustomerCartService {
       };
     }
 
-    if (medicine.medicine_category) {
-      query.medicine_category = {
-        $regex: `^${this._escapeRegex(medicine.medicine_category)}$`,
-        $options: 'i',
-      };
+    if (medicine.category) {
+      query.category = medicine.category;
     }
 
     return query;
@@ -83,88 +80,77 @@ class CustomerCartService {
     return `Added ${requestedQuantity} units to cart based on available stock.`;
   }
 
-  async _getOrCreatePendingOrder(customerId, branchId) {
-    let order = await Order.findOne({
-      customer_id: customerId,
-      branch_id: branchId,
-      status: 'pending',
-    });
+  async _getOrCreateCart(customerId) {
+    let cart = await Cart.findOne({ customer_id: customerId });
 
-    if (!order) {
-      order = await Order.create({
+    if (!cart) {
+      cart = await Cart.create({
         customer_id: customerId,
-        branch_id: branchId,
         total: 0,
-        delivery_charges: 0,
-        status: 'pending',
-        order_items: [],
+        items: [],
       });
     }
 
-    return order;
+    return cart;
   }
 
-  async _upsertOrderItem(orderId, medicineId, quantityToAdd, unitPrice) {
-    let orderItem = await OrderItem.findOne({
-      order_id: orderId,
+  async _upsertCartItem(
+    cartId,
+    branchId,
+    medicineId,
+    quantityToAdd,
+    unitPrice
+  ) {
+    let cartItem = await CartItem.findOne({
+      cart_id: cartId,
+      branch_id: branchId,
       medicine_id: medicineId,
     });
 
-    if (orderItem) {
-      orderItem.quantity += quantityToAdd;
-      orderItem.subtotal = this._roundTo2(orderItem.quantity * unitPrice);
-      await orderItem.save();
-      return orderItem;
+    if (cartItem) {
+      cartItem.quantity += quantityToAdd;
+      cartItem.subtotal = this._roundTo2(cartItem.quantity * unitPrice);
+      await cartItem.save();
+      return cartItem;
     }
 
-    orderItem = await OrderItem.create({
-      order_id: orderId,
+    cartItem = await CartItem.create({
+      cart_id: cartId,
+      branch_id: branchId,
       medicine_id: medicineId,
       quantity: quantityToAdd,
       subtotal: this._roundTo2(quantityToAdd * unitPrice),
     });
 
-    await Order.findByIdAndUpdate(orderId, {
-      $addToSet: { order_items: orderItem._id },
+    await Cart.findByIdAndUpdate(cartId, {
+      $addToSet: { items: cartItem._id },
     });
 
-    return orderItem;
+    return cartItem;
   }
 
   async _getDominantCartBranchId(customerId) {
-    const pendingOrders = await Order.find({
-      customer_id: customerId,
-      status: 'pending',
-    })
-      .select('_id branch_id')
+    const cart = await Cart.findOne({ customer_id: customerId })
+      .select('_id')
       .lean();
 
-    if (!pendingOrders.length) {
+    if (!cart) {
       return null;
     }
 
-    const pendingOrderIds = pendingOrders.map(order => order._id);
-    const pendingOrderItems = await OrderItem.find({
-      order_id: { $in: pendingOrderIds },
+    const cartItems = await CartItem.find({
+      cart_id: cart._id,
     })
-      .select('order_id quantity')
+      .select('branch_id quantity')
       .lean();
 
-    if (!pendingOrderItems.length) {
+    if (!cartItems.length) {
       return null;
     }
-
-    const orderBranchMap = new Map(
-      pendingOrders.map(order => [
-        order._id.toString(),
-        order.branch_id?.toString(),
-      ])
-    );
 
     const branchQuantityMap = new Map();
-    for (const item of pendingOrderItems) {
-      const orderId = item.order_id?.toString();
-      const branchId = orderBranchMap.get(orderId);
+    for (const item of cartItems) {
+      const branchId = item.branch_id?.toString();
       if (!branchId) continue;
 
       const quantity = Number(item.quantity) || 0;
@@ -309,16 +295,14 @@ class CustomerCartService {
     return null;
   }
 
-  async _recalculateOrderTotal(orderId) {
-    const items = await OrderItem.find({ order_id: orderId }).select(
-      'subtotal'
-    );
+  async _recalculateCartTotal(cartId) {
+    const items = await CartItem.find({ cart_id: cartId }).select('subtotal');
     const total = items.reduce(
       (sum, item) => sum + (Number(item.subtotal) || 0),
       0
     );
 
-    await Order.findByIdAndUpdate(orderId, {
+    await Cart.findByIdAndUpdate(cartId, {
       total: this._roundTo2(total),
     });
 
@@ -345,59 +329,79 @@ class CustomerCartService {
   }
 
   async _buildCartResponse(customerId) {
-    const pendingOrders = await Order.find({
-      customer_id: customerId,
-      status: 'pending',
-    })
+    const cart = await Cart.findOne({ customer_id: customerId })
+      .select('_id')
+      .lean();
+
+    if (!cart) {
+      return this._buildEmptyCartResponse();
+    }
+
+    const cartItems = await CartItem.find({ cart_id: cart._id })
       .populate({
-        path: 'order_items',
+        path: 'medicine_id',
+        select:
+          'Name alias_name sale_price img_urls active prescription_required category mgs dosage_form',
         populate: {
-          path: 'medicine_id',
-          select:
-            'Name alias_name sale_price img_urls is_available prescription_required medicine_category mgs',
+          path: 'category',
+          select: 'name',
         },
       })
       .sort({ created_at: 1 });
 
-    if (!pendingOrders.length) {
+    if (!cartItems.length) {
       return this._buildEmptyCartResponse();
     }
+
+    const branchIds = [
+      ...new Set(
+        cartItems.map(item => item.branch_id?.toString()).filter(Boolean)
+      ),
+    ];
+    const branches = await Branch.find({ _id: { $in: branchIds } })
+      .select('name')
+      .lean();
+    const branchNameById = new Map(
+      branches.map(branch => [branch._id.toString(), branch.name || null])
+    );
 
     const items = [];
     let subtotal = 0;
     let itemCount = 0;
 
-    for (const order of pendingOrders) {
-      for (const orderItem of order.order_items || []) {
-        const medicine = orderItem.medicine_id;
-        if (!medicine) continue;
+    for (const cartItem of cartItems) {
+      const medicine = cartItem.medicine_id;
+      if (!medicine) continue;
 
-        const quantity = Number(orderItem.quantity) || 0;
-        const itemSubtotal = this._roundTo2(orderItem.subtotal || 0);
-        const unitPrice =
-          quantity > 0 ? this._roundTo2(itemSubtotal / quantity) : 0;
+      const quantity = Number(cartItem.quantity) || 0;
+      const itemSubtotal = this._roundTo2(cartItem.subtotal || 0);
+      const unitPrice =
+        quantity > 0 ? this._roundTo2(itemSubtotal / quantity) : 0;
 
-        subtotal += itemSubtotal;
-        itemCount += quantity;
+      subtotal += itemSubtotal;
+      itemCount += quantity;
 
-        items.push({
-          itemId: orderItem._id,
-          orderId: order._id,
-          medicineId: medicine._id,
-          name: medicine.Name,
-          aliasName: medicine.alias_name || null,
-          imageUrl: Array.isArray(medicine.img_urls)
-            ? medicine.img_urls[0] || null
-            : null,
-          quantity,
-          unitPrice,
-          subtotal: itemSubtotal,
-          isAvailable: medicine.is_available,
-          prescriptionRequired: medicine.prescription_required,
-          category: medicine.medicine_category || null,
-          dosageForm: medicine.mgs || null,
-        });
-      }
+      const branchId = cartItem.branch_id?.toString() || null;
+
+      items.push({
+        itemId: cartItem._id,
+        cartId: cart._id,
+        branchId,
+        branchName: branchId ? branchNameById.get(branchId) || null : null,
+        medicineId: medicine._id,
+        name: medicine.Name,
+        aliasName: medicine.alias_name || null,
+        imageUrl: Array.isArray(medicine.img_urls)
+          ? medicine.img_urls[0] || null
+          : null,
+        quantity,
+        unitPrice,
+        subtotal: itemSubtotal,
+        isAvailable: medicine.active,
+        prescriptionRequired: medicine.prescription_required,
+        category: medicine.category?.name || null,
+        dosageForm: medicine.dosage_form || medicine.mgs || null,
+      });
     }
 
     if (!items.length) {
@@ -431,22 +435,18 @@ class CustomerCartService {
   }
 
   async getCartCount(customerId) {
-    const pendingOrders = await Order.find({
-      customer_id: customerId,
-      status: 'pending',
-    }).select('_id');
+    const cart = await Cart.findOne({ customer_id: customerId })
+      .select('_id')
+      .lean();
 
-    if (!pendingOrders.length) {
+    if (!cart) {
       return {
         itemCount: 0,
         uniqueItems: 0,
       };
     }
 
-    const orderIds = pendingOrders.map(order => order._id);
-    const items = await OrderItem.find({ order_id: { $in: orderIds } }).select(
-      'quantity'
-    );
+    const items = await CartItem.find({ cart_id: cart._id }).select('quantity');
 
     const itemCount = items.reduce(
       (sum, item) => sum + (Number(item.quantity) || 0),
@@ -464,10 +464,10 @@ class CustomerCartService {
     const requestedQuantity = Number(payload.quantity) || 1;
 
     const medicine = await Medicine.findById(medicineId).select(
-      '_id Name alias_name mgs medicine_category branch_id sale_price is_available'
+      '_id Name alias_name mgs dosage_form category sale_price active'
     );
 
-    if (!medicine || !medicine.is_available) {
+    if (!medicine || !medicine.active) {
       throw new Error('MEDICINE_NOT_AVAILABLE');
     }
 
@@ -483,7 +483,7 @@ class CustomerCartService {
 
     const equivalentMedicines = await Medicine.find(
       this._buildEquivalentMedicineQuery(medicine)
-    ).select('_id branch_id sale_price is_available');
+    ).select('_id sale_price active');
 
     if (!equivalentMedicines.length) {
       throw new Error('MEDICINE_NOT_AVAILABLE');
@@ -491,7 +491,16 @@ class CustomerCartService {
 
     const branchIds = [
       ...new Set(
-        equivalentMedicines
+        (
+          await StockInHand.find({
+            medicine_id: {
+              $in: equivalentMedicines.map(item => item._id),
+            },
+            quantity: { $gt: 0 },
+          })
+            .select('branch_id')
+            .lean()
+        )
           .map(item => item.branch_id?.toString())
           .filter(Boolean)
       ),
@@ -523,57 +532,52 @@ class CustomerCartService {
     const dominantCartBranchId =
       await this._getDominantCartBranchId(customerId);
 
-    const selectedBranchId = medicine.branch_id?.toString();
-    const selectedBranch = rankedBranches.find(
-      branch => branch._id?.toString() === selectedBranchId
+    const orderedBranches = rankedBranches;
+
+    const medicineById = new Map(
+      equivalentMedicines.map(item => [item._id?.toString(), item])
     );
-
-    const orderedBranches = selectedBranch
-      ? [
-          selectedBranch,
-          ...rankedBranches.filter(
-            branch => branch._id?.toString() !== selectedBranchId
-          ),
-        ]
-      : rankedBranches;
-
-    const medicineByBranchId = new Map();
-    for (const item of equivalentMedicines) {
-      medicineByBranchId.set(item.branch_id?.toString(), item);
-    }
 
     const stockRows = await StockInHand.find({
       medicine_id: { $in: equivalentMedicines.map(item => item._id) },
     })
-      .select('medicine_id quantity')
+      .select('medicine_id branch_id quantity')
       .lean();
 
-    const stockByMedicineId = new Map();
+    const stockByBranch = new Map();
     for (const row of stockRows) {
       const medicineKey = row.medicine_id?.toString();
-      if (!medicineKey) continue;
-      stockByMedicineId.set(
-        medicineKey,
-        Math.max(0, Number(row.quantity) || 0)
-      );
+      const branchKey = row.branch_id?.toString();
+      if (!medicineKey || !branchKey) continue;
+
+      const medicineDoc = medicineById.get(medicineKey);
+      if (!medicineDoc) continue;
+
+      const quantity = Math.max(0, Number(row.quantity) || 0);
+      const current = stockByBranch.get(branchKey);
+
+      if (!current || quantity > current.availableQuantity) {
+        stockByBranch.set(branchKey, {
+          medicineId: row.medicine_id,
+          availableQuantity: quantity,
+          unitPrice: Number(medicineDoc.sale_price) || 0,
+        });
+      }
     }
 
     const branchCandidates = orderedBranches
       .map((branch, rank) => {
         const branchId = branch._id?.toString();
-        const branchMedicine = medicineByBranchId.get(branchId);
-        if (!branchMedicine) return null;
-
-        const availableQuantity =
-          stockByMedicineId.get(branchMedicine._id.toString()) || 0;
+        const branchStock = stockByBranch.get(branchId);
+        if (!branchStock) return null;
 
         return {
           rank,
           branchId,
           branchName: branch.name || 'a nearby branch',
-          medicineId: branchMedicine._id,
-          unitPrice: Number(branchMedicine.sale_price) || 0,
-          availableQuantity,
+          medicineId: branchStock.medicineId,
+          unitPrice: branchStock.unitPrice,
+          availableQuantity: branchStock.availableQuantity,
         };
       })
       .filter(Boolean);
@@ -635,24 +639,18 @@ class CustomerCartService {
       throw new Error('NO_STOCK_ANY_BRANCH');
     }
 
-    const affectedOrderIds = new Set();
+    const cartDoc = await this._getOrCreateCart(customerId);
     for (const allocation of allocations) {
-      const order = await this._getOrCreatePendingOrder(
-        customerId,
-        allocation.branchId
-      );
-      await this._upsertOrderItem(
-        order._id,
+      await this._upsertCartItem(
+        cartDoc._id,
+        allocation.branchId,
         allocation.medicineId,
         allocation.allocatedQuantity,
         allocation.unitPrice
       );
-      affectedOrderIds.add(order._id.toString());
     }
 
-    for (const orderId of affectedOrderIds) {
-      await this._recalculateOrderTotal(orderId);
-    }
+    await this._recalculateCartTotal(cartDoc._id);
 
     const cart = await this._buildCartResponse(customerId);
     const allocationMessage = this._getAllocationMessage(
@@ -673,81 +671,86 @@ class CustomerCartService {
   }
 
   async updateCartItem(customerId, itemId, quantity) {
-    const orderItem = await OrderItem.findById(itemId);
-    if (!orderItem) {
+    const cart = await Cart.findOne({ customer_id: customerId })
+      .select('_id')
+      .lean();
+    if (!cart) {
       throw new Error('CART_ITEM_NOT_FOUND');
     }
 
-    const order = await Order.findById(orderItem.order_id);
-    if (
-      !order ||
-      String(order.customer_id) !== String(customerId) ||
-      order.status !== 'pending'
-    ) {
+    const cartItem = await CartItem.findOne({
+      _id: itemId,
+      cart_id: cart._id,
+    });
+    if (!cartItem) {
       throw new Error('CART_ITEM_NOT_FOUND');
     }
 
-    const medicine = await Medicine.findById(orderItem.medicine_id).select(
+    const medicine = await Medicine.findById(cartItem.medicine_id).select(
       'sale_price'
     );
     const unitPrice = medicine ? Number(medicine.sale_price) || 0 : 0;
 
-    orderItem.quantity = quantity;
-    orderItem.subtotal = this._roundTo2(unitPrice * quantity);
-    await orderItem.save();
+    cartItem.quantity = quantity;
+    cartItem.subtotal = this._roundTo2(unitPrice * quantity);
+    await cartItem.save();
 
-    await this._recalculateOrderTotal(order._id);
+    await this._recalculateCartTotal(cart._id);
 
     return this._buildCartResponse(customerId);
   }
 
   async removeCartItem(customerId, itemId) {
-    const orderItem = await OrderItem.findById(itemId);
-    if (!orderItem) {
+    const cart = await Cart.findOne({ customer_id: customerId })
+      .select('_id items')
+      .lean();
+    if (!cart) {
       throw new Error('CART_ITEM_NOT_FOUND');
     }
 
-    const order = await Order.findById(orderItem.order_id);
-    if (
-      !order ||
-      String(order.customer_id) !== String(customerId) ||
-      order.status !== 'pending'
-    ) {
+    const cartItem = await CartItem.findOne({
+      _id: itemId,
+      cart_id: cart._id,
+    });
+    if (!cartItem) {
       throw new Error('CART_ITEM_NOT_FOUND');
     }
 
-    await OrderItem.findByIdAndDelete(itemId);
+    await CartItem.findByIdAndDelete(itemId);
 
-    order.order_items = (order.order_items || []).filter(
-      existingId => String(existingId) !== String(itemId)
-    );
-    await order.save();
+    await Cart.findByIdAndUpdate(cart._id, {
+      $pull: { items: cartItem._id },
+    });
 
-    const remainingItems = await OrderItem.countDocuments({
-      order_id: order._id,
+    const remainingItems = await CartItem.countDocuments({
+      cart_id: cart._id,
     });
     if (!remainingItems) {
-      await Order.findByIdAndDelete(order._id);
+      await Cart.findByIdAndUpdate(cart._id, {
+        total: 0,
+        items: [],
+      });
     } else {
-      await this._recalculateOrderTotal(order._id);
+      await this._recalculateCartTotal(cart._id);
     }
 
     return this._buildCartResponse(customerId);
   }
 
   async clearCart(customerId) {
-    const pendingOrders = await Order.find({
-      customer_id: customerId,
-      status: 'pending',
-    }).select('_id');
+    const cart = await Cart.findOne({ customer_id: customerId })
+      .select('_id')
+      .lean();
 
-    if (!pendingOrders.length) {
+    if (!cart) {
       return this._buildEmptyCartResponse();
     }
 
-    const orderIds = pendingOrders.map(order => order._id);
-    await OrderItem.deleteMany({ order_id: { $in: orderIds } });
-    await Order.deleteMany({ _id: { $in: orderIds } });
+    await CartItem.deleteMany({ cart_id: cart._id });
+    await Cart.findByIdAndUpdate(cart._id, {
+      total: 0,
+      items: [],
+    });
 
     return this._buildEmptyCartResponse();
   }

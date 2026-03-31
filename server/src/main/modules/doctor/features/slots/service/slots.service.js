@@ -3,10 +3,45 @@ import { logDoctorActivity } from '../../../utils/logDoctorActivities.js';
 
 class DoctorSlotsService {
   /**
+   * Automatically mark past available slots as unavailable.
+   */
+  async markPastSlotsUnavailable(doctorId) {
+    const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(
+      now.getMinutes()
+    ).padStart(2, '0')}`;
+
+    await DoctorSlot.updateMany(
+      {
+        doctor_id: doctorId,
+        status: 'available',
+        $or: [
+          { date: { $lt: todayStart } },
+          {
+            date: { $gte: todayStart, $lt: tomorrowStart },
+            end_time: { $lte: currentTime },
+          },
+        ],
+      },
+      {
+        $set: { status: 'unavailable' },
+      }
+    );
+  }
+
+  /**
    * Create a single time slot
    */
   async createSlot(doctorId, slotData, req) {
     try {
+      await this.markPastSlotsUnavailable(doctorId);
+
       const { date, start_time, end_time, slot_duration, notes } = slotData;
 
       // Validate that end_time is after start_time
@@ -36,7 +71,7 @@ class DoctorSlotsService {
         date: new Date(date),
         start_time,
         end_time,
-        slot_duration: slot_duration || 30,
+        slot_duration: slot_duration ?? 20,
         notes: notes || '',
         is_recurring: false,
       });
@@ -61,6 +96,8 @@ class DoctorSlotsService {
    */
   async createRecurringSlots(doctorId, slotData, req) {
     try {
+      await this.markPastSlotsUnavailable(doctorId);
+
       const { start_time, end_time, slot_duration, recurring_pattern, notes } =
         slotData;
 
@@ -111,7 +148,7 @@ class DoctorSlotsService {
               date: new Date(currentDate),
               start_time,
               end_time,
-              slot_duration: slot_duration || 30,
+              slot_duration: slot_duration ?? 20,
               notes: notes || '',
               is_recurring: true,
               recurring_pattern: {
@@ -152,6 +189,8 @@ class DoctorSlotsService {
    */
   async getSlots(doctorId, filters) {
     try {
+      await this.markPastSlotsUnavailable(doctorId);
+
       const query = { doctor_id: doctorId };
 
       if (filters.start_date && filters.end_date) {
@@ -185,6 +224,8 @@ class DoctorSlotsService {
    */
   async getSlotById(doctorId, slotId) {
     try {
+      await this.markPastSlotsUnavailable(doctorId);
+
       const slot = await DoctorSlot.findOne({
         _id: slotId,
         doctor_id: doctorId,
@@ -206,6 +247,8 @@ class DoctorSlotsService {
    */
   async updateSlot(doctorId, slotId, updateData, req) {
     try {
+      await this.markPastSlotsUnavailable(doctorId);
+
       const slot = await DoctorSlot.findOne({
         _id: slotId,
         doctor_id: doctorId,
@@ -280,6 +323,8 @@ class DoctorSlotsService {
    */
   async deleteSlot(doctorId, slotId, req) {
     try {
+      await this.markPastSlotsUnavailable(doctorId);
+
       const slot = await DoctorSlot.findOne({
         _id: slotId,
         doctor_id: doctorId,
@@ -322,46 +367,12 @@ class DoctorSlotsService {
   }
 
   /**
-   * Mark slot as unavailable
-   */
-  async markSlotUnavailable(doctorId, slotId, req) {
-    try {
-      const slot = await DoctorSlot.findOne({
-        _id: slotId,
-        doctor_id: doctorId,
-      });
-
-      if (!slot) {
-        throw new Error('SLOT_NOT_FOUND');
-      }
-
-      if (slot.status === 'booked') {
-        throw new Error('CANNOT_MODIFY_BOOKED_SLOT');
-      }
-
-      slot.status = 'unavailable';
-      await slot.save();
-
-      await logDoctorActivity(
-        req,
-        'slot_unavailable',
-        `Marked slot ${slotId} as unavailable`,
-        'doctor_slots',
-        slotId
-      );
-
-      return slot;
-    } catch (error) {
-      console.error('Error in markSlotUnavailable:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Get calendar view (monthly)
    */
   async getCalendarView(doctorId, year, month) {
     try {
+      await this.markPastSlotsUnavailable(doctorId);
+
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 0, 23, 59, 59);
 

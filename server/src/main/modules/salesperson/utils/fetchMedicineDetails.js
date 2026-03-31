@@ -135,6 +135,7 @@ const http = axios.create({
 const emptyResult = () => ({
   description: null,
   imageUrls: [],
+  dosageForm: null,
 });
 
 const debugLog = (stage, meta = {}) => {
@@ -1427,6 +1428,88 @@ const fetchOpenRouterDescription = async medicineName => {
   }
 };
 
+const normalizeDosageForm = raw => {
+  const value = String(raw || '')
+    .trim()
+    .toLowerCase();
+
+  if (!value) return null;
+
+  if (value.includes('capsule') || value === 'cap' || value === 'caps') {
+    return 'Capsule';
+  }
+  if (value.includes('tablet') || value === 'tab' || value === 'tabs') {
+    return 'Tablet';
+  }
+  if (value.includes('syrup')) return 'Syrup';
+  if (value.includes('injection') || value.includes('injectable')) {
+    return 'Injection';
+  }
+  if (value.includes('cream')) return 'Cream';
+  if (value.includes('ointment')) return 'Ointment';
+  if (value.includes('gel')) return 'Gel';
+  if (value.includes('drop')) return 'Drops';
+  if (value.includes('spray')) return 'Spray';
+  if (value.includes('powder')) return 'Powder';
+  if (value.includes('solution')) return 'Solution';
+  if (value.includes('suspension')) return 'Suspension';
+  if (value.includes('suppository')) return 'Suppository';
+
+  return null;
+};
+
+const fetchOpenRouterDosageForm = async medicineName => {
+  if (!OPENROUTER_API_KEY) {
+    debugLog('openrouter_missing_api_key_dosage');
+    return null;
+  }
+
+  try {
+    const response = await axios.post(
+      OPENROUTER_API_URL,
+      {
+        model: OPENROUTER_MODEL,
+        temperature: 0,
+        max_tokens: 20,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a pharmacist assistant. Extract only the dosage form from the medicine name. Return exactly one short form from this list when possible: Tablet, Capsule, Syrup, Injection, Cream, Ointment, Gel, Drops, Spray, Powder, Solution, Suspension, Suppository. If uncertain, return Unknown.',
+          },
+          {
+            role: 'user',
+            content: `Medicine name: ${medicineName}`,
+          },
+        ],
+      },
+      {
+        timeout: REQUEST_TIMEOUT_MS,
+        headers: {
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    const raw = response?.data?.choices?.[0]?.message?.content;
+    const content = Array.isArray(raw)
+      ? raw
+          .map(item => (typeof item?.text === 'string' ? item.text : ''))
+          .join(' ')
+      : String(raw || '');
+
+    if (/unknown/i.test(content)) return null;
+    return normalizeDosageForm(content);
+  } catch (error) {
+    debugLog('openrouter_dosage_error', {
+      medicineName,
+      ...debugErrorMeta(error),
+    });
+    return null;
+  }
+};
+
 const fetchDescription = async medicineName => {
   try {
     debugLog('fetch_description_start', { medicineName });
@@ -1513,6 +1596,7 @@ export const fetchMedicineDetails = async medicineName => {
 
     let description = null;
     let imageUrls = [];
+    let dosageForm = null;
 
     try {
       description = await fetchDescription(normalizedName);
@@ -1526,16 +1610,24 @@ export const fetchMedicineDetails = async medicineName => {
       imageUrls = [];
     }
 
+    try {
+      dosageForm = await fetchOpenRouterDosageForm(normalizedName);
+    } catch {
+      dosageForm = null;
+    }
+
     debugLog('done', {
       medicineName: normalizedName,
       hasDescription: Boolean(description),
       hasImageUrls: imageUrls.length > 0,
       imageCandidatesFound: imageUrls.length,
+      dosageForm,
     });
 
     return {
       description: description || null,
       imageUrls,
+      dosageForm: dosageForm || null,
     };
   } catch (error) {
     debugLog('fatal_error', {

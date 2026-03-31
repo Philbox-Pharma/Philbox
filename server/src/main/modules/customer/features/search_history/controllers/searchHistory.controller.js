@@ -55,6 +55,36 @@ export const getHistory = async (req, res) => {
 };
 
 /**
+ * Get recent search queries for customer
+ */
+export const getRecentSearches = async (req, res) => {
+  try {
+    const customerId = req.customer?._id;
+
+    if (!customerId) {
+      return sendResponse(res, 401, 'Unauthorized');
+    }
+
+    const { limit = 10 } = req.query;
+    const recentSearches = await customerSearchHistoryService.getRecentSearches(
+      customerId,
+      limit,
+      req
+    );
+
+    return sendResponse(
+      res,
+      200,
+      'Recent searches fetched successfully',
+      recentSearches
+    );
+  } catch (err) {
+    console.error('Get Recent Searches Error:', err);
+    return sendResponse(res, 500, 'Server Error', null, err.message);
+  }
+};
+
+/**
  * Delete a specific search history item
  */
 export const deleteSearch = async (req, res) => {

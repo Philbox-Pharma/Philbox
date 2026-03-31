@@ -6,7 +6,6 @@ import {
   getSlotById,
   updateSlot,
   deleteSlot,
-  markSlotUnavailable,
   getCalendarView,
 } from '../controllers/slots.controller.js';
 import { authenticate as requireDoctorAuth } from '../../../middleware/auth.middleware.js';
@@ -58,13 +57,6 @@ router.get('/:slotId', getSlotById);
  * @access  Private (Doctor)
  */
 router.put('/:slotId', updateSlot);
-
-/**
- * @route   PATCH /api/doctor/slots/:slotId/unavailable
- * @desc    Mark a slot as unavailable
- * @access  Private (Doctor)
- */
-router.patch('/:slotId/unavailable', markSlotUnavailable);
 
 /**
  * @route   DELETE /api/doctor/slots/:slotId

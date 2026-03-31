@@ -13,7 +13,8 @@ class MedicineCatalogController {
    *
    * Query Parameters:
    * - category (optional): Filter by medicine category
-   * - brand (optional): Filter by brand/medicine name
+   * - brand (optional): Filter by manufacturer name
+   * - branch (optional): Filter by branch name
    * - dosage (optional): Filter by dosage form (tablet, syrup, etc.)
    * - prescriptionStatus (optional): 'OTC' or 'prescription_required'
    * - sortBy (optional): 'name', 'price_low_to_high', 'price_high_to_low', 'popularity'
@@ -26,6 +27,7 @@ class MedicineCatalogController {
       const {
         category,
         brand,
+        branch,
         dosage,
         prescriptionStatus,
         sortBy,
@@ -36,6 +38,7 @@ class MedicineCatalogController {
       const filters = {
         categoryFilter: category || null,
         brandFilter: brand || null,
+        branchFilter: branch || null,
         dosageFilter: dosage || null,
         prescriptionStatusFilter: prescriptionStatus || null,
         sortBy: sortBy || 'name',
@@ -78,20 +81,28 @@ class MedicineCatalogController {
 
   /**
    * Get available branches for the customer
-   * Branch details are intentionally restricted for customer medicine catalog flow.
+   * Returns branch names ordered with cart/proximity ranking rules.
    */
   async getAvailableBranches(req, res) {
     try {
       const customerId = req.user.id;
 
-      await MedicineCatalogService.getAvailableBranches(customerId);
+      const result =
+        await MedicineCatalogService.getAvailableBranches(customerId);
 
       // Log activity
       await logCustomerActivity(
         req,
-        'BRANCH_DETAILS_BLOCKED',
-        'Attempted to view restricted branch details in medicine catalog',
+        'VIEWED_BRANCH_NAMES',
+        'Viewed available branch names in medicine catalog',
         'branches'
+      );
+
+      return sendResponse(
+        res,
+        200,
+        'Branch names fetched successfully',
+        result.data
       );
     } catch (error) {
       console.error('Error fetching branches:', error);
@@ -99,14 +110,65 @@ class MedicineCatalogController {
       if (error.message === 'CUSTOMER_NOT_FOUND') {
         return sendResponse(res, 404, 'Customer not found');
       }
-      if (error.message === 'BRANCH_DETAILS_RESTRICTED') {
-        return sendResponse(
-          res,
-          403,
-          'Branch details are not available in customer medicine catalog'
-        );
-      }
 
+      return sendResponse(res, 500, 'Server Error', null, error.message);
+    }
+  }
+
+  async getAvailableBrands(req, res) {
+    try {
+      const customerId = req.user.id;
+      const result =
+        await MedicineCatalogService.getAvailableBrands(customerId);
+
+      return sendResponse(res, 200, 'Brands fetched successfully', result.data);
+    } catch (error) {
+      console.error('Error fetching brands:', error);
+      if (error.message === 'CUSTOMER_NOT_FOUND') {
+        return sendResponse(res, 404, 'Customer not found');
+      }
+      return sendResponse(res, 500, 'Server Error', null, error.message);
+    }
+  }
+
+  async getAvailableClasses(req, res) {
+    try {
+      const customerId = req.user.id;
+      const result =
+        await MedicineCatalogService.getAvailableClasses(customerId);
+
+      return sendResponse(
+        res,
+        200,
+        'Classes fetched successfully',
+        result.data
+      );
+    } catch (error) {
+      console.error('Error fetching classes:', error);
+      if (error.message === 'CUSTOMER_NOT_FOUND') {
+        return sendResponse(res, 404, 'Customer not found');
+      }
+      return sendResponse(res, 500, 'Server Error', null, error.message);
+    }
+  }
+
+  async getAvailableCategories(req, res) {
+    try {
+      const customerId = req.user.id;
+      const result =
+        await MedicineCatalogService.getAvailableCategories(customerId);
+
+      return sendResponse(
+        res,
+        200,
+        'Categories fetched successfully',
+        result.data
+      );
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      if (error.message === 'CUSTOMER_NOT_FOUND') {
+        return sendResponse(res, 404, 'Customer not found');
+      }
       return sendResponse(res, 500, 'Server Error', null, error.message);
     }
   }
@@ -214,8 +276,11 @@ class MedicineCatalogController {
       const customerId = req.user.id;
       const {
         searchTerm,
+        brand,
+        branch,
         category,
         dosage,
+        prescriptionStatus,
         sortBy,
         page = 1,
         limit = 10,
@@ -231,8 +296,11 @@ class MedicineCatalogController {
 
       const result = await MedicineCatalogService.searchMedicines(customerId, {
         searchTerm,
+        brandFilter: brand || null,
+        branchFilter: branch || null,
         categoryFilter: category || null,
         dosageFilter: dosage || null,
+        prescriptionStatusFilter: prescriptionStatus || null,
         sortBy: sortBy || 'name',
         page: parseInt(page),
         limit: parseInt(limit),
@@ -244,8 +312,11 @@ class MedicineCatalogController {
         {
           query: searchTerm.trim(),
           filters: {
+            brand: brand || null,
+            branch: branch || null,
             category: category || null,
             dosage: dosage || null,
+            prescriptionStatus: prescriptionStatus || null,
             sortBy: sortBy || 'name',
           },
         },

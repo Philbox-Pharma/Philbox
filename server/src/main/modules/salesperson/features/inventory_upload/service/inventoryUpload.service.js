@@ -3,6 +3,8 @@ import path from 'path';
 import * as XLSX from 'xlsx';
 import mongoose from 'mongoose';
 import Medicine from '../../../../../models/Medicine.js';
+import Manufacturer from '../../../../../models/Manufacturer.js';
+import MedicineCategory from '../../../../../models/MedicineCategory.js';
 import ItemClass from '../../../../../models/ItemClass.js';
 import StockInHand from '../../../../../models/StockInHand.js';
 import Salesperson from '../../../../../models/Salesperson.js';
@@ -57,6 +59,44 @@ const escapeRegex = value =>
 const buildIssueMessage = errors =>
   errors.map(err => `${err.field}: ${err.message}`).join(' | ');
 
+const extractStrengthFromName = name => {
+  const normalized = String(name || '').trim();
+  if (!normalized) return null;
+
+  const match = normalized.match(/\b(\d+(?:\.\d+)?)\s*(mg|mgs|ml|mls)\b/i);
+  if (!match) return null;
+
+  return `${match[1]}${match[2].toLowerCase()}`;
+};
+
+const resolveManufacturerByName = async manufacturerName => {
+  const normalizedName = String(manufacturerName || '').trim();
+  if (!normalizedName) return null;
+
+  let manufacturer = await Manufacturer.findOne({
+    name: {
+      $regex: `^${escapeRegex(normalizedName)}$`,
+      $options: 'i',
+    },
+  });
+
+  if (manufacturer) return manufacturer;
+
+  try {
+    manufacturer = await Manufacturer.create({ name: normalizedName });
+    return manufacturer;
+  } catch (error) {
+    if (error?.code !== 11000) throw error;
+
+    return Manufacturer.findOne({
+      name: {
+        $regex: `^${escapeRegex(normalizedName)}$`,
+        $options: 'i',
+      },
+    });
+  }
+};
+
 const resolveItemClassByName = async className => {
   const normalizedName = String(className || '').trim();
   if (!normalizedName) return null;
@@ -79,6 +119,36 @@ const resolveItemClassByName = async className => {
     }
 
     return ItemClass.findOne({
+      name: {
+        $regex: `^${escapeRegex(normalizedName)}$`,
+        $options: 'i',
+      },
+    });
+  }
+};
+
+const resolveMedicineCategoryByName = async categoryName => {
+  const normalizedName = String(categoryName || '').trim();
+  if (!normalizedName) return null;
+
+  let category = await MedicineCategory.findOne({
+    name: {
+      $regex: `^${escapeRegex(normalizedName)}$`,
+      $options: 'i',
+    },
+  });
+
+  if (category) return category;
+
+  try {
+    category = await MedicineCategory.create({ name: normalizedName });
+    return category;
+  } catch (error) {
+    if (error?.code !== 11000) {
+      throw error;
+    }
+
+    return MedicineCategory.findOne({
       name: {
         $regex: `^${escapeRegex(normalizedName)}$`,
         $options: 'i',
@@ -125,10 +195,25 @@ const normalizeRow = data => {
     StockValue: parseNumber(data.StockValue),
   };
 
+  if (normalized.PackUnits !== null && normalized.PackQty !== null) {
+    normalized.QTY = normalized.PackUnits * normalized.PackQty;
+  }
+
+  if (normalized.UnitPrice !== null && normalized.PackUnits !== null) {
+    normalized.saleprice = normalized.UnitPrice * normalized.PackUnits;
+  }
+
+  if (normalized.StockValue === null && normalized.UnitPrice !== null) {
+    normalized.StockValue = (normalized.QTY ?? 0) * normalized.UnitPrice;
+  }
+
   const errors = [];
 
   if (!normalized.Name) {
     errors.push({ field: 'Name', message: 'Name is required' });
+  }
+  if (!normalized.name) {
+    errors.push({ field: 'name', message: 'Manufacturer name is required' });
   }
   if (normalized.QTY === null || normalized.QTY < 0) {
     errors.push({
@@ -149,19 +234,34 @@ const normalizeRow = data => {
     });
   }
 
-  if (normalized.PackUnits !== null && normalized.PackUnits < 0) {
+  if (normalized.PackUnits === null || normalized.PackUnits <= 0) {
+    errors.push({
+      field: 'PackUnits',
+      message: 'PackUnits is required and must be a positive number',
+    });
+  } else if (normalized.PackUnits < 0) {
     errors.push({
       field: 'PackUnits',
       message: 'PackUnits must be a non-negative number',
     });
   }
-  if (normalized.UnitPrice !== null && normalized.UnitPrice < 0) {
+  if (normalized.UnitPrice === null || normalized.UnitPrice <= 0) {
+    errors.push({
+      field: 'UnitPrice',
+      message: 'UnitPrice is required and must be a positive number',
+    });
+  } else if (normalized.UnitPrice < 0) {
     errors.push({
       field: 'UnitPrice',
       message: 'UnitPrice must be a non-negative number',
     });
   }
-  if (normalized.PackQty !== null && normalized.PackQty < 0) {
+  if (normalized.PackQty === null || normalized.PackQty < 0) {
+    errors.push({
+      field: 'PackQty',
+      message: 'PackQty is required and must be a non-negative number',
+    });
+  } else if (normalized.PackQty < 0) {
     errors.push({
       field: 'PackQty',
       message: 'PackQty must be a non-negative number',
@@ -264,32 +364,59 @@ const createInventoryLog = async ({
   return log;
 };
 
+const buildMedicineCompoundKeyFilter = ({
+  name,
+  manufacturer,
+  category,
+  mgs,
+  dosageForm,
+}) => ({
+  Name: {
+    $regex: `^${escapeRegex(name)}$`,
+    $options: 'i',
+  },
+  manufacturer: manufacturer?._id || null,
+  category: category?._id || null,
+  mgs: mgs || null,
+  dosage_form: dosageForm || null,
+});
+
+const buildUploadNonKeyUpdatePayload = ({ data, itemClass }) => ({
+  alias_name: data.aliasname || undefined,
+  active: data.active,
+  sale_price: data.saleprice,
+  purchase_price: data.purprice,
+  unit_price: data.UnitPrice ?? data.saleprice,
+  class: itemClass?._id || undefined,
+  pack_unit: data.PackUnits ?? undefined,
+});
+
 const upsertMedicineAndStock = async ({ row, salespersonId, branchId }) => {
   const data = row.normalized;
   const itemClass = await resolveItemClassByName(data.classname);
-  let medicine = await Medicine.findOne({
-    Name: {
-      $regex: `^${escapeRegex(data.Name)}$`,
-      $options: 'i',
-    },
-    branch_id: branchId,
+  const manufacturer = await resolveManufacturerByName(data.name);
+  const category = await resolveMedicineCategoryByName(data.Category);
+  const strength = extractStrengthFromName(data.Name);
+  const { dosageForm, description, imageUrls } = await fetchMedicineDetails(
+    data.Name
+  );
+  const compoundKeyFilter = buildMedicineCompoundKeyFilter({
+    name: data.Name,
+    manufacturer,
+    category,
+    mgs: strength,
+    dosageForm,
   });
+
+  let medicine = await Medicine.findOne(compoundKeyFilter);
 
   let newMedicineAdded = false;
   let existingMedicineUpdated = false;
+  let resolutionMessage = 'New medicine created and stock was synced';
+  let resolutionAction = 'create';
 
   if (medicine) {
-    const updatePayload = {
-      alias_name: data.aliasname || undefined,
-      is_available: data.active,
-      sale_price: data.saleprice,
-      purchase_price: data.purprice,
-      medicine_category: data.Category || null,
-      class: itemClass?._id || undefined,
-      pack_unit: data.PackUnits ?? undefined,
-      salesperson_id: salespersonId,
-      branch_id: branchId,
-    };
+    const updatePayload = buildUploadNonKeyUpdatePayload({ data, itemClass });
 
     await Medicine.findByIdAndUpdate(medicine._id, {
       $set: updatePayload,
@@ -297,23 +424,26 @@ const upsertMedicineAndStock = async ({ row, salespersonId, branchId }) => {
 
     medicine = await Medicine.findById(medicine._id);
     existingMedicineUpdated = true;
+    resolutionMessage =
+      'Medicine already exists for this compound key; non-key details and stock were updated';
+    resolutionAction = 'update_existing';
   } else {
-    const { description, imageUrls } = await fetchMedicineDetails(data.Name);
-
     medicine = await Medicine.create({
       Name: data.Name,
       alias_name: data.aliasname || undefined,
-      is_available: data.active,
+      manufacturer: manufacturer?._id || null,
+      active: data.active,
       sale_price: data.saleprice,
       purchase_price: data.purprice,
-      medicine_category: data.Category || null,
+      unit_price: data.UnitPrice,
+      category: category?._id || null,
       class: itemClass?._id || undefined,
       pack_unit: data.PackUnits ?? undefined,
+      mgs: strength,
+      dosage_form: dosageForm || undefined,
       img_urls:
         Array.isArray(imageUrls) && imageUrls.length >= 2 ? imageUrls : [],
       description: description || undefined,
-      salesperson_id: salespersonId,
-      branch_id: branchId,
     });
     newMedicineAdded = true;
   }
@@ -322,12 +452,15 @@ const upsertMedicineAndStock = async ({ row, salespersonId, branchId }) => {
     {
       medicine_id: medicine._id,
       branch_id: branchId,
+      salesperson_id: salespersonId,
     },
     {
       $set: {
         quantity: data.QTY,
         stockValue: data.StockValue || 0,
         packQty: data.PackQty || 0,
+        branch_id: branchId,
+        salesperson_id: salespersonId,
       },
     },
     { upsert: true, new: true }
@@ -338,6 +471,8 @@ const upsertMedicineAndStock = async ({ row, salespersonId, branchId }) => {
     stockRecord,
     newMedicineAdded,
     existingMedicineUpdated,
+    resolutionMessage,
+    resolutionAction,
   };
 };
 
@@ -581,8 +716,8 @@ export const processInventoryUpload = async (req, file) => {
           uploadedFileId: uploadedFile._id,
           status: 'resolved',
           row,
-          issue: null,
-          action: null,
+          issue: processResult.resolutionMessage,
+          action: processResult.resolutionAction,
           targetMedicine: processResult.medicine._id,
           stock: processResult.stockRecord._id,
         });
@@ -800,9 +935,10 @@ export const resolveInventoryErrorLog = async (
     });
 
     log.status = 'resolved';
-    log.issue = null;
+    log.issue = processResult.resolutionMessage;
     log.error_field = null;
     log.error_message = null;
+    log.action = processResult.resolutionAction;
     log.target_medicine = processResult.medicine._id;
     log.stock = processResult.stockRecord._id;
     await log.save();
