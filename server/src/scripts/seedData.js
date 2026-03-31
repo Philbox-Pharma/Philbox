@@ -16,7 +16,9 @@ import Doctor from '../main/models/Doctor.js';
 import Salesperson from '../main/models/Salesperson.js';
 import Branch from '../main/models/Branch.js';
 import ItemClass from '../main/models/ItemClass.js';
-import MedicineItem from '../main/models/MedicineItem.js';
+import Medicine from '../main/models/Medicine.js';
+import MedicineCategory from '../main/models/MedicineCategory.js';
+import Manufacturer from '../main/models/Manufacturer.js';
 import StockInHand from '../main/models/StockInHand.js';
 import Appointment from '../main/models/Appointment.js';
 import Order from '../main/models/Order.js';
@@ -46,6 +48,7 @@ import Patient from '../main/models/Patient.js';
 import PrescriptionGeneratedByDoctor from '../main/models/PrescriptionGeneratedByDoctor.js';
 import PrescriptionItem from '../main/models/PrescriptionItem.js';
 import PrescriptionUploadedByCustomer from '../main/models/PrescriptionUploadedByCustomer.js';
+import Coupon from '../main/models/Coupon.js';
 
 // Connect to MongoDB
 const connectDB = async () => {
@@ -305,10 +308,10 @@ const seedSuperAdmin = async superAdminRole => {
     name,
     email,
     password: hashedPassword,
+    phone_number: '+92-300-9999999',
     category: 'super-admin',
     branches_managed: [],
     roleId: superAdminRole._id,
-    is_Verified: true,
   });
 
   console.log('  ✓ Super admin created:', email);
@@ -439,21 +442,23 @@ const seedData = async () => {
         name: 'Branch Admin Lahore',
         email: 'admin.lahore@philbox.com',
         password: hashedPassword,
+        phone_number: '+92-42-1234567',
         category: 'branch-admin',
         branches_managed: [],
         addresses: [addresses[0]._id],
+        status: 'active',
         roleId: branchAdminRole._id,
-        is_Verified: true,
       },
       {
         name: 'Branch Admin Karachi',
         email: 'admin.karachi@philbox.com',
         password: hashedPassword,
+        phone_number: '+92-21-9876543',
         category: 'branch-admin',
         branches_managed: [],
         addresses: [addresses[1]._id],
+        status: 'active',
         roleId: branchAdminRole._id,
-        is_Verified: true,
       },
     ]);
     console.log(
@@ -507,6 +512,10 @@ const seedData = async () => {
         dateOfBirth: new Date('1985-05-15'),
         contactNumber: '+92-300-1234567',
         passwordHash: hashedPassword,
+        oauth_provider: 'local',
+        affiliated_hospital: 'Lahore General Hospital',
+        onlineProfileURL: 'https://philbox.com/doctors/dr-sarah',
+        digital_signature: 'https://example.com/signature/dr-sarah',
         educational_details: [
           {
             degree: 'MBBS',
@@ -540,6 +549,10 @@ const seedData = async () => {
         dateOfBirth: new Date('1988-08-20'),
         contactNumber: '+92-321-9876543',
         passwordHash: hashedPassword,
+        oauth_provider: 'local',
+        affiliated_hospital: 'Aga Khan Hospital',
+        onlineProfileURL: 'https://philbox.com/doctors/dr-bilal',
+        digital_signature: 'https://example.com/signature/dr-bilal',
         educational_details: [
           {
             degree: 'MBBS',
@@ -577,6 +590,7 @@ const seedData = async () => {
         passwordHash: hashedPassword,
         branches_to_be_managed: [],
         address_id: addresses[7]._id,
+        status: 'active',
         roleId: salespersonRole._id,
         gender: 'Male',
         dateOfBirth: new Date('1992-04-10'),
@@ -588,6 +602,7 @@ const seedData = async () => {
         passwordHash: hashedPassword,
         branches_to_be_managed: [],
         address_id: addresses[8]._id,
+        status: 'active',
         roleId: salespersonRole._id,
         gender: 'Female',
         dateOfBirth: new Date('1995-09-18'),
@@ -671,61 +686,162 @@ const seedData = async () => {
     ]);
     console.log('  ✓ Created 5 item classes');
 
-    const medicineItems = await MedicineItem.insertMany([
+    // Create categories and manufacturers
+    const categories = await MedicineCategory.insertMany([
+      { name: 'Pain Relief' },
+      { name: 'Antibiotics' },
+      { name: 'Cardiology' },
+    ]);
+    console.log('  ✓ Created 3 medicine categories');
+
+    const manufacturers = await Manufacturer.insertMany([
+      { name: 'Panadol' },
+      { name: 'GlaxoSmithKline' },
+      { name: 'Abbott' },
+      { name: 'Pfizer' },
+    ]);
+    console.log('  ✓ Created 4 manufacturers');
+
+    const medicines = await Medicine.insertMany([
       {
         Name: 'Panadol 500mg',
-        branch_id: branches[0]._id,
-        salesperson_id: salespersons[0]._id,
+        alias_name: 'Paracetamol 500mg',
+        mgs: '500mg',
+        dosage_form: 'Tablet',
+        manufacturer: manufacturers[0].name,
+        category: categories[0].name,
         class: itemClasses[0]._id,
         sale_price: 5.0,
         purchase_price: 3.0,
-        is_available: true,
+        unit_price: 5.0,
+        pack_unit: 1,
+        active: true,
+        prescription_required: false,
+        lowStockThreshold: 50,
+        description: 'Pain relief tablet',
+        img_urls: ['https://example.com/panadol.jpg'],
       },
       {
         Name: 'Augmentin 625mg',
-        branch_id: branches[0]._id,
-        salesperson_id: salespersons[0]._id,
+        alias_name: 'Amoxicillin-Clavulanic Acid 625mg',
+        mgs: '625mg',
+        dosage_form: 'Tablet',
+        manufacturer: manufacturers[1].name,
+        category: categories[1].name,
         class: itemClasses[0]._id,
         sale_price: 280.0,
         purchase_price: 220.0,
-        is_available: true,
+        unit_price: 280.0,
+        pack_unit: 1,
+        active: true,
+        prescription_required: true,
+        lowStockThreshold: 30,
+        description: 'Antibiotic tablet',
+        img_urls: ['https://example.com/augmentin.jpg'],
       },
       {
         Name: 'Brufen 400mg',
-        branch_id: branches[0]._id,
-        salesperson_id: salespersons[0]._id,
+        alias_name: 'Ibuprofen 400mg',
+        mgs: '400mg',
+        dosage_form: 'Tablet',
+        manufacturer: manufacturers[2].name,
+        category: categories[0].name,
         class: itemClasses[0]._id,
         sale_price: 8.0,
         purchase_price: 5.5,
-        is_available: true,
-      },
-      {
-        Name: 'Amoxil Syrup 125mg',
-        branch_id: branches[1]._id,
-        salesperson_id: salespersons[1]._id,
-        class: itemClasses[2]._id,
-        sale_price: 150.0,
-        purchase_price: 110.0,
-        is_available: true,
+        unit_price: 8.0,
+        pack_unit: 1,
+        active: true,
+        prescription_required: false,
+        lowStockThreshold: 40,
+        description: 'Anti-inflammatory tablet',
+        img_urls: ['https://example.com/brufen.jpg'],
       },
       {
         Name: 'Lipitor 20mg',
-        branch_id: branches[1]._id,
-        salesperson_id: salespersons[1]._id,
+        alias_name: 'Atorvastatin 20mg',
+        mgs: '20mg',
+        dosage_form: 'Tablet',
+        manufacturer: manufacturers[0].name,
+        category: categories[2].name,
         class: itemClasses[0]._id,
         sale_price: 320.0,
         purchase_price: 270.0,
-        is_available: true,
+        unit_price: 320.0,
+        pack_unit: 1,
+        active: true,
+        prescription_required: true,
+        lowStockThreshold: 25,
+        description: 'Cholesterol-lowering medication',
+        img_urls: ['https://example.com/lipitor.jpg'],
+      },
+      {
+        Name: 'Amoxil Syrup 125mg',
+        alias_name: 'Amoxicillin Syrup 125mg',
+        mgs: '125ml',
+        dosage_form: 'Syrup',
+        manufacturer: manufacturers[3].name,
+        category: categories[1].name,
+        class: itemClasses[2]._id,
+        sale_price: 150.0,
+        purchase_price: 110.0,
+        unit_price: 150.0,
+        pack_unit: 1,
+        active: true,
+        prescription_required: false,
+        lowStockThreshold: 20,
+        description: 'Antibiotic syrup for children',
+        img_urls: ['https://example.com/amoxil-syrup.jpg'],
       },
     ]);
-    console.log('  ✓ Created 5 medicine items');
+    console.log('  ✓ Created 5 medicines');
 
     const stockInHand = await StockInHand.insertMany([
-      { medicine_id: medicineItems[0]._id, quantity: 1000 },
-      { medicine_id: medicineItems[1]._id, quantity: 500 },
-      { medicine_id: medicineItems[2]._id, quantity: 750 },
-      { medicine_id: medicineItems[3]._id, quantity: 300 },
-      { medicine_id: medicineItems[4]._id, quantity: 200 },
+      {
+        medicine_id: medicines[0]._id,
+        branch_id: branches[0]._id,
+        salesperson_id: salespersons[0]._id,
+        quantity: 1000,
+        stockValue: 5000,
+        packQty: 100,
+        alertResolved: false,
+      },
+      {
+        medicine_id: medicines[1]._id,
+        branch_id: branches[0]._id,
+        salesperson_id: salespersons[0]._id,
+        quantity: 500,
+        stockValue: 140000,
+        packQty: 50,
+        alertResolved: false,
+      },
+      {
+        medicine_id: medicines[2]._id,
+        branch_id: branches[0]._id,
+        salesperson_id: salespersons[0]._id,
+        quantity: 750,
+        stockValue: 6000,
+        packQty: 75,
+        alertResolved: false,
+      },
+      {
+        medicine_id: medicines[3]._id,
+        branch_id: branches[1]._id,
+        salesperson_id: salespersons[1]._id,
+        quantity: 300,
+        stockValue: 45000,
+        packQty: 30,
+        alertResolved: false,
+      },
+      {
+        medicine_id: medicines[4]._id,
+        branch_id: branches[1]._id,
+        salesperson_id: salespersons[1]._id,
+        quantity: 200,
+        stockValue: 64000,
+        packQty: 20,
+        alertResolved: false,
+      },
     ]);
     console.log('  ✓ Created 5 stock records');
 
@@ -737,21 +853,18 @@ const seedData = async () => {
         blood_group: 'O+',
         weight: 75,
         height: 175,
-        status: 'active',
       },
       {
         customer_id: customers[1]._id,
         blood_group: 'A+',
         weight: 58,
         height: 162,
-        status: 'active',
       },
       {
         customer_id: customers[2]._id,
         blood_group: 'B-',
         weight: 82,
         height: 180,
-        status: 'active',
       },
     ]);
     console.log(
@@ -865,7 +978,7 @@ const seedData = async () => {
     const prescriptionItems = await PrescriptionItem.insertMany([
       // Items for prescription 1 (Dr. Sarah → Ahmed)
       {
-        medicine_id: medicineItems[0]._id, // Panadol
+        medicine_id: medicines[0]._id, // Panadol
         form: 'tablet',
         frequency: 'twice a day',
         duration_days: 14,
@@ -874,7 +987,7 @@ const seedData = async () => {
         prescription_id: prescriptionsByDoctor[0]._id,
       },
       {
-        medicine_id: medicineItems[4]._id, // Lipitor
+        medicine_id: medicines[4]._id, // Lipitor
         form: 'tablet',
         frequency: 'once a day',
         duration_days: 30,
@@ -884,7 +997,7 @@ const seedData = async () => {
       },
       // Items for prescription 2 (Dr. Bilal → Usman)
       {
-        medicine_id: medicineItems[2]._id, // Brufen
+        medicine_id: medicines[2]._id, // Brufen
         form: 'tablet',
         frequency: 'thrice a day',
         duration_days: 7,
@@ -893,7 +1006,7 @@ const seedData = async () => {
         prescription_id: prescriptionsByDoctor[1]._id,
       },
       {
-        medicine_id: medicineItems[1]._id, // Augmentin
+        medicine_id: medicines[1]._id, // Augmentin
         form: 'tablet',
         frequency: 'twice a day',
         duration_days: 10,
@@ -982,25 +1095,25 @@ const seedData = async () => {
     const orderItems = await OrderItem.insertMany([
       {
         order_id: orders[0]._id,
-        medicine_id: medicineItems[1]._id,
+        medicine_id: medicines[1]._id,
         quantity: 2,
         subtotal: 560.0,
       },
       {
         order_id: orders[1]._id,
-        medicine_id: medicineItems[3]._id,
+        medicine_id: medicines[3]._id,
         quantity: 1,
         subtotal: 150.0,
       },
       {
         order_id: orders[1]._id,
-        medicine_id: medicineItems[4]._id,
+        medicine_id: medicines[4]._id,
         quantity: 1,
         subtotal: 320.0,
       },
       {
         order_id: orders[2]._id,
-        medicine_id: medicineItems[2]._id,
+        medicine_id: medicines[2]._id,
         quantity: 3,
         subtotal: 24.0,
       },
@@ -1131,7 +1244,7 @@ const seedData = async () => {
 
     const refillReminders = await RefillReminder.insertMany([
       {
-        medicines: [medicineItems[4]._id],
+        medicines: [medicines[4]._id],
         patient_id: customers[0]._id,
         frequency: 'monthly',
         timeOfDay: '08:00',
@@ -1140,7 +1253,7 @@ const seedData = async () => {
         nextNotificationDate: new Date('2026-04-01'),
       },
       {
-        medicines: [medicineItems[0]._id, medicineItems[2]._id],
+        medicines: [medicines[0]._id, medicines[2]._id],
         patient_id: customers[2]._id,
         frequency: 'weekly',
         timeOfDay: '09:00',
@@ -1320,7 +1433,7 @@ const seedData = async () => {
         action_type: 'add_medicine',
         description: 'Added Panadol 500mg to inventory',
         target_collection: 'medicine_items',
-        target_id: medicineItems[0]._id,
+        target_id: medicines[0]._id,
         ip_address: '192.168.4.15',
         created_at: new Date(),
       },
@@ -1471,7 +1584,7 @@ const seedData = async () => {
       {
         uploaded_inventory_file: uploadedInventoryFiles[0]._id,
         status: 'resolved',
-        target_medicine: medicineItems[0]._id,
+        target_medicine: medicines[0]._id,
         stock: stockInHand[0]._id,
         issue: 'Batch expiry date mismatch',
         action: 'retry',
@@ -1564,8 +1677,8 @@ const seedData = async () => {
         doctor_id: doctors[0]._id,
         date: new Date('2026-01-10'),
         start_time: '09:00',
-        end_time: '12:00',
-        slot_duration: 30,
+        end_time: '09:20',
+        slot_duration: 20,
         status: 'available',
         is_recurring: false,
         notes: 'Morning consultation - General checkups',
@@ -1574,8 +1687,8 @@ const seedData = async () => {
         doctor_id: doctors[0]._id,
         date: new Date('2026-01-10'),
         start_time: '14:00',
-        end_time: '17:00',
-        slot_duration: 60,
+        end_time: '14:20',
+        slot_duration: 20,
         status: 'available',
         is_recurring: false,
         notes: 'Afternoon consultation - Extended sessions',
@@ -1584,8 +1697,8 @@ const seedData = async () => {
         doctor_id: doctors[0]._id,
         date: new Date('2026-01-11'),
         start_time: '10:00',
-        end_time: '13:00',
-        slot_duration: 30,
+        end_time: '10:20',
+        slot_duration: 20,
         status: 'booked',
         is_recurring: false,
         appointment_id: appointments[0]._id,
@@ -1595,8 +1708,8 @@ const seedData = async () => {
         doctor_id: doctors[0]._id,
         date: new Date('2026-01-12'),
         start_time: '09:00',
-        end_time: '11:00',
-        slot_duration: 15,
+        end_time: '09:20',
+        slot_duration: 20,
         status: 'available',
         is_recurring: false,
         notes: 'Quick consultations - Follow-ups',
@@ -1605,8 +1718,8 @@ const seedData = async () => {
         doctor_id: doctors[0]._id,
         date: new Date('2026-01-13'),
         start_time: '15:00',
-        end_time: '18:00',
-        slot_duration: 30,
+        end_time: '15:20',
+        slot_duration: 20,
         status: 'unavailable',
         is_recurring: false,
         notes: 'Unavailable - Personal appointment',
@@ -1624,8 +1737,8 @@ const seedData = async () => {
         doctor_id: doctors[0]._id,
         date,
         start_time: '10:00',
-        end_time: '16:00',
-        slot_duration: 60,
+        end_time: '10:20',
+        slot_duration: 20,
         status: 'available',
         is_recurring: true,
         recurring_pattern: {
@@ -1647,8 +1760,8 @@ const seedData = async () => {
         doctor_id: doctors[0]._id,
         date,
         start_time: '14:00',
-        end_time: '18:00',
-        slot_duration: 60,
+        end_time: '14:20',
+        slot_duration: 20,
         status: 'available',
         is_recurring: true,
         recurring_pattern: {
@@ -1673,8 +1786,8 @@ const seedData = async () => {
         doctor_id: doctors[1]._id,
         date,
         start_time: '11:00',
-        end_time: '15:00',
-        slot_duration: 30,
+        end_time: '11:20',
+        slot_duration: 20,
         status: 'available',
         is_recurring: true,
         recurring_pattern: {
@@ -1697,8 +1810,8 @@ const seedData = async () => {
         doctor_id: doctors[1]._id,
         date,
         start_time: '09:00',
-        end_time: '13:00',
-        slot_duration: 60,
+        end_time: '09:20',
+        slot_duration: 20,
         status: 'available',
         is_recurring: true,
         recurring_pattern: {
@@ -1718,6 +1831,39 @@ const seedData = async () => {
       `  ✓ Created ${doctorSlots.length} doctor slots (${sarahSlots.length} for Dr. Sarah, ${bilalSlots.length} for Dr. Bilal)`
     );
 
+    // ==================== 20. COUPONS ====================
+    console.log('\n🎟️  Seeding coupons...');
+    const coupons = await Coupon.insertMany([
+      {
+        cupon_code: 'WELCOME10',
+        expiry_time: new Date('2026-12-31'),
+        percent_off: 10,
+        for: 'medicine',
+        is_active: true,
+        max_use_limit: 100,
+        times_used: 5,
+      },
+      {
+        cupon_code: 'HEALTH20',
+        expiry_time: new Date('2026-06-30'),
+        percent_off: 20,
+        for: 'appointments',
+        is_active: true,
+        max_use_limit: 50,
+        times_used: 10,
+      },
+      {
+        cupon_code: 'SUMMER15',
+        expiry_time: new Date('2026-05-31'),
+        percent_off: 15,
+        for: 'medicine',
+        is_active: false,
+        max_use_limit: 75,
+        times_used: 25,
+      },
+    ]);
+    console.log(`  ✓ Created ${coupons.length} coupons`);
+
     // ==================== SUMMARY ====================
     console.log('\n✅ Data seeding completed successfully!\n');
     console.log('='.repeat(60));
@@ -1733,7 +1879,9 @@ const seedData = async () => {
     console.log(`✓ Salespersons: ${salespersons.length}`);
     console.log(`✓ Branches: ${branches.length}`);
     console.log(`✓ Item Classes: ${itemClasses.length}`);
-    console.log(`✓ Medicine Items: ${medicineItems.length}`);
+    console.log(`✓ Medicine Categories: ${categories.length}`);
+    console.log(`✓ Manufacturers: ${manufacturers.length}`);
+    console.log(`✓ Medicines: ${medicines.length}`);
     console.log(`✓ Stock Records: ${stockInHand.length}`);
     console.log(`✓ Appointments: ${appointments.length}`);
     console.log(`✓ Prescriptions (by doctor): ${prescriptionsByDoctor.length}`);
@@ -1764,6 +1912,7 @@ const seedData = async () => {
     console.log(`✓ Doctor Documents: ${doctorDocuments.length}`);
     console.log(`✓ Doctor Applications: ${doctorApplications.length}`);
     console.log(`✓ Doctor Slots: ${doctorSlots.length}`);
+    console.log(`✓ Coupons: ${coupons.length}`);
     console.log('='.repeat(60));
     console.log('\n💡 Test Credentials:');
     console.log(
