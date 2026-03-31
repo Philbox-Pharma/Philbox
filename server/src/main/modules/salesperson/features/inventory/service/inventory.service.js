@@ -2,13 +2,17 @@ import * as XLSX from 'xlsx';
 import mongoose from 'mongoose';
 
 import Medicine from '../../../../../models/Medicine.js';
+import Manufacturer from '../../../../../models/Manufacturer.js';
+import MedicineCategory from '../../../../../models/MedicineCategory.js';
 import ItemClass from '../../../../../models/ItemClass.js';
 import StockInHand from '../../../../../models/StockInHand.js';
+import Branch from '../../../../../models/Branch.js';
 import InventoryFilesLog from '../../../../../models/InventoryFilesLog.js';
 import UploadedInventoryFile from '../../../../../models/UploadedInventoryFile.js';
 import Salesperson from '../../../../../models/Salesperson.js';
 import { paginate } from '../../../../../utils/paginate.js';
 import { logSalespersonActivity } from '../../../utils/logSalespersonActivity.js';
+import { fetchMedicineDetails } from '../../../utils/fetchMedicineDetails.js';
 
 const escapeRegex = value =>
   String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -75,22 +79,54 @@ const mapPagination = result => ({
   totalPages: result.totalPages,
 });
 
-const buildMedicineFilters = ({ search, category, branchId }) => {
+const extractStrengthFromName = name => {
+  const normalized = String(name || '').trim();
+  if (!normalized) return null;
+
+  const match = normalized.match(/\b(\d+(?:\.\d+)?)\s*(mg|mgs|ml|mls)\b/i);
+  if (!match) return null;
+
+  return `${match[1]}${match[2].toLowerCase()}`;
+};
+
+const buildMedicineFilters = async ({ search, category, branchId }) => {
   const filter = {
-    branch_id: branchId,
-    is_available: { $ne: false },
+    active: { $ne: false },
   };
 
+  void branchId;
+
   if (category) {
-    filter.medicine_category = category;
+    const keyword = escapeRegex(String(category).trim());
+    const matchedCategories = await MedicineCategory.find({
+      name: { $regex: keyword, $options: 'i' },
+    })
+      .select('_id')
+      .lean();
+
+    const categoryIds = matchedCategories.map(item => item._id);
+    filter.$and = filter.$and || [];
+    filter.$and.push({
+      $or: [
+        ...(categoryIds.length ? [{ category: { $in: categoryIds } }] : []),
+      ],
+    });
   }
 
   if (search) {
     const keyword = escapeRegex(search.trim());
+    const matchedCategories = await MedicineCategory.find({
+      name: { $regex: keyword, $options: 'i' },
+    })
+      .select('_id')
+      .lean();
+
+    const categoryIds = matchedCategories.map(item => item._id);
+
     filter.$or = [
       { Name: { $regex: keyword, $options: 'i' } },
       { alias_name: { $regex: keyword, $options: 'i' } },
-      { medicine_category: { $regex: keyword, $options: 'i' } },
+      ...(categoryIds.length ? [{ category: { $in: categoryIds } }] : []),
     ];
   }
 
@@ -106,6 +142,7 @@ const combineMedicineAndStock = (medicine, stockRecord) => {
 
   return {
     ...medicine,
+    is_available: medicine.active,
     stock: {
       quantity,
       stockValue,
@@ -115,6 +152,36 @@ const combineMedicineAndStock = (medicine, stockRecord) => {
     isCritical: quantity < 5,
     isLowStock: quantity <= lowStockThreshold,
   };
+};
+
+const resolveManufacturerByName = async manufacturerName => {
+  const normalized = String(manufacturerName || '').trim();
+  if (!normalized) return null;
+
+  let manufacturer = await Manufacturer.findOne({
+    name: {
+      $regex: `^${escapeRegex(normalized)}$`,
+      $options: 'i',
+    },
+  }).lean();
+
+  if (manufacturer?._id) return manufacturer._id;
+
+  try {
+    const created = await Manufacturer.create({ name: normalized });
+    return created._id;
+  } catch (error) {
+    if (error?.code !== 11000) throw error;
+
+    manufacturer = await Manufacturer.findOne({
+      name: {
+        $regex: `^${escapeRegex(normalized)}$`,
+        $options: 'i',
+      },
+    }).lean();
+
+    return manufacturer?._id || null;
+  }
 };
 
 const resolveItemClassByName = async className => {
@@ -147,27 +214,98 @@ const resolveItemClassByName = async className => {
   }
 };
 
+const resolveMedicineCategoryByName = async categoryName => {
+  const normalized = String(categoryName || '').trim();
+  if (!normalized) return null;
+
+  let category = await MedicineCategory.findOne({
+    name: {
+      $regex: `^${escapeRegex(normalized)}$`,
+      $options: 'i',
+    },
+  }).lean();
+
+  if (category?._id) return category._id;
+
+  try {
+    const created = await MedicineCategory.create({ name: normalized });
+    return created._id;
+  } catch (error) {
+    if (error?.code !== 11000) throw error;
+
+    category = await MedicineCategory.findOne({
+      name: {
+        $regex: `^${escapeRegex(normalized)}$`,
+        $options: 'i',
+      },
+    }).lean();
+
+    return category?._id || null;
+  }
+};
+
 const buildMedicineUpdatePayload = async payload => {
   const updatePayload = {};
 
+  let inferredDetails = null;
+  if (payload.Name !== undefined) {
+    inferredDetails = await fetchMedicineDetails(payload.Name);
+  }
+
   if (payload.Name !== undefined) updatePayload.Name = payload.Name;
+  if (payload.manufacturer_name !== undefined) {
+    updatePayload.manufacturer = await resolveManufacturerByName(
+      payload.manufacturer_name
+    );
+  }
   if (payload.alias_name !== undefined)
     updatePayload.alias_name = payload.alias_name || undefined;
-  if (payload.medicine_category !== undefined)
-    updatePayload.medicine_category = payload.medicine_category || null;
+  const categoryInput = payload.category_name;
+  if (categoryInput !== undefined) {
+    const normalizedCategory = String(categoryInput || '').trim();
+    updatePayload.category =
+      await resolveMedicineCategoryByName(normalizedCategory);
+  }
   if (payload.description !== undefined)
     updatePayload.description = payload.description || undefined;
+  else if (inferredDetails?.description) {
+    updatePayload.description = inferredDetails.description;
+  }
   if (payload.sale_price !== undefined)
     updatePayload.sale_price = payload.sale_price;
   if (payload.purchase_price !== undefined)
     updatePayload.purchase_price = payload.purchase_price;
+  if (payload.unit_price !== undefined)
+    updatePayload.unit_price = payload.unit_price;
   if (payload.pack_unit !== undefined)
     updatePayload.pack_unit = payload.pack_unit;
   if (payload.lowStockThreshold !== undefined)
     updatePayload.lowStockThreshold = payload.lowStockThreshold;
-  if (payload.is_available !== undefined)
-    updatePayload.is_available = payload.is_available;
+  if (payload.active !== undefined) updatePayload.active = payload.active;
   if (payload.img_urls !== undefined) updatePayload.img_urls = payload.img_urls;
+  else if (
+    Array.isArray(inferredDetails?.imageUrls) &&
+    inferredDetails.imageUrls.length >= 2
+  ) {
+    updatePayload.img_urls = inferredDetails.imageUrls;
+  }
+
+  if (inferredDetails?.dosageForm) {
+    updatePayload.dosage_form = inferredDetails.dosageForm;
+  }
+
+  if (payload.Name !== undefined) {
+    updatePayload.mgs = extractStrengthFromName(payload.Name);
+  }
+
+  if (
+    updatePayload.unit_price !== undefined &&
+    updatePayload.pack_unit !== undefined &&
+    updatePayload.sale_price === undefined
+  ) {
+    updatePayload.sale_price =
+      updatePayload.unit_price * updatePayload.pack_unit;
+  }
 
   if (payload.class) {
     assertValidObjectId(payload.class, 'class');
@@ -188,10 +326,96 @@ const buildStockUpdatePayload = payload => {
   return stockPayload;
 };
 
+const buildMedicineCompoundKeyFilter = payload => ({
+  Name: {
+    $regex: `^${escapeRegex(payload.Name || '')}$`,
+    $options: 'i',
+  },
+  manufacturer: payload.manufacturer ?? null,
+  category: payload.category ?? null,
+  mgs: payload.mgs || null,
+  dosage_form: payload.dosage_form || null,
+});
+
+const pickUpsertNonKeyFields = payload => {
+  const nonKeyPayload = {};
+  const allowedFields = [
+    'alias_name',
+    'active',
+    'sale_price',
+    'purchase_price',
+    'unit_price',
+    'pack_unit',
+    'lowStockThreshold',
+    'class',
+  ];
+
+  for (const field of allowedFields) {
+    if (payload[field] !== undefined) {
+      nonKeyPayload[field] = payload[field];
+    }
+  }
+
+  return nonKeyPayload;
+};
+
 const getRequestedBranchId = req =>
   req?.query?.branch_id || req?.body?.branch_id || null;
 
 class InventoryService {
+  async getManagedBranches(req) {
+    const managedBranchIds = await getSalespersonBranches(req.salesperson._id);
+
+    const branches = await Branch.find({
+      _id: { $in: managedBranchIds },
+      status: 'Active',
+    })
+      .select('_id name')
+      .sort({ name: 1 })
+      .lean();
+
+    return {
+      branches,
+      count: branches.length,
+    };
+  }
+
+  async getManufacturers() {
+    const manufacturers = await Manufacturer.find({})
+      .select('_id name')
+      .sort({ name: 1 })
+      .lean();
+
+    return {
+      brands: manufacturers,
+      count: manufacturers.length,
+    };
+  }
+
+  async getCategories() {
+    const categories = await MedicineCategory.find({})
+      .select('_id name')
+      .sort({ name: 1 })
+      .lean();
+
+    return {
+      categories,
+      count: categories.length,
+    };
+  }
+
+  async getItemClasses() {
+    const classes = await ItemClass.find({})
+      .select('_id name')
+      .sort({ name: 1 })
+      .lean();
+
+    return {
+      classes,
+      count: classes.length,
+    };
+  }
+
   async listInventory(query, req) {
     const {
       search,
@@ -204,24 +428,54 @@ class InventoryService {
     } = query;
 
     const branchId = await resolveBranchId(req.salesperson._id, branch_id);
-    const filter = buildMedicineFilters({ search, category, branchId });
+    const filter = await buildMedicineFilters({ search, category, branchId });
     const sort = { [sortBy]: sortOrder === 'desc' ? -1 : 1 };
+
+    const stockRows = await StockInHand.find({
+      branch_id: branchId,
+      salesperson_id: req.salesperson._id,
+    })
+      .select('medicine_id')
+      .lean();
+
+    const medicineIds = stockRows.map(row => row.medicine_id).filter(Boolean);
+
+    if (!medicineIds.length) {
+      return {
+        medicines: [],
+        pagination: {
+          total: 0,
+          page: Number(page),
+          limit: Number(limit),
+          totalPages: 0,
+        },
+      };
+    }
+
+    filter._id = { $in: medicineIds };
 
     const result = await paginate(
       Medicine,
       filter,
       Number(page),
       Number(limit),
-      [{ path: 'class', select: 'name' }],
+      [
+        { path: 'class', select: 'name' },
+        { path: 'category', select: 'name' },
+      ],
       sort,
       ''
     );
 
-    const medicineIds = result.list.map(medicine => medicine._id);
+    await Medicine.populate(result.list, {
+      path: 'manufacturer',
+      select: 'name',
+    });
 
     const stocks = await StockInHand.find({
-      medicine_id: { $in: medicineIds },
+      medicine_id: { $in: result.list.map(medicine => medicine._id) },
       branch_id: branchId,
+      salesperson_id: req.salesperson._id,
     }).lean();
 
     const stockMap = new Map(
@@ -230,6 +484,9 @@ class InventoryService {
 
     const medicines = result.list.map(medicine => {
       const medicineObj = medicine.toObject ? medicine.toObject() : medicine;
+      medicineObj.manufacturer_name =
+        medicineObj.manufacturer?.name || medicineObj.manufacturer_name || null;
+      medicineObj.category_name = medicineObj.category?.name || null;
       return combineMedicineAndStock(
         medicineObj,
         stockMap.get(String(medicineObj._id))
@@ -250,11 +507,23 @@ class InventoryService {
       getRequestedBranchId(req)
     );
 
-    const medicine = await Medicine.findOne({
-      _id: medicineId,
+    const stock = await StockInHand.findOne({
+      medicine_id: medicineId,
       branch_id: branchId,
-    })
+      salesperson_id: req.salesperson._id,
+    }).lean();
+
+    if (!stock) {
+      throw {
+        status: 404,
+        message: 'Medicine not found',
+      };
+    }
+
+    const medicine = await Medicine.findById(medicineId)
       .populate('class', 'name')
+      .populate('manufacturer', 'name')
+      .populate('category', 'name')
       .lean();
 
     if (!medicine) {
@@ -263,11 +532,6 @@ class InventoryService {
         message: 'Medicine not found',
       };
     }
-
-    const stock = await StockInHand.findOne({
-      medicine_id: medicineId,
-      branch_id: branchId,
-    }).lean();
 
     const auditLogs = await InventoryFilesLog.find({
       target_medicine: medicineId,
@@ -291,10 +555,7 @@ class InventoryService {
       getRequestedBranchId(req)
     );
 
-    const medicine = await Medicine.findOne({
-      _id: medicineId,
-      branch_id: branchId,
-    }).lean();
+    const medicine = await Medicine.findById(medicineId).lean();
 
     if (!medicine) {
       throw {
@@ -307,14 +568,17 @@ class InventoryService {
       {
         medicine_id: medicineId,
         branch_id: branchId,
+        salesperson_id: req.salesperson._id,
       },
       {
         $set: {
           quantity: payload.quantity,
+          salesperson_id: req.salesperson._id,
         },
         $setOnInsert: {
           medicine_id: medicineId,
           branch_id: branchId,
+          salesperson_id: req.salesperson._id,
         },
       },
       {
@@ -373,14 +637,22 @@ class InventoryService {
       getRequestedBranchId(req)
     );
 
+    const stockExists = await StockInHand.exists({
+      medicine_id: medicineId,
+      branch_id: branchId,
+      salesperson_id: req.salesperson._id,
+    });
+
+    if (!stockExists) {
+      throw {
+        status: 404,
+        message: 'Medicine not found',
+      };
+    }
+
     const medicine = await Medicine.findOneAndUpdate(
-      {
-        _id: medicineId,
-        branch_id: branchId,
-      },
-      {
-        $set: { is_available: false },
-      },
+      { _id: medicineId },
+      { $set: { active: false } },
       { new: true }
     ).lean();
 
@@ -397,7 +669,7 @@ class InventoryService {
       `Discontinued medicine ${medicine.Name}`,
       'medicineitems',
       medicine._id,
-      { is_available: false }
+      { active: false }
     );
 
     return medicine;
@@ -411,14 +683,22 @@ class InventoryService {
       getRequestedBranchId(req)
     );
 
+    const stockExists = await StockInHand.exists({
+      medicine_id: medicineId,
+      branch_id: branchId,
+      salesperson_id: req.salesperson._id,
+    });
+
+    if (!stockExists) {
+      throw {
+        status: 404,
+        message: 'Medicine not found',
+      };
+    }
+
     const medicine = await Medicine.findOneAndUpdate(
-      {
-        _id: medicineId,
-        branch_id: branchId,
-      },
-      {
-        $set: { is_available: false },
-      },
+      { _id: medicineId },
+      { $set: { active: false } },
       { new: true }
     ).lean();
 
@@ -435,7 +715,7 @@ class InventoryService {
       `Soft deleted medicine ${medicine.Name}`,
       'medicineitems',
       medicine._id,
-      { is_available: false }
+      { active: false }
     );
 
     return {
@@ -450,40 +730,44 @@ class InventoryService {
       { requireRequested: true }
     );
 
-    const existing = await Medicine.findOne({
-      Name: {
-        $regex: `^${escapeRegex(payload.Name)}$`,
-        $options: 'i',
-      },
-      branch_id: branchId,
-    }).lean();
-
-    if (existing) {
-      throw {
-        status: 409,
-        message: 'Medicine already exists in this branch',
-      };
-    }
-
     const medicinePayload = await buildMedicineUpdatePayload(payload);
     medicinePayload.Name = payload.Name;
-    medicinePayload.branch_id = branchId;
-    medicinePayload.salesperson_id = req.salesperson._id;
+    const existing = await Medicine.findOne(
+      buildMedicineCompoundKeyFilter(medicinePayload)
+    ).lean();
 
-    const medicine = await Medicine.create(medicinePayload);
+    let medicine;
+    if (existing) {
+      medicine = existing;
+      const nonKeyPayload = pickUpsertNonKeyFields(medicinePayload);
+      if (Object.keys(nonKeyPayload).length) {
+        await Medicine.findByIdAndUpdate(existing._id, {
+          $set: nonKeyPayload,
+        });
+        medicine = await Medicine.findById(existing._id).lean();
+      }
+    } else {
+      medicine = await Medicine.create(medicinePayload);
+    }
 
     const stockPayload = buildStockUpdatePayload(payload);
     const stock = await StockInHand.findOneAndUpdate(
-      { medicine_id: medicine._id, branch_id: branchId },
+      {
+        medicine_id: medicine._id,
+        branch_id: branchId,
+        salesperson_id: req.salesperson._id,
+      },
       {
         $set: {
           quantity: stockPayload.quantity ?? 0,
           stockValue: stockPayload.stockValue ?? 0,
           packQty: stockPayload.packQty ?? 0,
+          salesperson_id: req.salesperson._id,
         },
         $setOnInsert: {
           medicine_id: medicine._id,
           branch_id: branchId,
+          salesperson_id: req.salesperson._id,
         },
       },
       { upsert: true, new: true }
@@ -512,12 +796,13 @@ class InventoryService {
       payload.branch_id || getRequestedBranchId(req)
     );
 
-    const medicine = await Medicine.findOne({
-      _id: medicineId,
+    const stockLink = await StockInHand.exists({
+      medicine_id: medicineId,
       branch_id: branchId,
+      salesperson_id: req.salesperson._id,
     });
 
-    if (!medicine) {
+    if (!stockLink) {
       throw {
         status: 404,
         message: 'Medicine not found',
@@ -533,12 +818,20 @@ class InventoryService {
     let stock = null;
     if (Object.keys(stockPayload).length) {
       stock = await StockInHand.findOneAndUpdate(
-        { medicine_id: medicineId, branch_id: branchId },
         {
-          $set: stockPayload,
+          medicine_id: medicineId,
+          branch_id: branchId,
+          salesperson_id: req.salesperson._id,
+        },
+        {
+          $set: {
+            ...stockPayload,
+            salesperson_id: req.salesperson._id,
+          },
           $setOnInsert: {
             medicine_id: medicineId,
             branch_id: branchId,
+            salesperson_id: req.salesperson._id,
           },
         },
         { upsert: true, new: true }
@@ -547,6 +840,8 @@ class InventoryService {
 
     const updatedMedicine = await Medicine.findById(medicineId)
       .populate('class', 'name')
+      .populate('manufacturer', 'name')
+      .populate('category', 'name')
       .lean();
 
     const stockDoc =
@@ -554,6 +849,7 @@ class InventoryService {
       (await StockInHand.findOne({
         medicine_id: medicineId,
         branch_id: branchId,
+        salesperson_id: req.salesperson._id,
       }).lean());
 
     await logSalespersonActivity(
@@ -583,24 +879,19 @@ class InventoryService {
 
     for (const item of payload.medicines) {
       const medicinePayload = await buildMedicineUpdatePayload(item);
-      const existing = await Medicine.findOne({
-        Name: {
-          $regex: `^${escapeRegex(item.Name)}$`,
-          $options: 'i',
-        },
-        branch_id: branchId,
-      });
+      medicinePayload.Name = item.Name;
+
+      const existing = await Medicine.findOne(
+        buildMedicineCompoundKeyFilter(medicinePayload)
+      );
 
       let medicineId;
 
       if (existing) {
-        if (Object.keys(medicinePayload).length) {
+        const nonKeyPayload = pickUpsertNonKeyFields(medicinePayload);
+        if (Object.keys(nonKeyPayload).length) {
           await Medicine.findByIdAndUpdate(existing._id, {
-            $set: {
-              ...medicinePayload,
-              salesperson_id: req.salesperson._id,
-              branch_id: branchId,
-            },
+            $set: nonKeyPayload,
           });
         }
         medicineId = existing._id;
@@ -609,8 +900,6 @@ class InventoryService {
         const created = await Medicine.create({
           ...medicinePayload,
           Name: item.Name,
-          branch_id: branchId,
-          salesperson_id: req.salesperson._id,
         });
         medicineId = created._id;
         createdCount += 1;
@@ -619,12 +908,20 @@ class InventoryService {
       const stockPayload = buildStockUpdatePayload(item);
       if (Object.keys(stockPayload).length) {
         await StockInHand.findOneAndUpdate(
-          { medicine_id: medicineId, branch_id: branchId },
           {
-            $set: stockPayload,
+            medicine_id: medicineId,
+            branch_id: branchId,
+            salesperson_id: req.salesperson._id,
+          },
+          {
+            $set: {
+              ...stockPayload,
+              salesperson_id: req.salesperson._id,
+            },
             $setOnInsert: {
               medicine_id: medicineId,
               branch_id: branchId,
+              salesperson_id: req.salesperson._id,
             },
           },
           { upsert: true, new: true }
@@ -661,13 +958,8 @@ class InventoryService {
       { requireRequested: true }
     );
 
-    const medicineResult = await Medicine.updateMany(
-      { branch_id: branchId, is_available: { $ne: false } },
-      { $set: { is_available: false } }
-    );
-
     const stockResult = await StockInHand.updateMany(
-      { branch_id: branchId },
+      { branch_id: branchId, salesperson_id: req.salesperson._id },
       { $set: { quantity: 0, stockValue: 0, packQty: 0 } }
     );
 
@@ -679,14 +971,12 @@ class InventoryService {
       null,
       {
         branch_id: branchId,
-        medicinesAffected: medicineResult.modifiedCount || 0,
         stockAffected: stockResult.modifiedCount || 0,
       }
     );
 
     return {
       branch_id: branchId,
-      medicinesAffected: medicineResult.modifiedCount || 0,
       stockAffected: stockResult.modifiedCount || 0,
     };
   }
@@ -699,9 +989,10 @@ class InventoryService {
       query.branch_id || getRequestedBranchId(req)
     );
 
-    const medicineExists = await Medicine.exists({
-      _id: medicineId,
+    const medicineExists = await StockInHand.exists({
+      medicine_id: medicineId,
       branch_id: branchId,
+      salesperson_id: req.salesperson._id,
     });
 
     if (!medicineExists) {
@@ -741,39 +1032,46 @@ class InventoryService {
       getRequestedBranchId(req)
     );
 
-    const medicines = await Medicine.find({
-      branch_id: branchId,
-      is_available: { $ne: false },
-    })
-      .populate('class', 'name')
-      .lean();
-
     const stocks = await StockInHand.find({
       branch_id: branchId,
-      medicine_id: { $in: medicines.map(medicine => medicine._id) },
+      salesperson_id: req.salesperson._id,
     }).lean();
 
-    const stockMap = new Map(
-      stocks.map(stock => [String(stock.medicine_id), stock])
+    const medicines = await Medicine.find({
+      _id: { $in: stocks.map(stock => stock.medicine_id).filter(Boolean) },
+      active: { $ne: false },
+    })
+      .populate('class', 'name')
+      .populate('manufacturer', 'name')
+      .populate('category', 'name')
+      .lean();
+
+    const medicineMap = new Map(
+      medicines.map(medicine => [String(medicine._id), medicine])
     );
 
-    const rows = medicines.map(medicine => {
-      const stock = stockMap.get(String(medicine._id));
-      return {
-        Name: medicine.Name || '',
-        aliasname: medicine.alias_name || '',
-        active: medicine.is_available ?? true,
-        saleprice: medicine.sale_price ?? 0,
-        purprice: medicine.purchase_price ?? 0,
-        PackUnits: medicine.pack_unit ?? 1,
-        QTY: stock?.quantity ?? 0,
-        classname: medicine.class?.name || '',
-        Category: medicine.medicine_category || '',
-        UnitPrice: medicine.sale_price ?? 0,
-        PackQty: stock?.packQty ?? 0,
-        StockValue: stock?.stockValue ?? 0,
-      };
-    });
+    const rows = stocks
+      .map(stock => {
+        const medicine = medicineMap.get(String(stock.medicine_id));
+        if (!medicine) return null;
+
+        return {
+          Name: medicine.Name || '',
+          aliasname: medicine.alias_name || '',
+          active: medicine.active ?? true,
+          saleprice: medicine.sale_price ?? 0,
+          purprice: medicine.purchase_price ?? 0,
+          PackUnits: medicine.pack_unit ?? 1,
+          QTY: stock?.quantity ?? 0,
+          name: medicine.manufacturer?.name || '',
+          classname: medicine.class?.name || '',
+          Category: medicine.category?.name || '',
+          UnitPrice: medicine.unit_price ?? medicine.sale_price ?? 0,
+          PackQty: stock?.packQty ?? 0,
+          StockValue: stock?.stockValue ?? 0,
+        };
+      })
+      .filter(Boolean);
 
     const sheet = XLSX.utils.json_to_sheet(rows, {
       header: [
@@ -784,6 +1082,7 @@ class InventoryService {
         'purprice',
         'PackUnits',
         'QTY',
+        'name',
         'classname',
         'Category',
         'UnitPrice',

@@ -57,7 +57,7 @@ class CustomerCartController {
         req,
         'ADDED_TO_CART',
         `Added medicine ${value.medicineId} to cart. ${responseMessage}`,
-        'orders'
+        'carts'
       );
 
       return sendResponse(res, 200, responseMessage, cart);
@@ -112,7 +112,7 @@ class CustomerCartController {
         req,
         'UPDATED_CART_ITEM',
         `Updated cart item ${value.itemId} quantity to ${value.quantity}`,
-        'orders'
+        'carts'
       );
 
       return sendResponse(res, 200, 'Cart item updated successfully', cart);
@@ -150,7 +150,7 @@ class CustomerCartController {
         req,
         'REMOVED_CART_ITEM',
         `Removed cart item ${value.itemId}`,
-        'orders'
+        'carts'
       );
 
       return sendResponse(res, 200, 'Cart item removed successfully', cart);
@@ -180,7 +180,7 @@ class CustomerCartController {
         req,
         'CLEARED_CART',
         'Cleared all cart items',
-        'orders'
+        'carts'
       );
 
       return sendResponse(res, 200, 'Cart cleared successfully', cart);

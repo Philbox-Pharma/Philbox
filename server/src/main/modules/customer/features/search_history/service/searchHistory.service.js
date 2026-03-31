@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 import Medicine from '../../../../../models/Medicine.js';
+import MedicineCategory from '../../../../../models/MedicineCategory.js';
 import SearchHistory from '../../../../../models/SearchHistory.js';
 import { logCustomerActivity } from '../../../utils/logCustomerActivities.js';
 
@@ -96,6 +97,56 @@ class CustomerSearchHistoryService {
       );
 
       return searchHistory;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Get recent searches for a customer as query strings (latest first)
+   */
+  async getRecentSearches(customerId, limit = 10, req) {
+    try {
+      const parsedLimit = Math.max(1, Math.min(Number(limit) || 10, 50));
+
+      const searchHistory = await SearchHistory.find({
+        customer_id: customerId,
+      })
+        .sort({ searched_at: -1 })
+        .select('query searched_at')
+        .limit(parsedLimit * 3)
+        .lean();
+
+      // Keep only latest unique queries while preserving recency order.
+      const recent = [];
+      const seen = new Set();
+      for (const item of searchHistory) {
+        const query = String(item.query || '').trim();
+        if (!query) continue;
+
+        const key = query.toLowerCase();
+        if (seen.has(key)) continue;
+
+        seen.add(key);
+        recent.push({
+          query,
+          searched_at: item.searched_at,
+        });
+
+        if (recent.length >= parsedLimit) {
+          break;
+        }
+      }
+
+      await logCustomerActivity(
+        req,
+        'view_recent_searches',
+        'Viewed recent searches',
+        'search_history',
+        customerId
+      );
+
+      return recent;
     } catch (error) {
       throw error;
     }
@@ -245,16 +296,28 @@ class CustomerSearchHistoryService {
     }
 
     if (suggestions.length < limit) {
+      const matchedCategories = await MedicineCategory.find({
+        name: { $regex: escapedQuery, $options: 'i' },
+      })
+        .select('_id')
+        .lean();
+
+      const matchedCategoryIds = matchedCategories.map(item => item._id);
+
       const medicineMatches = await Medicine.find({
-        is_available: true,
+        active: true,
         $or: [
           { Name: { $regex: escapedQuery, $options: 'i' } },
           { alias_name: { $regex: escapedQuery, $options: 'i' } },
-          { medicine_category: { $regex: escapedQuery, $options: 'i' } },
           { mgs: { $regex: escapedQuery, $options: 'i' } },
+          { dosage_form: { $regex: escapedQuery, $options: 'i' } },
+          ...(matchedCategoryIds.length
+            ? [{ category: { $in: matchedCategoryIds } }]
+            : []),
         ],
       })
-        .select('Name alias_name medicine_category mgs class')
+        .select('Name alias_name category mgs dosage_form class')
+        .populate('category', 'name')
         .populate('class', 'name')
         .sort({ Name: 1 })
         .limit(medicineScanLimit)
@@ -269,8 +332,8 @@ class CustomerSearchHistoryService {
           label,
           source: 'medicine',
           medicineId: medicine._id,
-          medicineCategory: medicine.medicine_category || null,
-          dosageForm: medicine.mgs || null,
+          medicineCategory: medicine.category?.name || null,
+          dosageForm: medicine.dosage_form || medicine.mgs || null,
           className: medicine.class?.name || null,
         });
 

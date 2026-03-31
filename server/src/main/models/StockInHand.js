@@ -10,6 +10,12 @@ const stockInHandSchema = new mongoose.Schema(
     branch_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Branch',
+      required: true,
+    },
+    salesperson_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Salesperson',
+      required: true,
     },
     quantity: {
       type: Number,
@@ -113,8 +119,11 @@ stockInHandSchema.pre('findOneAndUpdate', autoClearResolvedOnQueryUpdate);
 stockInHandSchema.pre('updateOne', autoClearResolvedOnQueryUpdate);
 
 stockInHandSchema.index(
-  { medicine_id: 1, branch_id: 1 },
-  { unique: true, sparse: true }
+  { medicine_id: 1, branch_id: 1, salesperson_id: 1 },
+  {
+    unique: true,
+    sparse: true,
+  }
 );
 
 const StockInHand = mongoose.model('StockInHand', stockInHandSchema);

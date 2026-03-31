@@ -8,6 +8,38 @@ const router = express.Router();
 router.use(authenticate);
 
 /**
+ * GET /api/salesperson/inventory/branches
+ * Get managed branch options for inventory operations
+ */
+router.get('/branches', (req, res) =>
+  inventoryController.getManagedBranches(req, res)
+);
+
+/**
+ * GET /api/salesperson/inventory/brands
+ * Get manufacturer options for medicine creation forms
+ */
+router.get('/brands', (req, res) =>
+  inventoryController.getManufacturers(req, res)
+);
+
+/**
+ * GET /api/salesperson/inventory/categories
+ * Get medicine category options for medicine creation forms
+ */
+router.get('/categories', (req, res) =>
+  inventoryController.getCategories(req, res)
+);
+
+/**
+ * GET /api/salesperson/inventory/classes
+ * Get item class options for medicine creation forms
+ */
+router.get('/classes', (req, res) =>
+  inventoryController.getItemClasses(req, res)
+);
+
+/**
  * GET /api/salesperson/inventory
  * List all medicines with their stock levels
  * Query params: search, branch_id, category, page, limit, sortBy, sortOrder
