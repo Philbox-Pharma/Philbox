@@ -18,7 +18,8 @@ router.use(authenticate);
  *
  * Query Parameters:
  * - category (optional): Medicine category filter
- * - brand (optional): Brand/medicine name filter
+ * - brand (optional): Manufacturer name filter
+ * - branch (optional): Branch name filter
  * - dosage (optional): Dosage form filter
  * - prescriptionStatus (optional): 'OTC' or 'prescription_required'
  * - sortBy (optional): 'name', 'price_low_to_high', 'price_high_to_low', 'popularity'
@@ -41,14 +42,55 @@ router.get(
 );
 
 /**
+ * GET /api/customer/medicines/branches
+ * Get available branch names for branch filter UI.
+ */
+router.get(
+  '/branches',
+  MedicineCatalogController.getAvailableBranches.bind(MedicineCatalogController)
+);
+
+/**
+ * GET /api/customer/medicines/brands
+ * Get available manufacturer names for brand filter UI.
+ */
+router.get(
+  '/brands',
+  MedicineCatalogController.getAvailableBrands.bind(MedicineCatalogController)
+);
+
+/**
+ * GET /api/customer/medicines/classes
+ * Get available medicine class names for filter UI.
+ */
+router.get(
+  '/classes',
+  MedicineCatalogController.getAvailableClasses.bind(MedicineCatalogController)
+);
+
+/**
+ * GET /api/customer/medicines/categories
+ * Get available medicine category names for filter UI.
+ */
+router.get(
+  '/categories',
+  MedicineCatalogController.getAvailableCategories.bind(
+    MedicineCatalogController
+  )
+);
+
+/**
  * GET /api/customer/medicines/search
  * Search medicines by name, category, or brand
  * Applies cart-aware + proximity branch ranking and deduplicates duplicates by nearest branch.
  *
  * Query Parameters:
  * - searchTerm (required): Search keyword (min 2 characters)
+ * - brand (optional): Manufacturer name filter
+ * - branch (optional): Branch name filter
  * - category (optional)
  * - dosage (optional)
+ * - prescriptionStatus (optional): OTC | prescription_required
  * - sortBy (optional): name | price_low_to_high | price_high_to_low
  * - page (optional): default 1
  * - limit (optional): default 10
@@ -83,7 +125,7 @@ router.get(
  * Response:
  * {
  *   medicine: { full medicine object with details (branch hidden) },
- *   availability: { inStock: boolean, stockStatus: string }
+ *   availability: { inStock: boolean }
  * }
  */
 router.get(

@@ -5,6 +5,18 @@ const isPrescriptionRequiredForCategory = category =>
     .trim()
     .toLowerCase() === 'narcotics';
 
+const resolvePrescriptionRequiredByCategory = async (categoryId, db) => {
+  if (!categoryId) return false;
+
+  const category = await db
+    .model('MedicineCategory')
+    .findById(categoryId)
+    .select('name')
+    .lean();
+
+  return isPrescriptionRequiredForCategory(category?.name);
+};
+
 /**
  * Medicine Model (Alias for MedicineItem)
  * This model is registered as 'Medicine' to support legacy references in OrderItem schema
@@ -20,15 +32,10 @@ const medicineSchema = new mongoose.Schema(
     alias_name: {
       type: String,
     },
-    branch_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Branch',
-      required: true,
-    },
-    salesperson_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Salesperson',
-      required: true,
+    manufacturer: {
+      type: String,
+      ref: 'Manufacturer',
+      default: null,
     },
     img_urls: {
       type: [String],
@@ -36,17 +43,29 @@ const medicineSchema = new mongoose.Schema(
     },
     mgs: {
       type: String,
+      trim: true,
+      default: null,
+      validate: {
+        validator: value =>
+          value == null ||
+          /^\d+(?:\.\d+)?\s*(?:mg|mgs|ml|mls)$/i.test(String(value).trim()),
+        message:
+          'mgs must be a valid strength value like 500mg, 500mgs, 120ml, or 120mls',
+      },
     },
-    medicine_category: {
+    dosage_form: {
       type: String,
       trim: true,
       default: null,
     },
+    category: {
+      type: String,
+      ref: 'MedicineCategory',
+      default: null,
+    },
     prescription_required: {
       type: Boolean,
-      default: function () {
-        return isPrescriptionRequiredForCategory(this.medicine_category);
-      },
+      default: false,
     },
     class: {
       type: mongoose.Schema.Types.ObjectId,
@@ -63,15 +82,15 @@ const medicineSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    unit_price: {
+      type: Number,
+      default: 0,
+    },
     pack_unit: {
       type: Number,
       default: 1,
     },
-    sales_discount: {
-      type: Number,
-      default: 0,
-    },
-    is_available: {
+    active: {
       type: Boolean,
       default: true,
     },
@@ -87,23 +106,29 @@ const medicineSchema = new mongoose.Schema(
   }
 );
 
-medicineSchema.pre('validate', function (next) {
-  this.prescription_required = isPrescriptionRequiredForCategory(
-    this.medicine_category
-  );
-  next();
+medicineSchema.pre('validate', async function (next) {
+  try {
+    this.prescription_required = await resolvePrescriptionRequiredByCategory(
+      this.category,
+      this.constructor.db
+    );
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
-const applyPrescriptionFlagForUpdate = update => {
+const applyPrescriptionFlagForUpdate = async (update, db) => {
   if (!update || Array.isArray(update)) return update;
 
   const setPayload = update.$set || update;
-  if (!Object.prototype.hasOwnProperty.call(setPayload, 'medicine_category')) {
+  if (!Object.prototype.hasOwnProperty.call(setPayload, 'category')) {
     return update;
   }
 
-  const prescriptionRequired = isPrescriptionRequiredForCategory(
-    setPayload.medicine_category
+  const prescriptionRequired = await resolvePrescriptionRequiredByCategory(
+    setPayload.category,
+    db
   );
 
   if (update.$set) {
@@ -115,30 +140,57 @@ const applyPrescriptionFlagForUpdate = update => {
   return update;
 };
 
-medicineSchema.pre('findOneAndUpdate', function (next) {
-  const update = this.getUpdate() || {};
-  this.setUpdate(applyPrescriptionFlagForUpdate(update));
-  next();
+medicineSchema.pre('findOneAndUpdate', async function (next) {
+  try {
+    const update = this.getUpdate() || {};
+    this.setUpdate(await applyPrescriptionFlagForUpdate(update, this.model.db));
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
-medicineSchema.pre('updateOne', function (next) {
-  const update = this.getUpdate() || {};
-  this.setUpdate(applyPrescriptionFlagForUpdate(update));
-  next();
+medicineSchema.pre('updateOne', async function (next) {
+  try {
+    const update = this.getUpdate() || {};
+    this.setUpdate(await applyPrescriptionFlagForUpdate(update, this.model.db));
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
-medicineSchema.pre('updateMany', function (next) {
-  const update = this.getUpdate() || {};
-  this.setUpdate(applyPrescriptionFlagForUpdate(update));
-  next();
+medicineSchema.pre('updateMany', async function (next) {
+  try {
+    const update = this.getUpdate() || {};
+    this.setUpdate(await applyPrescriptionFlagForUpdate(update, this.model.db));
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Indexes for better query performance
-medicineSchema.index({ branch_id: 1 });
-medicineSchema.index({ salesperson_id: 1 });
 medicineSchema.index({ Name: 1 });
-medicineSchema.index({ medicine_category: 1 });
+medicineSchema.index({ manufacturer: 1 });
+medicineSchema.index({ category: 1 });
 medicineSchema.index({ prescription_required: 1 });
+medicineSchema.index({ active: 1 });
+
+// Enforce one canonical medicine record; stock should vary by branch in StockInHand.
+medicineSchema.index(
+  {
+    Name: 1,
+    mgs: 1,
+    dosage_form: 1,
+    manufacturer: 1,
+    category: 1,
+  },
+  {
+    unique: true,
+    collation: { locale: 'en', strength: 2 },
+  }
+);
 
 const Medicine =
   mongoose.models.Medicine || mongoose.model('Medicine', medicineSchema);

@@ -10,6 +10,78 @@ import {
 import inventoryService from '../service/inventory.service.js';
 
 class InventoryController {
+  async getManagedBranches(req, res) {
+    try {
+      const data = await inventoryService.getManagedBranches(req);
+      return sendResponse(res, 200, 'Managed branches retrieved successfully', {
+        success: true,
+        data,
+      });
+    } catch (error) {
+      return sendResponse(
+        res,
+        error.status || 500,
+        error.message || 'Failed to retrieve managed branches',
+        null,
+        error.details || error.message
+      );
+    }
+  }
+
+  async getManufacturers(req, res) {
+    try {
+      const data = await inventoryService.getManufacturers(req);
+      return sendResponse(res, 200, 'Manufacturers retrieved successfully', {
+        success: true,
+        data,
+      });
+    } catch (error) {
+      return sendResponse(
+        res,
+        error.status || 500,
+        error.message || 'Failed to retrieve manufacturers',
+        null,
+        error.details || error.message
+      );
+    }
+  }
+
+  async getCategories(req, res) {
+    try {
+      const data = await inventoryService.getCategories(req);
+      return sendResponse(res, 200, 'Categories retrieved successfully', {
+        success: true,
+        data,
+      });
+    } catch (error) {
+      return sendResponse(
+        res,
+        error.status || 500,
+        error.message || 'Failed to retrieve categories',
+        null,
+        error.details || error.message
+      );
+    }
+  }
+
+  async getItemClasses(req, res) {
+    try {
+      const data = await inventoryService.getItemClasses(req);
+      return sendResponse(res, 200, 'Item classes retrieved successfully', {
+        success: true,
+        data,
+      });
+    } catch (error) {
+      return sendResponse(
+        res,
+        error.status || 500,
+        error.message || 'Failed to retrieve item classes',
+        null,
+        error.details || error.message
+      );
+    }
+  }
+
   async listInventory(req, res) {
     try {
       const { error, value } = inventoryQuerySchema.validate(req.query);

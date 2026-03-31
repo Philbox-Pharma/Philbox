@@ -2,6 +2,7 @@ import express from 'express';
 import {
   saveSearch,
   getHistory,
+  getRecentSearches,
   deleteSearch,
   clearAllHistory,
   getSuggestions,
@@ -25,6 +26,13 @@ router.post('/', authenticate, validate(saveSearchDTO), saveSearch);
  * @access  Private (Customer only)
  */
 router.get('/', authenticate, getHistory);
+
+/**
+ * @route   GET /api/customer/search-history/recent
+ * @desc    Get recent search queries for customer
+ * @access  Private (Customer only)
+ */
+router.get('/recent', authenticate, getRecentSearches);
 
 /**
  * @route   GET /api/customer/search-history/suggestions

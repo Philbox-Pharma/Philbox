@@ -24,9 +24,10 @@ const Schema = {
 
   slot_duration: {
     type: Number,
-    enum: [15, 30, 60],
+    min: 0,
+    max: 20,
     required: true,
-    default: 30,
+    default: 20,
   },
 
   status: {
