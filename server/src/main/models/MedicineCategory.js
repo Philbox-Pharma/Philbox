@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const manufacturerSchema = new mongoose.Schema(
+const medicineCategorySchema = new mongoose.Schema(
   {
     _id: {
       type: String,
@@ -21,10 +21,10 @@ const manufacturerSchema = new mongoose.Schema(
   }
 );
 
-manufacturerSchema.index({ name: 1 }, { unique: true });
+medicineCategorySchema.index({ name: 1 }, { unique: true });
 
-const Manufacturer =
-  mongoose.models.Manufacturer ||
-  mongoose.model('Manufacturer', manufacturerSchema);
+const MedicineCategory =
+  mongoose.models.MedicineCategory ||
+  mongoose.model('MedicineCategory', medicineCategorySchema);
 
-export default Manufacturer;
+export default MedicineCategory;

@@ -2,8 +2,10 @@ import express from 'express';
 import {
   saveSearch,
   getHistory,
+  getRecentSearches,
   deleteSearch,
   clearAllHistory,
+  getSuggestions,
 } from '../controllers/searchHistory.controller.js';
 import { authenticate } from '../../../middleware/auth.middleware.js';
 import { validate } from '../../../../../validator/joiValidate.middleware.js';
@@ -24,6 +26,20 @@ router.post('/', authenticate, validate(saveSearchDTO), saveSearch);
  * @access  Private (Customer only)
  */
 router.get('/', authenticate, getHistory);
+
+/**
+ * @route   GET /api/customer/search-history/recent
+ * @desc    Get recent search queries for customer
+ * @access  Private (Customer only)
+ */
+router.get('/recent', authenticate, getRecentSearches);
+
+/**
+ * @route   GET /api/customer/search-history/suggestions
+ * @desc    Get realtime search suggestions from history and medicine matches
+ * @access  Private (Customer only)
+ */
+router.get('/suggestions', authenticate, getSuggestions);
 
 /**
  * @route   DELETE /api/customer/search-history/:id

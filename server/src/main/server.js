@@ -18,6 +18,7 @@ import permissionsManagementRoutes from './modules/admin/features/permissions_ma
 import adminDoctorManagementRoutes from './modules/admin/features/doctor_management/routes/doctor.routes.js';
 import adminCustomerManagementRoutes from './modules/admin/features/customer_management/routes/customer.routes.js';
 import adminProfileRoutes from './modules/admin/features/profile_management/routes/profile.routes.js';
+import couponManagementRoutes from './modules/admin/features/coupon_management/routes/coupon.routes.js';
 import appointmentAnalyticsRoutes from './modules/admin/features/dashboard_management/appointment_analytics/routes/appointmentAnalytics.routes.js';
 import revenueAnalyticsRoutes from './modules/admin/features/dashboard_management/revenue_analytics/routes/revenueAnalytics.routes.js';
 import ordersAnalyticsRoutes from './modules/admin/features/dashboard_management/orders_analytics/routes/ordersAnalytics.routes.js';
@@ -44,6 +45,8 @@ import customerDashboardRoutes from './modules/customer/features/dashboard/route
 import customerSearchHistoryRoutes from './modules/customer/features/search_history/routes/searchHistory.routes.js';
 import customerRefillReminderRoutes from './modules/customer/features/refill_reminder/routes/refillReminder.routes.js';
 import customerAppointmentsRoutes from './modules/customer/features/appointments/routes/appointments.routes.js';
+import customerMedicineCatalogRoutes from './modules/customer/features/medicine_catalog/routes/catalog.routes.js';
+import customerCartRoutes from './modules/customer/features/cart/routes/cart.routes.js';
 
 import salespersonAuthRoutes from './modules/salesperson/features/auth/routes/auth.routes.js';
 import salespersonTaskManagementRoutes from './modules/salesperson/features/task_management/routes/task.routes.js';
@@ -141,6 +144,7 @@ app.use(`/api/${ROUTES.ADMIN}/permissions`, permissionsManagementRoutes);
 app.use(`/api/${ROUTES.ADMIN}/doctors`, adminDoctorManagementRoutes);
 app.use(`/api/${ROUTES.ADMIN}/customers`, adminCustomerManagementRoutes);
 app.use(`/api/${ROUTES.ADMIN}/profile`, adminProfileRoutes);
+app.use(`/api/${ROUTES.ADMIN}/coupons`, couponManagementRoutes);
 app.use(
   `/api/${ROUTES.ADMIN}/appointment-analytics`,
   appointmentAnalyticsRoutes
@@ -180,6 +184,8 @@ app.use(`/api/customer/dashboard`, customerDashboardRoutes);
 app.use(`/api/customer/search-history`, customerSearchHistoryRoutes);
 app.use(`/api/customer/refill-reminders`, customerRefillReminderRoutes);
 app.use(`/api/customer/appointments`, customerAppointmentsRoutes);
+app.use(`/api/customer/medicines`, customerMedicineCatalogRoutes);
+app.use(`/api/customer/cart`, customerCartRoutes);
 app.use(`/api/${ROUTES.SALESPERSON_AUTH}`, salespersonAuthRoutes);
 app.use(`/api/salesperson/tasks`, salespersonTaskManagementRoutes);
 app.use(`/api/salesperson/alerts`, lowStockAlertsRoutes);

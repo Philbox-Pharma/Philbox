@@ -26,8 +26,9 @@ export const createSlotSchema = Joi.object({
       'any.required': 'End time is required',
     }),
 
-  slot_duration: Joi.number().valid(15, 30, 60).default(30).messages({
-    'any.only': 'Slot duration must be 15, 30, or 60 minutes',
+  slot_duration: Joi.number().min(0).max(20).default(20).messages({
+    'number.min': 'Slot duration must be between 0 and 20 minutes',
+    'number.max': 'Slot duration must be between 0 and 20 minutes',
   }),
 
   notes: Joi.string().max(500).allow('').optional(),
@@ -53,8 +54,9 @@ export const createRecurringSlotSchema = Joi.object({
       'any.required': 'End time is required',
     }),
 
-  slot_duration: Joi.number().valid(15, 30, 60).default(30).messages({
-    'any.only': 'Slot duration must be 15, 30, or 60 minutes',
+  slot_duration: Joi.number().min(0).max(20).default(20).messages({
+    'number.min': 'Slot duration must be between 0 and 20 minutes',
+    'number.max': 'Slot duration must be between 0 and 20 minutes',
   }),
 
   recurring_pattern: Joi.object({
@@ -105,8 +107,9 @@ export const updateSlotSchema = Joi.object({
       'string.pattern.base': 'End time must be in HH:mm format (e.g., 17:00)',
     }),
 
-  slot_duration: Joi.number().valid(15, 30, 60).optional().messages({
-    'any.only': 'Slot duration must be 15, 30, or 60 minutes',
+  slot_duration: Joi.number().min(0).max(20).optional().messages({
+    'number.min': 'Slot duration must be between 0 and 20 minutes',
+    'number.max': 'Slot duration must be between 0 and 20 minutes',
   }),
 
   status: Joi.string().valid('available', 'unavailable').optional().messages({

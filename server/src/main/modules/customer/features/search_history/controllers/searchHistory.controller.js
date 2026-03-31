@@ -1,5 +1,6 @@
 import customerSearchHistoryService from '../service/searchHistory.service.js';
 import sendResponse from '../../../../../utils/sendResponse.js';
+import { searchSuggestionsDTO } from '../../../../../dto/customer/searchHistory.dto.js';
 
 /**
  * Save a search query to history
@@ -49,6 +50,36 @@ export const getHistory = async (req, res) => {
     );
   } catch (err) {
     console.error('Get History Error:', err);
+    return sendResponse(res, 500, 'Server Error', null, err.message);
+  }
+};
+
+/**
+ * Get recent search queries for customer
+ */
+export const getRecentSearches = async (req, res) => {
+  try {
+    const customerId = req.customer?._id;
+
+    if (!customerId) {
+      return sendResponse(res, 401, 'Unauthorized');
+    }
+
+    const { limit = 10 } = req.query;
+    const recentSearches = await customerSearchHistoryService.getRecentSearches(
+      customerId,
+      limit,
+      req
+    );
+
+    return sendResponse(
+      res,
+      200,
+      'Recent searches fetched successfully',
+      recentSearches
+    );
+  } catch (err) {
+    console.error('Get Recent Searches Error:', err);
     return sendResponse(res, 500, 'Server Error', null, err.message);
   }
 };
@@ -104,6 +135,39 @@ export const clearAllHistory = async (req, res) => {
     });
   } catch (err) {
     console.error('Clear History Error:', err);
+    return sendResponse(res, 500, 'Server Error', null, err.message);
+  }
+};
+
+/**
+ * Get realtime autocomplete suggestions based on personal history,
+ * other users' searches, and medicine matches.
+ */
+export const getSuggestions = async (req, res) => {
+  try {
+    const customerId = req.customer?._id;
+
+    if (!customerId) {
+      return sendResponse(res, 401, 'Unauthorized');
+    }
+
+    const { error, value } = searchSuggestionsDTO.validate(req.query);
+    if (error) {
+      return sendResponse(res, 400, error.details[0].message);
+    }
+
+    const suggestions = await customerSearchHistoryService.getSuggestions(
+      customerId,
+      value.query,
+      value.limit
+    );
+
+    return sendResponse(res, 200, 'Suggestions fetched successfully', {
+      query: value.query,
+      suggestions,
+    });
+  } catch (err) {
+    console.error('Get Suggestions Error:', err);
     return sendResponse(res, 500, 'Server Error', null, err.message);
   }
 };

@@ -2,7 +2,6 @@ import Order from '../../../../../../models/Order.js';
 import OrderItem from '../../../../../../models/OrderItem.js';
 import StockInHand from '../../../../../../models/StockInHand.js';
 import Transaction from '../../../../../../models/Transaction.js';
-import Medicine from '../../../../../../models/Medicine.js';
 import { logAdminActivity } from '../../../../utils/logAdminActivities.js';
 
 class OrdersAnalyticsService {
@@ -198,10 +197,24 @@ class OrdersAnalyticsService {
         },
         { $unwind: '$medicine' },
         {
+          $lookup: {
+            from: 'medicinecategories',
+            localField: 'medicine.category',
+            foreignField: '_id',
+            as: 'category',
+          },
+        },
+        {
+          $unwind: {
+            path: '$category',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
           $project: {
             _id: 1,
             medicineName: '$medicine.Name',
-            medicineCategory: '$medicine.medicine_category',
+            medicineCategory: '$category.name',
             totalQuantitySold: 1,
             totalRevenue: 1,
             orderCount: 1,
@@ -239,7 +252,11 @@ class OrdersAnalyticsService {
         .populate({
           path: 'medicine_id',
           match: branchId ? { branch_id: branchId } : {},
-          select: 'Name branch_id medicine_category img_url',
+          select: 'Name branch_id category img_url',
+          populate: {
+            path: 'category',
+            select: 'name',
+          },
         })
         .limit(parseInt(limit))
         .sort({ quantity: 1 });
@@ -250,7 +267,7 @@ class OrdersAnalyticsService {
         .map(item => ({
           medicineId: item.medicine_id._id,
           medicineName: item.medicine_id.Name,
-          category: item.medicine_id.medicine_category,
+          category: item.medicine_id.category?.name || null,
           currentStock: item.quantity,
           alertType: 'low_stock',
           imgUrl: item.medicine_id.img_url,
@@ -312,27 +329,32 @@ class OrdersAnalyticsService {
         },
         { $unwind: '$medicine' },
         {
+          $lookup: {
+            from: 'medicinecategories',
+            localField: 'medicine.category',
+            foreignField: '_id',
+            as: 'category',
+          },
+        },
+        {
+          $unwind: {
+            path: '$category',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
           $group: {
-            _id: '$medicine.medicine_category',
+            _id: { $ifNull: ['$category.name', 'Uncategorized'] },
             revenue: { $sum: { $multiply: ['$quantity', '$price'] } },
             itemCount: { $sum: 1 },
           },
         },
       ]);
 
-      // Get all distinct categories from Medicine schema enum
-      const categoryEnum =
-        Medicine.schema.path('medicine_category').enumValues || [];
-
       // Initialize result object dynamically
       const result = {
         total: { revenue: 0, itemCount: 0 },
       };
-
-      // Add each category from enum
-      categoryEnum.forEach(category => {
-        result[category] = { revenue: 0, itemCount: 0, percentage: 0 };
-      });
 
       // Populate with actual data
       categoryRevenue.forEach(item => {
@@ -347,14 +369,17 @@ class OrdersAnalyticsService {
       });
 
       // Calculate percentages for each category
-      categoryEnum.forEach(category => {
-        result[category].percentage =
-          result.total.revenue > 0
-            ? ((result[category].revenue / result.total.revenue) * 100).toFixed(
-                2
-              )
-            : 0;
-      });
+      Object.keys(result)
+        .filter(key => key !== 'total')
+        .forEach(category => {
+          result[category].percentage =
+            result.total.revenue > 0
+              ? (
+                  (result[category].revenue / result.total.revenue) *
+                  100
+                ).toFixed(2)
+              : 0;
+        });
 
       await logAdminActivity(
         req,
