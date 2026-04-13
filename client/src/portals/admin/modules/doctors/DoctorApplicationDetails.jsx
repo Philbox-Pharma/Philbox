@@ -108,7 +108,7 @@ const ActionModal = ({
         {application && (
           <div className="bg-gray-50 rounded-lg p-3 mb-4">
             <p className="text-sm text-gray-600">
-              <strong>Applicant:</strong> Dr. {application.name || 'Unknown'}
+              <strong>Applicant:</strong> Dr. {(application.name || '').replace(/^Dr\.?\s*/i, '') || 'Unknown'}
             </p>
           </div>
         )}
@@ -211,7 +211,12 @@ export default function DoctorApplicationDetails() {
       }
       navigate('/admin/doctors/applications');
     } catch (err) {
-      alert(err.message || 'Action failed');
+      const details = err.data?.error;
+      if (Array.isArray(details) && details.length > 0) {
+        alert(details.join('\n'));
+      } else {
+        alert(err.message || 'Action failed');
+      }
     } finally {
       setActionLoading(false);
     }
@@ -275,7 +280,7 @@ export default function DoctorApplicationDetails() {
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2 flex-wrap">
               <h1 className="text-2xl md:text-3xl font-bold">
-                Dr. {application.doctor_id?.fullName || 'Unknown'}
+                Dr. {(application.doctor_id?.fullName || '').replace(/^Dr\.?\s*/i, '') || 'Unknown'}
               </h1>
               <StatusBadge status={application.status} />
             </div>
@@ -335,7 +340,7 @@ export default function DoctorApplicationDetails() {
               <div>
                 <label className="text-sm text-gray-500">Full Name</label>
                 <p className="font-medium text-gray-800">
-                  Dr. {application.doctor_id?.fullName || 'N/A'}
+                  Dr. {(application.doctor_id?.fullName || '').replace(/^Dr\.?\s*/i, '') || 'N/A'}
                 </p>
               </div>
               <div>

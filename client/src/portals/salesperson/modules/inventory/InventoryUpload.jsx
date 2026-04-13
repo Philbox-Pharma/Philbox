@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   FaCloudUploadAlt,
   FaDownload,
@@ -13,6 +13,8 @@ import {
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { salespersonInventoryUploadApi } from '../../../../core/api/salesperson/inventoryUpload.service';
+
+import { branchApi } from '../../../../core/api/admin/adminApi';
 import { useAuth } from '../../../../shared/context/AuthContext';
 
 // ==========================================
@@ -105,6 +107,25 @@ export default function InventoryUpload() {
   const [branchId, setBranchId] = useState(defaultBranchId);
   const [uploading, setUploading] = useState(false);
   const [downloadingTemplate, setDownloadingTemplate] = useState(false);
+  const [apiBranches, setApiBranches] = useState([]);
+
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const response = await branchApi.getAll(1, 100, { status: 'Active' });
+        const branches = response.data?.branches || [];
+        if (Array.isArray(branches)) {
+          setApiBranches(branches);
+          if (branches.length > 0) {
+            setBranchId(prev => prev || branches[0]._id);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch assigned branches', err);
+      }
+    };
+    fetchBranches();
+  }, []);
 
   // Preview data
   const [previewData, setPreviewData] = useState(null);
@@ -325,16 +346,26 @@ export default function InventoryUpload() {
             )}
           </div>
 
-          {/* Branch ID (Optional) */}
+          {/* Branch Select */}
           <div className="mt-6">
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Branch ID (optional)</label>
-            <input
-              type="text"
-              value={branchId}
-              onChange={(e) => setBranchId(e.target.value)}
-              className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter branch ID if assigned to specific branch"
-            />
+            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Select Branch *</label>
+            {apiBranches.length > 0 ? (
+              <select
+                value={branchId}
+                onChange={(e) => setBranchId(e.target.value)}
+                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="" disabled>Select Branch</option>
+                {apiBranches.map((b) => (
+                  <option key={b._id} value={b._id}>{b.name}</option>
+                ))}
+              </select>
+            ) : (
+                <div className="w-full px-3 py-2.5 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-500">
+                  Loading branches...
+                </div>
+            )}
           </div>
 
           {/* Action */}

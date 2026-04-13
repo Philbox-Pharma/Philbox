@@ -118,7 +118,10 @@ export default function DoctorProfile() {
         fullName: basicForm.name,
         contactNumber: basicForm.phone_number,
         specialization: basicForm.specialization
-          ? basicForm.specialization.split(',').map(s => s.trim()).filter(Boolean)
+          ? basicForm.specialization
+              .split(',')
+              .map(s => s.trim())
+              .filter(Boolean)
           : [],
         affiliated_hospital: basicForm.affiliated_hospital,
         onlineProfileURL: basicForm.onlineProfileURL,
@@ -135,12 +138,18 @@ export default function DoctorProfile() {
           ...doctor,
           fullName: basicForm.name,
           specialization: basicForm.specialization
-            ? basicForm.specialization.split(',').map(s => s.trim()).filter(Boolean)
+            ? basicForm.specialization
+                .split(',')
+                .map(s => s.trim())
+                .filter(Boolean)
             : [],
         });
       }
     } catch (err) {
-      showMessage(err.response?.data?.message || 'Failed to update profile.', 'error');
+      showMessage(
+        err.response?.data?.message || 'Failed to update profile.',
+        'error'
+      );
     } finally {
       setSaving(false);
     }
@@ -154,21 +163,24 @@ export default function DoctorProfile() {
           degree: edu.degree,
           institution: edu.institution,
           yearOfCompletion: Number(edu.yearOfCompletion || edu.year),
-          specialization: edu.specialization
+          specialization: edu.specialization,
         })),
         experience_details: experienceForm.map(exp => ({
           institution: exp.institution || exp.hospital,
           starting_date: exp.starting_date || exp.from_date || exp.from_year,
           ending_date: exp.ending_date || exp.to_date || exp.to_year,
-          is_going_on: !!exp.is_going_on
-        }))
+          is_going_on: !!exp.is_going_on,
+        })),
       };
 
       await doctorProfileApi.updateProfile(payload);
       showMessage('Professional details updated!');
       fetchProfile();
     } catch (err) {
-      showMessage(err.response?.data?.message || 'Failed to update details.', 'error');
+      showMessage(
+        err.response?.data?.message || 'Failed to update details.',
+        'error'
+      );
     } finally {
       setSaving(false);
     }
@@ -195,13 +207,16 @@ export default function DoctorProfile() {
       showMessage('Consultation fee updated!');
       fetchProfile();
     } catch (err) {
-      showMessage(err.response?.data?.message || 'Failed to update fee.', 'error');
+      showMessage(
+        err.response?.data?.message || 'Failed to update fee.',
+        'error'
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  const handleProfileImageUpload = async (e) => {
+  const handleProfileImageUpload = async e => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -211,16 +226,22 @@ export default function DoctorProfile() {
       showMessage('Profile image updated!');
       fetchProfile();
       if (setDoctor && response.data?.profile_img_url) {
-        setDoctor({ ...doctor, profile_img_url: response.data.profile_img_url });
+        setDoctor({
+          ...doctor,
+          profile_img_url: response.data.profile_img_url,
+        });
       }
     } catch (err) {
-      showMessage(err.response?.data?.message || 'Failed to upload image.', 'error');
+      showMessage(
+        err.response?.data?.message || 'Failed to upload image.',
+        'error'
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  const handleCoverImageUpload = async (e) => {
+  const handleCoverImageUpload = async e => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -233,7 +254,10 @@ export default function DoctorProfile() {
         setDoctor({ ...doctor, cover_img_url: response.data.cover_img_url });
       }
     } catch (err) {
-      showMessage(err.response?.data?.message || 'Failed to upload cover.', 'error');
+      showMessage(
+        err.response?.data?.message || 'Failed to upload cover.',
+        'error'
+      );
     } finally {
       setSaving(false);
     }
@@ -257,9 +281,16 @@ export default function DoctorProfile() {
       );
       showMessage('Password changed successfully!');
       setChangingPassword(false);
-      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
     } catch (err) {
-      showMessage(err.response?.data?.message || 'Failed to change password.', 'error');
+      showMessage(
+        err.response?.data?.message || 'Failed to change password.',
+        'error'
+      );
     } finally {
       setSaving(false);
     }
@@ -277,8 +308,19 @@ export default function DoctorProfile() {
           fill="none"
           viewBox="0 0 24 24"
         >
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
         </svg>
         <p className="text-gray-500">Loading profile...</p>
       </div>
@@ -296,7 +338,11 @@ export default function DoctorProfile() {
         {/* Cover */}
         <div className="h-36 sm:h-44 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 relative">
           {profile?.cover_img_url && (
-            <img src={profile.cover_img_url} alt="Cover" className="w-full h-full object-cover" />
+            <img
+              src={profile.cover_img_url}
+              alt="Cover"
+              className="w-full h-full object-cover"
+            />
           )}
           <div className="absolute inset-0 bg-black/10" />
           <button
@@ -349,14 +395,16 @@ export default function DoctorProfile() {
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold text-gray-800">
-                {(profile?.name || profile?.fullName || 'Doctor').toLowerCase().startsWith('dr') 
-                  ? (profile?.name || profile?.fullName || 'Doctor') 
+                {(profile?.name || profile?.fullName || 'Doctor')
+                  .toLowerCase()
+                  .startsWith('dr')
+                  ? profile?.name || profile?.fullName || 'Doctor'
                   : `Dr. ${profile?.name || profile?.fullName || 'Doctor'}`}
               </h1>
               <p className="text-sm text-emerald-600 font-medium mt-0.5">
-                {Array.isArray(profile?.specialization) 
-                  ? profile.specialization.join(', ') 
-                  : (profile?.specialization || 'General Physician')}
+                {Array.isArray(profile?.specialization)
+                  ? profile.specialization.join(', ')
+                  : profile?.specialization || 'General Physician'}
               </p>
               <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-500">
                 {profile?.email && (
@@ -384,7 +432,9 @@ export default function DoctorProfile() {
                 ) : (
                   <FaExclamationCircle size={10} />
                 )}
-                {profile?.status === 'approved' ? 'Verified' : profile?.status || 'Pending'}
+                {profile?.status === 'approved'
+                  ? 'Verified'
+                  : profile?.status || 'Pending'}
               </span>
             </div>
           </div>
@@ -432,7 +482,9 @@ export default function DoctorProfile() {
                 <input
                   type="text"
                   value={basicForm.name}
-                  onChange={(e) => setBasicForm({ ...basicForm, name: e.target.value })}
+                  onChange={e =>
+                    setBasicForm({ ...basicForm, name: e.target.value })
+                  }
                   className="input-field"
                 />
               </div>
@@ -441,8 +493,11 @@ export default function DoctorProfile() {
                 <input
                   type="text"
                   value={basicForm.specialization}
-                  onChange={(e) =>
-                    setBasicForm({ ...basicForm, specialization: e.target.value })
+                  onChange={e =>
+                    setBasicForm({
+                      ...basicForm,
+                      specialization: e.target.value,
+                    })
                   }
                   className="input-field"
                 />
@@ -452,7 +507,7 @@ export default function DoctorProfile() {
                 <input
                   type="text"
                   value={basicForm.phone_number}
-                  onChange={(e) =>
+                  onChange={e =>
                     setBasicForm({ ...basicForm, phone_number: e.target.value })
                   }
                   className="input-field"
@@ -463,20 +518,28 @@ export default function DoctorProfile() {
                 <input
                   type="text"
                   value={basicForm.affiliated_hospital}
-                  onChange={(e) =>
-                    setBasicForm({ ...basicForm, affiliated_hospital: e.target.value })
+                  onChange={e =>
+                    setBasicForm({
+                      ...basicForm,
+                      affiliated_hospital: e.target.value,
+                    })
                   }
                   className="input-field"
                   placeholder="e.g., City Hospital"
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="input-label">Online Profile / Website Link</label>
+                <label className="input-label">
+                  Online Profile / Website Link
+                </label>
                 <input
                   type="url"
                   value={basicForm.onlineProfileURL}
-                  onChange={(e) =>
-                    setBasicForm({ ...basicForm, onlineProfileURL: e.target.value })
+                  onChange={e =>
+                    setBasicForm({
+                      ...basicForm,
+                      onlineProfileURL: e.target.value,
+                    })
                   }
                   className="input-field"
                   placeholder="https://..."
@@ -485,7 +548,11 @@ export default function DoctorProfile() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <InfoRow icon={FaUserMd} label="Full Name" value={profile?.fullName || profile?.name || '—'} />
+              <InfoRow
+                icon={FaUserMd}
+                label="Full Name"
+                value={profile?.fullName || profile?.name || '—'}
+              />
               <InfoRow
                 icon={FaStethoscope}
                 label="Specialization"
@@ -495,13 +562,22 @@ export default function DoctorProfile() {
                     : profile?.specialization || '—'
                 }
               />
-              <InfoRow icon={FaEnvelope} label="Email" value={profile?.email || '—'} />
-              <InfoRow icon={FaPhone} label="Phone" value={profile?.contactNumber || profile?.phone_number || '—'} />
+              <InfoRow
+                icon={FaEnvelope}
+                label="Email"
+                value={profile?.email || '—'}
+              />
+              <InfoRow
+                icon={FaPhone}
+                label="Phone"
+                value={profile?.contactNumber || profile?.phone_number || '—'}
+              />
               <InfoRow
                 icon={FaBriefcase}
                 label="Experience"
                 value={
-                  Array.isArray(profile?.experience_details) && profile.experience_details.length > 0
+                  Array.isArray(profile?.experience_details) &&
+                  profile.experience_details.length > 0
                     ? `${profile.experience_details.length} positions listed`
                     : '—'
                 }
@@ -510,8 +586,12 @@ export default function DoctorProfile() {
                 icon={FaGraduationCap}
                 label="Qualifications"
                 value={
-                  Array.isArray(profile?.educational_details) && profile.educational_details.length > 0
-                    ? profile.educational_details.map(edu => edu.degree).filter(Boolean).join(', ')
+                  Array.isArray(profile?.educational_details) &&
+                  profile.educational_details.length > 0
+                    ? profile.educational_details
+                        .map(edu => edu.degree)
+                        .filter(Boolean)
+                        .join(', ')
                     : '—'
                 }
               />
@@ -543,7 +623,9 @@ export default function DoctorProfile() {
           {/* Consultation Type */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-gray-700">Consultation Type</label>
+              <label className="text-sm font-medium text-gray-700">
+                Consultation Type
+              </label>
               {!editingConsultation ? (
                 <button
                   onClick={() => setEditingConsultation(true)}
@@ -553,7 +635,10 @@ export default function DoctorProfile() {
                 </button>
               ) : (
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setEditingConsultation(false)} className="text-sm text-gray-500">
+                  <button
+                    onClick={() => setEditingConsultation(false)}
+                    className="text-sm text-gray-500"
+                  >
                     <FaTimes size={14} />
                   </button>
                   <button
@@ -570,10 +655,25 @@ export default function DoctorProfile() {
             {editingConsultation ? (
               <div className="flex gap-3">
                 {[
-                  { value: 'online', label: 'Online Only', icon: FaVideo, color: 'blue' },
-                  { value: 'in-person', label: 'In-Person Only', icon: FaClinicMedical, color: 'purple' },
-                  { value: 'both', label: 'Both', icon: FaGlobe, color: 'emerald' },
-                ].map((opt) => {
+                  {
+                    value: 'online',
+                    label: 'Online Only',
+                    icon: FaVideo,
+                    color: 'blue',
+                  },
+                  {
+                    value: 'in-person',
+                    label: 'In-Person Only',
+                    icon: FaClinicMedical,
+                    color: 'purple',
+                  },
+                  {
+                    value: 'both',
+                    label: 'Both',
+                    icon: FaGlobe,
+                    color: 'emerald',
+                  },
+                ].map(opt => {
                   const Icon = opt.icon;
                   return (
                     <button
@@ -625,7 +725,7 @@ export default function DoctorProfile() {
               <input
                 type="number"
                 value={consultationFee}
-                onChange={(e) => setConsultationFee(e.target.value)}
+                onChange={e => setConsultationFee(e.target.value)}
                 className="input-field !w-48"
                 min="0"
                 placeholder="e.g., 1500"
@@ -648,10 +748,21 @@ export default function DoctorProfile() {
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col">
           <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
             <h2 className="text-base font-semibold text-gray-800 flex items-center gap-2">
-              <FaGraduationCap className="text-emerald-500" size={14} /> Education
+              <FaGraduationCap className="text-emerald-500" size={14} />{' '}
+              Education
             </h2>
             <button
-              onClick={() => setEducationForm([...educationForm, { degree: '', institution: '', yearOfCompletion: '', specialization: '' }])}
+              onClick={() =>
+                setEducationForm([
+                  ...educationForm,
+                  {
+                    degree: '',
+                    institution: '',
+                    yearOfCompletion: '',
+                    specialization: '',
+                  },
+                ])
+              }
               className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
             >
               + Add
@@ -659,9 +770,14 @@ export default function DoctorProfile() {
           </div>
           <div className="p-4 flex-1 space-y-4 max-h-[400px] overflow-y-auto">
             {educationForm.map((edu, idx) => (
-              <div key={idx} className="p-3 bg-gray-50 rounded-lg relative group">
+              <div
+                key={idx}
+                className="p-3 bg-gray-50 rounded-lg relative group"
+              >
                 <button
-                  onClick={() => setEducationForm(educationForm.filter((_, i) => i !== idx))}
+                  onClick={() =>
+                    setEducationForm(educationForm.filter((_, i) => i !== idx))
+                  }
                   className="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <FaTimes size={12} />
@@ -704,7 +820,9 @@ export default function DoctorProfile() {
               </div>
             ))}
             {educationForm.length === 0 && (
-              <p className="text-gray-400 text-sm text-center py-8">No education details added.</p>
+              <p className="text-gray-400 text-sm text-center py-8">
+                No education details added.
+              </p>
             )}
           </div>
           <div className="p-4 bg-gray-50 border-t border-gray-100 mt-auto">
@@ -725,7 +843,17 @@ export default function DoctorProfile() {
               <FaBriefcase className="text-blue-500" size={14} /> Experience
             </h2>
             <button
-              onClick={() => setExperienceForm([...experienceForm, { institution: '', starting_date: '', ending_date: '', is_going_on: false }])}
+              onClick={() =>
+                setExperienceForm([
+                  ...experienceForm,
+                  {
+                    institution: '',
+                    starting_date: '',
+                    ending_date: '',
+                    is_going_on: false,
+                  },
+                ])
+              }
               className="text-xs text-blue-600 hover:text-blue-700 font-medium"
             >
               + Add
@@ -733,9 +861,16 @@ export default function DoctorProfile() {
           </div>
           <div className="p-4 flex-1 space-y-4 max-h-[400px] overflow-y-auto">
             {experienceForm.map((exp, idx) => (
-              <div key={idx} className="p-3 bg-gray-50 rounded-lg relative group">
+              <div
+                key={idx}
+                className="p-3 bg-gray-50 rounded-lg relative group"
+              >
                 <button
-                  onClick={() => setExperienceForm(experienceForm.filter((_, i) => i !== idx))}
+                  onClick={() =>
+                    setExperienceForm(
+                      experienceForm.filter((_, i) => i !== idx)
+                    )
+                  }
                   className="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <FaTimes size={12} />
@@ -753,11 +888,19 @@ export default function DoctorProfile() {
                   />
                   <div className="grid grid-cols-2 gap-3">
                     <div className="flex flex-col">
-                      <label className="text-[10px] text-gray-400 uppercase">From</label>
+                      <label className="text-[10px] text-gray-400 uppercase">
+                        From
+                      </label>
                       <input
                         type="date"
                         className="text-xs text-gray-600 bg-transparent outline-none"
-                        value={exp.starting_date ? new Date(exp.starting_date).toISOString().split('T')[0] : ''}
+                        value={
+                          exp.starting_date
+                            ? new Date(exp.starting_date)
+                                .toISOString()
+                                .split('T')[0]
+                            : ''
+                        }
                         onChange={e => {
                           const newForm = [...experienceForm];
                           newForm[idx].starting_date = e.target.value;
@@ -766,14 +909,24 @@ export default function DoctorProfile() {
                       />
                     </div>
                     <div className="flex flex-col">
-                      <label className="text-[10px] text-gray-400 uppercase">To</label>
+                      <label className="text-[10px] text-gray-400 uppercase">
+                        To
+                      </label>
                       {exp.is_going_on ? (
-                        <span className="text-xs text-blue-600 font-medium py-1">Present</span>
+                        <span className="text-xs text-blue-600 font-medium py-1">
+                          Present
+                        </span>
                       ) : (
                         <input
                           type="date"
                           className="text-xs text-gray-600 bg-transparent outline-none"
-                          value={exp.ending_date ? new Date(exp.ending_date).toISOString().split('T')[0] : ''}
+                          value={
+                            exp.ending_date
+                              ? new Date(exp.ending_date)
+                                  .toISOString()
+                                  .split('T')[0]
+                              : ''
+                          }
                           onChange={e => {
                             const newForm = [...experienceForm];
                             newForm[idx].ending_date = e.target.value;
@@ -795,13 +948,17 @@ export default function DoctorProfile() {
                         setExperienceForm(newForm);
                       }}
                     />
-                    <span className="text-xs text-gray-500">Currently working here</span>
+                    <span className="text-xs text-gray-500">
+                      Currently working here
+                    </span>
                   </label>
                 </div>
               </div>
             ))}
             {experienceForm.length === 0 && (
-              <p className="text-gray-400 text-sm text-center py-8">No experience listed.</p>
+              <p className="text-gray-400 text-sm text-center py-8">
+                No experience listed.
+              </p>
             )}
           </div>
           <div className="p-4 bg-gray-50 border-t border-gray-100 mt-auto">
@@ -840,8 +997,11 @@ export default function DoctorProfile() {
                 <input
                   type="password"
                   value={passwordForm.currentPassword}
-                  onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
+                  onChange={e =>
+                    setPasswordForm({
+                      ...passwordForm,
+                      currentPassword: e.target.value,
+                    })
                   }
                   className="input-field"
                 />
@@ -851,8 +1011,11 @@ export default function DoctorProfile() {
                 <input
                   type="password"
                   value={passwordForm.newPassword}
-                  onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, newPassword: e.target.value })
+                  onChange={e =>
+                    setPasswordForm({
+                      ...passwordForm,
+                      newPassword: e.target.value,
+                    })
                   }
                   className="input-field"
                   minLength={8}
@@ -863,8 +1026,11 @@ export default function DoctorProfile() {
                 <input
                   type="password"
                   value={passwordForm.confirmPassword}
-                  onChange={(e) =>
-                    setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
+                  onChange={e =>
+                    setPasswordForm({
+                      ...passwordForm,
+                      confirmPassword: e.target.value,
+                    })
                   }
                   className="input-field"
                 />
@@ -873,7 +1039,11 @@ export default function DoctorProfile() {
                 <button
                   onClick={() => {
                     setChangingPassword(false);
-                    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                    setPasswordForm({
+                      currentPassword: '',
+                      newPassword: '',
+                      confirmPassword: '',
+                    });
                   }}
                   className="btn-secondary !w-auto px-5"
                 >

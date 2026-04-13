@@ -241,10 +241,11 @@ export default function DoctorSidebar({ isOpen, closeSidebar, doctor }) {
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
+                        const fallback = e.target.parentElement.querySelector('.sidebar-profile-fallback');
+                        if (fallback) fallback.classList.remove('hidden');
                       }}
                     />
-                    <div className="hidden items-center justify-center w-full h-full">
+                    <div className="sidebar-profile-fallback hidden items-center justify-center w-full h-full">
                       {(doctor.fullName || doctor.name || 'D').charAt(0).toUpperCase()}
                     </div>
                   </>

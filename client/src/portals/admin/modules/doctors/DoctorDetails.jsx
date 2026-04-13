@@ -37,11 +37,35 @@ const StatusBadge = ({ status }) => {
       icon: FaClock,
       label: 'Suspended',
     },
+    'suspended/freezed': {
+      bg: 'bg-yellow-100',
+      text: 'text-yellow-700',
+      icon: FaClock,
+      label: 'Suspended',
+    },
     blocked: {
       bg: 'bg-red-100',
       text: 'text-red-700',
       icon: FaBan,
       label: 'Blocked',
+    },
+    'blocked/removed': {
+      bg: 'bg-red-100',
+      text: 'text-red-700',
+      icon: FaBan,
+      label: 'Blocked',
+    },
+    under_consideration: {
+      bg: 'bg-yellow-100',
+      text: 'text-yellow-700',
+      icon: FaClock,
+      label: 'Onboarding',
+    },
+    pending: {
+      bg: 'bg-blue-100',
+      text: 'text-blue-700',
+      icon: FaClock,
+      label: 'Pending',
     },
   };
 
@@ -112,21 +136,25 @@ const StatusModal = ({ isOpen, onClose, doctor, onSubmit, loading }) => {
               New Status
             </label>
             <div className="grid grid-cols-3 gap-2">
-              {['active', 'suspended', 'blocked'].map(status => (
+              {[
+                { value: 'active', label: 'Active' },
+                { value: 'suspended/freezed', label: 'Suspended' },
+                { value: 'blocked/removed', label: 'Blocked' }
+              ].map(({value, label}) => (
                 <button
-                  key={status}
-                  onClick={() => setNewStatus(status)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
-                    newStatus === status
-                      ? status === 'active'
+                  key={value}
+                  onClick={() => setNewStatus(value)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    newStatus === value
+                      ? value === 'active'
                         ? 'bg-green-600 text-white'
-                        : status === 'suspended'
+                        : value === 'suspended/freezed'
                           ? 'bg-yellow-500 text-white'
                           : 'bg-red-600 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
-                  {status}
+                  {label}
                 </button>
               ))}
             </div>
@@ -213,7 +241,12 @@ export default function DoctorDetails() {
       setDoctor(prev => ({ ...prev, account_status: data.status }));
       setStatusModal(false);
     } catch (err) {
-      alert(err.message || 'Failed to update status');
+      const details = err.data?.error;
+      if (Array.isArray(details) && details.length > 0) {
+        alert(details.join('\n'));
+      } else {
+        alert(err.message || 'Failed to update status');
+      }
     } finally {
       setStatusLoading(false);
     }
@@ -282,7 +315,7 @@ export default function DoctorDetails() {
           <div className="flex-1">
             <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
               <h1 className="text-2xl md:text-3xl font-bold">
-                Dr. {doctor.fullName || 'Unknown'}
+                Dr. {(doctor.fullName || '').replace(/^Dr\.?\s*/i, '') || 'Unknown'}
               </h1>
               <StatusBadge status={doctor.account_status} />
             </div>
@@ -364,7 +397,7 @@ export default function DoctorDetails() {
             <div>
               <label className="text-sm text-gray-500">Full Name</label>
               <p className="font-medium text-gray-800">
-                Dr. {doctor.fullName || 'N/A'}
+                Dr. {(doctor.fullName || '').replace(/^Dr\.?\s*/i, '') || 'N/A'}
               </p>
             </div>
             <div>

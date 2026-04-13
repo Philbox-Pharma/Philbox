@@ -124,12 +124,13 @@ export default function DoctorHeader({ toggleSidebar, doctor }) {
                   className="w-8 h-8 rounded-full object-cover border-2 border-emerald-400/50"
                   onError={(e) => {
                     e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
+                    const fallback = e.target.parentElement.querySelector('.profile-fallback');
+                    if (fallback) fallback.classList.remove('hidden');
                   }}
                 />
               ) : null}
               <div
-                className={`w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center ${
+                className={`profile-fallback w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center ${
                   doctor?.profile_img_url ? 'hidden' : ''
                 }`}
               >

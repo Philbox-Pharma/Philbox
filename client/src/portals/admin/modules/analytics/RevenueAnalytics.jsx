@@ -177,13 +177,17 @@ export default function RevenueAnalytics() {
           dateRange.endDate
         );
 
-        if (response.data) {
           const data = response.data;
           setOverview(data);
-          setTrends(data.trends || []);
-          setSplit(data.revenueSplit?.split || []);
+          setTrends(data.trends?.trends || []);
+          
+          const splitData = [];
+          if (data.revenueSplit) {
+            splitData.push({ source: 'Appointments', amount: data.revenueSplit.appointment?.revenue || 0 });
+            splitData.push({ source: 'Orders', amount: data.revenueSplit.order?.revenue || 0 });
+          }
+          setSplit(splitData);
           setTopBranches(data.topBranches || []);
-        }
       } catch (err) {
         console.error('Failed to fetch revenue data:', err);
       } finally {
@@ -240,28 +244,28 @@ export default function RevenueAnalytics() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
           title="Total Revenue"
-          value={`Rs ${((overview?.totalRevenue || 0) / 1000).toFixed(0)}K`}
+          value={`Rs ${((overview?.revenueSplit?.total?.revenue || 0) / 1000).toFixed(0)}K`}
           icon={FaMoneyBillWave}
           color="#1a365d"
           loading={loading}
         />
         <KPICard
           title="Orders Revenue"
-          value={`Rs ${((overview?.ordersRevenue || 0) / 1000).toFixed(0)}K`}
+          value={`Rs ${((overview?.revenueSplit?.order?.revenue || 0) / 1000).toFixed(0)}K`}
           icon={FaChartLine}
           color="#38a169"
           loading={loading}
         />
         <KPICard
           title="Appointments Revenue"
-          value={`Rs ${((overview?.appointmentsRevenue || 0) / 1000).toFixed(0)}K`}
+          value={`Rs ${((overview?.revenueSplit?.appointment?.revenue || 0) / 1000).toFixed(0)}K`}
           icon={FaCalendarAlt}
           color="#d69e2e"
           loading={loading}
         />
         <KPICard
           title="Avg Per Customer"
-          value={`Rs ${(overview?.avgPerCustomer || 0).toFixed(0)}`}
+          value={`Rs ${(overview?.avgRevenuePerCustomer?.averageRevenue || 0).toFixed(0)}`}
           icon={FaMoneyBillWave}
           color="#805ad5"
           loading={loading}
@@ -273,15 +277,13 @@ export default function RevenueAnalytics() {
         {/* Revenue Trends */}
         <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
           <SimpleBarChart
-            data={trends.slice(-7).map(t => {
-              const parts = t.date?.split('-');
-              const label =
-                parts?.length > 2
-                  ? `${parts[1]}/${parts[2]}`
-                  : t.date || 'N/A';
+            data={(Array.isArray(trends) ? trends : []).slice(-7).map(t => {
+              const label = t._id?.day && t._id?.month 
+                  ? `${t._id.day}/${t._id.month}` 
+                  : (t._id?.month && t._id?.year ? `${t._id.month}/${t._id.year}` : 'N/A');
               return {
                 label: label,
-                value: t.revenue || 0,
+                value: t.totalRevenue || 0,
               };
             })}
             loading={loading}

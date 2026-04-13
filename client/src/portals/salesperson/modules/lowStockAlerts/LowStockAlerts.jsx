@@ -13,7 +13,8 @@ import {
 } from 'react-icons/fa';
 import { salespersonAlertsApi } from '../../../../core/api/salesperson/alerts.service';
 import { useAuth } from '../../../../shared/context/AuthContext';
-import { salespersonTasksApi } from '../../../../core/api/salesperson/tasks.service';
+
+import { salespersonInventoryApi } from '../../../../core/api/salesperson/inventory.service';
 
 // ==========================================
 // LOW STOCK CARD
@@ -132,7 +133,7 @@ export default function LowStockAlerts() {
   const [error, setError] = useState('');
   const [branchMap, setBranchMap] = useState({});
 
-  // Discover Branch Names (Reuse discovered logic)
+  // Discover Branch Names
   useEffect(() => {
     const discoverNames = async () => {
       const map = {};
@@ -140,12 +141,12 @@ export default function LowStockAlerts() {
       branches.forEach(b => { if (b?._id && b?.name) map[b._id] = b.name; });
 
       try {
-        const taskRes = await salespersonTasksApi.getMyTasks({ limit: 50 });
-        const tasks = taskRes.data?.data?.tasks || taskRes.data?.tasks || [];
-        if (Array.isArray(tasks)) {
-           tasks.forEach(t => {
-             if (t.branch_id && t.branch_id._id && t.branch_id.name) {
-               map[t.branch_id._id] = t.branch_id.name;
+        const res = await salespersonInventoryApi.getManagedBranches();
+        const apiBranches = res.data?.data?.branches || res.data?.branches || [];
+        if (Array.isArray(apiBranches)) {
+           apiBranches.forEach(b => {
+             if (b?._id && b?.name) {
+               map[b._id] = b.name;
              }
            });
         }

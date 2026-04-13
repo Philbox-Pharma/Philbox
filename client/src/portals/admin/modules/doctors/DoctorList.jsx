@@ -72,7 +72,7 @@ const DoctorCard = ({ doctor }) => (
         <div className="flex items-start justify-between gap-2">
           <div>
             <h3 className="font-semibold text-gray-800 truncate">
-              Dr. {doctor.fullName || 'Unknown'}
+              Dr. {(doctor.fullName || '').replace(/^Dr\.?\s*/i, '') || 'Unknown'}
             </h3>
             <p className="text-sm text-gray-500 flex items-center gap-1.5 mt-0.5">
               <FaStethoscope className="text-xs" />

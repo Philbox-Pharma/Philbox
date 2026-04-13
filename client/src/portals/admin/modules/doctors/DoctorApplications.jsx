@@ -82,7 +82,7 @@ const ActionModal = ({
 
         <div className="bg-gray-50 rounded-lg p-4 mb-4">
           <p className="text-sm text-gray-600">
-            <strong>Applicant:</strong> Dr. {application?.doctor_id?.fullName || 'Unknown'}
+            <strong>Applicant:</strong> Dr. {(application?.doctor_id?.fullName || '').replace(/^Dr\.?\s*/i, '') || 'Unknown'}
           </p>
           <p className="text-sm text-gray-600">
             <strong>Email:</strong> {application?.doctor_id?.email || 'N/A'}
@@ -161,7 +161,7 @@ const ApplicationCard = ({ application, onApprove, onReject }) => (
         <div className="flex items-start justify-between gap-2 flex-wrap">
           <div>
             <h3 className="font-semibold text-gray-800">
-              Dr. {application.doctor_id?.fullName || 'Unknown'}
+              Dr. {(application.doctor_id?.fullName || '').replace(/^Dr\.?\s*/i, '') || 'Unknown'}
             </h3>
             <p className="text-sm text-gray-500 flex items-center gap-1.5">
               <FaGraduationCap className="text-xs" />
@@ -304,7 +304,12 @@ export default function DoctorApplications() {
       setModal({ isOpen: false, type: '', application: null });
       fetchApplications();
     } catch (err) {
-      alert(err.message || 'Action failed');
+      const details = err.data?.error;
+      if (Array.isArray(details) && details.length > 0) {
+        alert(details.join('\n'));
+      } else {
+        alert(err.message || 'Action failed');
+      }
     } finally {
       setActionLoading(false);
     }

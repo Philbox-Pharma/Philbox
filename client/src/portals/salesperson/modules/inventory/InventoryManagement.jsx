@@ -17,13 +17,13 @@ import {
   FaChevronRight,
 } from 'react-icons/fa';
 import { salespersonInventoryApi } from '../../../../core/api/salesperson/inventory.service';
-import { salespersonTasksApi } from '../../../../core/api/salesperson/tasks.service';
+import { branchApi } from '../../../../core/api/admin/adminApi';
 import { useAuth } from '../../../../shared/context/AuthContext';
 
 // ==========================================
 // ADD/EDIT MEDICINE MODAL
 // ==========================================
-function MedicineModal({ isOpen, onClose, onSave, medicine, branchId, availableBranches = [], branchMap = {} }) {
+function MedicineModal({ isOpen, onClose, onSave, medicine, branchId, availableBranches = [], branchMap = {}, branchesLoading = false }) {
   const [form, setForm] = useState({
     Name: '',
     alias_name: '',
@@ -124,7 +124,12 @@ function MedicineModal({ isOpen, onClose, onSave, medicine, branchId, availableB
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Branch *</label>
-              {availableBranches.length > 0 ? (
+              {branchesLoading ? (
+                <div className="flex items-center gap-2 py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-500">
+                  <svg className="animate-spin h-4 w-4 text-blue-500" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  Loading branches...
+                </div>
+              ) : availableBranches.length > 0 ? (
                 <select
                   value={form.branch_id}
                   onChange={(e) => setForm({ ...form, branch_id: e.target.value })}
@@ -134,8 +139,10 @@ function MedicineModal({ isOpen, onClose, onSave, medicine, branchId, availableB
                   <option value="" disabled>Select Branch</option>
                   {availableBranches.map((b, idx) => {
                     const bId = b?._id || b;
-                    const bName = branchMap[bId] || b?.name || `Branch ${idx + 1}`;
-                    return <option key={bId} value={bId}>{bName} ({bId.substring(0,8)})</option>;
+                    const bName = b?.name || branchMap[bId] || `Branch ${idx + 1}`;
+                    const bCode = b?.code;
+                    const displayName = bCode ? `${bName} (${bCode})` : bName;
+                    return <option key={bId} value={bId}>{displayName}</option>;
                   })}
                 </select>
               ) : (
@@ -319,7 +326,7 @@ function MedicineDetailModal({ isOpen, onClose, medicineId, branchId }) {
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
                   <p className="text-xs font-semibold text-gray-500 uppercase">Category</p>
-                  <p className="text-sm font-bold text-gray-800 mt-1">{medicine.medicine_category || medicine.category || 'General'}</p>
+                  <p className="text-sm font-bold text-gray-800 mt-1">{medicine.medicine_category || medicine.category?.name || (typeof medicine.category === 'string' ? medicine.category : null) || 'General'}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
                   <p className="text-xs font-semibold text-gray-500 uppercase">Unit Price</p>
@@ -392,45 +399,55 @@ export default function InventoryManagement() {
 
   const [currentBranchId] = useState(defaultBranchId);
   const [branchMap, setBranchMap] = useState({});
+  const [apiBranches, setApiBranches] = useState([]);
+  const [branchesLoading, setBranchesLoading] = useState(true);
 
   useEffect(() => {
-    // Silently attempt to fetch branch names mapping to override default IDs
+    // Always fetch managed branches from backend — don't gate on user object
     const fetchBranchNames = async () => {
-        // Since the backend does not expose a public/salesperson branch dictionary endpoint 
-        // without tripping a 401 Unauthorized, we skip the network call to keep logs clean.
-        // If the backend `getMe` is updated to populate `branches_to_be_managed` as objects in the future, 
-        // this mapping will seamlessly adapt.
-        const map = {};
-        
-        // 1. Direct contextual mapping if already populated
-        availableBranches.forEach(b => { 
-          if (b?._id && b?.name) map[b._id] = b.name; 
-        });
+      setBranchesLoading(true);
+      const map = {};
 
-        // 2. Fallback: Piggyback off the task mapping which natively populates `branch_id.name` in backend
-        try {
-          const taskRes = await salespersonTasksApi.getMyTasks({ limit: 50 });
-          const tasks = taskRes.data?.data?.tasks || taskRes.data?.tasks || taskRes.data || [];
-          if (Array.isArray(tasks)) {
-            tasks.forEach(t => {
-              if (t.branch_id && t.branch_id._id && t.branch_id.name) {
-                map[t.branch_id._id] = t.branch_id.name;
-              }
-            });
-          }
-        } catch (err) {
-          console.warn('Silent branch name extraction through Tasks API skipped.', err);
+      // 1. Seed map from whatever is already in user object (may be empty)
+      availableBranches.forEach(b => {
+        if (b?._id && b?.name) map[b._id] = b.name;
+      });
+
+      // 2. Always call the backend — this is the authoritative source
+      try {
+        const response = await branchApi.getAll(1, 100, { status: 'Active' });
+        const branches = response.data?.branches || [];
+        if (Array.isArray(branches) && branches.length > 0) {
+          setApiBranches(branches);
+          branches.forEach(b => {
+            if (b?._id && b?.name) {
+              map[b._id] = b.name;
+            }
+          });
+        } else if (availableBranches.length > 0) {
+          // Fallback: use whatever the user object had
+          setApiBranches(availableBranches);
         }
-
-        // 3. Last resort tracking for primary
-        if (user?.branch_id && user.branch_id._id && user.branch_id.name) {
-          map[user.branch_id._id] = user.branch_id.name;
+      } catch (err) {
+        console.warn('Failed to fetch managed branches from backend.', err);
+        // Fallback to user-object branches on error
+        if (availableBranches.length > 0) {
+          setApiBranches(availableBranches);
         }
+      }
 
-        setBranchMap(map);
+      // 3. Last resort: primary branch from user object
+      if (user?.branch_id?._id && user.branch_id.name) {
+        map[user.branch_id._id] = user.branch_id.name;
+      }
+
+      setBranchMap(map);
+      setBranchesLoading(false);
     };
-    if (availableBranches.length > 0) fetchBranchNames();
-  }, [availableBranches, user?.branch_id]);
+
+    fetchBranchNames();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);  // Run once on mount — intentionally avoid re-running when user object changes
 
   const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -639,7 +656,7 @@ export default function InventoryManagement() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3.5 text-gray-600">{med.medicine_category || med.category || '—'}</td>
+                      <td className="px-5 py-3.5 text-gray-600">{med.medicine_category || med.category_name || med.category?.name || (typeof med.category === 'string' ? med.category : null) || '—'}</td>
                       <td className="px-5 py-3.5 text-gray-600">{med.pack_unit ? `${med.pack_unit} Pack (${med.packQty})` : 'Tablet'}</td>
                       <td className="px-5 py-3.5 text-gray-800 font-medium">Rs. {med.sale_price || med.price || '0'}</td>
                       <td className="px-5 py-3.5 text-center">
@@ -754,8 +771,9 @@ export default function InventoryManagement() {
         onSave={handleAddMedicine}
         medicine={null}
         branchId={currentBranchId}
-        availableBranches={availableBranches}
+        availableBranches={apiBranches.length > 0 ? apiBranches : availableBranches}
         branchMap={branchMap}
+        branchesLoading={branchesLoading}
       />
 
       {/* Edit Modal */}
@@ -765,8 +783,9 @@ export default function InventoryManagement() {
         onSave={handleEditMedicine}
         medicine={editingMedicine}
         branchId={currentBranchId}
-        availableBranches={availableBranches}
+        availableBranches={apiBranches.length > 0 ? apiBranches : availableBranches}
         branchMap={branchMap}
+        branchesLoading={branchesLoading}
       />
 
       {/* Detail Modal */}

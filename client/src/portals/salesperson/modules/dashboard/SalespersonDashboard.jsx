@@ -182,15 +182,14 @@ export default function SalespersonDashboard() {
                   <p className="text-xs mt-1">Activities will appear here as you work.</p>
                 </div>
               ) : (
-                <div className="space-y-6 relative before:absolute before:inset-0 before:left-3 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
+                <div className="space-y-4 relative before:absolute before:inset-0 before:left-3 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent ml-2">
                   {data.activities.map((activity, index) => (
-                    <div key={index} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
-                      <div className="flex items-center justify-center w-6 h-6 rounded-full border-2 border-white bg-blue-100 text-blue-500 shadow-sm shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 relative z-10">
+                    <div key={index} className="relative flex items-start gap-4 group">
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full border-2 border-white bg-blue-100 text-blue-500 shadow-sm shrink-0 relative z-10 mt-1">
                         <FaCheckCircle size={10} />
                       </div>
-                      <div className="w-[calc(100%-2.5rem)] md:w-[calc(50%-1.5rem)] p-4 rounded-xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow">
-                        <p className="text-sm font-semibold text-gray-800">{activity.action || 'Task Completed'}</p>
-                        <p className="text-xs text-gray-500 mt-1">{activity.description}</p>
+                      <div className="flex-1 p-4 rounded-xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow">
+                        <p className="text-sm font-semibold text-gray-800">{activity.description || 'Task Completed'}</p>
                         <span className="text-[10px] uppercase font-bold text-gray-400 mt-2 block tracking-wider">
                           {new Date(activity.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} 
                           {', '} 

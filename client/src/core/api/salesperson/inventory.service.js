@@ -14,6 +14,15 @@ export const salespersonInventoryApi = {
   },
 
   /**
+   * GET /api/salesperson/inventory/branches
+   * Get managed branch options for inventory operations
+   */
+  getManagedBranches: async () => {
+    const response = await apiClient.get(`${BASE_URL}/branches`);
+    return response.data;
+  },
+
+  /**
    * POST /api/salesperson/inventory
    * Create a single medicine in a branch
    * @param {Object} data - { branch_id, Name, ... }

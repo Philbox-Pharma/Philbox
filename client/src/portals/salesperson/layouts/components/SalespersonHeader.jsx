@@ -2,10 +2,7 @@ import { FaBars, FaSignOutAlt } from 'react-icons/fa';
 import { useAuth } from '../../../../shared/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-export default function SalespersonHeader({
-  toggleSidebar,
-  salesperson,
-}) {
+export default function SalespersonHeader({ toggleSidebar, salesperson }) {
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -15,7 +12,7 @@ export default function SalespersonHeader({
   };
 
   return (
-    <header className="h-20 bg-white border-b border-gray-200 sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between shadow-sm">
+    <header className="h-24 shrink-0 bg-white border-b border-gray-200 sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between shadow-sm">
       <div className="flex items-center gap-4">
         <button
           onClick={toggleSidebar}
@@ -51,4 +48,3 @@ export default function SalespersonHeader({
     </header>
   );
 }
-
