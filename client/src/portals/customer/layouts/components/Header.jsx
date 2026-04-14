@@ -12,6 +12,7 @@ import {
 } from 'react-icons/fa';
 import { customerAuthApi } from '../../../../core/api/customer/auth';
 import profileService from '../../../../core/api/customer/profile.service';
+import cartService from '../../../../core/api/customer/cart.service';
 import SearchBar from './SearchBar';
 import NotificationDropdown from '../../../../shared/components/Dropdown/NotificationDropdown';
 
@@ -25,9 +26,10 @@ export default function Header() {
     profile_img: '',
   });
 
-  // Mock data for cart/notifications - baad mein API se aayega
-  const cartCount = 3;
-  const notificationCount = 5;
+  // Cart count from API
+  const [cartCount, setCartCount] = useState(0);
+  // Mock notification count (no backend notifications API)
+  const notificationCount = 2;
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -38,12 +40,26 @@ export default function Header() {
         console.error('Failed to load profile in header:', error);
       }
     };
+    const fetchCartCount = async () => {
+      try {
+        const response = await cartService.getCartCount();
+        const data = response.data?.data || response.data;
+        setCartCount(data?.count || data?.itemCount || 0);
+      } catch (error) {
+        console.error('Failed to load cart count:', error);
+      }
+    };
     fetchProfile();
+    fetchCartCount();
 
     const handleProfileUpdate = () => fetchProfile();
+    const handleCartUpdate = () => fetchCartCount();
     window.addEventListener('profileUpdated', handleProfileUpdate);
-    return () =>
+    window.addEventListener('cartUpdated', handleCartUpdate);
+    return () => {
       window.removeEventListener('profileUpdated', handleProfileUpdate);
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+    };
   }, []);
 
   // Handle logout

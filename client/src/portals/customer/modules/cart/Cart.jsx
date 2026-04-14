@@ -1,272 +1,330 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaTrash, FaMinus, FaPlus, FaShoppingBag, FaArrowLeft } from 'react-icons/fa';
+import {
+  FaTrash,
+  FaMinus,
+  FaPlus,
+  FaShoppingCart,
+  FaArrowLeft,
+  FaPills,
+} from 'react-icons/fa';
+import cartService from '../../../../core/api/customer/cart.service';
 
 export default function Cart() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const [cartData, setCartData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [updatingItemId, setUpdatingItemId] = useState(null);
+  const [removingItemId, setRemovingItemId] = useState(null);
 
-    // Mock cart data - baad mein Context/API se aayega
-    const [cartItems, setCartItems] = useState([
-        {
-            id: 1,
-            name: 'Panadol Extra',
-            generic: 'Paracetamol 500mg',
-            price: 150,
-            quantity: 2,
-            image: 'https://via.placeholder.com/100x100?text=Panadol',
-            inStock: true,
-            stockCount: 50,
-        },
-        {
-            id: 2,
-            name: 'Augmentin 625mg',
-            generic: 'Amoxicillin + Clavulanic Acid',
-            price: 850,
-            quantity: 1,
-            image: 'https://via.placeholder.com/100x100?text=Augmentin',
-            inStock: true,
-            stockCount: 25,
-            prescriptionRequired: true,
-        },
-        {
-            id: 3,
-            name: 'Centrum Multivitamin',
-            generic: 'Multivitamins & Minerals',
-            price: 1200,
-            quantity: 1,
-            image: 'https://via.placeholder.com/100x100?text=Centrum',
-            inStock: true,
-            stockCount: 15,
-        },
-    ]);
-
-    // Update quantity
-    const updateQuantity = (id, newQuantity) => {
-        if (newQuantity < 1) return;
-
-        setCartItems(items =>
-            items.map(item =>
-                item.id === id
-                    ? { ...item, quantity: Math.min(newQuantity, item.stockCount) }
-                    : item
-            )
-        );
-    };
-
-    // Remove item
-    const removeItem = (id) => {
-        setCartItems(items => items.filter(item => item.id !== id));
-    };
-
-    // Clear cart
-    const clearCart = () => {
-        if (window.confirm('Are you sure you want to clear the cart?')) {
-            setCartItems([]);
-        }
-    };
-
-    // Calculate totals
-    const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const deliveryFee = subtotal > 2000 ? 0 : 150;
-    const total = subtotal + deliveryFee;
-
-    // Check if prescription required
-    const prescriptionRequired = cartItems.some(item => item.prescriptionRequired);
-
-    // Handle checkout
-    const handleCheckout = () => {
-        navigate('/checkout');
-    };
-
-    // Empty cart view
-    if (cartItems.length === 0) {
-        return (
-            <div className="max-w-7xl mx-auto px-4 py-16">
-                <div className="text-center">
-                    <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <FaShoppingBag className="text-4xl text-gray-400" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Your cart is empty</h2>
-                    <p className="text-gray-500 mb-6">Looks like you haven't added any medicines yet.</p>
-                    <Link to="/medicines" className="btn-primary inline-flex items-center gap-2 px-6 py-3">
-                        <FaArrowLeft />
-                        Browse Medicines
-                    </Link>
-                </div>
-            </div>
-        );
+  // Fetch cart data from API
+  const fetchCart = async () => {
+    try {
+      const response = await cartService.getCart();
+      setCartData(response.data?.data || response.data || null);
+    } catch (error) {
+      console.error('Failed to fetch cart:', error);
+      setCartData(null);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  // Update item quantity
+  const handleUpdateQuantity = async (itemId, newQuantity) => {
+    if (newQuantity < 1) return;
+    setUpdatingItemId(itemId);
+    try {
+      const response = await cartService.updateCartItem(itemId, newQuantity);
+      setCartData(response.data?.data || response.data || null);
+      window.dispatchEvent(new Event('cartUpdated'));
+    } catch (error) {
+      console.error('Failed to update quantity:', error);
+      alert(error.response?.data?.message || 'Failed to update quantity');
+    } finally {
+      setUpdatingItemId(null);
+    }
+  };
+
+  // Remove item from cart
+  const handleRemoveItem = async (itemId) => {
+    if (!window.confirm('Remove this item from cart?')) return;
+    setRemovingItemId(itemId);
+    try {
+      const response = await cartService.removeFromCart(itemId);
+      setCartData(response.data?.data || response.data || null);
+      window.dispatchEvent(new Event('cartUpdated'));
+    } catch (error) {
+      console.error('Failed to remove item:', error);
+      alert(error.response?.data?.message || 'Failed to remove item');
+    } finally {
+      setRemovingItemId(null);
+    }
+  };
+
+  // Clear entire cart
+  const handleClearCart = async () => {
+    if (!window.confirm('Are you sure you want to clear your entire cart?')) return;
+    try {
+      const response = await cartService.clearCart();
+      setCartData(response.data?.data || response.data || null);
+      window.dispatchEvent(new Event('cartUpdated'));
+    } catch (error) {
+      console.error('Failed to clear cart:', error);
+      alert(error.response?.data?.message || 'Failed to clear cart');
+    }
+  };
+
+  // Handle checkout navigation
+  const handleCheckout = () => {
+    navigate('/checkout');
+  };
+
+  // Loading state
+  if (isLoading) {
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8">
-            {/* Page Header */}
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Shopping Cart</h1>
-                    <p className="text-gray-500 mt-1">{cartItems.length} items in your cart</p>
-                </div>
-                <button
-                    onClick={clearCart}
-                    className="text-red-500 hover:text-red-600 text-sm font-medium"
-                >
-                    Clear Cart
-                </button>
-            </div>
-
-            <div className="grid lg:grid-cols-3 gap-8">
-                {/* Cart Items */}
-                <div className="lg:col-span-2">
-                    <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                        {cartItems.map((item, index) => (
-                            <div
-                                key={item.id}
-                                className={`p-4 md:p-6 flex gap-4 ${index !== cartItems.length - 1 ? 'border-b' : ''
-                                    }`}
-                            >
-                                {/* Product Image */}
-                                <Link to={`/medicines/${item.id}`}>
-                                    <img
-                                        src={item.image}
-                                        alt={item.name}
-                                        className="w-20 h-20 md:w-24 md:h-24 object-cover rounded-lg"
-                                    />
-                                </Link>
-
-                                {/* Product Details */}
-                                <div className="flex-1">
-                                    <div className="flex justify-between">
-                                        <div>
-                                            <Link
-                                                to={`/medicines/${item.id}`}
-                                                className="font-semibold text-gray-800 hover:text-blue-600"
-                                            >
-                                                {item.name}
-                                            </Link>
-                                            <p className="text-sm text-gray-500">{item.generic}</p>
-                                            {item.prescriptionRequired && (
-                                                <span className="inline-block mt-1 text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded">
-                                                    Prescription Required
-                                                </span>
-                                            )}
-                                        </div>
-                                        <button
-                                            onClick={() => removeItem(item.id)}
-                                            className="text-gray-400 hover:text-red-500 p-1"
-                                        >
-                                            <FaTrash />
-                                        </button>
-                                    </div>
-
-                                    {/* Price & Quantity */}
-                                    <div className="flex items-center justify-between mt-4">
-                                        {/* Quantity Selector */}
-                                        <div className="flex items-center border rounded-lg">
-                                            <button
-                                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                                className="p-2 hover:bg-gray-100 transition-colors"
-                                                disabled={item.quantity <= 1}
-                                            >
-                                                <FaMinus className="text-gray-600 text-sm" />
-                                            </button>
-                                            <span className="w-10 text-center font-medium">{item.quantity}</span>
-                                            <button
-                                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                                className="p-2 hover:bg-gray-100 transition-colors"
-                                                disabled={item.quantity >= item.stockCount}
-                                            >
-                                                <FaPlus className="text-gray-600 text-sm" />
-                                            </button>
-                                        </div>
-
-                                        {/* Price */}
-                                        <div className="text-right">
-                                            <p className="font-bold text-gray-800">Rs. {item.price * item.quantity}</p>
-                                            <p className="text-sm text-gray-500">Rs. {item.price} each</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Continue Shopping */}
-                    <Link
-                        to="/medicines"
-                        className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mt-4"
-                    >
-                        <FaArrowLeft />
-                        Continue Shopping
-                    </Link>
-                </div>
-
-                {/* Order Summary */}
-                <div className="lg:col-span-1">
-                    <div className="bg-white rounded-xl shadow-sm border p-6 sticky top-24">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4">Order Summary</h2>
-
-                        {/* Summary Details */}
-                        <div className="space-y-3 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">Subtotal ({cartItems.length} items)</span>
-                                <span className="font-medium">Rs. {subtotal}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">Delivery Fee</span>
-                                {deliveryFee === 0 ? (
-                                    <span className="text-green-600 font-medium">FREE</span>
-                                ) : (
-                                    <span className="font-medium">Rs. {deliveryFee}</span>
-                                )}
-                            </div>
-                            {deliveryFee === 0 && (
-                                <p className="text-xs text-green-600">
-                                    ✓ Free delivery on orders above Rs. 2000
-                                </p>
-                            )}
-                            {deliveryFee > 0 && (
-                                <p className="text-xs text-gray-500">
-                                    Add Rs. {2000 - subtotal} more for free delivery
-                                </p>
-                            )}
-                        </div>
-
-                        <hr className="my-4" />
-
-                        {/* Total */}
-                        <div className="flex justify-between items-center mb-6">
-                            <span className="text-lg font-semibold text-gray-800">Total</span>
-                            <span className="text-xl font-bold text-blue-600">Rs. {total}</span>
-                        </div>
-
-                        {/* Prescription Warning */}
-                        {prescriptionRequired && (
-                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                                <p className="text-sm text-yellow-700">
-                                    ⚠️ Some items require a prescription. You'll need to upload it during checkout.
-                                </p>
-                            </div>
-                        )}
-
-                        {/* Checkout Button */}
-                        <button
-                            onClick={handleCheckout}
-                            className="btn-primary w-full py-3 text-lg"
-                        >
-                            Proceed to Checkout
-                        </button>
-
-                        {/* Trust Badges */}
-                        <div className="flex justify-center gap-4 mt-6 pt-4 border-t">
-                            <div className="text-center">
-                                <p className="text-xs text-gray-500">🔒 Secure Payment</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-xs text-gray-500">📦 Fast Delivery</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+      <div className="flex justify-center items-center py-20">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
     );
+  }
+
+  const items = cartData?.items || [];
+  const summary = cartData?.summary || {
+    uniqueItems: 0,
+    itemCount: 0,
+    subtotal: 0,
+    taxRate: 0,
+    taxAmount: 0,
+    total: 0,
+  };
+  const checkout = cartData?.checkout || { canProceed: false, message: 'Your cart is empty' };
+
+  // Empty cart
+  if (!items.length) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-8">
+          Shopping Cart
+        </h1>
+        <div className="text-center py-16 bg-white rounded-xl shadow-sm border">
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FaShoppingCart className="text-3xl text-gray-400" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">
+            Your cart is empty
+          </h3>
+          <p className="text-gray-500 mb-6">
+            Looks like you haven&apos;t added any medicines to your cart yet.
+          </p>
+          <Link
+            to="/medicines"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            <FaPills />
+            Browse Medicines
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+            Shopping Cart
+          </h1>
+          <p className="text-gray-500 mt-1">
+            {summary.uniqueItems} item{summary.uniqueItems !== 1 ? 's' : ''} in your cart
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Link
+            to="/medicines"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+          >
+            <FaArrowLeft />
+            Continue Shopping
+          </Link>
+          <button
+            onClick={handleClearCart}
+            className="inline-flex items-center gap-2 px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors text-sm"
+          >
+            <FaTrash />
+            Clear Cart
+          </button>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* Cart Items */}
+        <div className="lg:col-span-2 space-y-4">
+          {items.map((item) => (
+            <div
+              key={item.itemId}
+              className={`bg-white rounded-xl shadow-sm border p-4 transition-opacity ${
+                removingItemId === item.itemId ? 'opacity-50' : ''
+              }`}
+            >
+              <div className="flex gap-4">
+                {/* Medicine Image */}
+                <Link to={`/medicines/${item.medicineId}`}>
+                  <img
+                    src={item.imageUrl || 'https://via.placeholder.com/100x100?text=Medicine'}
+                    alt={item.name}
+                    className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg flex-shrink-0"
+                    onError={(e) => {
+                      e.target.src = 'https://via.placeholder.com/100x100?text=Medicine';
+                    }}
+                  />
+                </Link>
+
+                {/* Item Details */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <Link
+                        to={`/medicines/${item.medicineId}`}
+                        className="font-semibold text-gray-800 hover:text-blue-600 transition-colors line-clamp-1"
+                      >
+                        {item.name}
+                      </Link>
+                      {item.aliasName && (
+                        <p className="text-sm text-gray-500 line-clamp-1">{item.aliasName}</p>
+                      )}
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {item.dosageForm && (
+                          <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                            {item.dosageForm}
+                          </span>
+                        )}
+                        {item.category && (
+                          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                            {item.category}
+                          </span>
+                        )}
+                        {item.prescriptionRequired && (
+                          <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full">
+                            Rx Required
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Remove Button */}
+                    <button
+                      onClick={() => handleRemoveItem(item.itemId)}
+                      disabled={removingItemId === item.itemId}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                      title="Remove"
+                    >
+                      <FaTrash />
+                    </button>
+                  </div>
+
+                  {/* Price & Quantity */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-3 gap-3">
+                    <div className="flex items-center border rounded-lg">
+                      <button
+                        onClick={() => handleUpdateQuantity(item.itemId, item.quantity - 1)}
+                        disabled={item.quantity <= 1 || updatingItemId === item.itemId}
+                        className="p-2 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                      >
+                        <FaMinus size={12} />
+                      </button>
+                      <span className="w-10 text-center font-medium text-sm">
+                        {updatingItemId === item.itemId ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mx-auto"></div>
+                        ) : (
+                          item.quantity
+                        )}
+                      </span>
+                      <button
+                        onClick={() => handleUpdateQuantity(item.itemId, item.quantity + 1)}
+                        disabled={updatingItemId === item.itemId}
+                        className="p-2 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                      >
+                        <FaPlus size={12} />
+                      </button>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">
+                        Rs. {item.unitPrice} × {item.quantity}
+                      </p>
+                      <p className="text-lg font-bold text-blue-600">
+                        Rs. {item.subtotal}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Order Summary */}
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-xl shadow-sm border p-6 sticky top-20">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">
+              Order Summary
+            </h2>
+
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">
+                  Subtotal ({summary.itemCount} items)
+                </span>
+                <span className="font-medium">Rs. {summary.subtotal}</span>
+              </div>
+
+              {summary.taxAmount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">
+                    Tax ({(summary.taxRate * 100).toFixed(0)}%)
+                  </span>
+                  <span className="font-medium">Rs. {summary.taxAmount}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between text-gray-600">
+                <span>Delivery Fee</span>
+                <span className="text-green-600 font-medium">Free</span>
+              </div>
+
+              <hr className="my-2" />
+
+              <div className="flex justify-between text-lg font-bold">
+                <span className="text-gray-800">Total</span>
+                <span className="text-blue-600">Rs. {summary.total}</span>
+              </div>
+            </div>
+
+            {/* Checkout Button */}
+            <button
+              onClick={handleCheckout}
+              disabled={!checkout.canProceed}
+              className="w-full mt-6 py-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            >
+              Proceed to Checkout
+            </button>
+
+            {/* Info */}
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-xs text-blue-700 text-center">
+                🔒 Secure checkout. Your data is protected.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

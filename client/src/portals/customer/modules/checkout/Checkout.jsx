@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
     FaArrowLeft,
@@ -14,6 +14,8 @@ import {
     FaExclamationTriangle,
     FaTimes
 } from 'react-icons/fa';
+import cartService from '../../../../core/api/customer/cart.service';
+import profileService from '../../../../core/api/customer/profile.service';
 
 export default function Checkout() {
     const _navigate = useNavigate();
@@ -21,15 +23,16 @@ export default function Checkout() {
     const [step, setStep] = useState(1); // 1: Address, 2: Payment & Prescription, 3: Review
     const [loading, setLoading] = useState(false);
     const [orderPlaced, setOrderPlaced] = useState(false);
+    const [pageLoading, setPageLoading] = useState(true);
 
     // Address State
     const [address, setAddress] = useState({
-        fullName: 'John Doe',
-        phone: '03001234567',
-        street: 'House 12, Street 5, Block B',
-        city: 'Lahore',
-        province: 'Punjab',
-        zipCode: '54000',
+        fullName: '',
+        phone: '',
+        street: '',
+        city: '',
+        province: '',
+        zipCode: '',
     });
 
     const [editingAddress, setEditingAddress] = useState(false);
@@ -42,36 +45,48 @@ export default function Checkout() {
     const [selectedPrescription, setSelectedPrescription] = useState(null);
     const [uploadedPrescription, setUploadedPrescription] = useState(null);
 
-    // Mock cart data
-    const cartItems = [
-        {
-            id: 1,
-            name: 'Panadol Extra',
-            genericName: 'Paracetamol',
-            price: 150,
-            quantity: 2,
-            image: 'https://via.placeholder.com/60x60?text=P',
-            prescriptionRequired: false,
-        },
-        {
-            id: 2,
-            name: 'Augmentin 625mg',
-            genericName: 'Amoxicillin + Clavulanic Acid',
-            price: 850,
-            quantity: 1,
-            image: 'https://via.placeholder.com/60x60?text=A',
-            prescriptionRequired: true,
-        },
-        {
-            id: 3,
-            name: 'Lipitor 20mg',
-            genericName: 'Atorvastatin',
-            price: 1200,
-            quantity: 1,
-            image: 'https://via.placeholder.com/60x60?text=L',
-            prescriptionRequired: true,
-        },
-    ];
+    // Cart items from API
+    const [cartItems, setCartItems] = useState([]);
+    const [cartSummary, setCartSummary] = useState({ subtotal: 0, taxAmount: 0, total: 0 });
+
+    // Load cart data and profile on mount
+    useEffect(() => {
+        const loadCheckoutData = async () => {
+            try {
+                // Fetch cart items
+                const cartRes = await cartService.getCart();
+                const cartData = cartRes.data?.data || cartRes.data || {};
+                const items = (cartData.items || []).map(item => ({
+                    id: item.itemId,
+                    name: item.name,
+                    genericName: item.aliasName || item.dosageForm || '',
+                    price: item.unitPrice,
+                    quantity: item.quantity,
+                    image: item.imageUrl || 'https://via.placeholder.com/60x60?text=Med',
+                    prescriptionRequired: item.prescriptionRequired || false,
+                }));
+                setCartItems(items);
+                setCartSummary(cartData.summary || { subtotal: 0, taxAmount: 0, total: 0 });
+
+                // Fetch profile for address
+                const profileRes = await profileService.getProfile();
+                const profile = profileRes.data || profileRes;
+                setAddress({
+                    fullName: profile.fullName || '',
+                    phone: profile.contactNumber || '',
+                    street: profile.address?.street || '',
+                    city: profile.address?.city || '',
+                    province: profile.address?.province || '',
+                    zipCode: profile.address?.zip_code || '',
+                });
+            } catch (error) {
+                console.error('Failed to load checkout data:', error);
+            } finally {
+                setPageLoading(false);
+            }
+        };
+        loadCheckoutData();
+    }, []);
 
     // Mock existing prescriptions (from doctor appointments)
     const existingPrescriptions = [
@@ -186,6 +201,15 @@ export default function Checkout() {
         }
         return null;
     };
+
+    // Page loading state
+    if (pageLoading) {
+        return (
+            <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        );
+    }
 
     // Order Placed Success Screen
     if (orderPlaced) {

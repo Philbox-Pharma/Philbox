@@ -1,7 +1,6 @@
 import { useState } from 'react';
-//import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaExclamationCircle, FaCheckCircle } from 'react-icons/fa';
 import { customerAuthApi } from '../../../../core/api/customer/auth';
 
 export default function Register() {
@@ -19,8 +18,8 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  // eslint-disable-next-line no-unused-vars
+  const [errors, setErrors] = useState({}); // Per-field errors
+  const [generalError, setGeneralError] = useState(''); // General error message
   const [success, setSuccess] = useState(false);
 
   // Handle input changes
@@ -30,44 +29,153 @@ export default function Register() {
       ...prev,
       [name]: value,
     }));
+    // Clear field error when user types
+    if (errors[name]) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
+    if (generalError) setGeneralError('');
   };
 
-  // Form validation
-  // eslint-disable-next-line no-unused-vars
+  // Frontend validation aligned with backend DTO
   const validateForm = () => {
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return false;
+    const newErrors = {};
+
+    // fullName: required, min 3, max 50
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Full Name is required';
+    } else if (formData.fullName.trim().length < 3) {
+      newErrors.fullName = 'Full Name must be at least 3 characters';
+    } else if (formData.fullName.trim().length > 50) {
+      newErrors.fullName = 'Full Name must be at most 50 characters';
     }
-    if (formData.password.length < 3) {
-      setError('Password must be at least 3 characters');
-      return false;
+
+    // email: required, valid email
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
     }
-    if (
-      formData.contactNumber.length < 10 ||
-      formData.contactNumber.length > 15
-    ) {
-      setError('Contact number must be 10-15 digits');
-      return false;
+
+    // password: required, alphanumeric, 3-30 chars (matching backend regex)
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (!/^[a-zA-Z0-9]{3,30}$/.test(formData.password)) {
+      newErrors.password = 'Password must be 3-30 characters, letters and numbers only';
     }
-    return true;
+
+    // confirmPassword
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    // contactNumber: optional, but if provided must be 10-15 digits only
+    if (formData.contactNumber) {
+      if (!/^[0-9]+$/.test(formData.contactNumber)) {
+        newErrors.contactNumber = 'Contact number must contain digits only';
+      } else if (formData.contactNumber.length < 10 || formData.contactNumber.length > 15) {
+        newErrors.contactNumber = 'Contact number must be 10-15 digits';
+      }
+    }
+
+    // gender: optional, but if selected must be Male or Female
+    if (formData.gender && !['Male', 'Female'].includes(formData.gender)) {
+      newErrors.gender = 'Please select Male or Female';
+    }
+
+    // dateOfBirth: optional, but if provided must be a valid past date
+    if (formData.dateOfBirth) {
+      const dob = new Date(formData.dateOfBirth);
+      if (isNaN(dob.getTime())) {
+        newErrors.dateOfBirth = 'Please enter a valid date';
+      } else if (dob >= new Date()) {
+        newErrors.dateOfBirth = 'Date of birth must be in the past';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   // Handle form submit
   const handleSubmit = async e => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    setGeneralError('');
 
-    const { name, email, password, phone } = formData;
+    // Run frontend validation
+    if (!validateForm()) return;
+
+    setLoading(true);
+
+    // Build payload matching backend DTO (DO NOT send confirmPassword)
+    const payload = {
+      fullName: formData.fullName.trim(),
+      email: formData.email.trim().toLowerCase(),
+      password: formData.password,
+    };
+
+    // Only include optional fields if they have a value
+    if (formData.contactNumber) payload.contactNumber = formData.contactNumber;
+    if (formData.gender) payload.gender = formData.gender;
+    if (formData.dateOfBirth) payload.dateOfBirth = formData.dateOfBirth;
 
     try {
-      // Create the data object HERE before using it
-      const dataToSend = { name, email, password, phone };
-      const _response = await customerAuthApi.register(dataToSend); // API response not used
-      // ... rest
+      await customerAuthApi.register(payload);
+      setSuccess(true);
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      // Handle backend validation errors (array of messages)
+      const responseData = err.response?.data;
+      if (responseData) {
+        // If backend returns error details as an array
+        if (Array.isArray(responseData.error)) {
+          // Try to map errors to fields
+          const fieldErrors = {};
+          const unmappedErrors = [];
+
+          responseData.error.forEach(msg => {
+            const lower = msg.toLowerCase();
+            if (lower.includes('fullname') || lower.includes('"fullname"')) {
+              fieldErrors.fullName = msg.replace(/"/g, '');
+            } else if (lower.includes('email')) {
+              fieldErrors.email = msg.replace(/"/g, '');
+            } else if (lower.includes('password')) {
+              fieldErrors.password = msg.replace(/"/g, '');
+            } else if (lower.includes('contactnumber') || lower.includes('contact')) {
+              fieldErrors.contactNumber = msg.replace(/"/g, '');
+            } else if (lower.includes('gender')) {
+              fieldErrors.gender = msg.replace(/"/g, '');
+            } else if (lower.includes('dateofbirth') || lower.includes('date')) {
+              fieldErrors.dateOfBirth = msg.replace(/"/g, '');
+            } else {
+              unmappedErrors.push(msg.replace(/"/g, ''));
+            }
+          });
+
+          if (Object.keys(fieldErrors).length > 0) {
+            setErrors(fieldErrors);
+          }
+          if (unmappedErrors.length > 0) {
+            setGeneralError(unmappedErrors.join('. '));
+          } else if (Object.keys(fieldErrors).length === 0) {
+            setGeneralError(responseData.message || 'Registration failed');
+          }
+        } else {
+          // Single message string
+          const msg = responseData.message || 'Registration failed';
+          if (msg.toLowerCase().includes('email already exists')) {
+            setErrors({ email: msg });
+          } else {
+            setGeneralError(msg);
+          }
+        }
+      } else {
+        setGeneralError('Network error. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -77,6 +185,10 @@ export default function Register() {
   const handleGoogleSignup = () => {
     window.location.href = customerAuthApi.getGoogleAuthUrl();
   };
+
+  // Input error styling — use inline style since @apply border in .input-field can override Tailwind classes
+  const inputStyle = (fieldName) =>
+    errors[fieldName] ? { borderColor: '#f87171', boxShadow: '0 0 0 2px rgba(248, 113, 113, 0.2)' } : {};
 
   return (
     <div className="auth-wrapper">
@@ -100,9 +212,12 @@ export default function Register() {
         {success ? (
           <div>
             <div className="alert-success">
-              <p className="font-medium">Registration Successful!</p>
+              <div className="flex items-center gap-2 mb-1">
+                <FaCheckCircle className="text-green-500" />
+                <p className="font-medium">Registration Successful!</p>
+              </div>
               <p className="text-sm mt-1">
-                We've sent a verification link to{' '}
+                We&apos;ve sent a verification link to{' '}
                 <strong>{formData.email}</strong>
               </p>
               <p className="text-sm mt-1">
@@ -118,14 +233,19 @@ export default function Register() {
         ) : (
           <>
             {/* Registration Form */}
-            <form onSubmit={handleSubmit}>
-              {/* Error Message */}
-              {error && <div className="alert-error mb-4">{error}</div>}
+            <form onSubmit={handleSubmit} noValidate>
+              {/* General Error Message */}
+              {generalError && (
+                <div className="flex items-start gap-2 p-3 mb-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  <FaExclamationCircle className="text-red-500 mt-0.5 flex-shrink-0" />
+                  <span>{generalError}</span>
+                </div>
+              )}
 
               {/* Full Name */}
               <div className="mb-4">
                 <label htmlFor="fullName" className="input-label">
-                  Full Name
+                  Full Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -134,15 +254,21 @@ export default function Register() {
                   value={formData.fullName}
                   onChange={handleChange}
                   className="input-field"
+                  style={inputStyle('fullName')}
                   placeholder="John Doe"
-                  required
                 />
+                {errors.fullName && (
+                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                    <FaExclamationCircle size={10} />
+                    {errors.fullName}
+                  </p>
+                )}
               </div>
 
               {/* Email */}
               <div className="mb-4">
                 <label htmlFor="email" className="input-label">
-                  Email Address
+                  Email Address <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -151,67 +277,94 @@ export default function Register() {
                   value={formData.email}
                   onChange={handleChange}
                   className="input-field"
+                  style={inputStyle('email')}
                   placeholder="john@example.com"
-                  required
                 />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                    <FaExclamationCircle size={10} />
+                    {errors.email}
+                  </p>
+                )}
               </div>
 
               {/* Password & Confirm Password - Side by Side */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 {/* Password */}
-                <div className="relative">
+                <div>
                   <label htmlFor="password" className="input-label">
-                    Password
+                    Password <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="input-field pr-10"
-                    placeholder="••••••••"
-                    required
-                  />
-                  <span
-                    className="absolute right-3 top-9 cursor-pointer text-gray-500 hover:text-gray-700"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <FaEyeSlash size={16} />
-                    ) : (
-                      <FaEye size={16} />
-                    )}
-                  </span>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      id="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      className="input-field pr-10"
+                      style={inputStyle('password')}
+                      placeholder="••••••••"
+                    />
+                    <span
+                      className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <FaEyeSlash size={16} />
+                      ) : (
+                        <FaEye size={16} />
+                      )}
+                    </span>
+                  </div>
+                  {errors.password && (
+                    <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                      <FaExclamationCircle size={10} />
+                      {errors.password}
+                    </p>
+                  )}
                 </div>
 
                 {/* Confirm Password */}
-                <div className="relative">
+                <div>
                   <label htmlFor="confirmPassword" className="input-label">
-                    Confirm Password
+                    Confirm Password <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    className="input-field pr-10"
-                    placeholder="••••••••"
-                    required
-                  />
-                  <span
-                    className="absolute right-3 top-9 cursor-pointer text-gray-500 hover:text-gray-700"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? (
-                      <FaEyeSlash size={16} />
-                    ) : (
-                      <FaEye size={16} />
-                    )}
-                  </span>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      className="input-field pr-10"
+                      style={inputStyle('confirmPassword')}
+                      placeholder="••••••••"
+                    />
+                    <span
+                      className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? (
+                        <FaEyeSlash size={16} />
+                      ) : (
+                        <FaEye size={16} />
+                      )}
+                    </span>
+                  </div>
+                  {errors.confirmPassword && (
+                    <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                      <FaExclamationCircle size={10} />
+                      {errors.confirmPassword}
+                    </p>
+                  )}
                 </div>
               </div>
+
+              {/* Password hint */}
+              <p className="text-xs text-gray-400 -mt-2 mb-4">
+                3-30 characters, letters and numbers only
+              </p>
 
               {/* Contact Number */}
               <div className="mb-4">
@@ -225,9 +378,15 @@ export default function Register() {
                   value={formData.contactNumber}
                   onChange={handleChange}
                   className="input-field"
+                  style={inputStyle('contactNumber')}
                   placeholder="03001234567"
-                  required
                 />
+                {errors.contactNumber && (
+                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                    <FaExclamationCircle size={10} />
+                    {errors.contactNumber}
+                  </p>
+                )}
               </div>
 
               {/* Gender & Date of Birth - Side by Side */}
@@ -243,13 +402,18 @@ export default function Register() {
                     value={formData.gender}
                     onChange={handleChange}
                     className="input-field"
-                    required
+                    style={inputStyle('gender')}
                   >
                     <option value="">Select Gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
-                    <option value="Other">Other</option>
                   </select>
+                  {errors.gender && (
+                    <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                      <FaExclamationCircle size={10} />
+                      {errors.gender}
+                    </p>
+                  )}
                 </div>
 
                 {/* Date of Birth */}
@@ -264,8 +428,15 @@ export default function Register() {
                     value={formData.dateOfBirth}
                     onChange={handleChange}
                     className="input-field"
-                    required
+                    style={inputStyle('dateOfBirth')}
+                    max={new Date().toISOString().split('T')[0]}
                   />
+                  {errors.dateOfBirth && (
+                    <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                      <FaExclamationCircle size={10} />
+                      {errors.dateOfBirth}
+                    </p>
+                  )}
                 </div>
               </div>
 
