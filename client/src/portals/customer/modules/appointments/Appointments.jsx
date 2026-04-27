@@ -12,6 +12,7 @@ import {
   FaPlus,
   FaFilter,
   FaChevronDown,
+  FaPlayCircle,
 } from 'react-icons/fa';
 import appointmentsService from '../../../../core/api/customer/appointments.service';
 
@@ -349,6 +350,23 @@ export default function Appointments() {
                       >
                         Cancel Request
                       </button>
+                    )}
+
+                    {/* Join Video Call button */}
+                    {activeView === 'confirmed' && 
+                     (apt.appointment_type === 'video' || apt.appointment_type === 'online') && 
+                     (apt.status === 'pending' || apt.status === 'in-progress') && (
+                      <Link
+                        to={`/appointments/video/${apt._id}`}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-white transition-all shadow-sm ${
+                          apt.status === 'in-progress' 
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 animate-pulse' 
+                            : 'bg-blue-500 hover:bg-blue-600'
+                        }`}
+                      >
+                        {apt.status === 'in-progress' ? <FaPlayCircle size={14} /> : <FaVideo size={14} />}
+                        Join Video Call
+                      </Link>
                     )}
 
                     {/* View Details */}

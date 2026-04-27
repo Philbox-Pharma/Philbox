@@ -57,6 +57,9 @@ const SlotManagement = lazy(
 const ConsultationHistory = lazy(
   () => import('../../../portals/doctor/modules/consultations/ConsultationHistory')
 );
+const VideoCall = lazy(
+  () => import('../../../portals/doctor/modules/consultations/VideoCall')
+);
 
 // Prescriptions
 const PrescriptionsList = lazy(
@@ -162,6 +165,10 @@ export const doctorRoutes = [
       {
         path: 'consultations',
         element: <ConsultationHistory />,
+      },
+      {
+        path: 'consultation/video/:appointmentId',
+        element: <VideoCall />,
       },
 
       // --- Prescriptions ---

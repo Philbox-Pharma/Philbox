@@ -104,10 +104,10 @@ export default function AddSalesperson() {
     },
     contactNumber: {
       required: true,
-      pattern: /^[0-9]{10,15}$/,
+      pattern: /^[0-9]{11}$/,
       message: {
         required: 'Phone number is required',
-        pattern: 'Enter 10-15 digits only (no spaces, dashes, or +)',
+        pattern: 'Phone number must be exactly 11 digits',
       },
     },
     gender: {
@@ -164,6 +164,12 @@ export default function AddSalesperson() {
 
   const handleChange = e => {
     const { name, value } = e.target;
+
+    // Only allow digits for phone number
+    if (name === 'contactNumber') {
+      if (!/^\d*$/.test(value)) return;
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
 
     if (touched[name]) {
@@ -357,7 +363,8 @@ export default function AddSalesperson() {
                     value={formData.contactNumber}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    placeholder="03001234567 (digits only)"
+                    placeholder="03XXXXXXXXX"
+                    maxLength={11}
                     className={`w-full pl-10 pr-4 py-2.5 rounded-lg border transition-all duration-200 ${
                       errors.contactNumber
                         ? 'border-red-500 focus:ring-red-500 ring-1 ring-red-100'
@@ -371,7 +378,7 @@ export default function AddSalesperson() {
                   </p>
                 )}
                 <p className="text-gray-500 text-xs mt-1">
-                  Enter 10-15 digits without spaces or dashes
+                  Enter 11 digits only (e.g. 03407799573)
                 </p>
               </div>
 

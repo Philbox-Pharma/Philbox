@@ -25,6 +25,12 @@ export default function Register() {
   // Handle input changes
   const handleChange = e => {
     const { name, value } = e.target;
+
+    // Only allow digits for contact number
+    if (name === 'contactNumber') {
+      if (!/^\d*$/.test(value)) return;
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: value,
@@ -74,12 +80,12 @@ export default function Register() {
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
-    // contactNumber: optional, but if provided must be 10-15 digits only
+    // contactNumber: optional, but if provided must be exactly 11 digits
     if (formData.contactNumber) {
       if (!/^[0-9]+$/.test(formData.contactNumber)) {
         newErrors.contactNumber = 'Contact number must contain digits only';
-      } else if (formData.contactNumber.length < 10 || formData.contactNumber.length > 15) {
-        newErrors.contactNumber = 'Contact number must be 10-15 digits';
+      } else if (formData.contactNumber.length !== 11) {
+        newErrors.contactNumber = 'Contact number must be exactly 11 digits';
       }
     }
 
@@ -379,7 +385,8 @@ export default function Register() {
                   onChange={handleChange}
                   className="input-field"
                   style={inputStyle('contactNumber')}
-                  placeholder="03001234567"
+                  placeholder="03XXXXXXXXX"
+                  maxLength={11}
                 />
                 {errors.contactNumber && (
                   <p className="text-red-500 text-xs mt-1 flex items-center gap-1">

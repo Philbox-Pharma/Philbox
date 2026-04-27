@@ -151,6 +151,12 @@ export default function AddAdmin() {
 
   const handleChange = e => {
     const { name, value } = e.target;
+
+    // Only allow digits for phone number
+    if (name === 'phone_number') {
+      if (!/^\d*$/.test(value)) return;
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
 
     if (touched[name]) {
@@ -509,7 +515,8 @@ export default function AddAdmin() {
                 onBlur={handleBlur}
                 error={errors.phone_number}
                 icon={FaPhone}
-                placeholder="+92-300-1234567"
+                placeholder="03XXXXXXXXX"
+                maxLength={11}
               />
 
               <FormSelect

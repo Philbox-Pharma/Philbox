@@ -21,6 +21,7 @@ import Prescriptions from '../../../portals/customer/modules/prescriptions/Presc
 import Profile from '../../../portals/customer/modules/profile/Profile';
 import Notifications from '../../../portals/customer/modules/notifications/Notifications';
 import Reminders from '../../../portals/customer/modules/reminders/Reminders';
+import CustomerVideoCall from '../../../portals/customer/modules/appointments/CustomerVideoCall';
 
 export const customerRoutes = [
   // ============================================
@@ -139,6 +140,10 @@ export const customerRoutes = [
       {
         path: ':id',
         element: <AppointmentDetail />,
+      },
+      {
+        path: 'video/:id',
+        element: <CustomerVideoCall />,
       },
     ],
   },

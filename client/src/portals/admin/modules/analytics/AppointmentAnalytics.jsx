@@ -54,13 +54,13 @@ export default function AppointmentAnalytics() {
           const completionData = data.completionRate || {};
           const appointmentTypesData = data.appointmentTypes || {};
           const averageRevenueData = data.averageRevenue || {};
-          const trendsData = data.trends || {};
+          const trendsData = data.trends || [];
 
           // Calculate total appointments from completion data
           const totalAppointments = completionData.total || 0;
 
           // Calculate avg daily appointments from trends
-          const daysCount = trendsData.trends?.length || 1;
+          const daysCount = trendsData.length || 1;
           const avgDailyAppointments = totalAppointments / daysCount;
 
           // Set overview data with calculated values
@@ -72,7 +72,7 @@ export default function AppointmentAnalytics() {
           });
 
           // Set trends
-          setTrends(trendsData.trends || []);
+          setTrends(trendsData);
 
           // Set completion stats with cancelled included
           setCompletionStats({

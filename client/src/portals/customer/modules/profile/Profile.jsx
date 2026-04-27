@@ -101,6 +101,12 @@ export default function Profile() {
 
   const handleChange = e => {
     const { name, value } = e.target;
+
+    // Only allow digits for contact number
+    if (name === 'contactNumber') {
+      if (!/^\d*$/.test(value)) return;
+    }
+
     if (name.startsWith('address.')) {
       const addressField = name.split('.')[1];
       setFormData(prev => ({
@@ -413,6 +419,8 @@ export default function Profile() {
                     value={formData.contactNumber}
                     onChange={handleChange}
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    maxLength={11}
+                    placeholder="03XXXXXXXXX"
                   />
                 ) : (
                   <p className="text-gray-800 py-2">

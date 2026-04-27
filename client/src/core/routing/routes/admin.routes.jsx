@@ -68,7 +68,9 @@ const EditSalesperson = lazy(
 );
 const SalespersonDetails = lazy(
   () =>
-    import('../../../portals/admin/modules/staff/salespersons/SalespersonDetails')
+    import(
+      '../../../portals/admin/modules/staff/salespersons/SalespersonDetails'
+    )
 );
 
 // Roles & Permissions
@@ -109,6 +111,12 @@ const DoctorApplicationDetails = lazy(
 const DoctorDetails = lazy(
   () => import('../../../portals/admin/modules/doctors/DoctorDetails')
 );
+const DoctorAppointments = lazy(
+  () => import('../../../portals/admin/modules/doctors/DoctorAppointments')
+);
+const DoctorReviews = lazy(
+  () => import('../../../portals/admin/modules/doctors/DoctorReviews')
+);
 
 // Analytics
 const RevenueAnalytics = lazy(
@@ -127,7 +135,8 @@ const AppointmentAnalytics = lazy(
   () => import('../../../portals/admin/modules/analytics/AppointmentAnalytics')
 );
 const SalespersonPerformance = lazy(
-  () => import('../../../portals/admin/modules/analytics/SalespersonPerformance')
+  () =>
+    import('../../../portals/admin/modules/analytics/SalespersonPerformance')
 );
 
 // Notifications
@@ -275,6 +284,14 @@ const adminRoutes = [
       {
         path: 'doctors/:id',
         element: <DoctorDetails />,
+      },
+      {
+        path: 'doctors/:id/appointments',
+        element: <DoctorAppointments />,
+      },
+      {
+        path: 'doctors/:id/reviews',
+        element: <DoctorReviews />,
       },
 
       // --- Analytics ---

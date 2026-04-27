@@ -47,7 +47,6 @@ export default function Checkout() {
 
     // Cart items from API
     const [cartItems, setCartItems] = useState([]);
-    const [cartSummary, setCartSummary] = useState({ subtotal: 0, taxAmount: 0, total: 0 });
 
     // Load cart data and profile on mount
     useEffect(() => {
@@ -66,7 +65,6 @@ export default function Checkout() {
                     prescriptionRequired: item.prescriptionRequired || false,
                 }));
                 setCartItems(items);
-                setCartSummary(cartData.summary || { subtotal: 0, taxAmount: 0, total: 0 });
 
                 // Fetch profile for address
                 const profileRes = await profileService.getProfile();
@@ -126,6 +124,12 @@ export default function Checkout() {
     // Handle address change
     const handleAddressChange = (e) => {
         const { name, value } = e.target;
+
+        // Only allow digits for phone
+        if (name === 'phone') {
+            if (!/^\d*$/.test(value)) return;
+        }
+
         setAddress(prev => ({ ...prev, [name]: value }));
     };
 
@@ -353,6 +357,8 @@ export default function Checkout() {
                                                 onChange={handleAddressChange}
                                                 className="input-field"
                                                 required
+                                                maxLength={11}
+                                                placeholder="03XXXXXXXXX"
                                             />
                                         </div>
                                     </div>

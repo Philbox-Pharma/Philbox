@@ -422,19 +422,27 @@ export default function DoctorProfile() {
             <div className="flex items-center gap-2">
               <span
                 className={`badge flex items-center gap-1 ${
-                  profile?.status === 'approved'
+                  profile?.account_status === 'active'
                     ? 'bg-green-100 text-green-700'
+                    : profile?.account_status === 'blocked/removed'
+                    ? 'bg-red-100 text-red-700'
                     : 'bg-yellow-100 text-yellow-700'
                 }`}
               >
-                {profile?.status === 'approved' ? (
+                {profile?.account_status === 'active' ? (
                   <FaCheckCircle size={10} />
                 ) : (
                   <FaExclamationCircle size={10} />
                 )}
-                {profile?.status === 'approved'
+                {profile?.account_status === 'active'
                   ? 'Verified'
-                  : profile?.status || 'Pending'}
+                  : profile?.account_status === 'blocked/removed'
+                  ? 'Blocked'
+                  : profile?.account_status === 'under_consideration'
+                  ? 'Under Review'
+                  : profile?.onboarding_status === 'completed'
+                  ? 'Active'
+                  : 'Pending'}
               </span>
             </div>
           </div>
@@ -507,10 +515,14 @@ export default function DoctorProfile() {
                 <input
                   type="text"
                   value={basicForm.phone_number}
-                  onChange={e =>
-                    setBasicForm({ ...basicForm, phone_number: e.target.value })
-                  }
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (!/^\d*$/.test(val)) return;
+                    setBasicForm({ ...basicForm, phone_number: val });
+                  }}
                   className="input-field"
+                  maxLength={11}
+                  placeholder="03XXXXXXXXX"
                 />
               </div>
               <div>

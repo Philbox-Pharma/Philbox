@@ -13,6 +13,7 @@ import {
   FaPhoneAlt,
   FaTimes,
   FaEnvelope,
+  FaPlayCircle,
 } from 'react-icons/fa';
 import appointmentsService from '../../../../core/api/customer/appointments.service';
 import ContactSupportModal from '../../../../shared/components/Modal/ContactSupportModal';
@@ -336,6 +337,22 @@ export default function AppointmentDetail() {
                   <FaTimesCircle />
                   Cancel Request
                 </button>
+              )}
+
+              {/* Join Video Call button */}
+              {(appointment.appointment_type === 'video' || appointment.appointment_type === 'online') && 
+               (getAppointmentStatus() === 'pending' || getAppointmentStatus() === 'in-progress') && (
+                <Link
+                  to={`/appointments/video/${appointment._id}`}
+                  className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-white rounded-lg transition-colors font-medium ${
+                    getAppointmentStatus() === 'in-progress'
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md animate-pulse'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  {getAppointmentStatus() === 'in-progress' ? <FaPlayCircle size={16} /> : <FaVideo size={16} />}
+                  Join Video Call
+                </Link>
               )}
 
               {/* Book again for completed/cancelled */}

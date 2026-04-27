@@ -341,6 +341,152 @@ class DoctorAppointmentsService {
       throw error;
     }
   }
+  /**
+   * Start an online consultation - generates a Jitsi meeting link
+   */
+  async startConsultation(doctorId, appointmentId, req) {
+    try {
+      const appointment = await Appointment.findOne({
+        _id: appointmentId,
+        doctor_id: doctorId,
+        appointment_request: 'accepted',
+        status: 'pending',
+      }).populate('patient_id', 'fullName email');
+
+      if (!appointment) {
+        throw new Error('APPOINTMENT_NOT_FOUND_OR_NOT_READY');
+      }
+
+      // Generate Jitsi meeting room name
+      const roomName = `philbox-${appointmentId}-${Date.now()}`;
+      const meetingLink = `https://meet.jit.si/${roomName}`;
+
+      appointment.status = 'in-progress';
+      appointment.meeting_link = meetingLink;
+      await appointment.save();
+
+      // Log activity
+      await logDoctorActivity(
+        req,
+        'consultation_start',
+        `Started online consultation with ${appointment.patient_id?.fullName || 'patient'}`,
+        'appointments',
+        appointment._id,
+        { meeting_link: meetingLink }
+      );
+
+      return {
+        appointment,
+        meeting_link: meetingLink,
+        room_name: roomName,
+      };
+    } catch (error) {
+      console.error('Error in startConsultation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Complete a consultation - marks it as completed with notes
+   */
+  async completeConsultation(doctorId, appointmentId, data, req) {
+    try {
+      const { notes, recording_url } = data;
+
+      const appointment = await Appointment.findOne({
+        _id: appointmentId,
+        doctor_id: doctorId,
+        appointment_request: 'accepted',
+        status: { $in: ['pending', 'in-progress'] },
+      }).populate('patient_id', 'fullName email');
+
+      if (!appointment) {
+        throw new Error('APPOINTMENT_NOT_FOUND_OR_ALREADY_COMPLETED');
+      }
+
+      appointment.status = 'completed';
+      if (notes) appointment.notes = notes;
+      if (recording_url) appointment.recording_url = recording_url;
+      await appointment.save();
+
+      // Log activity
+      await logDoctorActivity(
+        req,
+        'consultation_complete',
+        `Completed consultation with ${appointment.patient_id?.fullName || 'patient'}`,
+        'appointments',
+        appointment._id,
+        { notes }
+      );
+
+      return appointment;
+    } catch (error) {
+      console.error('Error in completeConsultation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Mark appointment as missed
+   */
+  async markAsMissed(doctorId, appointmentId, data, req) {
+    try {
+      const { missed_by = 'patient' } = data;
+
+      const appointment = await Appointment.findOne({
+        _id: appointmentId,
+        doctor_id: doctorId,
+        appointment_request: 'accepted',
+        status: 'pending',
+      }).populate('patient_id', 'fullName email');
+
+      if (!appointment) {
+        throw new Error('APPOINTMENT_NOT_FOUND');
+      }
+
+      appointment.status = 'missed';
+      appointment.missed_by = missed_by;
+      await appointment.save();
+
+      // Log activity
+      await logDoctorActivity(
+        req,
+        'appointment_missed',
+        `Marked appointment with ${appointment.patient_id?.fullName || 'patient'} as missed by ${missed_by}`,
+        'appointments',
+        appointment._id
+      );
+
+      return appointment;
+    } catch (error) {
+      console.error('Error in markAsMissed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get meeting info for an appointment
+   */
+  async getMeetingInfo(doctorId, appointmentId) {
+    try {
+      const appointment = await Appointment.findOne({
+        _id: appointmentId,
+        doctor_id: doctorId,
+      })
+        .select('meeting_link status appointment_type')
+        .populate('patient_id', 'fullName email profile_img_url')
+        .lean();
+
+      if (!appointment) {
+        throw new Error('APPOINTMENT_NOT_FOUND');
+      }
+
+      return appointment;
+    } catch (error) {
+      console.error('Error in getMeetingInfo:', error);
+      throw error;
+    }
+  }
 }
 
 export default new DoctorAppointmentsService();

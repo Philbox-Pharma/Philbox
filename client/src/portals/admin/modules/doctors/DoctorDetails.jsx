@@ -120,7 +120,8 @@ const StatusModal = ({ isOpen, onClose, doctor, onSubmit, loading }) => {
       alert('Please provide a reason for the status change');
       return;
     }
-    onSubmit({ status: newStatus, reason });
+    const payload = { status: newStatus, reason: reason || '' };
+    onSubmit(payload);
   };
 
   return (
@@ -139,8 +140,8 @@ const StatusModal = ({ isOpen, onClose, doctor, onSubmit, loading }) => {
               {[
                 { value: 'active', label: 'Active' },
                 { value: 'suspended/freezed', label: 'Suspended' },
-                { value: 'blocked/removed', label: 'Blocked' }
-              ].map(({value, label}) => (
+                { value: 'blocked/removed', label: 'Blocked' },
+              ].map(({ value, label }) => (
                 <button
                   key={value}
                   onClick={() => setNewStatus(value)}
@@ -237,8 +238,11 @@ export default function DoctorDetails() {
   const handleStatusChange = async data => {
     setStatusLoading(true);
     try {
-      await doctorApi.updateDoctorStatus(id, data);
-      setDoctor(prev => ({ ...prev, account_status: data.status }));
+      const response = await doctorApi.updateDoctorStatus(id, data);
+      setDoctor(prev => ({
+        ...prev,
+        account_status: response.data.doctor.account_status,
+      }));
       setStatusModal(false);
     } catch (err) {
       const details = err.data?.error;
@@ -315,7 +319,8 @@ export default function DoctorDetails() {
           <div className="flex-1">
             <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
               <h1 className="text-2xl md:text-3xl font-bold">
-                Dr. {(doctor.fullName || '').replace(/^Dr\.?\s*/i, '') || 'Unknown'}
+                Dr.{' '}
+                {(doctor.fullName || '').replace(/^Dr\.?\s*/i, '') || 'Unknown'}
               </h1>
               <StatusBadge status={doctor.account_status} />
             </div>
@@ -323,7 +328,9 @@ export default function DoctorDetails() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-white/80">
               <p className="flex items-center gap-2">
                 <FaStethoscope />
-                {Array.isArray(doctor.specialization) ? doctor.specialization.join(', ') : (doctor.specialization || 'General')}
+                {Array.isArray(doctor.specialization)
+                  ? doctor.specialization.join(', ')
+                  : doctor.specialization || 'General'}
               </p>
               <p className="flex items-center gap-2">
                 <FaEnvelope />
@@ -415,7 +422,9 @@ export default function DoctorDetails() {
             <div>
               <label className="text-sm text-gray-500">Specialty</label>
               <p className="font-medium text-gray-800">
-                {Array.isArray(doctor.specialization) ? doctor.specialization.join(', ') : (doctor.specialization || 'General')}
+                {Array.isArray(doctor.specialization)
+                  ? doctor.specialization.join(', ')
+                  : doctor.specialization || 'General'}
               </p>
             </div>
             <div>
@@ -495,18 +504,11 @@ export default function DoctorDetails() {
                 <span className="font-medium">Change Account Status</span>
               </button>
               <Link
-                to={`/admin/doctors/${id}/appointments`}
+                to={`/admin/analytics/appointments`}
                 className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg flex items-center gap-3 transition-colors"
               >
                 <FaCalendarAlt className="text-green-600" />
-                <span className="font-medium">View Appointments</span>
-              </Link>
-              <Link
-                to={`/admin/doctors/${id}/reviews`}
-                className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg flex items-center gap-3 transition-colors"
-              >
-                <FaStar className="text-yellow-500" />
-                <span className="font-medium">View Reviews</span>
+                <span className="font-medium">View Appointments Analytics</span>
               </Link>
             </div>
           </div>

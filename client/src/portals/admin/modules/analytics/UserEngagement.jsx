@@ -23,7 +23,7 @@ export default function UserEngagement() {
   const [topCustomers, setTopCustomers] = useState([]);
   const [doctorApplications, setDoctorApplications] = useState(null);
   const [dateRange, setDateRange] = useState({
-    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    startDate: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
       .toISOString()
       .split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
@@ -53,8 +53,8 @@ export default function UserEngagement() {
           const statusData = data.customerActivityStatus || {};
 
           // Parse new customers data (trends)
-          const newCustomersData = data.newCustomersTrends || {};
-          const totalNewCustomers = (newCustomersData.trends || []).reduce(
+          const newCustomersData = data.newCustomersTrends?.trends || [];
+          const totalNewCustomers = newCustomersData.reduce(
             (sum, item) => sum + (item.newCustomers || 0),
             0
           );

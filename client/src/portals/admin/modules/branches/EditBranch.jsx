@@ -190,11 +190,9 @@ export default function EditBranch() {
   const handleChange = e => {
     const { name, value } = e.target;
 
-    // Block invalid chars & spaces for phone
+    // Only allow digits for phone
     if (name === 'phone') {
-      // Regex: Only allow digits, +, -, ( )
-      // Block spaces explicitly
-      if (!/^[\d+\-()]*$/.test(value)) return;
+      if (!/^\d*$/.test(value)) return;
     }
 
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -336,6 +334,8 @@ export default function EditBranch() {
                 onBlur={handleBlur}
                 error={errors.phone}
                 icon={FaPhone}
+                placeholder="03XXXXXXXXX"
+                maxLength={11}
               />
               <FormSelect
                 label="Status"

@@ -42,6 +42,12 @@ export default function Register() {
   // Handle input changes
   const handleChange = e => {
     const { name, value } = e.target;
+
+    // Only allow digits for contact number
+    if (name === 'contactNumber') {
+      if (!/^\d*$/.test(value)) return;
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: value,
@@ -76,10 +82,10 @@ export default function Register() {
     if (!formData.contactNumber.trim()) {
       errors.contactNumber = 'Contact number is required';
     } else if (
-      !/^(\+92|92|0)(3\d{2})[- ]?\d{7}$/.test(formData.contactNumber.trim())
+      !/^[0-9]{11}$/.test(formData.contactNumber.trim())
     ) {
       errors.contactNumber =
-        'Please provide a valid Pakistan contact number (e.g. 03001234567)';
+        'Phone number must be exactly 11 digits (e.g. 03001234567)';
     }
 
     setFieldErrors(errors);
@@ -300,7 +306,8 @@ export default function Register() {
           value={formData.contactNumber}
           onChange={handleChange}
           className={`input-field ${fieldErrors.contactNumber ? 'border-red-400 focus:ring-red-300' : ''}`}
-          placeholder="+923001234567"
+          placeholder="03XXXXXXXXX"
+          maxLength={11}
         />
         {fieldErrors.contactNumber && (
           <p className="input-error">{fieldErrors.contactNumber}</p>

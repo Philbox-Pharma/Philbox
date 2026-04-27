@@ -152,7 +152,7 @@ export const branchApi = {
   assignAdmins: (id, adminIds) =>
     fetchWithAuth(`/admin/branches/${id}/assign-admins`, {
       method: 'PATCH',
-      body: JSON.stringify({ adminIds }),
+      body: JSON.stringify({ under_administration_of: adminIds }),
     }),
 
   // PATCH /api/admin/branches/:id/assign-salespersons
@@ -749,6 +749,25 @@ export const doctorApi = {
 
   // GET /api/admin/doctors/:id/metrics - Get doctor performance metrics
   getDoctorMetrics: id => fetchWithAuth(`/admin/doctors/${id}/metrics`),
+
+  // GET /api/admin/doctors/:id/appointments - Get doctor's appointments
+  getDoctorAppointments: (id, filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.page) params.append('page', filters.page);
+    if (filters.limit) params.append('limit', filters.limit);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.date) params.append('date', filters.date);
+    return fetchWithAuth(`/admin/doctors/${id}/appointments?${params}`);
+  },
+
+  // GET /api/admin/doctors/:id/reviews - Get doctor's reviews
+  getDoctorReviews: (id, filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.page) params.append('page', filters.page);
+    if (filters.limit) params.append('limit', filters.limit);
+    if (filters.rating) params.append('rating', filters.rating);
+    return fetchWithAuth(`/admin/doctors/${id}/reviews?${params}`);
+  },
 
   // ========== DOCTOR APPLICATIONS ==========
   // GET /api/admin/doctors/applications

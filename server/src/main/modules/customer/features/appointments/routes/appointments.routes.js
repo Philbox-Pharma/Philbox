@@ -5,6 +5,7 @@ import {
   getRequestStatus,
   cancelRequest,
   getMyAppointments,
+  getMeetingInfo,
 } from '../controllers/appointments.controller.js';
 import { authenticate as requireCustomerAuth } from '../../../middleware/auth.middleware.js';
 
@@ -51,5 +52,12 @@ router.post('/requests/:appointmentId/cancel', cancelRequest);
  * @query   page, limit, status, appointment_type, sort_by, sort_order
  */
 router.get('/', getMyAppointments);
+
+/**
+ * @route   GET /api/customer/appointments/:appointmentId/meeting
+ * @desc    Get meeting info for a specific appointment
+ * @access  Private (Customer)
+ */
+router.get('/:appointmentId/meeting', getMeetingInfo);
 
 export default router;

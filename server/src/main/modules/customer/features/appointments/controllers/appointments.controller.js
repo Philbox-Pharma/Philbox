@@ -250,3 +250,29 @@ export const getMyAppointments = async (req, res) => {
     );
   }
 };
+
+/**
+ * @desc    Get meeting info for an appointment
+ * @route   GET /api/customer/appointments/:appointmentId/meeting
+ * @access  Private (Customer)
+ */
+export const getMeetingInfo = async (req, res) => {
+  try {
+    const customerId = req.session.customerId || req.user?.id;
+    if (!customerId) return sendResponse(res, 401, 'Unauthorized');
+
+    const { appointmentId } = req.params;
+    const result = await customerAppointmentsService.getMeetingInfo(
+      customerId,
+      appointmentId
+    );
+
+    return sendResponse(res, 200, 'Meeting info retrieved', result);
+  } catch (error) {
+    console.error('Error in getMeetingInfo:', error);
+    if (error.message === 'APPOINTMENT_NOT_FOUND') {
+      return sendResponse(res, 404, 'Appointment not found');
+    }
+    return sendResponse(res, 500, 'Failed to get meeting info', null, error.message);
+  }
+};

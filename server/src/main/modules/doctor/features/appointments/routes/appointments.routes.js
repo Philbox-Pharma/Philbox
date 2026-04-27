@@ -5,6 +5,10 @@ import {
   acceptRequest,
   rejectRequest,
   getAcceptedAppointments,
+  startConsultation,
+  completeConsultation,
+  markAsMissed,
+  getMeetingInfo,
 } from '../controllers/appointments.controller.js';
 import { authenticate as requireDoctorAuth } from '../../../middleware/auth.middleware.js';
 
@@ -51,5 +55,35 @@ router.post('/requests/:appointmentId/reject', rejectRequest);
  * @query   page, limit, status, appointment_type, sort_by, sort_order
  */
 router.get('/accepted', getAcceptedAppointments);
+
+/**
+ * @route   POST /api/doctor/appointments/:appointmentId/start
+ * @desc    Start an online consultation (generates Jitsi meeting link)
+ * @access  Private (Doctor)
+ */
+router.post('/:appointmentId/start', startConsultation);
+
+/**
+ * @route   POST /api/doctor/appointments/:appointmentId/complete
+ * @desc    Complete a consultation with notes
+ * @access  Private (Doctor)
+ * @body    notes (optional), recording_url (optional)
+ */
+router.post('/:appointmentId/complete', completeConsultation);
+
+/**
+ * @route   POST /api/doctor/appointments/:appointmentId/missed
+ * @desc    Mark appointment as missed
+ * @access  Private (Doctor)
+ * @body    missed_by ('doctor' | 'patient')
+ */
+router.post('/:appointmentId/missed', markAsMissed);
+
+/**
+ * @route   GET /api/doctor/appointments/:appointmentId/meeting
+ * @desc    Get meeting info for a specific appointment
+ * @access  Private (Doctor)
+ */
+router.get('/:appointmentId/meeting', getMeetingInfo);
 
 export default router;

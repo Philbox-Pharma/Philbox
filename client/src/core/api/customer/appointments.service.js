@@ -34,6 +34,13 @@ const appointmentsService = {
   getAppointments: (params = {}) => {
     return apiClient.get('/customer/appointments', { params });
   },
+
+  // === Video Consultation ===
+  
+  // Get meeting info for a specific appointment
+  getMeetingInfo: (appointmentId) => {
+    return apiClient.get(`/customer/appointments/${appointmentId}/meeting`);
+  },
 };
 
 export default appointmentsService;

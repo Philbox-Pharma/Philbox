@@ -397,6 +397,35 @@ class CustomerAppointmentsService {
       throw error;
     }
   }
+
+  /**
+   * Get meeting info for a customer's appointment (for joining video calls)
+   */
+  async getMeetingInfo(customerId, appointmentId) {
+    try {
+      const appointment = await Appointment.findOne({
+        _id: appointmentId,
+        patient_id: customerId,
+        appointment_request: 'accepted',
+      })
+        .select('meeting_link status appointment_type notes')
+        .populate(
+          'doctor_id',
+          'first_name last_name email specialization profile_img_url profile_picture consultation_fee'
+        )
+        .populate('slot_id', 'date start_time end_time slot_duration')
+        .lean();
+
+      if (!appointment) {
+        throw new Error('APPOINTMENT_NOT_FOUND');
+      }
+
+      return appointment;
+    } catch (error) {
+      console.error('Error in getMeetingInfo:', error);
+      throw error;
+    }
+  }
 }
 
 export default new CustomerAppointmentsService();

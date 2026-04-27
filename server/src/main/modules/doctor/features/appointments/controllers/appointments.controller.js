@@ -253,3 +253,112 @@ export const getAcceptedAppointments = async (req, res) => {
     );
   }
 };
+
+/**
+ * @desc    Start an online consultation (generates Jitsi meeting link)
+ * @route   POST /api/doctor/appointments/:appointmentId/start
+ * @access  Private (Doctor)
+ */
+export const startConsultation = async (req, res) => {
+  try {
+    const doctorId = req.session.doctorId || req.user?.id;
+    if (!doctorId) return sendResponse(res, 401, 'Unauthorized');
+
+    const { appointmentId } = req.params;
+    const result = await doctorAppointmentsService.startConsultation(
+      doctorId,
+      appointmentId,
+      req
+    );
+
+    return sendResponse(res, 200, 'Consultation started successfully', result);
+  } catch (error) {
+    console.error('Error in startConsultation:', error);
+    if (error.message === 'APPOINTMENT_NOT_FOUND_OR_NOT_READY') {
+      return sendResponse(res, 404, 'Appointment not found or not ready to start');
+    }
+    return sendResponse(res, 500, 'Failed to start consultation', null, error.message);
+  }
+};
+
+/**
+ * @desc    Complete a consultation
+ * @route   POST /api/doctor/appointments/:appointmentId/complete
+ * @access  Private (Doctor)
+ */
+export const completeConsultation = async (req, res) => {
+  try {
+    const doctorId = req.session.doctorId || req.user?.id;
+    if (!doctorId) return sendResponse(res, 401, 'Unauthorized');
+
+    const { appointmentId } = req.params;
+    const result = await doctorAppointmentsService.completeConsultation(
+      doctorId,
+      appointmentId,
+      req.body,
+      req
+    );
+
+    return sendResponse(res, 200, 'Consultation completed successfully', result);
+  } catch (error) {
+    console.error('Error in completeConsultation:', error);
+    if (error.message === 'APPOINTMENT_NOT_FOUND_OR_ALREADY_COMPLETED') {
+      return sendResponse(res, 404, 'Appointment not found or already completed');
+    }
+    return sendResponse(res, 500, 'Failed to complete consultation', null, error.message);
+  }
+};
+
+/**
+ * @desc    Mark appointment as missed
+ * @route   POST /api/doctor/appointments/:appointmentId/missed
+ * @access  Private (Doctor)
+ */
+export const markAsMissed = async (req, res) => {
+  try {
+    const doctorId = req.session.doctorId || req.user?.id;
+    if (!doctorId) return sendResponse(res, 401, 'Unauthorized');
+
+    const { appointmentId } = req.params;
+    const result = await doctorAppointmentsService.markAsMissed(
+      doctorId,
+      appointmentId,
+      req.body,
+      req
+    );
+
+    return sendResponse(res, 200, 'Appointment marked as missed', result);
+  } catch (error) {
+    console.error('Error in markAsMissed:', error);
+    if (error.message === 'APPOINTMENT_NOT_FOUND') {
+      return sendResponse(res, 404, 'Appointment not found');
+    }
+    return sendResponse(res, 500, 'Failed to mark as missed', null, error.message);
+  }
+};
+
+/**
+ * @desc    Get meeting info for an appointment
+ * @route   GET /api/doctor/appointments/:appointmentId/meeting
+ * @access  Private (Doctor)
+ */
+export const getMeetingInfo = async (req, res) => {
+  try {
+    const doctorId = req.session.doctorId || req.user?.id;
+    if (!doctorId) return sendResponse(res, 401, 'Unauthorized');
+
+    const { appointmentId } = req.params;
+    const result = await doctorAppointmentsService.getMeetingInfo(
+      doctorId,
+      appointmentId
+    );
+
+    return sendResponse(res, 200, 'Meeting info retrieved', result);
+  } catch (error) {
+    console.error('Error in getMeetingInfo:', error);
+    if (error.message === 'APPOINTMENT_NOT_FOUND') {
+      return sendResponse(res, 404, 'Appointment not found');
+    }
+    return sendResponse(res, 500, 'Failed to get meeting info', null, error.message);
+  }
+};

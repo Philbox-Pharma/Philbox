@@ -177,17 +177,23 @@ export default function RevenueAnalytics() {
           dateRange.endDate
         );
 
-          const data = response.data;
-          setOverview(data);
-          setTrends(data.trends?.trends || []);
-          
-          const splitData = [];
-          if (data.revenueSplit) {
-            splitData.push({ source: 'Appointments', amount: data.revenueSplit.appointment?.revenue || 0 });
-            splitData.push({ source: 'Orders', amount: data.revenueSplit.order?.revenue || 0 });
-          }
-          setSplit(splitData);
-          setTopBranches(data.topBranches || []);
+        const data = response.data;
+        setOverview(data);
+        setTrends(data.trends || []);
+
+        const splitData = [];
+        if (data.revenueSplit) {
+          splitData.push({
+            source: 'Appointments',
+            amount: data.revenueSplit.appointment?.revenue || 0,
+          });
+          splitData.push({
+            source: 'Orders',
+            amount: data.revenueSplit.order?.revenue || 0,
+          });
+        }
+        setSplit(splitData);
+        setTopBranches(data.topBranches || []);
       } catch (err) {
         console.error('Failed to fetch revenue data:', err);
       } finally {
@@ -278,9 +284,12 @@ export default function RevenueAnalytics() {
         <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
           <SimpleBarChart
             data={(Array.isArray(trends) ? trends : []).slice(-7).map(t => {
-              const label = t._id?.day && t._id?.month 
-                  ? `${t._id.day}/${t._id.month}` 
-                  : (t._id?.month && t._id?.year ? `${t._id.month}/${t._id.year}` : 'N/A');
+              const label =
+                t._id?.day && t._id?.month
+                  ? `${t._id.day}/${t._id.month}`
+                  : t._id?.month && t._id?.year
+                    ? `${t._id.month}/${t._id.year}`
+                    : 'N/A';
               return {
                 label: label,
                 value: t.totalRevenue || 0,

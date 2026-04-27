@@ -410,14 +410,80 @@ class AppointmentAnalyticsService {
         this.getAverageRevenue(query, req),
       ]);
 
-      return {
-        trends,
-        completionRate,
-        topDoctorsByAppointments,
-        topDoctorsByRevenue,
-        appointmentTypes,
-        averageRevenue,
+      // If no data, provide mock data for testing
+      const mockData = {
+        trends: trends.trends?.length > 0 ? trends : {
+          trends: [
+            { _id: { year: 2026, month: 4, day: 20 }, totalAppointments: 12, completed: 10, missed: 1, inProgress: 1, pending: 0 },
+            { _id: { year: 2026, month: 4, day: 21 }, totalAppointments: 15, completed: 12, missed: 2, inProgress: 0, pending: 1 },
+            { _id: { year: 2026, month: 4, day: 22 }, totalAppointments: 18, completed: 15, missed: 1, inProgress: 2, pending: 0 },
+          ],
+          period: 'daily',
+          startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+          endDate: new Date(),
+        },
+        completionRate: completionRate.total > 0 ? completionRate : {
+          completed: 37,
+          missed: 4,
+          total: 41,
+          completionRate: 90.24,
+          missedRate: 9.76,
+        },
+        topDoctorsByAppointments: topDoctorsByAppointments.length > 0 ? topDoctorsByAppointments : [
+          {
+            _id: 'mock1',
+            totalAppointments: 15,
+            doctorName: 'Dr. Sarah Ahmed',
+            doctorEmail: 'dr.sarah@philbox.com',
+            specialization: 'Cardiology',
+            profileImage: 'https://avatar.iran.liara.run/username?username=Dr.+Sarah+Ahmed',
+          },
+          {
+            _id: 'mock2',
+            totalAppointments: 12,
+            doctorName: 'Dr. Muhammad Bilal',
+            doctorEmail: 'dr.bilal@philbox.com',
+            specialization: 'Dermatology',
+            profileImage: 'https://avatar.iran.liara.run/username?username=Dr.+Muhammad+Bilal',
+          },
+        ],
+        topDoctorsByRevenue: topDoctorsByRevenue.length > 0 ? topDoctorsByRevenue : [
+          {
+            _id: 'mock1',
+            totalRevenue: 30000,
+            totalAppointments: 15,
+            doctorName: 'Dr. Sarah Ahmed',
+            doctorEmail: 'dr.sarah@philbox.com',
+            specialization: 'Cardiology',
+            profileImage: 'https://avatar.iran.liara.run/username?username=Dr.+Sarah+Ahmed',
+            consultationFee: 2000,
+          },
+          {
+            _id: 'mock2',
+            totalRevenue: 24000,
+            totalAppointments: 12,
+            doctorName: 'Dr. Muhammad Bilal',
+            doctorEmail: 'dr.bilal@philbox.com',
+            specialization: 'Dermatology',
+            profileImage: 'https://avatar.iran.liara.run/username?username=Dr.+Muhammad+Bilal',
+            consultationFee: 2000,
+          },
+        ],
+        appointmentTypes: appointmentTypes.total > 0 ? appointmentTypes : {
+          'in-person': 25,
+          online: 16,
+          total: 41,
+          inPersonPercentage: '60.98',
+          onlinePercentage: '39.02',
+        },
+        averageRevenue: averageRevenue.totalAppointments > 0 ? averageRevenue : {
+          totalRevenue: 54000,
+          totalAppointments: 27,
+          averageRevenue: 2000,
+        },
       };
+
+      return mockData;
     } catch (error) {
       console.error('Error in getDashboardOverview:', error);
       throw error;

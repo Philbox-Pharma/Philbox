@@ -322,14 +322,17 @@ export default function AdminProfile() {
                           ? profileData.phone_number
                           : admin?.phone_number || admin?.contactNumber || ''
                       }
-                      onChange={e =>
+                      onChange={e => {
+                        const val = e.target.value;
+                        if (!/^\d*$/.test(val)) return;
                         setProfileData({
                           ...profileData,
-                          phone_number: e.target.value,
-                        })
-                      }
+                          phone_number: val,
+                        });
+                      }}
                       disabled={!editing}
-                      placeholder="Not set"
+                      placeholder="03XXXXXXXXX"
+                      maxLength={11}
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
