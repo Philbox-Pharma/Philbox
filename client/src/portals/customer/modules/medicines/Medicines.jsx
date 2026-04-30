@@ -42,7 +42,6 @@ export default function Medicines() {
     'Novartis',
   ];
 
-  // eslint-disable-next-line no-unused-vars
   const priceRanges = [
     { label: 'All Prices', value: '' },
     { label: 'Under Rs. 500', value: '0-500' },

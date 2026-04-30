@@ -19,7 +19,7 @@ import { appointmentAnalyticsService } from '../../../../core/api/admin/appointm
 export default function AppointmentAnalytics() {
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState(null);
-  // eslint-disable-next-line no-unused-vars
+
   const [trends, setTrends] = useState([]);
   const [completionStats, setCompletionStats] = useState(null);
   const [topDoctors, setTopDoctors] = useState([]);
@@ -109,7 +109,7 @@ export default function AppointmentAnalytics() {
     (appointmentTypes?.online || 0) + (appointmentTypes?.inPerson || 0);
   const onlinePercent =
     totalTypes > 0 ? ((appointmentTypes?.online || 0) / totalTypes) * 100 : 0;
-  // eslint-disable-next-line no-unused-vars
+
   const inPersonPercent =
     totalTypes > 0 ? ((appointmentTypes?.inPerson || 0) / totalTypes) * 100 : 0;
 

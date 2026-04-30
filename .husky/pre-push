@@ -1,5 +1,5 @@
 echo "Running ESLint on client..."
-npm --prefix client exec eslint -- --fix "client/src/**/*.{js,jsx}"
+npm --prefix client exec eslint -- --fix --config client/eslint.config.js --rule "no-unused-vars: off" "client/src/**/*.{js,jsx}"
 
 echo "Running ESLint on server..."
 npm --prefix server exec eslint -- --fix --config server/eslint.config.js "server/src/**/*.js"

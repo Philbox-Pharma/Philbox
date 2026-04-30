@@ -177,7 +177,6 @@ export default function CompleteProfile() {
 
       // Append education details as JSON string (without files)
       const educationData = educationList.map(
-        // eslint-disable-next-line no-unused-vars
         ({ file: _file, ...rest }) => rest
       );
       formDataToSend.append(
@@ -194,7 +193,6 @@ export default function CompleteProfile() {
 
       // Append experience details as JSON string (without files)
       const experienceData = experienceList.map(
-        // eslint-disable-next-line no-unused-vars
         ({ file: _file, ...rest }) => rest
       );
       formDataToSend.append(

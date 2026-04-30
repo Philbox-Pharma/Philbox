@@ -4,7 +4,6 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { doctorAuthApi } from '../../../../core/api/doctor/auth.service';
 
 export default function Register() {
-  // eslint-disable-next-line no-unused-vars
   const navigate = useNavigate();
 
   // Form States

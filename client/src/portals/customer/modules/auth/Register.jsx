@@ -20,7 +20,7 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  // eslint-disable-next-line no-unused-vars
+
   const [success, setSuccess] = useState(false);
 
   // Handle input changes
@@ -33,7 +33,7 @@ export default function Register() {
   };
 
   // Form validation
-  // eslint-disable-next-line no-unused-vars
+
   const validateForm = () => {
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');

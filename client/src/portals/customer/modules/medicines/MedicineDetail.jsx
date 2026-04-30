@@ -15,7 +15,6 @@ import {
 } from 'react-icons/fa';
 
 export default function MedicineDetail() {
-  // eslint-disable-next-line no-unused-vars
   const { id } = useParams();
 
   const [quantity, setQuantity] = useState(1);

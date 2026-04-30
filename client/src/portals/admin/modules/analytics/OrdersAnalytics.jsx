@@ -112,15 +112,15 @@ export default function OrdersAnalytics() {
     totalOrders > 0
       ? ((statusBreakdown?.delivered || 0) / totalOrders) * 100
       : 0;
-  // eslint-disable-next-line no-unused-vars
+
   const pendingPercent =
     totalOrders > 0 ? ((statusBreakdown?.pending || 0) / totalOrders) * 100 : 0;
-  // eslint-disable-next-line no-unused-vars
+
   const processingPercent =
     totalOrders > 0
       ? ((statusBreakdown?.processing || 0) / totalOrders) * 100
       : 0;
-  // eslint-disable-next-line no-unused-vars
+
   const cancelledPercent =
     totalOrders > 0
       ? ((statusBreakdown?.cancelled || 0) / totalOrders) * 100

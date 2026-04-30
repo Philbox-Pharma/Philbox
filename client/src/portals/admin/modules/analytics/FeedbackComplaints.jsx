@@ -90,7 +90,7 @@ export default function FeedbackComplaints() {
       : 0;
   const neutralPercent =
     totalSentiment > 0 ? ((sentiment?.neutral || 0) / totalSentiment) * 100 : 0;
-  // eslint-disable-next-line no-unused-vars
+
   const negativePercent =
     totalSentiment > 0
       ? ((sentiment?.negative || 0) / totalSentiment) * 100
