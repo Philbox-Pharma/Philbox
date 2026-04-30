@@ -49,6 +49,234 @@ import PrescriptionGeneratedByDoctor from '../main/models/PrescriptionGeneratedB
 import PrescriptionItem from '../main/models/PrescriptionItem.js';
 import PrescriptionUploadedByCustomer from '../main/models/PrescriptionUploadedByCustomer.js';
 import Coupon from '../main/models/Coupon.js';
+import Delivery from '../main/models/Delivery.js';
+import DeliveryFare from '../main/models/DeliveryFare.js';
+import Cart from '../main/models/Cart.js';
+import CartItem from '../main/models/CartItem.js';
+import CustomerRefundRequest from '../main/models/CustomerRefundRequest.js';
+import BranchRefundAllocation from '../main/models/BranchRefundAllocation.js';
+import Report from '../main/models/Report.js';
+import Announcement from '../main/models/Announcement.js';
+import NotificationPreference from '../main/models/NotificationPreference.js';
+import NotificationLog from '../main/models/NotificationLog.js';
+import DeviceToken from '../main/models/DeviceToken.js';
+import DailyMedicineRecommendations from '../main/models/DailyMedicineRecommendations.js';
+import { resolveCoordinatesForAddress } from '../main/utils/proximityCalculator.js';
+
+const SEEDED_MODELS = [
+  Role,
+  Permission,
+  Currency,
+  Address,
+  Admin,
+  Customer,
+  Doctor,
+  Salesperson,
+  Branch,
+  ItemClass,
+  Medicine,
+  MedicineCategory,
+  Manufacturer,
+  StockInHand,
+  Appointment,
+  Order,
+  OrderItem,
+  Transaction,
+  Review,
+  Feedback,
+  Complaint,
+  RefillReminder,
+  SearchHistory,
+  SalespersonTask,
+  AppointmentMessage,
+  AdminActivityLog,
+  DoctorActivityLog,
+  CustomerActivityLog,
+  SalespersonActivityLog,
+  DailyAppointmentsAnalytics,
+  AppointmentsAnalyticsHistory,
+  MedicineSalesAnalytics,
+  BranchPerformanceSummary,
+  InventoryFilesLog,
+  UploadedInventoryFile,
+  DoctorApplication,
+  DoctorDocuments,
+  DoctorSlot,
+  Patient,
+  PrescriptionGeneratedByDoctor,
+  PrescriptionItem,
+  PrescriptionUploadedByCustomer,
+  Coupon,
+  Delivery,
+  DeliveryFare,
+  Cart,
+  CartItem,
+  CustomerRefundRequest,
+  BranchRefundAllocation,
+  Report,
+  Announcement,
+  NotificationPreference,
+  NotificationLog,
+  DeviceToken,
+  DailyMedicineRecommendations,
+];
+
+const isPlainObject = value =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const getNestedValue = (source, path) => {
+  return path
+    .split('.')
+    .reduce((acc, key) => (acc == null ? undefined : acc[key]), source);
+};
+
+const setNestedValue = (target, path, value) => {
+  const keys = path.split('.');
+  let current = target;
+
+  for (let i = 0; i < keys.length - 1; i += 1) {
+    const key = keys[i];
+    if (!isPlainObject(current[key])) {
+      current[key] = {};
+    }
+    current = current[key];
+  }
+
+  current[keys[keys.length - 1]] = value;
+};
+
+const shouldSkipBackfillPath = (path, schemaType) => {
+  if (
+    path === '_id' ||
+    path === '__v' ||
+    path === 'created_at' ||
+    path === 'updated_at' ||
+    path === 'createdAt' ||
+    path === 'updatedAt'
+  ) {
+    return true;
+  }
+
+  if (path.includes('$') || path.includes('..')) {
+    return true;
+  }
+
+  if (!schemaType) {
+    return true;
+  }
+
+  return false;
+};
+
+const cloneDefaultValue = defaultValue => {
+  if (defaultValue instanceof Date) {
+    return new Date(defaultValue);
+  }
+
+  if (Array.isArray(defaultValue)) {
+    return [...defaultValue];
+  }
+
+  if (isPlainObject(defaultValue)) {
+    return { ...defaultValue };
+  }
+
+  return defaultValue;
+};
+
+const getPlaceholderValue = schemaType => {
+  const defaultValue = schemaType?.options?.default;
+  if (defaultValue !== undefined) {
+    if (typeof defaultValue === 'function') {
+      try {
+        return defaultValue();
+      } catch {
+        // Ignore default function errors and fallback to type placeholders.
+      }
+    } else {
+      return cloneDefaultValue(defaultValue);
+    }
+  }
+
+  switch (schemaType.instance) {
+    case 'String':
+      return '';
+    case 'Number':
+      return 0;
+    case 'Boolean':
+      return false;
+    case 'Date':
+      return new Date('2026-01-01T00:00:00.000Z');
+    case 'Array':
+      return [];
+    case 'Object':
+      return {};
+    case 'Map':
+      return {};
+    default:
+      return null;
+  }
+};
+
+const backfillMissingFieldsAcrossModels = async () => {
+  console.log('\n🧩 Backfilling missing schema fields for seeded documents...');
+
+  let totalUpdatedDocs = 0;
+
+  for (const Model of SEEDED_MODELS) {
+    const schemaPaths = Object.entries(Model.schema.paths);
+    const docs = await Model.find({}).lean();
+
+    if (!docs.length) {
+      continue;
+    }
+
+    const operations = [];
+
+    for (const doc of docs) {
+      const setPayload = {};
+
+      for (const [path, schemaType] of schemaPaths) {
+        if (shouldSkipBackfillPath(path, schemaType)) {
+          continue;
+        }
+
+        const existingValue = getNestedValue(doc, path);
+        if (existingValue !== undefined) {
+          continue;
+        }
+
+        const placeholder = getPlaceholderValue(schemaType);
+        if (placeholder === undefined) {
+          continue;
+        }
+
+        setNestedValue(setPayload, path, placeholder);
+      }
+
+      if (Object.keys(setPayload).length) {
+        operations.push({
+          updateOne: {
+            filter: { _id: doc._id },
+            update: { $set: setPayload },
+          },
+        });
+      }
+    }
+
+    if (operations.length) {
+      await Model.bulkWrite(operations, { ordered: false });
+      totalUpdatedDocs += operations.length;
+      console.log(
+        `  ✓ ${Model.modelName}: backfilled ${operations.length} docs`
+      );
+    }
+  }
+
+  console.log(
+    `✅ Backfill complete. Updated ${totalUpdatedDocs} document(s) across all models.`
+  );
+};
 
 // Connect to MongoDB
 const connectDB = async () => {
@@ -95,6 +323,36 @@ const seedRolesAndPermissions = async () => {
       description: 'Delete customers',
     },
     {
+      resource: 'profile',
+      action: 'read',
+      description: 'Read own profile',
+    },
+    {
+      resource: 'profile',
+      action: 'update',
+      description: 'Update own profile',
+    },
+    {
+      resource: 'application',
+      action: 'submit',
+      description: 'Submit doctor application',
+    },
+    {
+      resource: 'application_status',
+      action: 'check',
+      description: 'Check doctor application status',
+    },
+    {
+      resource: 'application',
+      action: 'resubmit',
+      description: 'Resubmit doctor application',
+    },
+    {
+      resource: 'profile',
+      action: 'complete',
+      description: 'Complete doctor profile',
+    },
+    {
       resource: 'salespersons',
       action: 'create',
       description: 'Create salespersons',
@@ -135,6 +393,36 @@ const seedRolesAndPermissions = async () => {
       description: 'Delete appointments',
     },
     {
+      resource: 'order_processing',
+      action: 'read',
+      description: 'Read order processing records',
+    },
+    {
+      resource: 'order_processing',
+      action: 'update',
+      description: 'Update order processing records',
+    },
+    {
+      resource: 'slots',
+      action: 'create',
+      description: 'Create slots',
+    },
+    {
+      resource: 'slots',
+      action: 'read',
+      description: 'Read slots',
+    },
+    {
+      resource: 'slots',
+      action: 'update',
+      description: 'Update slots',
+    },
+    {
+      resource: 'slots',
+      action: 'delete',
+      description: 'Delete slots',
+    },
+    {
       resource: 'prescriptions',
       action: 'create',
       description: 'Create prescriptions',
@@ -154,6 +442,33 @@ const seedRolesAndPermissions = async () => {
       action: 'delete',
       description: 'Delete prescriptions',
     },
+    {
+      resource: 'prescriptions',
+      action: 'export',
+      description: 'Export prescriptions to PDF',
+    },
+    {
+      resource: 'consultations',
+      action: 'read',
+      description: 'Read consultations',
+    },
+    {
+      resource: 'consultations',
+      action: 'update',
+      description: 'Update consultations',
+    },
+    {
+      resource: 'consultation_history',
+      action: 'export',
+      description: 'Export consultation history to PDF',
+    },
+    {
+      resource: 'medical_history',
+      action: 'read',
+      description: 'Read patient medical history',
+    },
+    { resource: 'patients', action: 'read', description: 'Read patients' },
+    { resource: 'reviews', action: 'read', description: 'Read reviews' },
     { resource: 'reports', action: 'create', description: 'Create reports' },
     { resource: 'reports', action: 'read', description: 'Read reports' },
     { resource: 'reports', action: 'update', description: 'Update reports' },
@@ -173,6 +488,91 @@ const seedRolesAndPermissions = async () => {
       resource: 'inventory',
       action: 'delete',
       description: 'Delete inventory',
+    },
+    { resource: 'dashboard', action: 'read', description: 'Read dashboard' },
+    { resource: 'cart', action: 'create', description: 'Create cart items' },
+    { resource: 'cart', action: 'read', description: 'Read cart items' },
+    { resource: 'cart', action: 'update', description: 'Update cart items' },
+    { resource: 'cart', action: 'delete', description: 'Delete cart items' },
+    {
+      resource: 'checkout',
+      action: 'create',
+      description: 'Create checkout resources',
+    },
+    {
+      resource: 'checkout',
+      action: 'read',
+      description: 'Read checkout summary',
+    },
+    {
+      resource: 'checkout',
+      action: 'update',
+      description: 'Update checkout resources',
+    },
+    {
+      resource: 'checkout',
+      action: 'delete',
+      description: 'Delete checkout resources',
+    },
+    {
+      resource: 'refund_requests',
+      action: 'create',
+      description: 'Create refund requests',
+    },
+    {
+      resource: 'refund_requests',
+      action: 'read',
+      description: 'Read refund requests',
+    },
+    {
+      resource: 'refund_requests',
+      action: 'update',
+      description: 'Update refund requests',
+    },
+    {
+      resource: 'refund_requests',
+      action: 'delete',
+      description: 'Delete refund requests',
+    },
+    {
+      resource: 'search_history',
+      action: 'create',
+      description: 'Create search history records',
+    },
+    {
+      resource: 'search_history',
+      action: 'read',
+      description: 'Read search history records',
+    },
+    {
+      resource: 'search_history',
+      action: 'delete',
+      description: 'Delete search history records',
+    },
+    {
+      resource: 'refill_reminders',
+      action: 'create',
+      description: 'Create refill reminders',
+    },
+    {
+      resource: 'refill_reminders',
+      action: 'read',
+      description: 'Read refill reminders',
+    },
+    {
+      resource: 'refill_reminders',
+      action: 'update',
+      description: 'Update refill reminders',
+    },
+    {
+      resource: 'refill_reminders',
+      action: 'deactivate',
+      description: 'Deactivate refill reminders',
+    },
+    {
+      resource: 'refill_reminders',
+      action: 'delete',
+      description: 'Delete refill reminders',
     },
     { resource: 'orders', action: 'create', description: 'Create orders' },
     { resource: 'orders', action: 'read', description: 'Read orders' },
@@ -236,6 +636,8 @@ const seedRolesAndPermissions = async () => {
         permissions['delete_inventory'],
         permissions['read_orders'],
         permissions['update_orders'],
+        permissions['read_order_processing'],
+        permissions['update_order_processing'],
         permissions['read_prescriptions'],
         permissions['update_prescriptions'],
         permissions['read_customers'],
@@ -247,12 +649,29 @@ const seedRolesAndPermissions = async () => {
       name: 'doctor',
       description: 'Doctor - Manage consultations and appointments',
       permissions: [
+        permissions['read_profile'],
+        permissions['update_profile'],
+        permissions['submit_application'],
+        permissions['check_application_status'],
+        permissions['resubmit_application'],
+        permissions['complete_profile'],
         permissions['read_appointments'],
         permissions['update_appointments'],
         permissions['create_appointments'],
+        permissions['create_slots'],
+        permissions['read_slots'],
+        permissions['update_slots'],
+        permissions['delete_slots'],
         permissions['create_prescriptions'],
         permissions['read_prescriptions'],
         permissions['update_prescriptions'],
+        permissions['export_prescriptions'],
+        permissions['read_consultations'],
+        permissions['update_consultations'],
+        permissions['export_consultation_history'],
+        permissions['read_medical_history'],
+        permissions['read_patients'],
+        permissions['read_reviews'],
         permissions['read_customers'],
         permissions['read_reports'],
       ].filter(Boolean),
@@ -261,10 +680,36 @@ const seedRolesAndPermissions = async () => {
       name: 'customer',
       description: 'Customer - Browse, order, and book appointments',
       permissions: [
+        permissions['read_customers'],
+        permissions['update_customers'],
+        permissions['read_profile'],
+        permissions['update_profile'],
         permissions['read_inventory'],
+        permissions['read_dashboard'],
+        permissions['create_cart'],
+        permissions['read_cart'],
+        permissions['update_cart'],
+        permissions['delete_cart'],
+        permissions['create_checkout'],
+        permissions['read_checkout'],
+        permissions['update_checkout'],
+        permissions['delete_checkout'],
+        permissions['create_refund_requests'],
+        permissions['read_refund_requests'],
+        permissions['update_refund_requests'],
+        permissions['delete_refund_requests'],
+        permissions['create_search_history'],
+        permissions['read_search_history'],
+        permissions['delete_search_history'],
+        permissions['create_refill_reminders'],
+        permissions['read_refill_reminders'],
+        permissions['update_refill_reminders'],
+        permissions['deactivate_refill_reminders'],
+        permissions['delete_refill_reminders'],
         permissions['create_orders'],
         permissions['read_orders'],
         permissions['update_orders'],
+        permissions['delete_orders'],
         permissions['create_appointments'],
         permissions['read_appointments'],
         permissions['update_appointments'],
@@ -357,22 +802,22 @@ const seedData = async () => {
 
     // ==================== 4. ADDRESSES (without person links yet) ====================
     console.log('\n📍 Seeding addresses...');
-    const addresses = await Address.insertMany([
+    const addressSeedData = [
       {
         street: '123 Main Street',
         town: 'Gulberg',
         city: 'Lahore',
         province: 'Punjab',
         country: 'Pakistan',
-        google_map_link: 'https://maps.google.com/?q=123+Main+St+Lahore',
+        google_map_link: 'https://maps.app.goo.gl/5qCoKqEK7e3gAc1TA',
       },
       {
-        street: '456 Park Avenue',
-        town: 'DHA Phase 5',
-        city: 'Karachi',
-        province: 'Sindh',
+        street: 'Mochipura Morr',
+        town: 'Mochipura',
+        city: 'Lahore',
         country: 'Pakistan',
-        google_map_link: 'https://maps.google.com/?q=456+Park+Ave+Karachi',
+        province: 'Punjab',
+        google_map_link: 'https://maps.app.goo.gl/5qCoKqEK7e3gAc1TA',
       },
       {
         street: '789 Garden Road',
@@ -392,12 +837,12 @@ const seedData = async () => {
           'https://maps.google.com/?q=321+University+Rd+Peshawar',
       },
       {
-        street: '654 Mall Road',
-        town: 'Cantt',
-        city: 'Rawalpindi',
+        street: 'PHILBOX Pharmacy & Medical Complex',
+        town: 'Gulberg',
+        city: 'Lahore',
         province: 'Punjab',
         country: 'Pakistan',
-        google_map_link: 'https://maps.google.com/?q=654+Mall+Rd+Rawalpindi',
+        google_map_link: 'https://maps.app.goo.gl/xr5wQrbNpNTM9p618',
       },
       // Extra addresses for doctors and salespersons
       {
@@ -428,7 +873,17 @@ const seedData = async () => {
         province: 'Sindh',
         country: 'Pakistan',
       },
-    ]);
+    ];
+
+    for (const address of addressSeedData) {
+      const coordinates = await resolveCoordinatesForAddress(address);
+      if (coordinates) {
+        address.latitude = coordinates.latitude;
+        address.longitude = coordinates.longitude;
+      }
+    }
+
+    const addresses = await Address.insertMany(addressSeedData);
     console.log(`  ✓ Created ${addresses.length} addresses`);
 
     // ==================== 5. USERS ====================
@@ -572,10 +1027,10 @@ const seedData = async () => {
         license_number: 'PMC-67890',
         consultation_type: 'online',
         consultation_fee: 1500,
-        account_status: 'under_consideration',
-        onboarding_status: 'documents-submitted',
+        account_status: 'rejected',
+        onboarding_status: 'rejected',
         roleId: doctorRole._id,
-        is_Verified: false,
+        is_Verified: true,
         averageRating: 0,
       },
     ]);
@@ -618,17 +1073,19 @@ const seedData = async () => {
         code: 'LHR-001',
         phone: '+92-42-1234567',
         under_administration_of: [admins[0]._id],
-        salespersons_assigned: [salespersons[0]._id],
+        salespersons_assigned: [salespersons[0]._id, salespersons[1]._id],
+        salesperson_assignment_cursor: 0,
         address_id: addresses[0]._id,
         status: 'Active',
       },
       {
-        name: 'Philbox Karachi DHA',
-        code: 'KHI-001',
+        name: 'Philbox Lahore Mochipura',
+        code: 'LHR-002',
         phone: '+92-21-9876543',
         under_administration_of: [admins[1]._id],
-        salespersons_assigned: [salespersons[1]._id],
-        address_id: addresses[1]._id,
+        salespersons_assigned: [salespersons[0]._id, salespersons[1]._id],
+        salesperson_assignment_cursor: 0,
+        address_id: addresses[4]._id,
         status: 'Active',
       },
     ]);
@@ -645,10 +1102,10 @@ const seedData = async () => {
       branches_managed: [branches[1]._id],
     });
     await Salesperson.findByIdAndUpdate(salespersons[0]._id, {
-      branches_to_be_managed: [branches[0]._id],
+      branches_to_be_managed: [branches[0]._id, branches[1]._id],
     });
     await Salesperson.findByIdAndUpdate(salespersons[1]._id, {
-      branches_to_be_managed: [branches[1]._id],
+      branches_to_be_managed: [branches[0]._id, branches[1]._id],
     });
 
     // Update address_of_persons_id for all persons
@@ -908,8 +1365,18 @@ const seedData = async () => {
         preferred_time: '11:30',
         notes: 'Skin rash consultation',
       },
+      {
+        doctor_id: doctors[0]._id,
+        patient_id: customers[1]._id,
+        status: 'pending',
+        appointment_type: 'online',
+        appointment_request: 'accepted',
+        preferred_date: new Date('2026-05-20'),
+        preferred_time: '15:00',
+        notes: 'Future accepted consultation for live room testing',
+      },
     ]);
-    console.log('  ✓ Created 3 appointments');
+    console.log('  ✓ Created 4 appointments');
 
     // ==================== 10. TRANSACTIONS ====================
     console.log('\n💰 Seeding transactions...');
@@ -1096,24 +1563,36 @@ const seedData = async () => {
       {
         order_id: orders[0]._id,
         medicine_id: medicines[1]._id,
+        branch_id: branches[0]._id,
+        price: medicines[1].sale_price,
+        medicine_name: medicines[1].Name,
         quantity: 2,
         subtotal: 560.0,
       },
       {
         order_id: orders[1]._id,
         medicine_id: medicines[3]._id,
+        branch_id: branches[1]._id,
+        price: medicines[3].sale_price,
+        medicine_name: medicines[3].Name,
         quantity: 1,
         subtotal: 150.0,
       },
       {
         order_id: orders[1]._id,
         medicine_id: medicines[4]._id,
+        branch_id: branches[1]._id,
+        price: medicines[4].sale_price,
+        medicine_name: medicines[4].Name,
         quantity: 1,
         subtotal: 320.0,
       },
       {
         order_id: orders[2]._id,
         medicine_id: medicines[2]._id,
+        branch_id: branches[0]._id,
+        price: medicines[2].sale_price,
+        medicine_name: medicines[2].Name,
         quantity: 3,
         subtotal: 24.0,
       },
@@ -1195,6 +1674,7 @@ const seedData = async () => {
         customer_id: customers[0]._id,
         target_id: orders[0]._id,
         target_type: 'order',
+        appointment_id: appointments[1]._id,
         rating: 4,
         message: 'Fast delivery, medicines were well packaged.',
         sentiment: 'positive',
@@ -1224,7 +1704,7 @@ const seedData = async () => {
         title: 'Expired Medicine Received',
         description:
           'I received medicine that was past its expiry date in my last order. This is very concerning for customer safety.',
-        category: 'product-quality',
+        category: 'order_issue',
         priority: 'high',
         status: 'pending',
         messages: [
@@ -1269,16 +1749,33 @@ const seedData = async () => {
         customer_id: customers[0]._id,
         query: 'paracetamol',
         searched_at: new Date('2026-01-20'),
+        filters: {
+          category: 'Pain Relief',
+          brand: 'Panadol',
+          branch: 'Philbox Lahore Main',
+          dosage: '500mg',
+          prescriptionStatus: 'otc',
+          sortBy: 'name',
+        },
       },
       {
         customer_id: customers[1]._id,
         query: 'antibiotic',
         searched_at: new Date('2026-01-22'),
+        filters: {
+          category: 'Antibiotics',
+          prescriptionStatus: 'prescription_required',
+          sortBy: 'price_low_to_high',
+        },
       },
       {
         customer_id: customers[2]._id,
         query: 'pain killer',
         searched_at: new Date('2026-01-23'),
+        filters: {
+          category: 'Pain Relief',
+          sortBy: 'name',
+        },
       },
     ]);
     console.log('  ✓ Created 3 search history records');
@@ -1499,18 +1996,20 @@ const seedData = async () => {
 
     const medicineSalesAnalytics = await MedicineSalesAnalytics.insertMany([
       {
-        medicine_id: orderItems[0]._id,
+        order_id: orderItems[0].order_id,
+        medicine_id: orderItems[0].medicine_id,
         branch_id: branches[0]._id,
         date: new Date('2026-01-20'),
-        total_sold: 2,
+        quantity: 2,
         revenue_generated: 560.0,
         refunds_count: 0,
       },
       {
-        medicine_id: orderItems[3]._id,
+        order_id: orderItems[3].order_id,
+        medicine_id: orderItems[3].medicine_id,
         branch_id: branches[0]._id,
         date: new Date('2026-01-22'),
-        total_sold: 3,
+        quantity: 3,
         revenue_generated: 24.0,
         refunds_count: 0,
       },
@@ -1634,10 +2133,14 @@ const seedData = async () => {
       {
         applications_documents_id: doctorDocuments[1]._id,
         doctor_id: doctors[1]._id,
-        status: 'pending',
+        status: 'rejected',
+        reviewed_by_admin_id: admins[0]._id,
+        admin_comment:
+          'Medical license verification failed. Please upload a valid PMC license.',
+        reviewed_at: new Date('2026-01-06'),
       },
     ]);
-    console.log('  ✓ Created 2 doctor applications (1 approved, 1 pending)');
+    console.log('  ✓ Created 2 doctor applications (1 approved, 1 rejected)');
 
     // ==================== 19. DOCTOR SLOTS ====================
     console.log('\n📅 Seeding doctor slots...');
@@ -1679,7 +2182,7 @@ const seedData = async () => {
         start_time: '09:00',
         end_time: '09:20',
         slot_duration: 20,
-        status: 'available',
+        status: 'unbooked',
         is_recurring: false,
         notes: 'Morning consultation - General checkups',
       },
@@ -1689,7 +2192,7 @@ const seedData = async () => {
         start_time: '14:00',
         end_time: '14:20',
         slot_duration: 20,
-        status: 'available',
+        status: 'unbooked',
         is_recurring: false,
         notes: 'Afternoon consultation - Extended sessions',
       },
@@ -1710,7 +2213,7 @@ const seedData = async () => {
         start_time: '09:00',
         end_time: '09:20',
         slot_duration: 20,
-        status: 'available',
+        status: 'unbooked',
         is_recurring: false,
         notes: 'Quick consultations - Follow-ups',
       },
@@ -1720,7 +2223,7 @@ const seedData = async () => {
         start_time: '15:00',
         end_time: '15:20',
         slot_duration: 20,
-        status: 'unavailable',
+        status: 'unbooked',
         is_recurring: false,
         notes: 'Unavailable - Personal appointment',
       }
@@ -1739,7 +2242,7 @@ const seedData = async () => {
         start_time: '10:00',
         end_time: '10:20',
         slot_duration: 20,
-        status: 'available',
+        status: 'unbooked',
         is_recurring: true,
         recurring_pattern: {
           frequency: 'weekly',
@@ -1762,7 +2265,7 @@ const seedData = async () => {
         start_time: '14:00',
         end_time: '14:20',
         slot_duration: 20,
-        status: 'available',
+        status: 'unbooked',
         is_recurring: true,
         recurring_pattern: {
           frequency: 'monthly',
@@ -1788,7 +2291,7 @@ const seedData = async () => {
         start_time: '11:00',
         end_time: '11:20',
         slot_duration: 20,
-        status: 'available',
+        status: 'unbooked',
         is_recurring: true,
         recurring_pattern: {
           frequency: 'daily',
@@ -1812,7 +2315,7 @@ const seedData = async () => {
         start_time: '09:00',
         end_time: '09:20',
         slot_duration: 20,
-        status: 'available',
+        status: 'unbooked',
         is_recurring: true,
         recurring_pattern: {
           frequency: 'weekly',
@@ -1831,7 +2334,242 @@ const seedData = async () => {
       `  ✓ Created ${doctorSlots.length} doctor slots (${sarahSlots.length} for Dr. Sarah, ${bilalSlots.length} for Dr. Bilal)`
     );
 
-    // ==================== 20. COUPONS ====================
+    // ==================== 20. DELIVERY & DELIVERY FARE ====================
+    console.log('\n🚚 Seeding delivery data...');
+
+    const deliveryFares = await DeliveryFare.insertMany([
+      {
+        min_distance_km: 0,
+        max_distance_km: 5,
+        fare_amount: 100,
+        is_active: true,
+      },
+      {
+        min_distance_km: 5,
+        max_distance_km: 15,
+        fare_amount: 150,
+        is_active: true,
+      },
+      {
+        min_distance_km: 15,
+        max_distance_km: 35,
+        fare_amount: 180,
+        is_active: true,
+      },
+      {
+        min_distance_km: 35,
+        max_distance_km: 60,
+        fare_amount: 220,
+        is_active: true,
+      },
+      {
+        min_distance_km: 60,
+        max_distance_km: null,
+        fare_amount: 280,
+        is_active: true,
+      },
+    ]);
+    console.log('  ✓ Created 5 delivery fares');
+
+    const deliveries = await Delivery.insertMany([
+      {
+        order_id: orders[0]._id,
+        customer_id: customers[0]._id,
+        google_address_link: 'https://maps.google.com/?q=123+Main+St+Lahore',
+        calculated_fare: 150,
+      },
+      {
+        order_id: orders[1]._id,
+        customer_id: customers[1]._id,
+        google_address_link: 'https://maps.google.com/?q=456+Park+Ave+Karachi',
+        calculated_fare: 200,
+      },
+      {
+        order_id: orders[2]._id,
+        customer_id: customers[2]._id,
+        google_address_link:
+          'https://maps.google.com/?q=789+Garden+Rd+Islamabad',
+        calculated_fare: 180,
+      },
+    ]);
+    console.log('  ✓ Created 3 deliveries');
+
+    // ==================== 21. CART & CART ITEMS ====================
+    console.log('\n🛍️  Seeding cart data...');
+
+    const carts = await Cart.insertMany([
+      {
+        customer_id: customers[0]._id,
+        total: 0,
+        items: [],
+      },
+      {
+        customer_id: customers[1]._id,
+        total: 0,
+        items: [],
+      },
+    ]);
+    console.log('  ✓ Created 2 carts (active shopping carts)');
+
+    const cartItems = await CartItem.insertMany([
+      {
+        cart_id: carts[0]._id,
+        medicine_id: medicines[3]._id,
+        branch_id: branches[1]._id,
+        quantity: 1,
+        price: medicines[3].sale_price,
+        subtotal: medicines[3].sale_price,
+      },
+      {
+        cart_id: carts[0]._id,
+        medicine_id: medicines[4]._id,
+        branch_id: branches[1]._id,
+        quantity: 1,
+        price: medicines[4].sale_price,
+        subtotal: medicines[4].sale_price,
+      },
+      {
+        cart_id: carts[1]._id,
+        medicine_id: medicines[0]._id,
+        branch_id: branches[0]._id,
+        quantity: 3,
+        price: medicines[0].sale_price,
+        subtotal: medicines[0].sale_price * 3,
+      },
+      {
+        cart_id: carts[1]._id,
+        medicine_id: medicines[2]._id,
+        branch_id: branches[0]._id,
+        quantity: 1,
+        price: medicines[2].sale_price,
+        subtotal: medicines[2].sale_price,
+      },
+    ]);
+    console.log('  ✓ Created 4 cart items');
+
+    // Update cart totals and linked items
+    await Cart.findByIdAndUpdate(carts[0]._id, {
+      total: cartItems[0].subtotal + cartItems[1].subtotal,
+      items: [cartItems[0]._id, cartItems[1]._id],
+    });
+    await Cart.findByIdAndUpdate(carts[1]._id, {
+      total: cartItems[2].subtotal + cartItems[3].subtotal,
+      items: [cartItems[2]._id, cartItems[3]._id],
+    });
+
+    // ==================== 22. REFUND WORKFLOW ====================
+    console.log('\n💰 Seeding refund workflow data...');
+
+    const customerRefundRequests = await CustomerRefundRequest.insertMany([
+      {
+        customer_id: customers[0]._id,
+        order_id: orders[0]._id,
+        reason: 'Received wrong medicine batch',
+        requested_items: [
+          {
+            order_item_id: orderItems[0]._id,
+            quantity: 1,
+            unit_price: medicines[1].sale_price,
+            requested_refund_amount: medicines[1].sale_price,
+            branch_id: branches[0]._id,
+          },
+        ],
+        total_requested_refund_amount: medicines[1].sale_price,
+        status: 'approved',
+        super_admin_notes: 'Verification successful. Approved for refund.',
+        reviewed_by: superAdmin._id,
+        reviewed_at: new Date(),
+      },
+      {
+        customer_id: customers[1]._id,
+        order_id: orders[1]._id,
+        reason: 'Quality issue with received medicine',
+        requested_items: [
+          {
+            order_item_id: orderItems[2]._id,
+            quantity: 1,
+            unit_price: medicines[4].sale_price,
+            requested_refund_amount: medicines[4].sale_price,
+            branch_id: branches[1]._id,
+          },
+        ],
+        total_requested_refund_amount: medicines[4].sale_price,
+        status: 'super_admin_review',
+        reviewed_by: null,
+        reviewed_at: null,
+      },
+      {
+        customer_id: customers[2]._id,
+        order_id: orders[2]._id,
+        reason: 'Changed my mind about the purchase',
+        requested_items: [
+          {
+            order_item_id: orderItems[3]._id,
+            quantity: 2,
+            unit_price: medicines[2].sale_price,
+            requested_refund_amount: medicines[2].sale_price * 2,
+            branch_id: branches[0]._id,
+          },
+        ],
+        total_requested_refund_amount: medicines[2].sale_price * 2,
+        status: 'rejected',
+        rejection_reason: 'Return window has expired',
+        reviewed_by: superAdmin._id,
+        reviewed_at: new Date(),
+      },
+    ]);
+    console.log('  ✓ Created 3 customer refund requests');
+
+    const branchRefundAllocations = await BranchRefundAllocation.insertMany([
+      {
+        refund_request_id: customerRefundRequests[0]._id,
+        branch_id: branches[0]._id,
+        order_id: orders[0]._id,
+        customer_id: customers[0]._id,
+        allocated_items: [
+          {
+            order_item_id: orderItems[0]._id,
+            quantity: 1,
+            unit_price: medicines[1].sale_price,
+            refund_amount: medicines[1].sale_price,
+          },
+        ],
+        total_allocation_amount: medicines[1].sale_price,
+        status: 'completed',
+        branch_admin_notes:
+          'Processed and refund initiated to customer account.',
+        allocated_by: admins[0]._id,
+        allocated_at: new Date('2026-01-25'),
+        accepted_by: admins[0]._id,
+        accepted_at: new Date('2026-01-26'),
+        completed_by: admins[0]._id,
+        completed_at: new Date('2026-01-27'),
+      },
+      {
+        refund_request_id: customerRefundRequests[1]._id,
+        branch_id: branches[1]._id,
+        order_id: orders[1]._id,
+        customer_id: customers[1]._id,
+        allocated_items: [
+          {
+            order_item_id: orderItems[2]._id,
+            quantity: 1,
+            unit_price: medicines[4].sale_price,
+            refund_amount: medicines[4].sale_price,
+          },
+        ],
+        total_allocation_amount: medicines[4].sale_price,
+        status: 'processing',
+        branch_admin_notes: 'Quality inspection passing. Preparing refund.',
+        allocated_by: superAdmin._id,
+        allocated_at: new Date('2026-01-28'),
+        accepted_by: admins[1]._id,
+        accepted_at: new Date('2026-01-29'),
+      },
+    ]);
+    console.log('  ✓ Created 2 branch refund allocations');
+
+    // ==================== 23. COUPONS ====================
     console.log('\n🎟️  Seeding coupons...');
     const coupons = await Coupon.insertMany([
       {
@@ -1864,12 +2602,249 @@ const seedData = async () => {
     ]);
     console.log(`  ✓ Created ${coupons.length} coupons`);
 
+    // ==================== 24. REPORTS, ANNOUNCEMENTS & NOTIFICATIONS ====================
+    console.log('\n📢 Seeding reports, announcements, and notifications...');
+
+    const reports = await Report.insertMany([
+      {
+        title: 'Sales Report - January 2026',
+        report_type: 'sales',
+        date_from: new Date('2026-01-01'),
+        date_to: new Date('2026-01-31'),
+        branch_id: branches[0]._id,
+        frequency: 'monthly',
+        summary: {
+          total_orders: 2,
+          gross_revenue: 584,
+        },
+        data: {
+          top_medicines: [medicines[1].Name, medicines[2].Name],
+        },
+        total_records: 2,
+        admin_id: admins[0]._id,
+        status: 'generated',
+        is_scheduled: false,
+      },
+      {
+        title: 'Appointments Report - January 2026',
+        report_type: 'appointments',
+        date_from: new Date('2026-01-01'),
+        date_to: new Date('2026-01-31'),
+        frequency: 'monthly',
+        summary: {
+          total_appointments: 3,
+          completed: 2,
+        },
+        data: {
+          doctors: [doctors[0].fullName, doctors[1].fullName],
+        },
+        total_records: 3,
+        admin_id: superAdmin._id,
+        status: 'generated',
+        is_scheduled: true,
+        schedule_next_date: new Date('2026-02-28'),
+        is_active_schedule: true,
+      },
+    ]);
+    console.log(`  ✓ Created ${reports.length} reports`);
+
+    const announcements = await Announcement.insertMany([
+      {
+        title: 'System Maintenance Notice',
+        message:
+          'Philbox services will undergo maintenance tonight from 11:00 PM to 11:30 PM.',
+        target_audience: 'all',
+        delivery_methods: ['email', 'push', 'in-app'],
+        scheduled_at: new Date('2026-02-01T23:00:00.000Z'),
+        status: 'scheduled',
+        created_by: superAdmin._id,
+        notes: 'Planned monthly maintenance window',
+      },
+      {
+        title: 'New Doctor Onboarding Update',
+        message:
+          'Please welcome newly approved doctors to the consultation portal this week.',
+        target_audience: 'doctors',
+        delivery_methods: ['email', 'in-app'],
+        scheduled_at: new Date('2026-02-03T10:00:00.000Z'),
+        sent_at: new Date('2026-02-03T10:05:00.000Z'),
+        status: 'sent',
+        created_by: admins[0]._id,
+        delivery_status: {
+          total_recipients: 2,
+          sent: 2,
+          failed: 0,
+          pending: 0,
+          by_method: {
+            email: { sent: 2, failed: 0, pending: 0 },
+            'in-app': { sent: 2, failed: 0, pending: 0 },
+          },
+        },
+      },
+    ]);
+    console.log(`  ✓ Created ${announcements.length} announcements`);
+
+    const notificationPreferences = await NotificationPreference.insertMany([
+      {
+        user_id: customers[0]._id,
+        user_type: 'customer',
+        appointment_reminders: { enabled: true, minutes_before: 45 },
+        order_status_changes: { enabled: true },
+        notification_channels: {
+          push: true,
+          email: true,
+          sms: false,
+          in_app: true,
+        },
+      },
+      {
+        user_id: doctors[0]._id,
+        user_type: 'doctor',
+        appointment_reminders: { enabled: true, minutes_before: 30 },
+        consultation_messages: { enabled: true },
+        quiet_hours_enabled: true,
+        quiet_hours_start: '23:00',
+        quiet_hours_end: '07:00',
+      },
+      {
+        user_id: salespersons[0]._id,
+        user_type: 'salesperson',
+        new_tasks: { enabled: true },
+        low_stock_alerts: { enabled: true },
+        notification_channels: {
+          push: true,
+          email: true,
+          sms: false,
+          in_app: true,
+        },
+      },
+    ]);
+    console.log(
+      `  ✓ Created ${notificationPreferences.length} notification preferences`
+    );
+
+    const deviceTokens = await DeviceToken.insertMany([
+      {
+        user_id: customers[0]._id,
+        user_type: 'customer',
+        token: 'fcm_customer_ahmed_token_001',
+        device_type: 'android',
+        device_name: 'Ahmed Pixel 7',
+        is_active: true,
+        user_agent: 'PhilboxMobile/1.0 Android',
+      },
+      {
+        user_id: doctors[0]._id,
+        user_type: 'doctor',
+        token: 'fcm_doctor_sarah_token_001',
+        device_type: 'ios',
+        device_name: 'Dr Sarah iPhone 14',
+        is_active: true,
+        user_agent: 'PhilboxDoctor/1.0 iOS',
+      },
+      {
+        user_id: salespersons[0]._id,
+        user_type: 'salesperson',
+        token: 'fcm_sales_ali_token_001',
+        device_type: 'web',
+        device_name: 'Ali Workstation',
+        is_active: true,
+        user_agent: 'Mozilla/5.0 PhilboxWeb',
+      },
+    ]);
+    console.log(`  ✓ Created ${deviceTokens.length} device tokens`);
+
+    const notificationLogs = await NotificationLog.insertMany([
+      {
+        user_id: customers[0]._id,
+        user_type: 'customer',
+        notification_type: 'order_status_change',
+        title: 'Your order is completed',
+        message: 'Order has been completed and is ready for delivery.',
+        data: {
+          order_id: orders[0]._id,
+          status: 'completed',
+        },
+        channels_sent: ['push', 'in-app'],
+        status: 'sent',
+      },
+      {
+        user_id: doctors[0]._id,
+        user_type: 'doctor',
+        notification_type: 'new_message',
+        title: 'New patient message',
+        message: 'You have received a new message in appointment chat.',
+        data: {
+          appointment_id: appointments[0]._id,
+        },
+        channels_sent: ['in-app', 'socket'],
+        status: 'sent',
+        read_at: new Date('2026-01-11T10:45:00.000Z'),
+      },
+      {
+        user_id: salespersons[0]._id,
+        user_type: 'salesperson',
+        notification_type: 'low_stock_alert',
+        title: 'Low stock warning',
+        message: 'Panadol 500mg stock is below threshold in branch inventory.',
+        data: {
+          medicine_id: medicines[0]._id,
+          branch_id: branches[0]._id,
+        },
+        channels_sent: ['email', 'in-app'],
+        status: 'pending',
+      },
+    ]);
+    console.log(`  ✓ Created ${notificationLogs.length} notification logs`);
+
+    const dailyMedicineRecommendations =
+      await DailyMedicineRecommendations.insertMany([
+        {
+          date: new Date('2026-01-21'),
+          customer_id: customers[0]._id,
+          recommendations: [
+            {
+              medicine_id: medicines[0]._id,
+              reason: 'Frequently ordered by customer',
+              score: 0.93,
+            },
+            {
+              medicine_id: medicines[2]._id,
+              reason: 'Common co-purchase for pain management',
+              score: 0.86,
+            },
+          ],
+          count: 2,
+          generated_source: 'system',
+        },
+        {
+          date: new Date('2026-01-21'),
+          customer_id: customers[1]._id,
+          recommendations: [
+            {
+              medicine_id: medicines[4]._id,
+              reason: 'Past prescription profile match',
+              score: 0.88,
+            },
+          ],
+          count: 1,
+          generated_source: 'system',
+        },
+      ]);
+    console.log(
+      `  ✓ Created ${dailyMedicineRecommendations.length} daily medicine recommendations`
+    );
+
+    await backfillMissingFieldsAcrossModels();
+
     // ==================== SUMMARY ====================
     console.log('\n✅ Data seeding completed successfully!\n');
     console.log('='.repeat(60));
     console.log('SUMMARY:');
     console.log('='.repeat(60));
+    const permissionsCount = await Permission.countDocuments();
     console.log(`✓ Roles: ${roles.length}`);
+    console.log(`✓ Permissions: ${permissionsCount}`);
     console.log(`✓ Currencies: ${currencies.length}`);
     console.log(`✓ Addresses: ${addresses.length}`);
     console.log(`✓ Admins: ${admins.length + 1} (including super admin)`);
@@ -1891,6 +2866,14 @@ const seedData = async () => {
     );
     console.log(`✓ Orders: ${orders.length}`);
     console.log(`✓ Order Items: ${orderItems.length}`);
+    console.log(`✓ Deliveries: ${deliveries.length}`);
+    console.log(`✓ Delivery Fares: ${deliveryFares.length}`);
+    console.log(`✓ Carts: ${carts.length}`);
+    console.log(`✓ Cart Items: ${cartItems.length}`);
+    console.log(`✓ Customer Refund Requests: ${customerRefundRequests.length}`);
+    console.log(
+      `✓ Branch Refund Allocations: ${branchRefundAllocations.length}`
+    );
     console.log(
       `✓ Transactions: ${transactions.length + orderTransactions.length}`
     );
@@ -1913,6 +2896,16 @@ const seedData = async () => {
     console.log(`✓ Doctor Applications: ${doctorApplications.length}`);
     console.log(`✓ Doctor Slots: ${doctorSlots.length}`);
     console.log(`✓ Coupons: ${coupons.length}`);
+    console.log(`✓ Reports: ${reports.length}`);
+    console.log(`✓ Announcements: ${announcements.length}`);
+    console.log(
+      `✓ Notification Preferences: ${notificationPreferences.length}`
+    );
+    console.log(`✓ Device Tokens: ${deviceTokens.length}`);
+    console.log(`✓ Notification Logs: ${notificationLogs.length}`);
+    console.log(
+      `✓ Daily Medicine Recommendations: ${dailyMedicineRecommendations.length}`
+    );
     console.log('='.repeat(60));
     console.log('\n💡 Test Credentials:');
     console.log(

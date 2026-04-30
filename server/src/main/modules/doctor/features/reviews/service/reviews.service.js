@@ -52,7 +52,7 @@ class DoctorReviewsService {
       // Execute query with pagination
       const [reviews, total] = await Promise.all([
         Review.find(query)
-          .populate('customer_id', 'first_name last_name profile_img_url')
+          .populate('customer_id', 'fullName profile_img_url')
           .sort(sortObj)
           .skip(skip)
           .limit(limit)
@@ -216,7 +216,7 @@ class DoctorReviewsService {
         target_type: 'doctor',
         target_id: new mongoose.Types.ObjectId(doctorId),
       })
-        .populate('customer_id', 'first_name last_name profile_img_url email')
+        .populate('customer_id', 'fullName profile_img_url email')
         .lean();
 
       if (!review) {

@@ -8,7 +8,7 @@ import customerProfileService from '../service/profile.service.js';
 export const getProfile = async (req, res) => {
   try {
     const customerId = req.customer._id;
-    const result = await customerProfileService.getProfile(customerId);
+    const result = await customerProfileService.getProfile(customerId, req);
     return sendResponse(res, 200, 'Profile fetched successfully', result);
   } catch (err) {
     if (err.message === 'USER_NOT_FOUND') {
@@ -30,10 +30,17 @@ export const updateProfile = async (req, res) => {
       req.body,
       req
     );
-    return sendResponse(res, 200, 'Profile updated successfully', result);
+    const message = result.emailVerificationRequired
+      ? 'Profile updated successfully. Please verify your new email address.'
+      : 'Profile updated successfully';
+
+    return sendResponse(res, 200, message, result);
   } catch (err) {
     if (err.message === 'USER_NOT_FOUND') {
       return sendResponse(res, 404, 'User not found');
+    }
+    if (err.message === 'EMAIL_ALREADY_EXISTS') {
+      return sendResponse(res, 409, 'Email already exists');
     }
     return sendResponse(res, 500, 'Server Error', null, err.message);
   }

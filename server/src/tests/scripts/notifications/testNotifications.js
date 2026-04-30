@@ -2,12 +2,12 @@
  * Test Script for Refill Reminder Notifications
  *
  * This script helps test the notification service independently
- * Run with: node src/tests/testNotifications.js
+ * Run with: node src/tests/scripts/notifications/testNotifications.js
  */
 
-import notificationService from '../main/utils/notificationService.js';
-import { sendEmail } from '../main/utils/sendEmail.js';
-import { TEST_REFILL_REMINDER_TEMPLATE } from '../main/constants/global.mail.constants.js';
+import notificationService from '../../../main/utils/notificationService.js';
+import { sendEmail } from '../../../main/utils/sendEmail.js';
+import { TEST_REFILL_REMINDER_TEMPLATE } from '../../../main/constants/global.mail.constants.js';
 import dotenv from 'dotenv';
 
 dotenv.config();

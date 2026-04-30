@@ -12,6 +12,14 @@ class CustomerCartController {
     try {
       const customerId = req.user?.id;
       const cart = await cartService.getCart(customerId);
+
+      await logCustomerActivity(
+        req,
+        'VIEWED_CART',
+        'Viewed customer cart',
+        'carts'
+      );
+
       return sendResponse(res, 200, 'Cart fetched successfully', cart);
     } catch (error) {
       console.error('Error in getCart:', error);
@@ -29,6 +37,14 @@ class CustomerCartController {
     try {
       const customerId = req.user?.id;
       const result = await cartService.getCartCount(customerId);
+
+      await logCustomerActivity(
+        req,
+        'VIEWED_CART_COUNT',
+        'Viewed customer cart item count',
+        'carts'
+      );
+
       return sendResponse(res, 200, 'Cart count fetched successfully', result);
     } catch (error) {
       console.error('Error in getCartCount:', error);
@@ -107,6 +123,19 @@ class CustomerCartController {
         value.itemId,
         value.quantity
       );
+
+      if (cart?.stockCheckFailed) {
+        return sendResponse(
+          res,
+          409,
+          'Requested quantity exceeds available stock',
+          {
+            requestedQuantity: cart.requestedQuantity,
+            maxAvailableQuantity: cart.maxAvailableQuantity,
+            message: cart.message,
+          }
+        );
+      }
 
       await logCustomerActivity(
         req,

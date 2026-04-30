@@ -59,7 +59,7 @@ class RefillReminderService {
   /**
    * Get all active reminders for a customer
    */
-  async getReminders(customerId, query = {}) {
+  async getReminders(customerId, query = {}, req) {
     try {
       const { isActive = true, page = 1, limit = 10 } = query;
 
@@ -79,6 +79,13 @@ class RefillReminderService {
         ...(isActive !== undefined && { isActive }),
       });
 
+      await logCustomerActivity(
+        req,
+        'VIEWED_REFILL_REMINDERS',
+        'Viewed refill reminders list',
+        'refill_reminders'
+      );
+
       return {
         reminders,
         pagination: {
@@ -97,7 +104,7 @@ class RefillReminderService {
   /**
    * Get a single reminder by ID
    */
-  async getReminderById(customerId, reminderId) {
+  async getReminderById(customerId, reminderId, req) {
     try {
       const reminder = await RefillReminder.findOne({
         _id: reminderId,
@@ -107,6 +114,14 @@ class RefillReminderService {
       if (!reminder) {
         throw new Error('Reminder not found');
       }
+
+      await logCustomerActivity(
+        req,
+        'VIEWED_REFILL_REMINDER_DETAILS',
+        'Viewed refill reminder details',
+        'refill_reminders',
+        reminder._id
+      );
 
       return reminder;
     } catch (error) {
@@ -209,9 +224,9 @@ class RefillReminderService {
   }
 
   /**
-   * Mark reminder as completed (deactivate)
+   * Deactivate a reminder
    */
-  async markAsCompleted(customerId, reminderId, req) {
+  async deactivateReminder(customerId, reminderId, req) {
     try {
       const reminder = await RefillReminder.findOne({
         _id: reminderId,
@@ -228,18 +243,18 @@ class RefillReminderService {
       // Log activity
       await logCustomerActivity(
         req,
-        'complete_reminder',
-        `Marked refill reminder as completed`,
+        'deactivate_reminder',
+        'Deactivated refill reminder',
         'refill_reminder',
         reminder._id
       );
 
       return {
         reminder,
-        message: 'Reminder marked as completed',
+        message: 'Reminder deactivated successfully',
       };
     } catch (error) {
-      console.error('Mark Completed Error:', error);
+      console.error('Deactivate Reminder Error:', error);
       throw error;
     }
   }

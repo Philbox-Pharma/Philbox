@@ -1,5 +1,6 @@
 import doctorAppointmentsService from '../service/appointments.service.js';
 import sendResponse from '../../../../../utils/sendResponse.js';
+import { logDoctorActivity } from '../../../utils/logDoctorActivities.js';
 import {
   getRequestsSchema,
   acceptRequestSchema,
@@ -29,6 +30,19 @@ export const getPendingRequests = async (req, res) => {
     const result = await doctorAppointmentsService.getPendingRequests(
       doctorId,
       value
+    );
+
+    await logDoctorActivity(
+      req,
+      'view_appointment_requests',
+      `Viewed pending appointment requests with filters: ${JSON.stringify(value)}`,
+      'appointments',
+      null,
+      {
+        filters: value,
+        total_requests:
+          result.pagination?.total_items ?? result.appointments?.length ?? 0,
+      }
     );
 
     return sendResponse(
@@ -71,6 +85,19 @@ export const getRequestDetails = async (req, res) => {
     const appointment = await doctorAppointmentsService.getRequestDetails(
       doctorId,
       value.appointmentId
+    );
+
+    await logDoctorActivity(
+      req,
+      'view_appointment_request_details',
+      `Viewed appointment request details for ${value.appointmentId}`,
+      'appointments',
+      value.appointmentId,
+      {
+        appointment_id: value.appointmentId,
+        status: appointment.appointment_request,
+        appointment_type: appointment.appointment_type,
+      }
     );
 
     return sendResponse(
@@ -234,6 +261,19 @@ export const getAcceptedAppointments = async (req, res) => {
     const result = await doctorAppointmentsService.getAcceptedAppointments(
       doctorId,
       value
+    );
+
+    await logDoctorActivity(
+      req,
+      'view_accepted_appointments',
+      `Viewed accepted appointments with filters: ${JSON.stringify(value)}`,
+      'appointments',
+      null,
+      {
+        filters: value,
+        total_appointments:
+          result.pagination?.total_items ?? result.appointments?.length ?? 0,
+      }
     );
 
     return sendResponse(

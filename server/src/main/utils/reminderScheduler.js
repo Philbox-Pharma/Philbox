@@ -5,6 +5,8 @@ import notificationService from './notificationService.js';
 class ReminderScheduler {
   constructor() {
     this.isRunning = false;
+    this.schedule = '*/5 * * * *';
+    this.scheduleLabel = 'Every 5 minutes';
   }
 
   /**
@@ -17,15 +19,19 @@ class ReminderScheduler {
       return;
     }
 
-    // Run every 5 minutes: */5 * * * *
-    // For testing, you can use '* * * * *' to run every minute
-    this.task = cron.schedule('*/5 * * * *', async () => {
+    // Run every minute in development for faster testing,
+    // otherwise run every 5 minutes in production-like environments.
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    this.schedule = isDevelopment ? '* * * * *' : '*/5 * * * *';
+    this.scheduleLabel = isDevelopment ? 'Every minute' : 'Every 5 minutes';
+
+    this.task = cron.schedule(this.schedule, async () => {
       console.log('Running reminder scheduler...');
       await this.processReminders();
     });
 
     this.isRunning = true;
-    console.log('✅ Reminder scheduler started (runs every 5 minutes)');
+    console.log(`✅ Reminder scheduler started (${this.scheduleLabel})`);
   }
 
   /**
@@ -132,7 +138,7 @@ class ReminderScheduler {
   getStatus() {
     return {
       isRunning: this.isRunning,
-      schedule: '*/5 * * * * (Every 5 minutes)',
+      schedule: `${this.schedule} (${this.scheduleLabel})`,
     };
   }
 }

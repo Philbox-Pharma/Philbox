@@ -1,6 +1,7 @@
 import sendResponse from '../../../../../utils/sendResponse.js';
 import customerAuthService from '../service/auth.service.js';
 import passport from '../config/passport.config.js';
+import Customer from '../../../../../models/Customer.js';
 
 // ------------------------- REGISTER --------------------------
 export const register = async (req, res) => {
@@ -120,7 +121,31 @@ export const resetPassword = async (req, res) => {
 
 // ------------------------- CURRENT USER --------------------------
 export const getMe = async (req, res) => {
-  return sendResponse(res, 200, 'Current user fetched', req.customer);
+  try {
+    const customerId =
+      req.customer?._id || req.customer?.id || req.session?.customerId;
+
+    const customer = await Customer.findById(customerId)
+      .select(
+        '-passwordHash -refreshTokens -oauthId -verificationToken -verificationTokenExpiresAt -resetPasswordToken -resetPasswordExpiresAt -__v -created_at -updated_at -last_login'
+      )
+      .populate({
+        path: 'address_id',
+        select: 'street town city province zip_code country google_map_link',
+      })
+      .populate({
+        path: 'roleId',
+        select: 'name description',
+      });
+
+    if (!customer) {
+      return sendResponse(res, 404, 'Customer not found');
+    }
+
+    return sendResponse(res, 200, 'Current user fetched', { customer });
+  } catch (err) {
+    return sendResponse(res, 500, 'Server Error', null, err.message);
+  }
 };
 
 // ------------------------- LOGOUT --------------------------

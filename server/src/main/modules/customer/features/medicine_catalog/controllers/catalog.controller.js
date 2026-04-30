@@ -4,6 +4,22 @@ import { logCustomerActivity } from '../../../utils/logCustomerActivities.js';
 import customerSearchHistoryService from '../../search_history/service/searchHistory.service.js';
 
 class MedicineCatalogController {
+  _getCustomerId(req) {
+    return (
+      req.user?.id ||
+      req.user?._id ||
+      req.customer?.id ||
+      req.customer?._id ||
+      req.session?.customerId ||
+      null
+    );
+  }
+
+  _parsePositiveInt(value, fallback) {
+    const parsed = Number.parseInt(String(value ?? '').trim(), 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  }
+
   /**
    * Browse medicines catalog
    * Flow:
@@ -23,7 +39,7 @@ class MedicineCatalogController {
    */
   async browseMedicines(req, res) {
     try {
-      const customerId = req.user.id; // From auth middleware
+      const customerId = this._getCustomerId(req);
       const {
         category,
         brand,
@@ -42,8 +58,8 @@ class MedicineCatalogController {
         dosageFilter: dosage || null,
         prescriptionStatusFilter: prescriptionStatus || null,
         sortBy: sortBy || 'name',
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: this._parsePositiveInt(page, 1),
+        limit: this._parsePositiveInt(limit, 20),
       };
 
       const result = await MedicineCatalogService.browseMedicines(
@@ -85,7 +101,7 @@ class MedicineCatalogController {
    */
   async getAvailableBranches(req, res) {
     try {
-      const customerId = req.user.id;
+      const customerId = this._getCustomerId(req);
 
       const result =
         await MedicineCatalogService.getAvailableBranches(customerId);
@@ -101,7 +117,7 @@ class MedicineCatalogController {
       return sendResponse(
         res,
         200,
-        'Branch names fetched successfully',
+        'Branch list fetched successfully',
         result.data
       );
     } catch (error) {
@@ -117,7 +133,7 @@ class MedicineCatalogController {
 
   async getAvailableBrands(req, res) {
     try {
-      const customerId = req.user.id;
+      const customerId = this._getCustomerId(req);
       const result =
         await MedicineCatalogService.getAvailableBrands(customerId);
 
@@ -133,7 +149,7 @@ class MedicineCatalogController {
 
   async getAvailableClasses(req, res) {
     try {
-      const customerId = req.user.id;
+      const customerId = this._getCustomerId(req);
       const result =
         await MedicineCatalogService.getAvailableClasses(customerId);
 
@@ -154,7 +170,7 @@ class MedicineCatalogController {
 
   async getAvailableCategories(req, res) {
     try {
-      const customerId = req.user.id;
+      const customerId = this._getCustomerId(req);
       const result =
         await MedicineCatalogService.getAvailableCategories(customerId);
 
@@ -179,7 +195,7 @@ class MedicineCatalogController {
    */
   async getMedicineDetails(req, res) {
     try {
-      const customerId = req.user.id;
+      const customerId = this._getCustomerId(req);
       const { medicineId } = req.params;
 
       if (!medicineId) {
@@ -225,7 +241,7 @@ class MedicineCatalogController {
    */
   async getRelatedMedicines(req, res) {
     try {
-      const customerId = req.user.id;
+      const customerId = this._getCustomerId(req);
       const { medicineId } = req.params;
       const { limit = 8 } = req.query;
 
@@ -236,7 +252,7 @@ class MedicineCatalogController {
       const result = await MedicineCatalogService.getRelatedMedicines(
         medicineId,
         customerId,
-        { limit: parseInt(limit) }
+        { limit: this._parsePositiveInt(limit, 8) }
       );
 
       await logCustomerActivity(
@@ -268,12 +284,49 @@ class MedicineCatalogController {
   }
 
   /**
+   * Get personalized medicine recommendations
+   */
+  async getMedicineRecommendations(req, res) {
+    try {
+      const customerId = this._getCustomerId(req);
+      const { limit = 8 } = req.query;
+
+      const result = await MedicineCatalogService.getMedicineRecommendations(
+        customerId,
+        { limit: this._parsePositiveInt(limit, 8) }
+      );
+
+      await logCustomerActivity(
+        req,
+        'VIEWED_MEDICINE_RECOMMENDATIONS',
+        'Viewed personalized medicine recommendations',
+        'medicines'
+      );
+
+      return sendResponse(
+        res,
+        200,
+        'Medicine recommendations fetched successfully',
+        result.data
+      );
+    } catch (error) {
+      console.error('Error fetching medicine recommendations:', error);
+
+      if (error.message === 'CUSTOMER_NOT_FOUND') {
+        return sendResponse(res, 404, 'Customer not found');
+      }
+
+      return sendResponse(res, 500, 'Server Error', null, error.message);
+    }
+  }
+
+  /**
    * Search medicines by name/category/brand with cart-aware + proximity ranking.
    * Duplicate medicines from farther branches are removed if nearest branch already has one.
    */
   async searchMedicines(req, res) {
     try {
-      const customerId = req.user.id;
+      const customerId = this._getCustomerId(req);
       const {
         searchTerm,
         brand,
@@ -302,34 +355,28 @@ class MedicineCatalogController {
         dosageFilter: dosage || null,
         prescriptionStatusFilter: prescriptionStatus || null,
         sortBy: sortBy || 'name',
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: this._parsePositiveInt(page, 1),
+        limit: this._parsePositiveInt(limit, 10),
       });
 
-      // Record search query in search history
-      await customerSearchHistoryService.saveSearch(
-        customerId,
-        {
-          query: searchTerm.trim(),
-          filters: {
-            brand: brand || null,
-            branch: branch || null,
-            category: category || null,
-            dosage: dosage || null,
-            prescriptionStatus: prescriptionStatus || null,
-            sortBy: sortBy || 'name',
+      if (customerId) {
+        // Record search query in search history only for logged-in customers
+        await customerSearchHistoryService.saveSearch(
+          customerId,
+          {
+            query: searchTerm.trim(),
+            filters: {
+              brand: brand || null,
+              branch: branch || null,
+              category: category || null,
+              dosage: dosage || null,
+              prescriptionStatus: prescriptionStatus || null,
+              sortBy: sortBy || 'name',
+            },
           },
-        },
-        req
-      );
-
-      // Log activity
-      await logCustomerActivity(
-        req,
-        'SEARCHED_MEDICINES',
-        `Searched medicines for: ${searchTerm}`,
-        'medicines'
-      );
+          req
+        );
+      }
 
       return sendResponse(res, 200, 'Search results', result.data);
     } catch (error) {

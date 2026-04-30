@@ -28,6 +28,32 @@ const appointmentSchema = new mongoose.Schema(
     recording_url: {
       type: String,
     },
+    consultation_room_id: {
+      type: String,
+      index: true,
+    },
+    consultation_mode: {
+      type: String,
+      enum: ['video', 'chat'],
+      default: null,
+    },
+    consultation_started_at: {
+      type: Date,
+    },
+    consultation_ended_at: {
+      type: Date,
+    },
+    consultation_duration_seconds: {
+      type: Number,
+      default: 0,
+    },
+    consultation_started_by: {
+      type: String,
+      enum: ['doctor', 'patient'],
+    },
+    consultation_last_activity_at: {
+      type: Date,
+    },
     appointment_request: {
       type: String,
       enum: ['processing', 'accepted', 'cancelled'],
@@ -60,6 +86,11 @@ const appointmentSchema = new mongoose.Schema(
     notes: {
       type: String,
     },
+    medical_document_urls: [
+      {
+        type: String,
+      },
+    ],
     prescription_generated: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'PrescriptionGeneratedByDoctor',

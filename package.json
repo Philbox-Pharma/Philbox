@@ -8,15 +8,12 @@
   },
   "lint-staged": {
     "client/src/**/*.{js,jsx}": [
-      "npx eslint --fix",
-      "npx prettier --write"
+      "npm --prefix client exec eslint -- --fix",
+      "npm --prefix client exec prettier -- --write"
     ],
     "server/src/**/*.js": [
-      "npx eslint --fix",
-      "npx prettier --write"
-    ],
-    "*.{json,md}": [
-      "npx prettier --write"
+      "npm --prefix server exec eslint -- --fix",
+      "npm --prefix server exec prettier -- --write"
     ]
   }
 }

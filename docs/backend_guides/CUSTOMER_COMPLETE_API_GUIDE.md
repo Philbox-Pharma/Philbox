@@ -951,9 +951,9 @@ The Refill Reminders feature allows customers to set up automated reminders for 
 
 ---
 
-### 23. Mark Reminder as Completed
+### 23. Deactivate Reminder
 
-**Endpoint:** `PATCH /api/customer/refill-reminders/:id/complete`
+**Endpoint:** `PATCH /api/customer/refill-reminders/:id/deactivate`
 **Auth Required:** Yes (Customer)
 
 **Request Body:**
@@ -970,7 +970,7 @@ The Refill Reminders feature allows customers to set up automated reminders for 
 {
   "success": true,
   "status": 200,
-  "message": "Reminder marked as completed",
+  "message": "Reminder deactivated successfully",
   "data": {
     "_id": "reminder123",
     "isActive": false,

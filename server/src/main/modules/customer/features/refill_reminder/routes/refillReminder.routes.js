@@ -5,17 +5,24 @@ import {
   getReminderById,
   updateReminder,
   deleteReminder,
-  markAsCompleted,
+  deactivateReminder,
 } from '../controllers/refillReminder.controller.js';
 import { authenticate } from '../../../middleware/auth.middleware.js';
+import {
+  roleMiddleware,
+  rbacMiddleware,
+} from '../../../../../middlewares/rbac.middleware.js';
 import { validate } from '../../../../../validator/joiValidate.middleware.js';
 import {
   createRefillReminderDTO,
   updateRefillReminderDTO,
-  markCompletedDTO,
+  deactivateReminderDTO,
 } from '../../../../../dto/customer/refillReminder.dto.js';
 
 const router = express.Router();
+
+router.use(authenticate);
+router.use(roleMiddleware(['customer']));
 
 /**
  * @route   POST /api/customer/refill-reminders
@@ -24,7 +31,7 @@ const router = express.Router();
  */
 router.post(
   '/',
-  authenticate,
+  rbacMiddleware(['create_refill_reminders']),
   validate(createRefillReminderDTO),
   createReminder
 );
@@ -37,14 +44,14 @@ router.post(
  * @query   page (optional): page number for pagination
  * @query   limit (optional): items per page
  */
-router.get('/', authenticate, getReminders);
+router.get('/', rbacMiddleware(['read_refill_reminders']), getReminders);
 
 /**
  * @route   GET /api/customer/refill-reminders/:id
  * @desc    Get a single reminder by ID
  * @access  Private (Customer only)
  */
-router.get('/:id', authenticate, getReminderById);
+router.get('/:id', rbacMiddleware(['read_refill_reminders']), getReminderById);
 
 /**
  * @route   PUT /api/customer/refill-reminders/:id
@@ -53,21 +60,21 @@ router.get('/:id', authenticate, getReminderById);
  */
 router.put(
   '/:id',
-  authenticate,
+  rbacMiddleware(['update_refill_reminders']),
   validate(updateRefillReminderDTO),
   updateReminder
 );
 
 /**
- * @route   PATCH /api/customer/refill-reminders/:id/complete
- * @desc    Mark a reminder as completed (deactivate)
+ * @route   PATCH /api/customer/refill-reminders/:id/deactivate
+ * @desc    Deactivate a reminder
  * @access  Private (Customer only)
  */
 router.patch(
-  '/:id/complete',
-  authenticate,
-  validate(markCompletedDTO),
-  markAsCompleted
+  '/:id/deactivate',
+  rbacMiddleware(['deactivate_refill_reminders']),
+  validate(deactivateReminderDTO),
+  deactivateReminder
 );
 
 /**
@@ -75,6 +82,10 @@ router.patch(
  * @desc    Delete a reminder
  * @access  Private (Customer only)
  */
-router.delete('/:id', authenticate, deleteReminder);
+router.delete(
+  '/:id',
+  rbacMiddleware(['delete_refill_reminders']),
+  deleteReminder
+);
 
 export default router;

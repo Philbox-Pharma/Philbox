@@ -10,6 +10,10 @@ const Schema = {
   salespersons_assigned: [
     { type: mongoose.Schema.Types.ObjectId, ref: 'Salesperson' },
   ],
+  salesperson_assignment_cursor: {
+    type: Number,
+    default: 0,
+  },
   address_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Address' },
   status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
   cover_img_url: {

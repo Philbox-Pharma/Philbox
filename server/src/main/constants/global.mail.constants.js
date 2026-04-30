@@ -741,3 +741,275 @@ export const NEW_APPOINTMENT_REQUEST_NOTIFICATION_TEMPLATE = `<!DOCTYPE html>
     </table>
 </body>
 </html>`;
+
+// 11. Order Confirmation Template
+export const ORDER_CONFIRMATION_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmation</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .header { background-color: #007bff; color: #ffffff; padding: 20px; text-align: center; }
+    .content { padding: 30px 20px; text-align: center; }
+    .summary-box { background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 15px; margin: 20px 0; text-align: left; display: inline-block; width: 90%; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #28a745; color: #ffffff !important; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+    .instructions { color: #666666; line-height: 1.5; margin-bottom: 20px; }
+    .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #999999; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <table class="container" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td class="header">
+        <h1>Order Confirmed</h1>
+      </td>
+    </tr>
+    <tr>
+      <td class="content">
+        <p style="font-size:16px; color:#333;">Hello {{NAME}},</p>
+        <p class="instructions">Thank you for your order. Your Philbox order <strong>#{{ORDER_ID}}</strong> has been confirmed successfully.</p>
+
+        <div class="summary-box">
+          <p style="margin: 5px 0;"><strong>Total Amount:</strong> PKR {{TOTAL_AMOUNT}}</p>
+          <p style="margin: 5px 0;"><strong>Estimated Delivery:</strong> {{ESTIMATED_DELIVERY}}</p>
+        </div>
+
+        <p class="instructions">You can track your order status anytime using the link below.</p>
+        <a href="{{TRACK_LINK}}" class="btn">Track Your Order</a>
+      </td>
+    </tr>
+    <tr>
+      <td class="footer">
+        <p>If you have any questions, please contact Philbox support.</p>
+        <p>&copy; ${CURRENT_YEAR} Philbox. All rights reserved.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+// 12. Order Status Update Template
+export const ORDER_STATUS_UPDATE_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Status Update</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .header { background-color: #007bff; color: #ffffff; padding: 20px; text-align: center; }
+    .content { padding: 30px 20px; }
+    .status-badge { display: inline-block; padding: 10px 20px; border-radius: 20px; font-weight: bold; margin-bottom: 20px; color: #ffffff; }
+    .status-confirmed { background-color: #28a745; }
+    .status-processing { background-color: #ffc107; }
+    .status-shipped { background-color: #17a2b8; }
+    .status-delivered { background-color: #28a745; }
+    .status-cancelled { background-color: #dc3545; }
+    .order-details { background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; }
+    .detail-row { display: flex; justify-content: space-between; margin: 10px 0; padding: 8px 0; border-bottom: 1px solid #e9ecef; }
+    .detail-label { font-weight: bold; color: #333; }
+    .detail-value { color: #666; }
+    .detail-row:last-child { border-bottom: none; }
+    .timeline { margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 6px; }
+    .timeline-item { margin: 15px 0; padding-left: 30px; position: relative; }
+    .timeline-item:before { content: '✓'; position: absolute; left: 0; color: #28a745; font-weight: bold; }
+    .timeline-item.pending:before { content: '○'; color: #ccc; }
+    .timeline-text { color: #666; font-size: 14px; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff !important; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+    .instructions { color: #666666; line-height: 1.5; margin-bottom: 20px; }
+    .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #999999; font-size: 12px; }
+    .unsubscribe { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; text-align: center; }
+    .unsubscribe a { color: #007bff; text-decoration: none; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <table class="container" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td class="header">
+        <h1>Order Status Update</h1>
+      </td>
+    </tr>
+    <tr>
+      <td class="content">
+        <p style="font-size:16px; color:#333;">Hello {{NAME}},</p>
+
+        <div style="text-align: center;">
+          <span class="status-badge status-{{STATUS_CLASS}}">{{STATUS}}</span>
+        </div>
+
+        <p class="instructions">Your Philbox order <strong>#{{ORDER_ID}}</strong> has been {{STATUS_DESCRIPTION}}.</p>
+
+        <div class="order-details">
+          <div class="detail-row">
+            <span class="detail-label">Order Number:</span>
+            <span class="detail-value">#{{ORDER_ID}}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Order Date:</span>
+            <span class="detail-value">{{ORDER_DATE}}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Current Status:</span>
+            <span class="detail-value"><strong>{{STATUS}}</strong></span>
+          </div>
+          {{#if TRACKING_NUMBER}}
+          <div class="detail-row">
+            <span class="detail-label">Tracking Number:</span>
+            <span class="detail-value">{{TRACKING_NUMBER}}</span>
+          </div>
+          {{/if}}
+          {{#if ESTIMATED_DELIVERY}}
+          <div class="detail-row">
+            <span class="detail-label">Estimated Delivery:</span>
+            <span class="detail-value">{{ESTIMATED_DELIVERY}}</span>
+          </div>
+          {{/if}}
+        </div>
+
+        {{#if STATUS_MESSAGE}}
+        <div style="background-color: #e7f3ff; border-left: 4px solid #007bff; padding: 15px; margin: 20px 0; border-radius: 4px;">
+          <p style="margin: 0; color: #004085;"><strong>Update:</strong> {{STATUS_MESSAGE}}</p>
+        </div>
+        {{/if}}
+
+        <div style="text-align: center; margin-top: 20px;">
+          <a href="{{TRACK_LINK}}" class="btn">Track Order Details</a>
+        </div>
+
+        <p style="color:#666; line-height:1.6; margin-top: 30px;">Thank you for shopping with Philbox. If you have any questions or concerns about your order, please don't hesitate to contact us.</p>
+
+        <div class="unsubscribe">
+          <p style="margin: 0; color: #999; font-size: 12px;">
+            Don't want to receive these emails? <a href="{{UNSUBSCRIBE_LINK}}">Unsubscribe from order notifications</a>
+          </p>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td class="footer">
+        <p>Thank you for choosing Philbox for your healthcare needs.</p>
+        <p>&copy; ${CURRENT_YEAR} Philbox. All rights reserved.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+// 13. Complaint Status Update Template
+export const COMPLAINT_STATUS_UPDATE_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complaint Status Update</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .header { background-color: #007bff; color: #ffffff; padding: 20px; text-align: center; }
+    .content { padding: 30px 20px; }
+    .status-badge { display: inline-block; padding: 10px 20px; border-radius: 20px; font-weight: bold; margin-bottom: 20px; color: #ffffff; }
+    .status-open { background-color: #ffc107; color: #000; }
+    .status-in-progress { background-color: #17a2b8; }
+    .status-resolved { background-color: #28a745; }
+    .status-closed { background-color: #6c757d; }
+    .complaint-details { background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; }
+    .detail-row { display: flex; justify-content: space-between; margin: 10px 0; padding: 8px 0; border-bottom: 1px solid #e9ecef; }
+    .detail-label { font-weight: bold; color: #333; }
+    .detail-value { color: #666; }
+    .detail-row:last-child { border-bottom: none; }
+    .resolution-box { background-color: #e7f3ff; border-left: 4px solid #007bff; padding: 15px; margin: 20px 0; border-radius: 4px; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff !important; border-radius: 6px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+    .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #999999; font-size: 12px; }
+    .unsubscribe { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; text-align: center; }
+    .unsubscribe a { color: #007bff; text-decoration: none; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <table class="container" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td class="header">
+        <h1>Complaint Status Update</h1>
+      </td>
+    </tr>
+    <tr>
+      <td class="content">
+        <p style="font-size:16px; color:#333;">Hello {{NAME}},</p>
+
+        <div style="text-align: center;">
+          <span class="status-badge status-{{STATUS_CLASS}}">{{STATUS}}</span>
+        </div>
+
+        <p style="color:#666; line-height:1.6;">We have an update regarding your complaint. Below are the details:</p>
+
+        <div class="complaint-details">
+          <div class="detail-row">
+            <span class="detail-label">Complaint ID:</span>
+            <span class="detail-value">#{{COMPLAINT_ID}}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Submitted Date:</span>
+            <span class="detail-value">{{SUBMITTED_DATE}}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Category:</span>
+            <span class="detail-value">{{CATEGORY}}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Current Status:</span>
+            <span class="detail-value"><strong>{{STATUS}}</strong></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Last Updated:</span>
+            <span class="detail-value">{{LAST_UPDATED}}</span>
+          </div>
+        </div>
+
+        {{#if STATUS_MESSAGE}}
+        <div class="resolution-box">
+          <p style="margin: 0; color: #004085;"><strong>{{STATUS_TITLE}}:</strong></p>
+          <p style="margin: 10px 0 0 0; color: #004085;">{{STATUS_MESSAGE}}</p>
+        </div>
+        {{/if}}
+
+        {{#if RESOLUTION_DETAILS}}
+        <div style="background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; margin: 20px 0; border-radius: 4px;">
+          <p style="margin: 0 0 10px 0; font-weight: bold; color: #333;">Resolution Details:</p>
+          <p style="margin: 0; color: #666; line-height: 1.6;">{{RESOLUTION_DETAILS}}</p>
+        </div>
+        {{/if}}
+
+        <p style="color:#666; line-height:1.6; margin: 30px 0 0 0;">
+          {{#if IS_RESOLVED}}
+          Thank you for bringing this to our attention. We've worked diligently to resolve your complaint. We appreciate your patience and understanding.
+          {{/if}}
+          {{#if NOT_RESOLVED}}
+          Our team is actively working on your complaint. We will update you as soon as we have more information.
+          {{/if}}
+        </p>
+
+        <div style="text-align: center; margin-top: 20px;">
+          <a href="{{VIEW_COMPLAINT_LINK}}" class="btn">View Full Complaint Details</a>
+        </div>
+
+        <p style="color:#666; line-height:1.6; margin-top: 20px;">If you have further concerns or need to provide additional information, please don't hesitate to contact our support team.</p>
+
+        <div class="unsubscribe">
+          <p style="margin: 0; color: #999; font-size: 12px;">
+            Don't want to receive these updates? <a href="{{UNSUBSCRIBE_LINK}}">Manage notification preferences</a>
+          </p>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td class="footer">
+        <p>We're committed to providing excellent customer service.</p>
+        <p>&copy; ${CURRENT_YEAR} Philbox. All rights reserved.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;

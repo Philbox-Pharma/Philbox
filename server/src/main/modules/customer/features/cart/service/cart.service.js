@@ -4,25 +4,9 @@ import Medicine from '../../../../../models/Medicine.js';
 import StockInHand from '../../../../../models/StockInHand.js';
 import Branch from '../../../../../models/Branch.js';
 import Customer from '../../../../../models/Customer.js';
-import { rankBranchesByProximity } from '../../../../../utils/proximityCalculator.js';
+import { rankBranchesByProximityAsync } from '../../../../../utils/proximityCalculator.js';
 
 class CustomerCartService {
-  constructor() {
-    this.taxRate = this._resolveTaxRate();
-  }
-
-  _resolveTaxRate() {
-    const raw = Number(process.env.CART_TAX_RATE ?? 0);
-    if (Number.isNaN(raw) || raw < 0) return 0;
-
-    if (raw > 1 && raw <= 100) {
-      return raw / 100;
-    }
-
-    if (raw > 1) return 0;
-    return raw;
-  }
-
   _roundTo2(value) {
     return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
   }
@@ -94,13 +78,7 @@ class CustomerCartService {
     return cart;
   }
 
-  async _upsertCartItem(
-    cartId,
-    branchId,
-    medicineId,
-    quantityToAdd,
-    unitPrice
-  ) {
+  async _upsertCartItem(cartId, branchId, medicineId, quantityToAdd, price) {
     let cartItem = await CartItem.findOne({
       cart_id: cartId,
       branch_id: branchId,
@@ -109,7 +87,8 @@ class CustomerCartService {
 
     if (cartItem) {
       cartItem.quantity += quantityToAdd;
-      cartItem.subtotal = this._roundTo2(cartItem.quantity * unitPrice);
+      cartItem.price = this._roundTo2(Number(price) || 0);
+      cartItem.subtotal = this._roundTo2(cartItem.quantity * cartItem.price);
       await cartItem.save();
       return cartItem;
     }
@@ -119,7 +98,8 @@ class CustomerCartService {
       branch_id: branchId,
       medicine_id: medicineId,
       quantity: quantityToAdd,
-      subtotal: this._roundTo2(quantityToAdd * unitPrice),
+      price: this._roundTo2(Number(price) || 0),
+      subtotal: this._roundTo2(quantityToAdd * price),
     });
 
     await Cart.findByIdAndUpdate(cartId, {
@@ -170,6 +150,250 @@ class CustomerCartService {
     }
 
     return dominantBranchId;
+  }
+
+  async _buildMedicineAllocationPlan(
+    customerId,
+    medicineId,
+    requestedQuantity
+  ) {
+    const medicine = await Medicine.findById(medicineId).select(
+      '_id Name alias_name mgs dosage_form category sale_price active'
+    );
+
+    if (!medicine || !medicine.active) {
+      throw new Error('MEDICINE_NOT_AVAILABLE');
+    }
+
+    const customer = await Customer.findById(customerId).populate('address_id');
+    if (!customer) {
+      throw new Error('CUSTOMER_NOT_FOUND');
+    }
+
+    const customerCity = this._normalizeCity(customer.address_id?.city);
+    if (!customerCity) {
+      throw new Error('CUSTOMER_CITY_NOT_AVAILABLE');
+    }
+
+    const equivalentMedicines = await Medicine.find(
+      this._buildEquivalentMedicineQuery(medicine)
+    ).select('_id sale_price active');
+
+    if (!equivalentMedicines.length) {
+      throw new Error('MEDICINE_NOT_AVAILABLE');
+    }
+
+    const branchIds = [
+      ...new Set(
+        (
+          await StockInHand.find({
+            medicine_id: {
+              $in: equivalentMedicines.map(item => item._id),
+            },
+            quantity: { $gt: 0 },
+          })
+            .select('branch_id')
+            .lean()
+        )
+          .map(item => item.branch_id?.toString())
+          .filter(Boolean)
+      ),
+    ];
+
+    const branches = await Branch.find({
+      _id: { $in: branchIds },
+      status: 'Active',
+    })
+      .populate('address_id')
+      .lean();
+
+    if (!branches.length) {
+      throw new Error('NO_STOCK_ANY_BRANCH');
+    }
+
+    const sameCityBranches = branches.filter(
+      branch => this._normalizeCity(branch.address_id?.city) === customerCity
+    );
+
+    if (!sameCityBranches.length) {
+      throw new Error('NO_STOCK_IN_CUSTOMER_CITY');
+    }
+
+    const rankedBranches = customer.address_id
+      ? await rankBranchesByProximityAsync(
+          customer.address_id,
+          sameCityBranches
+        )
+      : sameCityBranches;
+
+    const dominantCartBranchId =
+      await this._getDominantCartBranchId(customerId);
+    const orderedBranches = rankedBranches;
+
+    const medicineById = new Map(
+      equivalentMedicines.map(item => [item._id?.toString(), item])
+    );
+
+    const stockRows = await StockInHand.find({
+      medicine_id: { $in: equivalentMedicines.map(item => item._id) },
+    })
+      .select('medicine_id branch_id quantity')
+      .lean();
+
+    const stockByBranch = new Map();
+    for (const row of stockRows) {
+      const medicineKey = row.medicine_id?.toString();
+      const branchKey = row.branch_id?.toString();
+      if (!medicineKey || !branchKey) continue;
+
+      const medicineDoc = medicineById.get(medicineKey);
+      if (!medicineDoc) continue;
+
+      const quantity = Math.max(0, Number(row.quantity) || 0);
+      const current = stockByBranch.get(branchKey);
+
+      if (!current || quantity > current.availableQuantity) {
+        stockByBranch.set(branchKey, {
+          medicineId: row.medicine_id,
+          availableQuantity: quantity,
+          price: Number(medicineDoc.sale_price) || 0,
+        });
+      }
+    }
+
+    const branchCandidates = orderedBranches
+      .map((branch, rank) => {
+        const branchId = branch._id?.toString();
+        const branchStock = stockByBranch.get(branchId);
+        if (!branchStock) return null;
+
+        return {
+          rank,
+          branchId,
+          branchName: branch.name || 'a nearby branch',
+          medicineId: branchStock.medicineId,
+          price: branchStock.price,
+          availableQuantity: branchStock.availableQuantity,
+        };
+      })
+      .filter(Boolean);
+
+    let remainingQuantity = requestedQuantity;
+    const allocations = [];
+
+    const minBranchSet = this._chooseMinimumBranchCombination(
+      branchCandidates,
+      requestedQuantity,
+      dominantCartBranchId
+    );
+
+    if (minBranchSet?.length) {
+      for (const candidate of minBranchSet) {
+        if (remainingQuantity <= 0) break;
+
+        const allocatedQuantity = Math.min(
+          remainingQuantity,
+          candidate.availableQuantity
+        );
+
+        if (allocatedQuantity <= 0) continue;
+
+        allocations.push({
+          branchId: candidate.branchId,
+          branchName: candidate.branchName,
+          medicineId: candidate.medicineId,
+          allocatedQuantity,
+          price: candidate.price,
+        });
+
+        remainingQuantity -= allocatedQuantity;
+      }
+    } else {
+      for (const candidate of branchCandidates) {
+        if (remainingQuantity <= 0) break;
+        if (candidate.availableQuantity <= 0) continue;
+
+        const allocatedQuantity = Math.min(
+          remainingQuantity,
+          candidate.availableQuantity
+        );
+
+        allocations.push({
+          branchId: candidate.branchId,
+          branchName: candidate.branchName,
+          medicineId: candidate.medicineId,
+          allocatedQuantity,
+          price: candidate.price,
+        });
+
+        remainingQuantity -= allocatedQuantity;
+      }
+    }
+
+    if (!allocations.length) {
+      throw new Error('NO_STOCK_ANY_BRANCH');
+    }
+
+    const cartDoc = await this._getOrCreateCart(customerId);
+    for (const allocation of allocations) {
+      await this._upsertCartItem(
+        cartDoc._id,
+        allocation.branchId,
+        allocation.medicineId,
+        allocation.allocatedQuantity,
+        allocation.price
+      );
+    }
+
+    await this._recalculateCartTotal(cartDoc._id);
+
+    const cart = await this._buildCartResponse(customerId);
+    const allocationMessage = this._getAllocationMessage(
+      requestedQuantity,
+      allocations,
+      remainingQuantity
+    );
+
+    return {
+      allocation: {
+        requestedQuantity,
+        fulfilledQuantity: requestedQuantity - remainingQuantity,
+        unfulfilledQuantity: remainingQuantity,
+      },
+      cart,
+      allocations,
+      requestedQuantity,
+      message: allocationMessage,
+    };
+  }
+
+  async _allocateMedicineToCart(customerId, medicineId, requestedQuantity) {
+    const plan = await this._buildMedicineAllocationPlan(
+      customerId,
+      medicineId,
+      requestedQuantity
+    );
+
+    const cartDoc = await this._getOrCreateCart(customerId);
+    for (const allocation of plan.allocations) {
+      await this._upsertCartItem(
+        cartDoc._id,
+        allocation.branchId,
+        allocation.medicineId,
+        allocation.allocatedQuantity,
+        allocation.price
+      );
+    }
+
+    await this._recalculateCartTotal(cartDoc._id);
+
+    const cart = await this._buildCartResponse(customerId);
+
+    return {
+      ...cart,
+      allocation: plan.allocation,
+      message: plan.message,
+    };
   }
 
   _chooseMinimumBranchCombination(
@@ -309,28 +533,22 @@ class CustomerCartService {
     return this._roundTo2(total);
   }
 
-  _buildEmptyCartResponse() {
+  _buildEmptyCartResponse(cart = null) {
     return {
-      items: [],
-      summary: {
-        uniqueItems: 0,
-        itemCount: 0,
-        subtotal: 0,
-        taxRate: this.taxRate,
-        taxAmount: 0,
-        total: 0,
-      },
-      checkout: {
-        canProceed: false,
-        message: 'Your cart is empty',
-      },
+      cart: cart
+        ? {
+            ...cart,
+            total: 0,
+            items: [],
+          }
+        : null,
       message: 'Your cart is empty',
     };
   }
 
   async _buildCartResponse(customerId) {
     const cart = await Cart.findOne({ customer_id: customerId })
-      .select('_id')
+      .select('_id customer_id total created_at updated_at')
       .lean();
 
     if (!cart) {
@@ -338,6 +556,7 @@ class CustomerCartService {
     }
 
     const cartItems = await CartItem.find({ cart_id: cart._id })
+      .populate('branch_id', 'name')
       .populate({
         path: 'medicine_id',
         select:
@@ -347,86 +566,51 @@ class CustomerCartService {
           select: 'name',
         },
       })
+      .lean()
       .sort({ created_at: 1 });
 
     if (!cartItems.length) {
-      return this._buildEmptyCartResponse();
+      return this._buildEmptyCartResponse(cart);
     }
 
-    const branchIds = [
-      ...new Set(
-        cartItems.map(item => item.branch_id?.toString()).filter(Boolean)
-      ),
-    ];
-    const branches = await Branch.find({ _id: { $in: branchIds } })
-      .select('name')
-      .lean();
-    const branchNameById = new Map(
-      branches.map(branch => [branch._id.toString(), branch.name || null])
+    const normalizedItems = cartItems
+      .filter(item => item.medicine_id)
+      .map(item => ({
+        itemId: item._id,
+        branchId: item.branch_id?._id || item.branch_id || null,
+        branchName: item.branch_id?.name || null,
+        medicineId: item.medicine_id._id,
+        name: item.medicine_id.Name,
+        aliasName: item.medicine_id.alias_name || null,
+        imageUrls: Array.isArray(item.medicine_id.img_urls)
+          ? item.medicine_id.img_urls
+          : [],
+        quantity: Number(item.quantity) || 0,
+        price: this._roundTo2(
+          Number(item.price ?? item.medicine_id?.sale_price) || 0
+        ),
+        subtotal: this._roundTo2(Number(item.subtotal) || 0),
+        isAvailable: Boolean(item.medicine_id.active),
+        prescriptionRequired: Boolean(item.medicine_id.prescription_required),
+      }));
+
+    if (!normalizedItems.length) {
+      return this._buildEmptyCartResponse(cart);
+    }
+
+    const subtotal = this._roundTo2(
+      normalizedItems.reduce(
+        (sum, item) => sum + (Number(item.subtotal) || 0),
+        0
+      )
     );
 
-    const items = [];
-    let subtotal = 0;
-    let itemCount = 0;
-
-    for (const cartItem of cartItems) {
-      const medicine = cartItem.medicine_id;
-      if (!medicine) continue;
-
-      const quantity = Number(cartItem.quantity) || 0;
-      const itemSubtotal = this._roundTo2(cartItem.subtotal || 0);
-      const unitPrice =
-        quantity > 0 ? this._roundTo2(itemSubtotal / quantity) : 0;
-
-      subtotal += itemSubtotal;
-      itemCount += quantity;
-
-      const branchId = cartItem.branch_id?.toString() || null;
-
-      items.push({
-        itemId: cartItem._id,
-        cartId: cart._id,
-        branchId,
-        branchName: branchId ? branchNameById.get(branchId) || null : null,
-        medicineId: medicine._id,
-        name: medicine.Name,
-        aliasName: medicine.alias_name || null,
-        imageUrl: Array.isArray(medicine.img_urls)
-          ? medicine.img_urls[0] || null
-          : null,
-        quantity,
-        unitPrice,
-        subtotal: itemSubtotal,
-        isAvailable: medicine.active,
-        prescriptionRequired: medicine.prescription_required,
-        category: medicine.category?.name || null,
-        dosageForm: medicine.dosage_form || medicine.mgs || null,
-      });
-    }
-
-    if (!items.length) {
-      return this._buildEmptyCartResponse();
-    }
-
-    const roundedSubtotal = this._roundTo2(subtotal);
-    const taxAmount = this._roundTo2(roundedSubtotal * this.taxRate);
-    const total = this._roundTo2(roundedSubtotal + taxAmount);
-
     return {
-      items,
-      summary: {
-        uniqueItems: items.length,
-        itemCount,
-        subtotal: roundedSubtotal,
-        taxRate: this.taxRate,
-        taxAmount,
-        total,
+      cart: {
+        ...cart,
+        total: subtotal,
+        items: normalizedItems,
       },
-      checkout: {
-        canProceed: items.length > 0,
-        message: 'Ready to proceed to checkout',
-      },
-      message: null,
     };
   }
 
@@ -460,214 +644,12 @@ class CustomerCartService {
   }
 
   async addToCart(customerId, payload) {
-    const { medicineId } = payload;
     const requestedQuantity = Number(payload.quantity) || 1;
-
-    const medicine = await Medicine.findById(medicineId).select(
-      '_id Name alias_name mgs dosage_form category sale_price active'
+    return this._allocateMedicineToCart(
+      customerId,
+      payload.medicineId,
+      requestedQuantity
     );
-
-    if (!medicine || !medicine.active) {
-      throw new Error('MEDICINE_NOT_AVAILABLE');
-    }
-
-    const customer = await Customer.findById(customerId).populate('address_id');
-    if (!customer) {
-      throw new Error('CUSTOMER_NOT_FOUND');
-    }
-
-    const customerCity = this._normalizeCity(customer.address_id?.city);
-    if (!customerCity) {
-      throw new Error('CUSTOMER_CITY_NOT_AVAILABLE');
-    }
-
-    const equivalentMedicines = await Medicine.find(
-      this._buildEquivalentMedicineQuery(medicine)
-    ).select('_id sale_price active');
-
-    if (!equivalentMedicines.length) {
-      throw new Error('MEDICINE_NOT_AVAILABLE');
-    }
-
-    const branchIds = [
-      ...new Set(
-        (
-          await StockInHand.find({
-            medicine_id: {
-              $in: equivalentMedicines.map(item => item._id),
-            },
-            quantity: { $gt: 0 },
-          })
-            .select('branch_id')
-            .lean()
-        )
-          .map(item => item.branch_id?.toString())
-          .filter(Boolean)
-      ),
-    ];
-
-    const branches = await Branch.find({
-      _id: { $in: branchIds },
-      status: 'Active',
-    })
-      .populate('address_id')
-      .lean();
-
-    if (!branches.length) {
-      throw new Error('NO_STOCK_ANY_BRANCH');
-    }
-
-    const sameCityBranches = branches.filter(
-      branch => this._normalizeCity(branch.address_id?.city) === customerCity
-    );
-
-    if (!sameCityBranches.length) {
-      throw new Error('NO_STOCK_IN_CUSTOMER_CITY');
-    }
-
-    const rankedBranches = customer.address_id
-      ? rankBranchesByProximity(customer.address_id, sameCityBranches)
-      : sameCityBranches;
-
-    const dominantCartBranchId =
-      await this._getDominantCartBranchId(customerId);
-
-    const orderedBranches = rankedBranches;
-
-    const medicineById = new Map(
-      equivalentMedicines.map(item => [item._id?.toString(), item])
-    );
-
-    const stockRows = await StockInHand.find({
-      medicine_id: { $in: equivalentMedicines.map(item => item._id) },
-    })
-      .select('medicine_id branch_id quantity')
-      .lean();
-
-    const stockByBranch = new Map();
-    for (const row of stockRows) {
-      const medicineKey = row.medicine_id?.toString();
-      const branchKey = row.branch_id?.toString();
-      if (!medicineKey || !branchKey) continue;
-
-      const medicineDoc = medicineById.get(medicineKey);
-      if (!medicineDoc) continue;
-
-      const quantity = Math.max(0, Number(row.quantity) || 0);
-      const current = stockByBranch.get(branchKey);
-
-      if (!current || quantity > current.availableQuantity) {
-        stockByBranch.set(branchKey, {
-          medicineId: row.medicine_id,
-          availableQuantity: quantity,
-          unitPrice: Number(medicineDoc.sale_price) || 0,
-        });
-      }
-    }
-
-    const branchCandidates = orderedBranches
-      .map((branch, rank) => {
-        const branchId = branch._id?.toString();
-        const branchStock = stockByBranch.get(branchId);
-        if (!branchStock) return null;
-
-        return {
-          rank,
-          branchId,
-          branchName: branch.name || 'a nearby branch',
-          medicineId: branchStock.medicineId,
-          unitPrice: branchStock.unitPrice,
-          availableQuantity: branchStock.availableQuantity,
-        };
-      })
-      .filter(Boolean);
-
-    let remainingQuantity = requestedQuantity;
-    const allocations = [];
-
-    const minBranchSet = this._chooseMinimumBranchCombination(
-      branchCandidates,
-      requestedQuantity,
-      dominantCartBranchId
-    );
-
-    if (minBranchSet?.length) {
-      for (const candidate of minBranchSet) {
-        if (remainingQuantity <= 0) break;
-
-        const allocatedQuantity = Math.min(
-          remainingQuantity,
-          candidate.availableQuantity
-        );
-
-        if (allocatedQuantity <= 0) continue;
-
-        allocations.push({
-          branchId: candidate.branchId,
-          branchName: candidate.branchName,
-          medicineId: candidate.medicineId,
-          allocatedQuantity,
-          unitPrice: candidate.unitPrice,
-        });
-
-        remainingQuantity -= allocatedQuantity;
-      }
-    } else {
-      // If full fulfillment is impossible, add maximum possible from nearest branches.
-      for (const candidate of branchCandidates) {
-        if (remainingQuantity <= 0) break;
-        if (candidate.availableQuantity <= 0) continue;
-
-        const allocatedQuantity = Math.min(
-          remainingQuantity,
-          candidate.availableQuantity
-        );
-
-        allocations.push({
-          branchId: candidate.branchId,
-          branchName: candidate.branchName,
-          medicineId: candidate.medicineId,
-          allocatedQuantity,
-          unitPrice: candidate.unitPrice,
-        });
-
-        remainingQuantity -= allocatedQuantity;
-      }
-    }
-
-    if (!allocations.length) {
-      throw new Error('NO_STOCK_ANY_BRANCH');
-    }
-
-    const cartDoc = await this._getOrCreateCart(customerId);
-    for (const allocation of allocations) {
-      await this._upsertCartItem(
-        cartDoc._id,
-        allocation.branchId,
-        allocation.medicineId,
-        allocation.allocatedQuantity,
-        allocation.unitPrice
-      );
-    }
-
-    await this._recalculateCartTotal(cartDoc._id);
-
-    const cart = await this._buildCartResponse(customerId);
-    const allocationMessage = this._getAllocationMessage(
-      requestedQuantity,
-      allocations,
-      remainingQuantity
-    );
-
-    return {
-      ...cart,
-      allocation: {
-        requestedQuantity,
-        fulfilledQuantity: requestedQuantity - remainingQuantity,
-        unfulfilledQuantity: remainingQuantity,
-      },
-      message: allocationMessage,
-    };
   }
 
   async updateCartItem(customerId, itemId, quantity) {
@@ -686,18 +668,55 @@ class CustomerCartService {
       throw new Error('CART_ITEM_NOT_FOUND');
     }
 
-    const medicine = await Medicine.findById(cartItem.medicine_id).select(
-      'sale_price'
+    const requestedQuantity = Number(quantity) || 0;
+    const plan = await this._buildMedicineAllocationPlan(
+      customerId,
+      cartItem.medicine_id,
+      requestedQuantity
     );
-    const unitPrice = medicine ? Number(medicine.sale_price) || 0 : 0;
 
-    cartItem.quantity = quantity;
-    cartItem.subtotal = this._roundTo2(unitPrice * quantity);
-    await cartItem.save();
+    if (plan.allocation.unfulfilledQuantity > 0) {
+      return {
+        stockCheckFailed: true,
+        requestedQuantity,
+        maxAvailableQuantity: plan.allocation.fulfilledQuantity,
+        message: `Only ${plan.allocation.fulfilledQuantity} out of ${requestedQuantity} units are available. No changes were made to your cart.`,
+      };
+    }
+
+    const sameMedicineItems = await CartItem.find({
+      cart_id: cart._id,
+      medicine_id: cartItem.medicine_id,
+    })
+      .select('_id')
+      .lean();
+
+    await CartItem.deleteMany({
+      cart_id: cart._id,
+      medicine_id: cartItem.medicine_id,
+    });
+
+    if (sameMedicineItems.length) {
+      await Cart.findByIdAndUpdate(cart._id, {
+        $pull: { items: { $in: sameMedicineItems.map(item => item._id) } },
+      });
+    }
+
+    for (const allocation of plan.allocations) {
+      await this._upsertCartItem(
+        cart._id,
+        allocation.branchId,
+        allocation.medicineId,
+        allocation.allocatedQuantity,
+        allocation.price
+      );
+    }
 
     await this._recalculateCartTotal(cart._id);
 
-    return this._buildCartResponse(customerId);
+    const cartWithUpdatedAllocation = await this._buildCartResponse(customerId);
+
+    return cartWithUpdatedAllocation;
   }
 
   async removeCartItem(customerId, itemId) {

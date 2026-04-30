@@ -1,5 +1,6 @@
 import doctorReviewsService from '../service/reviews.service.js';
 import sendResponse from '../../../../../utils/sendResponse.js';
+import { logDoctorActivity } from '../../../utils/logDoctorActivities.js';
 import {
   getReviewsSchema,
   getReviewStatsSchema,
@@ -25,6 +26,19 @@ export const getReviews = async (req, res) => {
     }
 
     const result = await doctorReviewsService.getReviews(doctorId, value);
+
+    await logDoctorActivity(
+      req,
+      'view_reviews',
+      `Viewed doctor reviews with filters: ${JSON.stringify(value)}`,
+      'reviews',
+      null,
+      {
+        filters: value,
+        total_reviews:
+          result.pagination?.total_items ?? result.reviews?.length ?? 0,
+      }
+    );
 
     return sendResponse(res, 200, 'Reviews retrieved successfully', result);
   } catch (error) {
@@ -61,6 +75,19 @@ export const getReviewStatistics = async (req, res) => {
     const statistics = await doctorReviewsService.getReviewStatistics(
       doctorId,
       value
+    );
+
+    await logDoctorActivity(
+      req,
+      'view_review_statistics',
+      `Viewed review statistics with filters: ${JSON.stringify(value)}`,
+      'reviews',
+      null,
+      {
+        filters: value,
+        total_reviews: statistics.total_reviews,
+        average_rating: statistics.average_rating,
+      }
     );
 
     return sendResponse(
@@ -101,6 +128,19 @@ export const getReviewById = async (req, res) => {
     }
 
     const review = await doctorReviewsService.getReviewById(doctorId, reviewId);
+
+    await logDoctorActivity(
+      req,
+      'view_review_details',
+      `Viewed review details for review ${reviewId}`,
+      'reviews',
+      review._id,
+      {
+        reviewId,
+        rating: review.rating,
+        sentiment: review.sentiment,
+      }
+    );
 
     return sendResponse(res, 200, 'Review retrieved successfully', review);
   } catch (error) {

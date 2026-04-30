@@ -26,6 +26,10 @@ const reviewSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       required: true,
     },
+    appointment_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Appointment',
+    },
     sentiment: {
       type: String,
       enum: ['positive', 'negative', 'neutral'],
@@ -40,6 +44,10 @@ const reviewSchema = new mongoose.Schema(
 // Indexes for performance
 reviewSchema.index({ target_type: 1, target_id: 1 });
 reviewSchema.index({ customer_id: 1 });
+reviewSchema.index(
+  { customer_id: 1, appointment_id: 1 },
+  { unique: true, sparse: true }
+);
 reviewSchema.index({ created_at: -1 });
 
 const Review = mongoose.model('Review', reviewSchema);

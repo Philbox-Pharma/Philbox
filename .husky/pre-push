@@ -1,5 +1,5 @@
 echo "Running ESLint on client..."
-npx eslint --config ./client/eslint.config.js "client/src/**/*.{js,jsx}"
+npm --prefix client exec eslint -- --fix "client/src/**/*.{js,jsx}"
 
 echo "Running ESLint on server..."
-npx eslint --config ./server/eslint.config.js "server/src/**/*.js"
+npm --prefix server exec eslint -- --fix --config server/eslint.config.js "server/src/**/*.js"

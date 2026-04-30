@@ -16,10 +16,6 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    delivery_charges: {
-      type: Number,
-      default: 0,
-    },
     status: {
       type: String,
       enum: [
@@ -37,6 +33,35 @@ const orderSchema = new mongoose.Schema(
       enum: ['not-refunded', 'partially_refunded', 'refunded'],
       default: 'not-refunded',
     },
+    cancellation_request_status: {
+      type: String,
+      enum: ['none', 'requested', 'approved', 'rejected'],
+      default: 'none',
+    },
+    cancellation_requested_reason: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    cancellation_requested_at: {
+      type: Date,
+    },
+    cancellation_requested_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Customer',
+    },
+    cancellation_review_reason: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    cancellation_reviewed_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Salesperson',
+    },
+    cancellation_reviewed_at: {
+      type: Date,
+    },
     salesperson_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Salesperson',
@@ -47,12 +72,27 @@ const orderSchema = new mongoose.Schema(
         ref: 'OrderItem',
       },
     ],
-    discount_id: {
+    coupon_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Discount',
+      ref: 'Coupon',
     },
     total_after_applying_coupon: {
       type: Number,
+    },
+    invoice_url: {
+      type: String,
+    },
+    cancellation_reason: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    cancelled_at: {
+      type: Date,
+    },
+    refund_transaction_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Transaction',
     },
   },
   {

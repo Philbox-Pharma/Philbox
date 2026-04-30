@@ -1,5 +1,41 @@
 import sendResponse from '../../../../../utils/sendResponse.js';
-import { getPatientMedicalHistory } from '../service/medicalHistory.service.js';
+import {
+  getDoctorPatientList,
+  getPatientMedicalHistory,
+} from '../service/medicalHistory.service.js';
+
+/**
+ * @desc    Get all patients treated by the logged-in doctor
+ * @route   GET /api/doctor/patients
+ * @access  Private (Doctor)
+ */
+export const getDoctorPatients = async (req, res) => {
+  try {
+    const doctorId = req.doctor?._id || req.user?.id || req.session.doctorId;
+
+    if (!doctorId) {
+      return sendResponse(res, 401, 'Unauthorized');
+    }
+
+    const result = await getDoctorPatientList(req, doctorId, req.query);
+
+    return sendResponse(
+      res,
+      200,
+      'Doctor patients retrieved successfully',
+      result
+    );
+  } catch (error) {
+    console.error('Error in getDoctorPatients:', error);
+    return sendResponse(
+      res,
+      500,
+      'Failed to retrieve doctor patients',
+      null,
+      error.message
+    );
+  }
+};
 
 /**
  * @desc    Get patient's medical history

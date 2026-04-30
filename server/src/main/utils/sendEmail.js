@@ -1,4 +1,5 @@
 import { brevo, fromEmail } from '../config/brevo.config.js';
+import notificationService from './notificationService.js';
 import {
   VERIFICATION_EMAIL_TEMPLATE,
   PASSWORD_RESET_TEMPLATE,
@@ -12,6 +13,8 @@ import {
   APPOINTMENT_REQUEST_ACCEPTED_TEMPLATE,
   APPOINTMENT_REQUEST_REJECTED_TEMPLATE,
   NEW_APPOINTMENT_REQUEST_NOTIFICATION_TEMPLATE,
+  ORDER_STATUS_UPDATE_TEMPLATE,
+  COMPLAINT_STATUS_UPDATE_TEMPLATE,
 } from '../constants/global.mail.constants.js';
 
 /**
@@ -645,5 +648,421 @@ export const sendAppointmentRequestRejected = async (
   } catch (error) {
     console.error('Error sending appointment rejected email:', error);
     throw error;
+  }
+};
+
+/**
+ * Send refund request submission confirmation email
+ */
+export const sendRefundRequestSubmissionEmail = async (
+  email,
+  customerName,
+  orderNumber,
+  refundAmount
+) => {
+  const greetingName = formatName(customerName);
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #1f2937;">Refund Request Submitted</h2>
+      <p>Dear ${greetingName},</p>
+      <p>We have received your refund request for order <strong>#${orderNumber}</strong>.</p>
+      <p>Requested refund amount: <strong>PKR ${Number(refundAmount || 0).toLocaleString()}</strong></p>
+      <p>Our team will review your request and update you soon.</p>
+      <p>Thank you,<br/>Philbox Support</p>
+    </div>
+  `;
+
+  const { data, error } = await brevo.emails.send({
+    from: fromEmail,
+    to: email,
+    subject: 'Refund Request Received - Philbox',
+    html,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return { success: true, messageId: data.id };
+};
+
+/**
+ * Send refund completion notification email
+ */
+export const sendRefundCompletionNotificationToCustomer = async (
+  email,
+  customerName,
+  orderNumber,
+  refundAmount,
+  paymentMethod
+) => {
+  const greetingName = formatName(customerName);
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #1f2937;">Refund Processed</h2>
+      <p>Dear ${greetingName},</p>
+      <p>Your refund for order <strong>#${orderNumber}</strong> has been processed.</p>
+      <p>Refund amount: <strong>PKR ${Number(refundAmount || 0).toLocaleString()}</strong></p>
+      <p>Payment method: <strong>${paymentMethod || 'Original payment method'}</strong></p>
+      <p>The amount should reflect in your account within 5-7 business days.</p>
+      <p>Thank you,<br/>Philbox Support</p>
+    </div>
+  `;
+
+  const { data, error } = await brevo.emails.send({
+    from: fromEmail,
+    to: email,
+    subject: 'Refund Processed - Philbox',
+    html,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return { success: true, messageId: data.id };
+};
+
+/**
+ * Send Order Status Update Email
+ * @param {string} email - Customer email
+ * @param {string} name - Customer's name
+ * @param {string} orderId - Order number
+ * @param {string} status -Order status (pending/processing/shipped/delivered/cancelled)
+ * @param {string} statusDescription - Human readable status description
+ * @param {string} orderDate - Order created date
+ * @param {number} trackingNumber - Optional tracking number
+ * @param {string} estimatedDelivery - Estimated delivery date
+ * @param {string} statusMessage - Additional status message
+ * @param {string} trackLink - Link to track order
+ * @param {string} unsubscribeLink - Link to unsubscribe
+ */
+export const sendOrderStatusUpdate = async (
+  email,
+  name,
+  orderId,
+  status,
+  statusDescription,
+  orderDate,
+  trackingNumber,
+  estimatedDelivery,
+  statusMessage,
+  trackLink,
+  unsubscribeLink
+) => {
+  const greetingName = formatName(name);
+
+  // Determine status class based on status value
+  const statusMap = {
+    pending: 'confirmed',
+    processing: 'processing',
+    shipped: 'shipped',
+    delivered: 'delivered',
+    cancelled: 'cancelled',
+  };
+
+  const statusClass = statusMap[status.toLowerCase()] || 'processing';
+
+  let emailTemplate = ORDER_STATUS_UPDATE_TEMPLATE.replace(
+    /{{NAME}}/g,
+    greetingName
+  )
+    .replace('{{ORDER_ID}}', orderId)
+    .replace('{{STATUS}}', status)
+    .replace('{{STATUS_CLASS}}', statusClass)
+    .replace('{{STATUS_DESCRIPTION}}', statusDescription)
+    .replace('{{ORDER_DATE}}', orderDate)
+    .replace('{{TRACK_LINK}}', trackLink)
+    .replace('{{UNSUBSCRIBE_LINK}}', unsubscribeLink);
+
+  // Handle conditional fields
+  if (trackingNumber) {
+    emailTemplate = emailTemplate
+      .replace('{{#if TRACKING_NUMBER}}', '')
+      .replace('{{/if}}', '')
+      .replace('{{TRACKING_NUMBER}}', trackingNumber);
+  } else {
+    emailTemplate = emailTemplate.replace(
+      /{{#if TRACKING_NUMBER}}[\s\S]*?{{\/if}}/g,
+      ''
+    );
+  }
+
+  if (estimatedDelivery) {
+    emailTemplate = emailTemplate
+      .replace('{{#if ESTIMATED_DELIVERY}}', '')
+      .replace('{{/if}}', '')
+      .replace('{{ESTIMATED_DELIVERY}}', estimatedDelivery);
+  } else {
+    emailTemplate = emailTemplate.replace(
+      /{{#if ESTIMATED_DELIVERY}}[\s\S]*?{{\/if}}/g,
+      ''
+    );
+  }
+
+  if (statusMessage) {
+    emailTemplate = emailTemplate
+      .replace('{{#if STATUS_MESSAGE}}', '')
+      .replace('{{/if}}', '')
+      .replace('{{STATUS_MESSAGE}}', statusMessage);
+  } else {
+    emailTemplate = emailTemplate.replace(
+      /{{#if STATUS_MESSAGE}}[\s\S]*?{{\/if}}/g,
+      ''
+    );
+  }
+
+  try {
+    const { data, error } = await brevo.emails.send({
+      from: fromEmail,
+      to: email,
+      replyTo: 'philboxpk@gmail.com',
+      subject: `Order Status Update - Order #${orderId} - Philbox`,
+      html: emailTemplate,
+    });
+
+    if (error) {
+      console.error('Error sending order status update email:', error);
+      throw error;
+    }
+
+    console.log('Order status update email sent:', data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('Error sending order status update email:', error);
+    throw error;
+  }
+};
+
+/**
+ * Send Complaint Status Update Email
+ * @param {string} email - Customer email
+ * @param {string} name - Customer's name
+ * @param {string} complaintId - Complaint ID
+ * @param {string} status - Complaint status (open/in-progress/resolved/closed)
+ * @param {string} statusTitle - Status title (e.g., "In Progress", "Resolved")
+ * @param {string} statusMessage - Status update message
+ * @param {string} category - Complaint category
+ * @param {string} submittedDate - When complaint was submitted
+ * @param {string} lastUpdated - Last update date
+ * @param {string} resolutionDetails - Optional resolution details
+ * @param {boolean} isResolved - Is the complaint resolved
+ * @param {string} viewComplaintLink - Link to view complaint details
+ * @param {string} unsubscribeLink - Link to unsubscribe
+ */
+export const sendComplaintStatusUpdate = async (
+  email,
+  name,
+  complaintId,
+  status,
+  statusTitle,
+  statusMessage,
+  category,
+  submittedDate,
+  lastUpdated,
+  resolutionDetails,
+  isResolved,
+  viewComplaintLink,
+  unsubscribeLink
+) => {
+  const greetingName = formatName(name);
+
+  // Determine status class based on status value
+  const statusMap = {
+    open: 'open',
+    'in-progress': 'in-progress',
+    in_progress: 'in-progress',
+    resolved: 'resolved',
+    closed: 'closed',
+  };
+
+  const statusClass = statusMap[status.toLowerCase()] || 'open';
+
+  let emailTemplate = COMPLAINT_STATUS_UPDATE_TEMPLATE.replace(
+    /{{NAME}}/g,
+    greetingName
+  )
+    .replace('{{COMPLAINT_ID}}', complaintId)
+    .replace('{{STATUS}}', status)
+    .replace('{{STATUS_CLASS}}', statusClass)
+    .replace('{{STATUS_TITLE}}', statusTitle)
+    .replace('{{STATUS_MESSAGE}}', statusMessage)
+    .replace('{{CATEGORY}}', category)
+    .replace('{{SUBMITTED_DATE}}', submittedDate)
+    .replace('{{LAST_UPDATED}}', lastUpdated)
+    .replace('{{VIEW_COMPLAINT_LINK}}', viewComplaintLink)
+    .replace('{{UNSUBSCRIBE_LINK}}', unsubscribeLink);
+
+  // Handle conditional fields
+  if (statusMessage) {
+    emailTemplate = emailTemplate
+      .replace('{{#if STATUS_MESSAGE}}', '')
+      .replace('{{/if}}', '');
+  } else {
+    emailTemplate = emailTemplate.replace(
+      /{{#if STATUS_MESSAGE}}[\s\S]*?{{\/if}}/g,
+      ''
+    );
+  }
+
+  if (resolutionDetails) {
+    emailTemplate = emailTemplate
+      .replace('{{#if RESOLUTION_DETAILS}}', '')
+      .replace('{{/if}}', '')
+      .replace('{{RESOLUTION_DETAILS}}', resolutionDetails);
+  } else {
+    emailTemplate = emailTemplate.replace(
+      /{{#if RESOLUTION_DETAILS}}[\s\S]*?{{\/if}}/g,
+      ''
+    );
+  }
+
+  if (isResolved) {
+    emailTemplate = emailTemplate
+      .replace('{{#if IS_RESOLVED}}', '')
+      .replace('{{/if}}', '');
+    emailTemplate = emailTemplate.replace(
+      /{{#if NOT_RESOLVED}}[\s\S]*?{{\/if}}/g,
+      ''
+    );
+  } else {
+    emailTemplate = emailTemplate.replace(
+      /{{#if IS_RESOLVED}}[\s\S]*?{{\/if}}/g,
+      ''
+    );
+    emailTemplate = emailTemplate
+      .replace('{{#if NOT_RESOLVED}}', '')
+      .replace('{{/if}}', '');
+  }
+
+  try {
+    const { data, error } = await brevo.emails.send({
+      from: fromEmail,
+      to: email,
+      replyTo: 'philboxpk@gmail.com',
+      subject: `Complaint Status Update - #${complaintId} - Philbox`,
+      html: emailTemplate,
+    });
+
+    if (error) {
+      console.error('Error sending complaint status update email:', error);
+      throw error;
+    }
+
+    console.log('Complaint status update email sent:', data.id);
+    return { success: true, messageId: data.id };
+  } catch (error) {
+    console.error('Error sending complaint status update email:', error);
+    throw error;
+  }
+};
+
+/**
+ * Send OTP via SMS (2FA)
+ * @param {string} phone - Phone number to send OTP
+ * @param {string} otp - One-time password code
+ * @param {string} role - User role ('Admin' | 'Salesperson' | 'Doctor' | 'Customer')
+ */
+export const sendOTPSMS = async (phone, otp, role = 'User') => {
+  if (!phone) {
+    console.warn('Phone number not provided for OTP SMS');
+    return {
+      success: false,
+      error: 'Phone number required for SMS',
+    };
+  }
+
+  const message = `Your Philbox ${role} login OTP is: ${otp}. Do not share this code with anyone. Valid for 10 minutes.`;
+
+  try {
+    const result = await notificationService.sendSMS(phone, message);
+    if (result.success) {
+      console.log(`OTP SMS sent successfully to ${phone}`);
+    }
+    return result;
+  } catch (error) {
+    console.error('Error sending OTP SMS:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to send OTP SMS',
+    };
+  }
+};
+
+/**
+ * Send Appointment Request Submitted SMS to Customer
+ * @param {string} phone - Customer phone number
+ * @param {string} name - Customer's name
+ * @param {string} doctorName - Doctor's name
+ * @param {string} appointmentType - Type of appointment
+ */
+export const sendAppointmentRequestSubmittedSMS = async (
+  phone,
+  name,
+  doctorName,
+  appointmentType
+) => {
+  if (!phone) {
+    console.warn('Phone number not provided for appointment SMS');
+    return {
+      success: false,
+      error: 'Phone number required for SMS',
+    };
+  }
+
+  const message = `Hi ${formatName(name)}, your ${appointmentType} appointment request with Dr. ${formatName(doctorName)} has been submitted. You will receive updates soon. - Philbox`;
+
+  try {
+    const result = await notificationService.sendSMS(phone, message);
+    if (result.success) {
+      console.log(`Appointment submission SMS sent successfully to ${phone}`);
+    }
+    return result;
+  } catch (error) {
+    console.error('Error sending appointment submission SMS:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to send SMS',
+    };
+  }
+};
+
+/**
+ * Send Appointment Accepted SMS to Customer
+ * @param {string} phone - Customer phone number
+ * @param {string} name - Customer's name
+ * @param {string} doctorName - Doctor's name
+ * @param {string} appointmentDate - Confirmed appointment date/time
+ * @param {string} appointmentType - Type of appointment
+ */
+export const sendAppointmentAcceptedSMS = async (
+  phone,
+  name,
+  doctorName,
+  appointmentDate,
+  appointmentType
+) => {
+  if (!phone) {
+    console.warn('Phone number not provided for appointment accepted SMS');
+    return {
+      success: false,
+      error: 'Phone number required for SMS',
+    };
+  }
+
+  const message = `Great news! Your ${appointmentType} appointment with Dr. ${formatName(doctorName)} has been confirmed for ${appointmentDate}. - Philbox`;
+
+  try {
+    const result = await notificationService.sendSMS(phone, message);
+    if (result.success) {
+      console.log(`Appointment accepted SMS sent successfully to ${phone}`);
+    }
+    return result;
+  } catch (error) {
+    console.error('Error sending appointment accepted SMS:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to send SMS',
+    };
   }
 };

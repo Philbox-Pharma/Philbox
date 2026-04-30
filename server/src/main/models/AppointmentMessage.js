@@ -4,7 +4,10 @@ const appointmentMessageSchema = new mongoose.Schema(
   {
     text: {
       type: String,
-      required: true,
+      default: '',
+      required: function () {
+        return !this.media_url;
+      },
     },
     from: {
       type: String,

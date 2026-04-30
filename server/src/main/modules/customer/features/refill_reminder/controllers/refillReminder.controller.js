@@ -38,7 +38,8 @@ export const getReminders = async (req, res) => {
 
     const result = await refillReminderService.getReminders(
       customerId,
-      req.query
+      req.query,
+      req
     );
 
     return sendResponse(res, 200, 'Reminders fetched successfully', result);
@@ -62,7 +63,8 @@ export const getReminderById = async (req, res) => {
 
     const reminder = await refillReminderService.getReminderById(
       customerId,
-      id
+      id,
+      req
     );
 
     return sendResponse(res, 200, 'Reminder fetched successfully', reminder);
@@ -127,9 +129,9 @@ export const deleteReminder = async (req, res) => {
 };
 
 /**
- * Mark reminder as completed
+ * Deactivate a reminder
  */
-export const markAsCompleted = async (req, res) => {
+export const deactivateReminder = async (req, res) => {
   try {
     const customerId = req.customer?._id;
     const { id } = req.params;
@@ -138,7 +140,7 @@ export const markAsCompleted = async (req, res) => {
       return sendResponse(res, 401, 'Unauthorized');
     }
 
-    const result = await refillReminderService.markAsCompleted(
+    const result = await refillReminderService.deactivateReminder(
       customerId,
       id,
       req
@@ -146,7 +148,7 @@ export const markAsCompleted = async (req, res) => {
 
     return sendResponse(res, 200, result.message, result.reminder);
   } catch (err) {
-    console.error('Mark Completed Error:', err);
+    console.error('Deactivate Reminder Error:', err);
     const statusCode = err.message === 'Reminder not found' ? 404 : 500;
     return sendResponse(res, statusCode, err.message);
   }

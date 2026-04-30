@@ -19,16 +19,22 @@ export const logCustomerActivity = async (
   changes = {}
 ) => {
   try {
-    // Ensure we have a customer attached to the request (from auth middleware)
-    const customer = req.customer;
+    const customerId =
+      req.customer?._id ||
+      req.customer?.id ||
+      req.user?._id ||
+      req.user?.id ||
+      req.session?.customerId ||
+      null;
 
-    if (!customer || !customer._id) {
-      console.warn('⚠️ Customer Activity not logged — missing req.customer');
+    if (!customerId) {
+      // Public endpoints can call shared services without an authenticated customer.
+      // Silently skip activity logging in those cases.
       return;
     }
 
     const logData = {
-      customer_id: customer._id,
+      customer_id: customerId,
       action_type,
       description,
       target_collection,

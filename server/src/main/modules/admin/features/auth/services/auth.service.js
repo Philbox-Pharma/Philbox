@@ -3,7 +3,11 @@ import Admin from '../../../../../models/Admin.js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { generateOTPAndExpiryDate } from '../../../../../utils/generateOTP.js';
-import { sendOTP, sendResetEmail } from '../../../../../utils/sendEmail.js';
+import {
+  sendOTP,
+  sendOTPSMS,
+  sendResetEmail,
+} from '../../../../../utils/sendEmail.js';
 import { logAdminActivity } from '../../../utils/logAdminActivities.js';
 import { ROUTES } from '../../../../../constants/global.routes.constants.js';
 
@@ -33,6 +37,13 @@ class AdminAuthService {
       await admin.save();
 
       await sendOTP(admin.email, otp, admin.fullName, 'Admin');
+
+      // Send SMS OTP if phone number is available
+      if (admin.phoneNumber) {
+        await sendOTPSMS(admin.phoneNumber, otp, 'Admin').catch(err =>
+          console.warn('Failed to send OTP SMS:', err)
+        );
+      }
 
       // Return admin ID to store in session for OTP verification
       return {

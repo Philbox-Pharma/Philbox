@@ -5,6 +5,7 @@ import Joi from 'joi';
  */
 export const updateProfileDTO = Joi.object({
   fullName: Joi.string().min(3).max(50).optional(),
+  email: Joi.string().email().optional(),
   contactNumber: Joi.string()
     .pattern(/^[0-9]+$/)
     .min(10)

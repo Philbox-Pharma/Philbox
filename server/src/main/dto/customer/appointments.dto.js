@@ -41,6 +41,32 @@ export const createAppointmentRequestSchema = Joi.object({
       'string.pattern.base':
         'Preferred time must be in HH:mm format (e.g., 14:30)',
     }),
+
+  payment_method: Joi.string()
+    .valid('stripe', 'jazzcash', 'easypaisa')
+    .required()
+    .messages({
+      'any.required': 'Payment method is required',
+      'any.only': 'Payment method must be one of: stripe, jazzcash, easypaisa',
+    }),
+
+  stripe_payment_method_id: Joi.when('payment_method', {
+    is: 'stripe',
+    then: Joi.string().required().messages({
+      'any.required': 'Stripe payment method ID is required for Stripe',
+      'string.empty': 'Stripe payment method ID cannot be empty',
+    }),
+    otherwise: Joi.string().optional().allow('', null),
+  }),
+
+  wallet_number: Joi.when('payment_method', {
+    is: Joi.valid('jazzcash', 'easypaisa'),
+    then: Joi.string().required().messages({
+      'any.required': 'Wallet number is required for wallet payments',
+      'string.empty': 'Wallet number cannot be empty',
+    }),
+    otherwise: Joi.string().optional().allow('', null),
+  }),
 });
 
 /**
@@ -79,6 +105,51 @@ export const cancelRequestSchema = Joi.object({
     'string.max': 'Cancellation reason cannot exceed 500 characters',
   }),
 });
+
+/**
+ * Validation for rescheduling appointment request
+ */
+export const rescheduleRequestSchema = Joi.object({
+  appointmentId: Joi.string().required().messages({
+    'any.required': 'Appointment ID is required',
+    'string.empty': 'Appointment ID cannot be empty',
+  }),
+
+  slot_id: Joi.string().optional().messages({
+    'string.base': 'Slot ID must be a valid string',
+  }),
+
+  preferred_date: Joi.date().optional().min('now').messages({
+    'date.base': 'Preferred date must be a valid date',
+    'date.min': 'Preferred date cannot be in the past',
+  }),
+
+  preferred_time: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .optional()
+    .messages({
+      'string.pattern.base':
+        'Preferred time must be in HH:mm format (e.g., 14:30)',
+    }),
+
+  appointment_type: Joi.string().valid('in-person', 'online').optional(),
+
+  consultation_reason: Joi.string().optional().min(10).max(500).messages({
+    'string.min': 'Consultation reason must be at least 10 characters',
+    'string.max': 'Consultation reason cannot exceed 500 characters',
+  }),
+})
+  .or(
+    'slot_id',
+    'preferred_date',
+    'preferred_time',
+    'appointment_type',
+    'consultation_reason'
+  )
+  .messages({
+    'object.missing':
+      'Provide at least one field to reschedule (slot_id, preferred_date, preferred_time, appointment_type, consultation_reason)',
+  });
 
 /**
  * Validation for getting appointment details

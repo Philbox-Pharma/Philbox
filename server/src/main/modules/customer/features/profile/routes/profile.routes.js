@@ -14,26 +14,36 @@ import {
   changePassword,
 } from '../controllers/profile.controller.js';
 import { authenticate } from '../../../middleware/auth.middleware.js';
+import {
+  roleMiddleware,
+  rbacMiddleware,
+} from '../../../../../middlewares/rbac.middleware.js';
 import { upload } from '../../../../../middlewares/multer.middleware.js';
 
 const router = express.Router();
 
 // All routes require authentication
 router.use(authenticate);
+router.use(roleMiddleware(['customer']));
 
 /**
  * @route   GET /api/customer/profile
  * @desc    Get current customer profile with address
  * @access  Private (Customer)
  */
-router.get('/', getProfile);
+router.get('/', rbacMiddleware(['read_profile']), getProfile);
 
 /**
  * @route   PUT /api/customer/profile
  * @desc    Update customer profile information (name, contact, gender, DOB, address)
  * @access  Private (Customer)
  */
-router.put('/', validate(updateProfileDTO), updateProfile);
+router.put(
+  '/',
+  rbacMiddleware(['update_profile']),
+  validate(updateProfileDTO),
+  updateProfile
+);
 
 /**
  * @route   PUT /api/customer/profile/picture
@@ -42,6 +52,7 @@ router.put('/', validate(updateProfileDTO), updateProfile);
  */
 router.put(
   '/picture',
+  rbacMiddleware(['update_profile']),
   upload.single('profile_img'),
   validate(uploadProfilePictureDTO),
   uploadProfilePicture
@@ -54,6 +65,7 @@ router.put(
  */
 router.put(
   '/cover',
+  rbacMiddleware(['update_profile']),
   upload.single('cover_img'),
   validate(uploadCoverImageDTO),
   uploadCoverImage
@@ -64,6 +76,11 @@ router.put(
  * @desc    Change password (requires current password)
  * @access  Private (Customer)
  */
-router.put('/password', validate(changePasswordDTO), changePassword);
+router.put(
+  '/password',
+  rbacMiddleware(['update_profile']),
+  validate(changePasswordDTO),
+  changePassword
+);
 
 export default router;

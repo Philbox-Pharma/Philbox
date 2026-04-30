@@ -14,7 +14,7 @@ export const getMyProfile = async (req, res) => {
       return sendResponse(res, 401, 'Unauthorized');
     }
 
-    const profile = await doctorProfileService.getDoctorProfile(doctorId);
+    const profile = await doctorProfileService.getDoctorProfile(doctorId, req);
 
     return sendResponse(res, 200, 'Profile retrieved successfully', profile);
   } catch (error) {

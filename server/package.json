@@ -11,12 +11,23 @@
     "start": "node src/main/server.js",
     "dev": "nodemon src/main/server.js",
     "test": "jest",
+    "test:server:all": "node src/tests/scripts/runAllServerTests.js",
+    "test:server:unit": "node src/tests/scripts/unit-tests/run.js",
+    "test:server:integration": "node src/tests/scripts/integration-tests/run.js",
+    "test:server:system": "node src/tests/scripts/system-tests/run.js",
+    "test:server:acceptance": "node src/tests/scripts/acceptance-testing/run.js",
+    "test:server:performance": "node src/tests/scripts/performance-testing/run.js",
+    "test:server:security": "node src/tests/scripts/security-testing/run.js",
+    "test:server:usability": "node src/tests/scripts/usability-testing/run.js",
+    "test:server:compatibility": "node src/tests/scripts/compatibility-testing/run.js",
     "lint": "eslint src --ext .js",
     "lint:fix": "eslint src --ext .js --fix",
     "format": "prettier --write \"src/**/*.{js,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{js,json,md}\"",
     "code:check": "npm run lint && npm run format:check",
-    "seed:data": "node src/scripts/seedData.js"
+    "seed:data": "node src/scripts/seedData.js",
+    "backfill:address-coordinates": "node src/scripts/backfillAddressCoordinates.js",
+    "test:doctors:approval-filtering": "node src/tests/scripts/doctors/testDoctorApprovalFiltering.js"
   },
   "dependencies": {
     "axios": "^1.13.6",
@@ -25,12 +36,15 @@
     "connect-mongo": "^5.1.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
+    "exceljs": "^4.4.0",
     "express": "^5.1.0",
     "express-rate-limit": "^8.1.0",
     "express-session": "^1.18.2",
     "express-validator": "^7.2.1",
+    "firebase-admin": "^13.8.0",
     "helmet": "^8.1.0",
     "joi": "^18.0.1",
+    "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.1",
     "morgan": "^1.10.1",
@@ -42,6 +56,7 @@
     "passport-google-oauth20": "^2.0.0",
     "pdfkit": "^0.17.2",
     "socket.io": "^4.7.5",
+    "stripe": "^21.0.1",
     "twilio": "^5.11.1",
     "xlsx": "^0.18.5"
   },
@@ -52,6 +67,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-security": "^3.0.1",
     "nodemon": "^3.1.10",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "socket.io-client": "^4.8.3"
   }
 }

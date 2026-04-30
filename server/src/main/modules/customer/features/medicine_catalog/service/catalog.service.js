@@ -5,13 +5,35 @@ import ItemClass from '../../../../../models/ItemClass.js';
 import StockInHand from '../../../../../models/StockInHand.js';
 import Branch from '../../../../../models/Branch.js';
 import Customer from '../../../../../models/Customer.js';
+import Order from '../../../../../models/Order.js';
+import OrderItem from '../../../../../models/OrderItem.js';
+import SearchHistory from '../../../../../models/SearchHistory.js';
 import Cart from '../../../../../models/Cart.js';
 import CartItem from '../../../../../models/CartItem.js';
-import { rankBranchesByProximity } from '../../../../../utils/proximityCalculator.js';
+import { rankBranchesByProximityAsync } from '../../../../../utils/proximityCalculator.js';
 
 class MedicineCatalogService {
   _escapeRegex(value = '') {
     return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  _normalizeText(value = '') {
+    return String(value || '')
+      .trim()
+      .toLowerCase();
+  }
+
+  _buildRecommendationMedicineKey(medicine) {
+    return [
+      medicine?.Name,
+      medicine?.alias_name,
+      medicine?.mgs,
+      medicine?.dosage_form,
+      medicine?.manufacturer,
+      medicine?.category,
+    ]
+      .map(value => this._normalizeText(value))
+      .join('|');
   }
 
   _matchesBranchFilter(branch, branchFilter) {
@@ -139,19 +161,22 @@ class MedicineCatalogService {
       limit = 20,
     } = filters;
 
-    // Get customer data with address
-    const customer = await Customer.findById(customerId).populate('address_id');
+    const customer = customerId
+      ? await Customer.findById(customerId).populate('address_id')
+      : null;
 
-    if (!customer) {
-      throw new Error('CUSTOMER_NOT_FOUND');
-    }
-
-    const ranking = await this._getOrderedBranches(customer);
+    const ranking = customer
+      ? await this._getOrderedBranches(customer)
+      : await this._getPublicOrderedBranches();
     let branches = ranking.orderedBranches.filter(branch =>
       this._matchesBranchFilter(branch, branchFilter)
     );
 
-    if (this._isNoBrowseFilterApplied(filters) && customer.address_id?.city) {
+    if (
+      customer &&
+      this._isNoBrowseFilterApplied(filters) &&
+      customer.address_id?.city
+    ) {
       const sameCityBranches = branches.filter(branch =>
         this._isSameCity(customer.address_id, branch.address_id)
       );
@@ -302,6 +327,10 @@ class MedicineCatalogService {
           return (b.sale_price || 0) - (a.sale_price || 0);
         }
 
+        if (sortBy === 'popularity') {
+          return (b.quantity_sold || 0) - (a.quantity_sold || 0);
+        }
+
         return (a.Name || '').localeCompare(b.Name || '');
       })
       .map(medicine => this._sanitizeMedicineForCustomer(medicine));
@@ -387,8 +416,11 @@ class MedicineCatalogService {
       description: medicine.description,
       img_urls: Array.isArray(medicine.img_urls) ? medicine.img_urls : [],
       sale_price: medicine.sale_price,
+      revenue_generated: Number(medicine.revenue_generated || 0),
+      refunds_count: Number(medicine.refunds_count || 0),
       purchase_price: medicine.purchase_price,
       unit_price: medicine.unit_price,
+      quantity_sold: Number(medicine.quantity_sold || 0),
       mgs: medicine.mgs || null,
       dosage_form: medicine.dosage_form || null,
       is_available: medicine.active,
@@ -398,6 +430,162 @@ class MedicineCatalogService {
       category: medicine.category || null,
       prescription_required: Boolean(medicine.prescription_required),
     };
+  }
+
+  async _getRecentSearchQueries(customerId, limit = 10) {
+    const searches = await SearchHistory.find({ customer_id: customerId })
+      .sort({ searched_at: -1 })
+      .select('query searched_at filters')
+      .limit(Math.max(1, Math.min(Number(limit) || 10, 20)))
+      .lean();
+
+    const unique = [];
+    const seen = new Set();
+
+    for (const item of searches) {
+      const query = String(item.query || '').trim();
+      if (!query) continue;
+
+      const key = query.toLowerCase();
+      if (seen.has(key)) continue;
+
+      seen.add(key);
+      unique.push(query);
+    }
+
+    return unique;
+  }
+
+  async _findMedicinesForSearchQuery(searchTerm, limit = 8) {
+    const escapedQuery = this._escapeRegex(searchTerm);
+    if (!escapedQuery) return [];
+
+    const matchedCategories = await MedicineCategory.find({
+      name: { $regex: escapedQuery, $options: 'i' },
+    })
+      .select('_id')
+      .lean();
+
+    const matchedManufacturers = await Manufacturer.find({
+      name: { $regex: escapedQuery, $options: 'i' },
+    })
+      .select('_id')
+      .lean();
+
+    const query = {
+      active: true,
+      $or: [
+        { Name: { $regex: escapedQuery, $options: 'i' } },
+        { alias_name: { $regex: escapedQuery, $options: 'i' } },
+        { mgs: { $regex: escapedQuery, $options: 'i' } },
+        { dosage_form: { $regex: escapedQuery, $options: 'i' } },
+      ],
+    };
+
+    if (matchedCategories.length) {
+      query.$or.push({
+        category: { $in: matchedCategories.map(item => item._id) },
+      });
+    }
+
+    if (matchedManufacturers.length) {
+      query.$or.push({
+        manufacturer: { $in: matchedManufacturers.map(item => item._id) },
+      });
+    }
+
+    return Medicine.find(query)
+      .select(
+        'Name alias_name img_urls sale_price description mgs dosage_form category manufacturer prescription_required active'
+      )
+      .sort({ createdAt: -1 })
+      .limit(Math.max(1, Math.min(Number(limit) || 8, 12)))
+      .lean();
+  }
+
+  async _getPurchasedMedicineIds(customerId, limit = 6) {
+    const customerOrders = await Order.find({ customer_id: customerId })
+      .select('order_items created_at')
+      .sort({ created_at: -1 })
+      .limit(15)
+      .lean();
+
+    if (!customerOrders.length) {
+      return [];
+    }
+
+    const orderItemIds = customerOrders.flatMap(
+      order => order.order_items || []
+    );
+    if (!orderItemIds.length) {
+      return [];
+    }
+
+    const orderItems = await OrderItem.find({ _id: { $in: orderItemIds } })
+      .select('medicine_id')
+      .lean();
+
+    const frequency = new Map();
+    for (const item of orderItems) {
+      const medicineId = String(item.medicine_id || '');
+      if (!medicineId) continue;
+      frequency.set(medicineId, (frequency.get(medicineId) || 0) + 1);
+    }
+
+    return [...frequency.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, Math.max(1, Math.min(Number(limit) || 6, 10)))
+      .map(([medicineId]) => medicineId);
+  }
+
+  async _getRecommendationSeedMedicines(customerId) {
+    const searchQueries = await this._getRecentSearchQueries(customerId, 8);
+    const purchasedMedicineIds = await this._getPurchasedMedicineIds(
+      customerId,
+      6
+    );
+
+    const searchMedicines = [];
+    for (const query of searchQueries.slice(0, 5)) {
+      const matches = await this._findMedicinesForSearchQuery(query, 4);
+      searchMedicines.push(...matches);
+    }
+
+    const seedMap = new Map();
+
+    for (const medicineId of purchasedMedicineIds) {
+      seedMap.set(`purchase:${medicineId}`, medicineId);
+    }
+
+    for (const medicine of searchMedicines) {
+      seedMap.set(`search:${medicine._id}`, String(medicine._id));
+    }
+
+    return {
+      searchQueries,
+      seedMedicineIds: [...seedMap.values()].slice(0, 8),
+    };
+  }
+
+  async _getFallbackMedicines(limit = 5, excludedKeys = new Set()) {
+    const medicines = await Medicine.find({ active: true })
+      .sort({ createdAt: -1 })
+      .limit(Math.max(1, Math.min(Number(limit) || 5, 20)))
+      .select(
+        'Name alias_name img_urls sale_price description mgs dosage_form category manufacturer prescription_required active'
+      )
+      .lean();
+
+    const fallback = [];
+    for (const medicine of medicines) {
+      const key = this._buildRecommendationMedicineKey(medicine);
+      if (excludedKeys.has(key)) continue;
+      excludedKeys.add(key);
+      fallback.push(this._sanitizeMedicineForCustomer(medicine));
+      if (fallback.length >= limit) break;
+    }
+
+    return fallback;
   }
 
   _buildRelatedMedicineQuery(baseMedicine) {
@@ -496,7 +684,7 @@ class MedicineCatalogService {
     );
 
     const proximityRankedBranches = customer.address_id
-      ? rankBranchesByProximity(customer.address_id, allBranches)
+      ? await rankBranchesByProximityAsync(customer.address_id, allBranches)
       : allBranches;
 
     if (!dominantCartBranchId) {
@@ -536,6 +724,18 @@ class MedicineCatalogService {
     };
   }
 
+  async _getPublicOrderedBranches() {
+    const allBranches = await Branch.find({ status: 'Active' }).populate(
+      'address_id'
+    );
+
+    return {
+      orderedBranches: allBranches,
+      prioritizedBranchId: null,
+      rankingMode: 'public',
+    };
+  }
+
   async searchMedicines(customerId, options = {}) {
     const {
       searchTerm,
@@ -549,12 +749,13 @@ class MedicineCatalogService {
       limit = 10,
     } = options;
 
-    const customer = await Customer.findById(customerId).populate('address_id');
-    if (!customer) {
-      throw new Error('CUSTOMER_NOT_FOUND');
-    }
+    const customer = customerId
+      ? await Customer.findById(customerId).populate('address_id')
+      : null;
 
-    const ranking = await this._getOrderedBranches(customer);
+    const ranking = customer
+      ? await this._getOrderedBranches(customer)
+      : await this._getPublicOrderedBranches();
     const branches = ranking.orderedBranches.filter(branch =>
       this._matchesBranchFilter(branch, branchFilter)
     );
@@ -738,13 +939,13 @@ class MedicineCatalogService {
    * Returns branches ranked by proximity if no branch is selected
    */
   async getAvailableBranches(customerId) {
-    const customer = await Customer.findById(customerId).populate('address_id');
+    const customer = customerId
+      ? await Customer.findById(customerId).populate('address_id')
+      : null;
 
-    if (!customer) {
-      throw new Error('CUSTOMER_NOT_FOUND');
-    }
-
-    const ranking = await this._getOrderedBranches(customer);
+    const ranking = customer
+      ? await this._getOrderedBranches(customer)
+      : await this._getPublicOrderedBranches();
     const branches = ranking.orderedBranches;
 
     if (!branches.length) {
@@ -757,7 +958,7 @@ class MedicineCatalogService {
       };
     }
 
-    const branchNames = [];
+    const branchList = [];
     const seenNames = new Set();
 
     for (const branch of branches) {
@@ -768,25 +969,29 @@ class MedicineCatalogService {
       if (seenNames.has(key)) continue;
 
       seenNames.add(key);
-      branchNames.push(name);
+      branchList.push({
+        id: branch._id,
+        name,
+      });
     }
 
     return {
       success: true,
       data: {
-        branches: branchNames,
-        count: branchNames.length,
+        branches: branchList,
+        count: branchList.length,
       },
     };
   }
 
   async _getAvailableMedicineIdsForCustomer(customerId) {
-    const customer = await Customer.findById(customerId).populate('address_id');
-    if (!customer) {
-      throw new Error('CUSTOMER_NOT_FOUND');
-    }
+    const customer = customerId
+      ? await Customer.findById(customerId).populate('address_id')
+      : null;
 
-    const ranking = await this._getOrderedBranches(customer);
+    const ranking = customer
+      ? await this._getOrderedBranches(customer)
+      : await this._getPublicOrderedBranches();
     const branches = ranking.orderedBranches;
     if (!branches.length) {
       return [];
@@ -814,21 +1019,30 @@ class MedicineCatalogService {
       return { success: true, data: { brands: [], count: 0 } };
     }
 
-    const manufacturerIds = await Medicine.distinct('manufacturer', {
+    const manufacturerNames = await Medicine.distinct('manufacturer', {
       _id: { $in: medicineIds },
       active: true,
       manufacturer: { $ne: null },
     });
 
     const brands = await Manufacturer.find({
-      _id: { $in: manufacturerIds },
+      name: { $in: manufacturerNames },
     })
       .sort({ name: 1 })
-      .select('name -_id')
+      .select('_id name')
       .lean();
 
-    const names = brands.map(item => item.name).filter(Boolean);
-    return { success: true, data: { brands: names, count: names.length } };
+    const availableBrands = brands
+      .map(item => ({
+        id: item._id,
+        name: item.name,
+      }))
+      .filter(item => item.name);
+
+    return {
+      success: true,
+      data: { brands: availableBrands, count: availableBrands.length },
+    };
   }
 
   async getAvailableClasses(customerId) {
@@ -846,11 +1060,20 @@ class MedicineCatalogService {
 
     const classes = await ItemClass.find({ _id: { $in: classIds } })
       .sort({ name: 1 })
-      .select('name -_id')
+      .select('_id name')
       .lean();
 
-    const names = classes.map(item => item.name).filter(Boolean);
-    return { success: true, data: { classes: names, count: names.length } };
+    const availableClasses = classes
+      .map(item => ({
+        id: item._id,
+        name: item.name,
+      }))
+      .filter(item => item.name);
+
+    return {
+      success: true,
+      data: { classes: availableClasses, count: availableClasses.length },
+    };
   }
 
   async getAvailableCategories(customerId) {
@@ -860,28 +1083,31 @@ class MedicineCatalogService {
       return { success: true, data: { categories: [], count: 0 } };
     }
 
-    const categoryIds = await Medicine.distinct('category', {
+    const categoryNames = await Medicine.distinct('category', {
       _id: { $in: medicineIds },
       active: true,
       category: { $ne: null },
     });
 
     const categoryDocs = await MedicineCategory.find({
-      _id: { $in: categoryIds },
+      name: { $in: categoryNames },
     })
       .sort({ name: 1 })
-      .select('name -_id')
+      .select('_id name')
       .lean();
 
-    const names = [...categoryDocs.map(item => item.name)]
-      .filter(Boolean)
-      .filter(
-        (value, index, arr) =>
-          arr.findIndex(v => v.toLowerCase() === value.toLowerCase()) === index
-      )
-      .sort((a, b) => a.localeCompare(b));
+    const categories = categoryDocs
+      .map(item => ({
+        id: item._id,
+        name: item.name,
+      }))
+      .filter(item => item.name)
+      .sort((a, b) => a.name.localeCompare(b.name));
 
-    return { success: true, data: { categories: names, count: names.length } };
+    return {
+      success: true,
+      data: { categories, count: categories.length },
+    };
   }
 
   /**
@@ -897,10 +1123,12 @@ class MedicineCatalogService {
       throw new Error('MEDICINE_NOT_FOUND');
     }
 
-    const customer = await Customer.findById(customerId).populate('address_id');
-
-    if (!customer) {
-      throw new Error('CUSTOMER_NOT_FOUND');
+    if (customerId) {
+      const customer =
+        await Customer.findById(customerId).populate('address_id');
+      if (!customer) {
+        throw new Error('CUSTOMER_NOT_FOUND');
+      }
     }
 
     const inStock =
@@ -909,6 +1137,12 @@ class MedicineCatalogService {
         quantity: { $gt: 0 },
       })) != null;
 
+    const relatedMedicinesResult = await this.getRelatedMedicines(
+      medicineId,
+      customerId,
+      { limit: 5 }
+    );
+
     return {
       success: true,
       data: {
@@ -916,6 +1150,63 @@ class MedicineCatalogService {
         availability: {
           inStock,
         },
+        related_medicines: relatedMedicinesResult?.data?.medicines || [],
+      },
+    };
+  }
+
+  async getMedicineRecommendations(customerId, options = {}) {
+    const limit = Math.max(1, Math.min(Number(options.limit) || 8, 12));
+    const { seedMedicineIds } =
+      await this._getRecommendationSeedMedicines(customerId);
+
+    const recommendations = [];
+    const seenKeys = new Set();
+
+    const pushMedicine = medicine => {
+      if (!medicine) return;
+      const key = this._buildRecommendationMedicineKey(medicine);
+      if (!key || seenKeys.has(key)) return;
+      seenKeys.add(key);
+      recommendations.push(this._sanitizeMedicineForCustomer(medicine));
+    };
+
+    for (const seedMedicineId of seedMedicineIds) {
+      const seedMedicine = await Medicine.findById(seedMedicineId)
+        .select(
+          'Name alias_name img_urls sale_price description mgs dosage_form category manufacturer prescription_required active'
+        )
+        .lean();
+
+      if (!seedMedicine) continue;
+
+      pushMedicine(seedMedicine);
+
+      const relatedResult = await this.getRelatedMedicines(
+        seedMedicineId,
+        customerId,
+        { limit: 6 }
+      );
+
+      for (const related of relatedResult?.data?.medicines || []) {
+        pushMedicine(related);
+      }
+
+      if (recommendations.length >= limit) {
+        break;
+      }
+    }
+
+    if (recommendations.length < Math.min(5, limit)) {
+      const fallback = await this._getFallbackMedicines(limit, seenKeys);
+      recommendations.push(...fallback);
+    }
+
+    return {
+      success: true,
+      data: {
+        recommendations: recommendations.slice(0, limit),
+        count: Math.min(recommendations.length, limit),
       },
     };
   }
@@ -931,11 +1222,6 @@ class MedicineCatalogService {
       throw new Error('MEDICINE_NOT_FOUND');
     }
 
-    const customer = await Customer.findById(customerId).populate('address_id');
-    if (!customer) {
-      throw new Error('CUSTOMER_NOT_FOUND');
-    }
-
     const query = this._buildRelatedMedicineQuery(baseMedicine);
     if (!query) {
       return {
@@ -948,7 +1234,13 @@ class MedicineCatalogService {
       };
     }
 
-    const ranking = await this._getOrderedBranches(customer);
+    const customer = customerId
+      ? await Customer.findById(customerId).populate('address_id')
+      : null;
+
+    const ranking = customer
+      ? await this._getOrderedBranches(customer)
+      : await this._getPublicOrderedBranches();
     const branches = ranking.orderedBranches;
     const branchIds = branches.map(branch => branch._id);
     const branchIndexMap = new Map(
