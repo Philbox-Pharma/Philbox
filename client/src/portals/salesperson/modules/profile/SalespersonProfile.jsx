@@ -154,6 +154,7 @@ export default function SalespersonProfile() {
   );
 }
 
+/* eslint-disable-next-line no-unused-vars */
 function InfoItem({ icon: Icon, label, value }) {
   return (
     <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">

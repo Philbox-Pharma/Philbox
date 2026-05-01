@@ -1,6 +1,8 @@
 // src/portals/admin/modules/branches/components/AssignAdminsModal.jsx
 import { useState, useEffect } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
+/* eslint-disable-next-line no-unused-vars */
+import { motion } from 'framer-motion';
 import { FaTimes, FaUserShield, FaSpinner, FaCheck } from 'react-icons/fa';
 import { branchApi, staffApi } from '../../../../../core/api/admin/adminApi';
 

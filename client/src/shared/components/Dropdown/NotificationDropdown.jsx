@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
+/* eslint-disable-next-line no-unused-vars */
+import { motion } from 'framer-motion';
 import { FaBell, FaInfoCircle, FaCheckCircle, FaExclamationTriangle, FaTimes, FaSpinner, FaHistory } from 'react-icons/fa';
 
 /**

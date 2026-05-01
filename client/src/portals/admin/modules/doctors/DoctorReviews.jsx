@@ -134,7 +134,7 @@ export default function DoctorReviews() {
     if (id) {
       fetchReviews();
     }
-  }, [fetchReviews]);
+  }, [id, fetchReviews]);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));

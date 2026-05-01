@@ -28,9 +28,6 @@ const appointmentSchema = new mongoose.Schema(
     recording_url: {
       type: String,
     },
-    meeting_link: {
-      type: String,
-    },
     appointment_request: {
       type: String,
       enum: ['processing', 'accepted', 'cancelled'],

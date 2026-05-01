@@ -151,7 +151,7 @@ export default function DoctorAppointments() {
     status: '',
     date: '',
   });
-  const [showFilters, setShowFilters] = useState(false);
+
   const limit = 12;
 
   const fetchAppointments = useCallback(async () => {
@@ -180,7 +180,7 @@ export default function DoctorAppointments() {
     if (id) {
       fetchAppointments();
     }
-  }, [fetchAppointments]);
+  }, [id, fetchAppointments]);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
