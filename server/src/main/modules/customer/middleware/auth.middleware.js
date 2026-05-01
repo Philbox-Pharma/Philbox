@@ -42,6 +42,15 @@ export async function authenticate(req, res, next) {
       fullName: customer.fullName,
       roleId: customer.roleId, // 🔐 RBAC - Include roleId for middleware
     };
+
+    if (!customer.is_Verified) {
+      res.locals.customerAlert = {
+        type: 'verification_required',
+        message:
+          'Please verify your email address to unlock full account access.',
+      };
+    }
+
     // Also set req.user for RBAC middleware compatibility
     req.user = req.customer;
     next();

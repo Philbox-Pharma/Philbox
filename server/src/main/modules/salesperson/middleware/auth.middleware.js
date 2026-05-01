@@ -37,15 +37,21 @@ export async function authenticate(req, res, next) {
     }
 
     // 4. Attach salesperson to req with roleId for RBAC
+    const branchId =
+      salesperson.branches_to_be_managed?.[0]?.toString() || null;
     req.salesperson = {
       _id: salesperson._id,
       id: salesperson._id,
       email: salesperson.email,
       fullName: salesperson.fullName,
+      branches_to_be_managed: salesperson.branches_to_be_managed || [],
+      branchId,
       roleId: salesperson.roleId, // 🔐 RBAC - Include roleId for middleware
     };
     // Also set req.user for RBAC middleware compatibility
     req.user = req.salesperson;
+    req.userId = salesperson._id.toString();
+    req.branchId = branchId;
     next();
   } catch (err) {
     console.error('Authentication error:', err);

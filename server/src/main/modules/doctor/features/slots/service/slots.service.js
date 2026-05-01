@@ -2,37 +2,51 @@ import DoctorSlot from '../../../../../models/DoctorSlot.js';
 import { logDoctorActivity } from '../../../utils/logDoctorActivities.js';
 
 class DoctorSlotsService {
-  /**
-   * Automatically mark past available slots as unavailable.
-   */
-  async markPastSlotsUnavailable(doctorId) {
-    const now = new Date();
-    const todayStart = new Date(now);
-    todayStart.setHours(0, 0, 0, 0);
+  normalizeDate(dateInput) {
+    const date = new Date(dateInput);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
 
-    const tomorrowStart = new Date(todayStart);
-    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+  sameWeekDays(daysA = [], daysB = []) {
+    const a = [...daysA].sort((x, y) => x - y);
+    const b = [...daysB].sort((x, y) => x - y);
+    return a.length === b.length && a.every((day, index) => day === b[index]);
+  }
 
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(
-      now.getMinutes()
-    ).padStart(2, '0')}`;
+  async validateRecurringPatternConflict(doctorId, recurringPayload) {
+    const {
+      start_time,
+      end_time,
+      recurring_pattern: { frequency, start_date, end_date, days_of_week = [] },
+    } = recurringPayload;
 
-    await DoctorSlot.updateMany(
-      {
-        doctor_id: doctorId,
-        status: 'available',
-        $or: [
-          { date: { $lt: todayStart } },
-          {
-            date: { $gte: todayStart, $lt: tomorrowStart },
-            end_time: { $lte: currentTime },
-          },
-        ],
-      },
-      {
-        $set: { status: 'unavailable' },
+    const startDate = this.normalizeDate(start_date);
+    const endDate = this.normalizeDate(end_date);
+
+    const candidates = await DoctorSlot.find({
+      doctor_id: doctorId,
+      is_recurring: true,
+      start_time,
+      end_time,
+      date: { $lte: endDate },
+      'recurring_pattern.end_date': { $gte: startDate },
+      'recurring_pattern.frequency': frequency,
+    }).select('recurring_pattern date start_time end_time');
+
+    const duplicate = candidates.find(slot => {
+      if (frequency !== 'weekly') {
+        return true;
       }
-    );
+      return this.sameWeekDays(
+        slot.recurring_pattern?.days_of_week,
+        days_of_week
+      );
+    });
+
+    if (duplicate) {
+      throw new Error('RECURRING_SLOT_ALREADY_EXISTS');
+    }
   }
 
   /**
@@ -40,8 +54,6 @@ class DoctorSlotsService {
    */
   async createSlot(doctorId, slotData, req) {
     try {
-      await this.markPastSlotsUnavailable(doctorId);
-
       const { date, start_time, end_time, slot_duration, notes } = slotData;
 
       // Validate that end_time is after start_time
@@ -49,11 +61,19 @@ class DoctorSlotsService {
         throw new Error('END_TIME_BEFORE_START');
       }
 
+      // Validate that range exactly matches duration (e.g. 09:00-09:20 with 20)
+      const [startHour, startMinute] = start_time.split(':').map(Number);
+      const [endHour, endMinute] = end_time.split(':').map(Number);
+      const rangeMinutes =
+        endHour * 60 + endMinute - (startHour * 60 + startMinute);
+      if (rangeMinutes !== slot_duration) {
+        throw new Error('INVALID_SLOT_DURATION_RANGE');
+      }
+
       // Check for overlapping slots
       const overlapping = await DoctorSlot.findOne({
         doctor_id: doctorId,
         date: new Date(date),
-        status: { $ne: 'unavailable' },
         $or: [
           {
             start_time: { $lt: end_time },
@@ -96,8 +116,6 @@ class DoctorSlotsService {
    */
   async createRecurringSlots(doctorId, slotData, req) {
     try {
-      await this.markPastSlotsUnavailable(doctorId);
-
       const { start_time, end_time, slot_duration, recurring_pattern, notes } =
         slotData;
 
@@ -109,9 +127,23 @@ class DoctorSlotsService {
       const { frequency, days_of_week, start_date, end_date } =
         recurring_pattern;
 
+      await this.validateRecurringPatternConflict(doctorId, {
+        start_time,
+        end_time,
+        recurring_pattern: { frequency, start_date, end_date, days_of_week },
+      });
+
       const slots = [];
       const startDate = new Date(start_date);
       const endDateObj = new Date(end_date);
+
+      const [startHour, startMinute] = start_time.split(':').map(Number);
+      const [endHour, endMinute] = end_time.split(':').map(Number);
+      const rangeMinutes =
+        endHour * 60 + endMinute - (startHour * 60 + startMinute);
+      if (rangeMinutes !== slot_duration) {
+        throw new Error('INVALID_SLOT_DURATION_RANGE');
+      }
 
       let currentDate = new Date(startDate);
 
@@ -133,7 +165,6 @@ class DoctorSlotsService {
           const overlapping = await DoctorSlot.findOne({
             doctor_id: doctorId,
             date: currentDate,
-            status: { $ne: 'unavailable' },
             $or: [
               {
                 start_time: { $lt: end_time },
@@ -142,23 +173,25 @@ class DoctorSlotsService {
             ],
           });
 
-          if (!overlapping) {
-            const slot = await DoctorSlot.create({
-              doctor_id: doctorId,
-              date: new Date(currentDate),
-              start_time,
-              end_time,
-              slot_duration: slot_duration ?? 20,
-              notes: notes || '',
-              is_recurring: true,
-              recurring_pattern: {
-                frequency,
-                days_of_week: days_of_week || [],
-                end_date: endDateObj,
-              },
-            });
-            slots.push(slot);
+          if (overlapping) {
+            throw new Error('SLOT_OVERLAP');
           }
+
+          const slot = await DoctorSlot.create({
+            doctor_id: doctorId,
+            date: new Date(currentDate),
+            start_time,
+            end_time,
+            slot_duration: slot_duration ?? 20,
+            notes: notes || '',
+            is_recurring: true,
+            recurring_pattern: {
+              frequency,
+              days_of_week: days_of_week || [],
+              end_date: endDateObj,
+            },
+          });
+          slots.push(slot);
         }
 
         // Move to next day
@@ -189,8 +222,6 @@ class DoctorSlotsService {
    */
   async getSlots(doctorId, filters) {
     try {
-      await this.markPastSlotsUnavailable(doctorId);
-
       const query = { doctor_id: doctorId };
 
       if (filters.start_date && filters.end_date) {
@@ -224,8 +255,6 @@ class DoctorSlotsService {
    */
   async getSlotById(doctorId, slotId) {
     try {
-      await this.markPastSlotsUnavailable(doctorId);
-
       const slot = await DoctorSlot.findOne({
         _id: slotId,
         doctor_id: doctorId,
@@ -243,12 +272,10 @@ class DoctorSlotsService {
   }
 
   /**
-   * Update a slot (only if not booked and in future)
+   * Update a slot (only if not booked and in future for time changes)
    */
   async updateSlot(doctorId, slotId, updateData, req) {
     try {
-      await this.markPastSlotsUnavailable(doctorId);
-
       const slot = await DoctorSlot.findOne({
         _id: slotId,
         doctor_id: doctorId,
@@ -256,11 +283,6 @@ class DoctorSlotsService {
 
       if (!slot) {
         throw new Error('SLOT_NOT_FOUND');
-      }
-
-      // Cannot update booked slots
-      if (slot.status === 'booked') {
-        throw new Error('CANNOT_UPDATE_BOOKED_SLOT');
       }
 
       // Cannot update past slots
@@ -273,8 +295,18 @@ class DoctorSlotsService {
         throw new Error('CANNOT_UPDATE_PAST_SLOT');
       }
 
+      // Cannot update time fields if slot is booked (unless only updating status)
+      const isTimeUpdate = updateData.start_time || updateData.end_time;
+      const isStatusOnly = Object.keys(updateData).every(
+        key => key === 'status'
+      );
+
+      if (isTimeUpdate && !isStatusOnly && slot.status === 'booked') {
+        throw new Error('CANNOT_UPDATE_BOOKED_SLOT');
+      }
+
       // Check for overlapping if time is being updated
-      if (updateData.start_time || updateData.end_time) {
+      if (isTimeUpdate && !isStatusOnly) {
         const start_time = updateData.start_time || slot.start_time;
         const end_time = updateData.end_time || slot.end_time;
 
@@ -286,7 +318,6 @@ class DoctorSlotsService {
           _id: { $ne: slotId },
           doctor_id: doctorId,
           date: slot.date,
-          status: { $ne: 'unavailable' },
           $or: [
             {
               start_time: { $lt: end_time },
@@ -323,8 +354,6 @@ class DoctorSlotsService {
    */
   async deleteSlot(doctorId, slotId, req) {
     try {
-      await this.markPastSlotsUnavailable(doctorId);
-
       const slot = await DoctorSlot.findOne({
         _id: slotId,
         doctor_id: doctorId,
@@ -371,8 +400,6 @@ class DoctorSlotsService {
    */
   async getCalendarView(doctorId, year, month) {
     try {
-      await this.markPastSlotsUnavailable(doctorId);
-
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 0, 23, 59, 59);
 

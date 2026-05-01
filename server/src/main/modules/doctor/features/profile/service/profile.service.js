@@ -7,7 +7,7 @@ class DoctorProfileService {
   /**
    * Get doctor's complete profile
    */
-  async getDoctorProfile(doctorId) {
+  async getDoctorProfile(doctorId, req) {
     try {
       const doctor = await Doctor.findById(doctorId)
         .select('-passwordHash -verificationToken -resetPasswordToken')
@@ -15,6 +15,22 @@ class DoctorProfileService {
 
       if (!doctor) {
         throw new Error('DOCTOR_NOT_FOUND');
+      }
+
+      if (req) {
+        req.doctor = {
+          _id: doctor._id,
+          email: doctor.email,
+          fullName: doctor.fullName,
+        };
+
+        await logDoctorActivity(
+          req,
+          'view_profile',
+          'Viewed profile details',
+          'doctors',
+          doctor._id
+        );
       }
 
       return doctor;
@@ -43,6 +59,7 @@ class DoctorProfileService {
         'affiliated_hospital',
         'educational_details',
         'experience_details',
+        'bio',
         'onlineProfileURL',
       ];
 

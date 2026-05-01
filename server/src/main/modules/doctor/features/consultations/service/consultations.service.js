@@ -9,8 +9,117 @@ import AppointmentMessage from '../../../../../models/AppointmentMessage.js';
 import Patient from '../../../../../models/Patient.js';
 
 import Customer from '../../../../../models/Customer.js';
+import doctorConsultationService from '../../../../shared/consultations/service/doctorConsultation.service.js';
+import { uploadToCloudinary } from '../../../../../utils/uploadToCloudinary.js';
+import cloudinary from '../../../../../config/cloudinary.config.js';
 
 import { logDoctorActivity } from '../../../utils/logDoctorActivities.js';
+import PDFDocument from 'pdfkit';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const parseCloudinaryAssetInfo = fileUrl => {
+  try {
+    const urlObj = new URL(fileUrl);
+    const parts = urlObj.pathname.split('/').filter(Boolean);
+    const uploadIndex = parts.indexOf('upload');
+
+    if (uploadIndex === -1 || uploadIndex + 1 >= parts.length) {
+      return null;
+    }
+
+    const afterUpload = parts.slice(uploadIndex + 1);
+    const hasVersion = /^v\d+$/.test(afterUpload[0]);
+    const version = hasVersion ? afterUpload[0].slice(1) : undefined;
+    const publicIdWithExt = hasVersion
+      ? afterUpload.slice(1).join('/')
+      : afterUpload.join('/');
+
+    if (!publicIdWithExt) {
+      return null;
+    }
+
+    const publicId = publicIdWithExt.replace(/\.pdf$/i, '');
+
+    return { publicId, publicIdWithExt, version };
+  } catch {
+    return null;
+  }
+};
+
+const canAccessUrl = async url => {
+  try {
+    const headRes = await fetch(url, { method: 'HEAD' });
+    if (headRes.ok) return true;
+
+    if (headRes.status === 405) {
+      const getRes = await fetch(url, {
+        method: 'GET',
+        headers: { Range: 'bytes=0-32' },
+      });
+      return getRes.ok || getRes.status === 206;
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+};
+
+const buildAccessibleConsultationPdfUrl = async fileUrl => {
+  if (!fileUrl) return null;
+
+  const assetInfo = parseCloudinaryAssetInfo(fileUrl);
+  if (!assetInfo) {
+    return fileUrl;
+  }
+
+  const { publicId, publicIdWithExt, version } = assetInfo;
+  const expiresAt = Math.floor(Date.now() / 1000) + 60 * 60;
+
+  const candidates = [
+    cloudinary.utils.private_download_url(publicId, 'pdf', {
+      resource_type: 'raw',
+      type: 'upload',
+      expires_at: expiresAt,
+    }),
+    cloudinary.utils.private_download_url(publicIdWithExt, null, {
+      resource_type: 'raw',
+      type: 'upload',
+      expires_at: expiresAt,
+    }),
+    cloudinary.url(publicId, {
+      resource_type: 'raw',
+      type: 'upload',
+      secure: true,
+      sign_url: true,
+      version,
+      format: 'pdf',
+    }),
+    cloudinary.url(publicIdWithExt, {
+      resource_type: 'raw',
+      type: 'upload',
+      secure: true,
+      sign_url: true,
+      version,
+    }),
+    fileUrl,
+  ];
+
+  const uniqueCandidates = [...new Set(candidates.filter(Boolean))];
+
+  for (const candidate of uniqueCandidates) {
+    if (await canAccessUrl(candidate)) {
+      return candidate;
+    }
+  }
+
+  return fileUrl;
+};
 
 class DoctorConsultationsService {
   /**
@@ -507,8 +616,341 @@ class DoctorConsultationsService {
       throw error;
     }
   }
+
+  async getConsultationSession(doctorId, consultationId) {
+    return doctorConsultationService.getConsultationSession(
+      doctorId,
+      consultationId
+    );
+  }
+
+  async startConsultation(doctorId, consultationId) {
+    return doctorConsultationService.startConsultation(
+      doctorId,
+      consultationId
+    );
+  }
+
+  async endConsultation(doctorId, consultationId, payload = {}) {
+    return doctorConsultationService.endConsultation(
+      doctorId,
+      consultationId,
+      payload
+    );
+  }
+
+  async updateRecordingUrl(doctorId, consultationId, recordingUrl) {
+    return doctorConsultationService.updateRecordingUrl(
+      doctorId,
+      consultationId,
+      recordingUrl
+    );
+  }
+
+  async listConsultationMessages(doctorId, consultationId, filters = {}) {
+    return doctorConsultationService.listConsultationMessages(
+      doctorId,
+      consultationId,
+      filters
+    );
+  }
+
+  async sendConsultationMessage(doctorId, consultationId, payload = {}) {
+    return doctorConsultationService.sendConsultationMessage(
+      doctorId,
+      consultationId,
+      payload
+    );
+  }
+
+  async exportConsultationHistory(doctorId, filters = {}, doctorInfo = null) {
+    try {
+      const {
+        patient_name,
+        start_date,
+        end_date,
+        sort_by = 'created_at',
+        sort_order = 'desc',
+      } = filters;
+
+      const query = {
+        doctor_id: new mongoose.Types.ObjectId(doctorId),
+        status: 'completed',
+        appointment_request: 'accepted',
+      };
+
+      if (start_date || end_date) {
+        query.created_at = {};
+        if (start_date) {
+          query.created_at.$gte = new Date(start_date);
+        }
+        if (end_date) {
+          query.created_at.$lte = new Date(end_date);
+        }
+      }
+
+      const sortObj = {};
+      sortObj[sort_by] = sort_order === 'asc' ? 1 : -1;
+
+      let consultations = await Appointment.find(query)
+        .select('-doctor_id -__v')
+        .populate('patient_id', 'fullName email contactNumber profile_img_url')
+        .populate('slot_id', 'date start_time end_time slot_duration')
+        .populate(
+          'prescription_generated',
+          'diagnosis_reason file_url digital_verification_id special_instructions valid_till created_at'
+        )
+        .sort(sortObj)
+        .lean();
+
+      const patientIds = consultations
+        .map(consultation => consultation.patient_id?._id)
+        .filter(Boolean);
+
+      const patientRecords = await Patient.find({
+        customer_id: { $in: patientIds },
+      }).lean();
+
+      const patientMap = new Map();
+      patientRecords.forEach(patient => {
+        patientMap.set(patient.customer_id.toString(), patient);
+      });
+
+      consultations = consultations.map(consultation => {
+        if (consultation.patient_id) {
+          const patientData = patientMap.get(
+            consultation.patient_id._id.toString()
+          );
+
+          if (patientData) {
+            consultation.patient_id = {
+              ...consultation.patient_id,
+              blood_group: patientData.blood_group,
+              weight: patientData.weight,
+              height: patientData.height,
+              patient_status: patientData.status,
+            };
+          }
+        }
+
+        return {
+          ...consultation,
+          recording_url: consultation.recording_url || null,
+          slot_id: consultation.slot_id || null,
+          consultation_reason: consultation.consultation_reason || null,
+          notes: consultation.notes || null,
+        };
+      });
+
+      if (patient_name) {
+        const searchTerm = patient_name.toLowerCase();
+        consultations = consultations.filter(consultation => {
+          if (!consultation.patient_id) return false;
+
+          const fullName =
+            consultation.patient_id.fullName?.toLowerCase() || '';
+          return fullName.includes(searchTerm);
+        });
+      }
+
+      const summary = {
+        total_consultations: consultations.length,
+        in_person_consultations: consultations.filter(
+          consultation => consultation.appointment_type === 'in-person'
+        ).length,
+        online_consultations: consultations.filter(
+          consultation => consultation.appointment_type === 'online'
+        ).length,
+        consultations_with_prescriptions: consultations.filter(
+          consultation => consultation.prescription_generated
+        ).length,
+        consultations_with_recordings: consultations.filter(
+          consultation => consultation.recording_url
+        ).length,
+      };
+
+      const pdfUrl = await generateConsultationHistoryPDF({
+        doctorName: doctorInfo?.fullName || doctorInfo?.name || 'Doctor',
+        consultations,
+        filters,
+        summary,
+      });
+
+      const accessiblePdfUrl = await buildAccessibleConsultationPdfUrl(pdfUrl);
+
+      return {
+        pdf_url: accessiblePdfUrl,
+        original_url: pdfUrl,
+        total_consultations: consultations.length,
+        summary,
+      };
+    } catch (error) {
+      console.error('Error in exportConsultationHistory:', error);
+      throw error;
+    }
+  }
 }
 
 // Export singleton instance
 const doctorConsultationsService = new DoctorConsultationsService();
 export default doctorConsultationsService;
+
+const formatPdfDate = value => {
+  if (!value) {
+    return 'N/A';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return 'N/A';
+  }
+
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
+const generateConsultationHistoryPDF = async ({
+  doctorName,
+  consultations,
+  filters,
+  summary,
+}) => {
+  try {
+    const tempDir = path.join(__dirname, '../../../../../../temp');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+
+    const fileName = `consultation_history_${Date.now()}.pdf`;
+    const filePath = path.join(tempDir, fileName);
+
+    const doc = new PDFDocument({ margin: 40, size: 'A4' });
+    const stream = fs.createWriteStream(filePath);
+    doc.pipe(stream);
+
+    const addTableHeader = () => {
+      const tableTop = doc.y;
+      doc.fontSize(9).font('Helvetica-Bold');
+      doc.text('Date', 40, tableTop, { width: 70 });
+      doc.text('Patient', 110, tableTop, { width: 150 });
+      doc.text('Type', 260, tableTop, { width: 70 });
+      doc.text('Status', 330, tableTop, { width: 70 });
+      doc.text('Rx', 400, tableTop, { width: 45 });
+      doc.text('Recording', 445, tableTop, { width: 150 });
+
+      doc
+        .strokeColor('#d1d5db')
+        .lineWidth(0.5)
+        .moveTo(40, doc.y + 2)
+        .lineTo(555, doc.y + 2)
+        .stroke();
+
+      doc.moveDown(0.8);
+      doc.font('Helvetica');
+    };
+
+    const ensurePageSpace = requiredSpace => {
+      if (doc.y + requiredSpace > 760) {
+        doc.addPage();
+        addTableHeader();
+      }
+    };
+
+    doc.fontSize(20).font('Helvetica-Bold').text('CONSULTATION HISTORY', {
+      align: 'center',
+    });
+    doc.moveDown(0.5);
+    doc.fontSize(10).font('Helvetica').fillColor('#555555');
+    doc.text(`Doctor: ${doctorName}`, { align: 'center' });
+    doc.text(`Generated: ${formatPdfDate(new Date())}`, { align: 'center' });
+    doc.moveDown(1);
+
+    doc
+      .fillColor('#000000')
+      .fontSize(11)
+      .font('Helvetica-Bold')
+      .text('SUMMARY', { underline: true });
+    doc.moveDown(0.3);
+    doc.fontSize(10).font('Helvetica');
+    doc.text(`Total consultations: ${summary.total_consultations}`);
+    doc.text(`In-person consultations: ${summary.in_person_consultations}`);
+    doc.text(`Online consultations: ${summary.online_consultations}`);
+    doc.text(
+      `Consultations with prescriptions: ${summary.consultations_with_prescriptions}`
+    );
+    doc.text(
+      `Consultations with recordings: ${summary.consultations_with_recordings}`
+    );
+    doc.moveDown(0.5);
+
+    doc
+      .fontSize(10)
+      .font('Helvetica-Bold')
+      .text('FILTERS', { underline: true });
+    doc.moveDown(0.3);
+    doc.fontSize(9).font('Helvetica');
+    doc.text(`Patient name: ${filters.patient_name || 'All'}`);
+    doc.text(`Start date: ${filters.start_date || 'All'}`);
+    doc.text(`End date: ${filters.end_date || 'All'}`);
+    doc.text(`Sort by: ${filters.sort_by || 'created_at'}`);
+    doc.text(`Sort order: ${filters.sort_order || 'desc'}`);
+    doc.moveDown(0.8);
+
+    doc.fontSize(11).font('Helvetica-Bold').text('CONSULTATIONS', {
+      underline: true,
+    });
+    doc.moveDown(0.5);
+
+    addTableHeader();
+
+    consultations.forEach(consultation => {
+      ensurePageSpace(32);
+
+      const rowY = doc.y;
+      const patientName = consultation.patient_id?.fullName || 'N/A';
+      const hasPrescription = consultation.prescription_generated
+        ? 'Yes'
+        : 'No';
+      const hasRecording = consultation.recording_url ? 'Yes' : 'No';
+
+      doc.fontSize(8).font('Helvetica');
+      doc.text(formatPdfDate(consultation.created_at), 40, rowY, { width: 70 });
+      doc.text(patientName, 110, rowY, { width: 145 });
+      doc.text(consultation.appointment_type || 'N/A', 260, rowY, {
+        width: 70,
+      });
+      doc.text(consultation.status || 'N/A', 330, rowY, { width: 70 });
+      doc.text(hasPrescription, 400, rowY, { width: 45 });
+      doc.text(hasRecording, 445, rowY, { width: 150 });
+
+      doc.y = rowY + 16;
+    });
+
+    doc.end();
+
+    await new Promise((resolve, reject) => {
+      stream.on('finish', resolve);
+      stream.on('error', reject);
+    });
+
+    const cloudinaryUrl = await uploadToCloudinary(
+      filePath,
+      'consultations/pdfs',
+      {
+        resource_type: 'raw',
+        type: 'upload',
+        invalidate: true,
+      }
+    );
+
+    return cloudinaryUrl;
+  } catch (error) {
+    console.error('Consultation history PDF generation error:', error);
+    throw new Error(
+      `Failed to generate consultation history PDF: ${error.message}`
+    );
+  }
+};

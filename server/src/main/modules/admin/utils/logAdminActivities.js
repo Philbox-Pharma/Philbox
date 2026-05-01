@@ -26,6 +26,8 @@ export const logAdminActivity = async (
       return;
     }
 
+    const headers = req?.headers ?? {};
+
     const baseData = {
       admin_id: user._id,
       action_type,
@@ -33,8 +35,8 @@ export const logAdminActivity = async (
       target_collection,
       target_id,
       changes,
-      ip_address: req.ip,
-      device_info: req.headers['user-agent'],
+      ip_address: req?.ip,
+      device_info: headers['user-agent'] || 'unknown',
       created_at: new Date(),
     };
 

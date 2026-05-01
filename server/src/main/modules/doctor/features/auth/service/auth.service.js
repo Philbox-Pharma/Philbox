@@ -12,6 +12,29 @@ import doctorOnboardingService from '../../onboarding/service/onboarding.service
 
 class DoctorAuthService {
   /**
+   * Remove internal/sensitive fields from doctor payloads returned to clients.
+   */
+  _sanitizeDoctor(doctorDoc) {
+    const safeDoctor = doctorDoc?.toObject ? doctorDoc.toObject() : doctorDoc;
+
+    if (!safeDoctor) return safeDoctor;
+
+    delete safeDoctor.passwordHash;
+    delete safeDoctor.__v;
+    delete safeDoctor.created_at;
+    delete safeDoctor.updated_at;
+    delete safeDoctor.last_login;
+    delete safeDoctor.oauth_id;
+    delete safeDoctor.oauth_provider;
+    delete safeDoctor.resetPasswordToken;
+    delete safeDoctor.resetPasswordExpiresAt;
+    delete safeDoctor.verificationToken;
+    delete safeDoctor.verificationTokenExpiresAt;
+
+    return safeDoctor;
+  }
+
+  /**
    * Register a new Doctor
    */
   async register(data, req) {
@@ -162,8 +185,7 @@ class DoctorAuthService {
       doctor._id
     );
 
-    const safeDoctor = doctor.toObject();
-    delete safeDoctor.passwordHash;
+    const safeDoctor = this._sanitizeDoctor(doctor);
 
     return {
       doctorId: doctor._id.toString(),
@@ -298,8 +320,7 @@ class DoctorAuthService {
       doctor._id
     );
 
-    const safeDoctor = doctor.toObject();
-    delete safeDoctor.passwordHash;
+    const safeDoctor = this._sanitizeDoctor(doctor);
 
     return {
       doctorId: doctor._id.toString(),

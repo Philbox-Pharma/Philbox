@@ -54,7 +54,6 @@ const prescriptionGeneratedByDoctorSchema = new mongoose.Schema(
 prescriptionGeneratedByDoctorSchema.index({ doctor_id: 1, created_at: -1 });
 prescriptionGeneratedByDoctorSchema.index({ patient_id: 1, created_at: -1 });
 prescriptionGeneratedByDoctorSchema.index({ appointment_id: 1 });
-prescriptionGeneratedByDoctorSchema.index({ digital_verification_id: 1 });
 
 const PrescriptionGeneratedByDoctor = mongoose.model(
   'PrescriptionGeneratedByDoctor',

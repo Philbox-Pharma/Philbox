@@ -10,25 +10,32 @@ import {
 } from '../controllers/profile.controller.js';
 import { authenticate as requireDoctorAuth } from '../../../middleware/auth.middleware.js';
 import { upload } from '../../../../../middlewares/multer.middleware.js';
+import {
+  roleMiddleware,
+  rbacMiddleware,
+} from '../../../../../middlewares/rbac.middleware.js';
+import { isApprovedDoctor } from '../../../middleware/auth.middleware.js';
 
 const router = express.Router();
 
 // All routes require authentication
 router.use(requireDoctorAuth);
+router.use(isApprovedDoctor);
+router.use(roleMiddleware(['doctor']));
 
 /**
  * @route   GET /api/doctor/profile
  * @desc    Get current doctor's complete profile
  * @access  Private (Doctor)
  */
-router.get('/', getMyProfile);
+router.get('/', rbacMiddleware(['read_profile']), getMyProfile);
 
 /**
  * @route   PUT /api/doctor/profile
  * @desc    Update profile details (name, specialization, bio, qualifications)
  * @access  Private (Doctor)
  */
-router.put('/', updateProfile);
+router.put('/', rbacMiddleware(['update_profile']), updateProfile);
 
 /**
  * @route   PUT /api/doctor/profile/profile-image

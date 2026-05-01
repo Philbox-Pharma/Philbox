@@ -1,0 +1,3155 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Consultation Test Lab</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+      :root {
+        --bg: #08111f;
+        --bg-2: #0e1a2d;
+        --panel: rgba(255, 255, 255, 0.08);
+        --border: rgba(255, 255, 255, 0.14);
+        --text: #edf3ff;
+        --muted: #9fb1cc;
+        --accent: #66e3c4;
+        --accent-2: #7ea8ff;
+        --danger: #ff7d7d;
+        --warning: #ffd166;
+        --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+        --radius: 20px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        font-family:
+          Inter,
+          Segoe UI,
+          Tahoma,
+          sans-serif;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(102, 227, 196, 0.18),
+            transparent 26%
+          ),
+          radial-gradient(
+            circle at top right,
+            rgba(126, 168, 255, 0.2),
+            transparent 28%
+          ),
+          linear-gradient(160deg, var(--bg), var(--bg-2));
+      }
+
+      .wrap {
+        width: min(1440px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 24px 0 40px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.4fr 0.8fr;
+        gap: 20px;
+        align-items: start;
+        margin-bottom: 20px;
+      }
+
+      .hero-card,
+      .panel {
+        border: 1px solid var(--border);
+        background: var(--panel);
+        backdrop-filter: blur(16px);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+      }
+
+      .hero-card {
+        padding: 28px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(102, 227, 196, 0.14);
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 16px 0 10px;
+        font-size: clamp(32px, 4vw, 54px);
+        line-height: 1.02;
+      }
+
+      .lead {
+        margin: 0;
+        max-width: 70ch;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      .hero-stats {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 20px;
+      }
+
+      .stat {
+        padding: 14px 16px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .stat span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .stat strong {
+        display: block;
+        margin-top: 6px;
+        font-size: 16px;
+      }
+
+      .pill-stack {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+
+      .pill {
+        padding: 11px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 0.95fr 1.15fr 0.9fr;
+        gap: 20px;
+      }
+
+      .tool-grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 20px;
+        margin-top: 20px;
+      }
+
+      .panel {
+        padding: 20px;
+      }
+
+      .panel h2 {
+        margin: 0 0 16px;
+        font-size: 18px;
+      }
+
+      .subtle {
+        margin: -8px 0 16px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .form-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .field label {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 6px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .field label strong {
+        color: var(--text);
+      }
+
+      .field input,
+      .field select,
+      .field textarea {
+        width: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 14px;
+        padding: 12px 14px;
+        background: rgba(7, 13, 24, 0.7);
+        color: var(--text);
+        font: inherit;
+        outline: none;
+      }
+
+      .field textarea {
+        resize: vertical;
+        min-height: 92px;
+      }
+
+      .field input:focus,
+      .field select:focus,
+      .field textarea:focus {
+        border-color: rgba(126, 168, 255, 0.75);
+        box-shadow: 0 0 0 4px rgba(126, 168, 255, 0.12);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .section-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 14px;
+        padding: 11px 14px;
+        cursor: pointer;
+        color: #06101d;
+        background: linear-gradient(135deg, #66e3c4, #7ea8ff);
+        font: inherit;
+        font-weight: 700;
+        transition:
+          transform 0.15s ease,
+          opacity 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(126, 168, 255, 0.22);
+      }
+
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .button-secondary {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .button-danger {
+        color: #fff;
+        background: linear-gradient(135deg, #ff7d7d, #ff9d5c);
+      }
+
+      .button-warning {
+        color: #241700;
+        background: linear-gradient(135deg, #ffd166, #ffb703);
+      }
+
+      .status-row {
+        display: grid;
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .status-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 700;
+        width: fit-content;
+      }
+
+      .status-chip[data-tone='ok'] {
+        background: rgba(102, 227, 196, 0.16);
+        color: #8ef0d9;
+      }
+
+      .status-chip[data-tone='warn'] {
+        background: rgba(255, 209, 102, 0.18);
+        color: #ffd166;
+      }
+
+      .status-chip[data-tone='bad'] {
+        background: rgba(255, 125, 125, 0.16);
+        color: #ff9d9d;
+      }
+
+      .video-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .video-box {
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        overflow: hidden;
+        background: rgba(6, 12, 21, 0.88);
+      }
+
+      .video-box header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      video {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        object-fit: cover;
+        background: linear-gradient(
+          135deg,
+          rgba(126, 168, 255, 0.12),
+          rgba(102, 227, 196, 0.12)
+        );
+      }
+
+      .split {
+        display: grid;
+        gap: 12px;
+      }
+
+      .json-box {
+        margin: 0;
+        min-height: 120px;
+        max-height: 220px;
+        overflow: auto;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(6, 12, 21, 0.72);
+        color: #d7e5ff;
+        padding: 14px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: Consolas, Monaco, monospace;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .log-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .log-item {
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 12px;
+      }
+
+      .log-item .meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 12px;
+        margin-bottom: 8px;
+      }
+
+      .log-item .title {
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+
+      .log-item pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: Consolas, Monaco, monospace;
+        font-size: 12px;
+        line-height: 1.45;
+        color: #d7e5ff;
+      }
+
+      .empty {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .footer-note {
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .chat-feed {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 14px;
+        max-height: 360px;
+        overflow: auto;
+        padding-right: 4px;
+      }
+
+      .chat-bubble {
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 12px 14px;
+      }
+
+      .chat-bubble[data-self='true'] {
+        background: rgba(102, 227, 196, 0.08);
+        border-color: rgba(102, 227, 196, 0.18);
+      }
+
+      .chat-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .chat-text {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        line-height: 1.5;
+      }
+
+      .chat-media {
+        margin-top: 10px;
+      }
+
+      .chat-media img,
+      .chat-media video {
+        width: 100%;
+        max-height: 280px;
+        object-fit: contain;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(0, 0, 0, 0.25);
+      }
+
+      .chat-media audio {
+        width: 100%;
+      }
+
+      .composer {
+        display: grid;
+        gap: 12px;
+      }
+
+      .composer input[type='file'] {
+        padding: 10px 12px;
+      }
+
+      .attachment-preview {
+        display: none;
+        gap: 10px;
+        align-items: center;
+        border-radius: 14px;
+        border: 1px dashed rgba(255, 255, 255, 0.18);
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .attachment-preview img,
+      .attachment-preview video {
+        width: 72px;
+        height: 72px;
+        object-fit: cover;
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.2);
+      }
+
+      .attachment-preview audio {
+        width: 100%;
+      }
+
+      .attachment-preview strong {
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      .prescription-form {
+        display: grid;
+        gap: 12px;
+      }
+
+      .medicine-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .medicine-card {
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 14px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .medicine-card header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .medicine-card header strong {
+        font-size: 14px;
+      }
+
+      .medicine-search-wrap {
+        position: relative;
+        display: grid;
+        gap: 10px;
+      }
+
+      .medicine-results {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        z-index: 15;
+        display: grid;
+        gap: 6px;
+        max-height: 260px;
+        overflow: auto;
+        padding: 10px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(11, 18, 30, 0.98);
+        box-shadow: 0 22px 50px rgba(0, 0, 0, 0.28);
+      }
+
+      .medicine-option {
+        width: 100%;
+        text-align: left;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        color: inherit;
+        padding: 10px 12px;
+      }
+
+      .medicine-option:hover {
+        background: rgba(102, 227, 196, 0.12);
+        border-color: rgba(102, 227, 196, 0.22);
+      }
+
+      .medicine-option strong,
+      .medicine-option span {
+        display: block;
+      }
+
+      .medicine-option span {
+        margin-top: 3px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .medicine-summary {
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 12px;
+      }
+
+      .medicine-summary .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 12px;
+        margin-top: 8px;
+      }
+
+      .medicine-summary .summary-item {
+        display: grid;
+        gap: 2px;
+      }
+
+      .medicine-summary .summary-item span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .medicine-summary .summary-item strong {
+        font-size: 13px;
+      }
+
+      .selected-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(102, 227, 196, 0.12);
+        color: #cff9eb;
+        font-size: 12px;
+      }
+
+      .prescription-panel[style*='display: none'] {
+        display: none !important;
+      }
+
+      .medicine-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .prescription-result {
+        margin-top: 14px;
+      }
+
+      .prescription-result pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: Consolas, Monaco, monospace;
+        font-size: 12px;
+        line-height: 1.5;
+        color: #d7e5ff;
+      }
+
+      @media (max-width: 1180px) {
+        .hero,
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .pill-stack {
+          justify-content: flex-start;
+        }
+      }
+
+      @media (max-width: 780px) {
+        .wrap {
+          width: min(100vw - 20px, 100%);
+          padding-top: 10px;
+        }
+
+        .hero-card,
+        .panel {
+          padding: 16px;
+        }
+
+        .hero-stats,
+        .video-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <section class="hero">
+        <div class="hero-card">
+          <div class="eyebrow">Manual testing harness</div>
+          <h1>Doctor and customer video consultation lab</h1>
+          <p class="lead">
+            Open this page in two tabs. Use one tab as the doctor and the other
+            as the customer, point both to the same appointment ID, then join
+            the consultation room and exchange the WebRTC offer, answer, and ICE
+            candidates through the backend Socket.IO room.
+          </p>
+
+          <div class="hero-stats">
+            <div class="stat">
+              <span>Socket flow</span>
+              <strong>consultation:&lt;appointmentId&gt;</strong>
+            </div>
+            <div class="stat">
+              <span>Backend origin</span>
+              <strong id="pageOrigin">Loading...</strong>
+            </div>
+            <div class="stat">
+              <span>WebRTC media</span>
+              <strong>Local camera + microphone</strong>
+            </div>
+            <div class="stat">
+              <span>Best practice</span>
+              <strong>Use headphones to avoid echo</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-card">
+          <div class="pill-stack">
+            <div class="pill">Socket.IO</div>
+            <div class="pill">WebRTC</div>
+            <div class="pill">Doctor role</div>
+            <div class="pill">Customer role</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="panel">
+          <h2>Connection</h2>
+          <p class="subtle">
+            If the socket fails to connect in production, make sure the backend
+            <strong>FRONTEND_URL</strong> matches this page origin. In
+            development, the manual file-based test page is also allowed.
+          </p>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="serverUrl"
+                ><strong>Backend URL</strong><span>Socket server</span></label
+              >
+              <input
+                id="serverUrl"
+                value="http://localhost:5000"
+                placeholder="http://localhost:5000"
+              />
+            </div>
+
+            <div class="field">
+              <label for="appointmentId"
+                ><strong>Appointment ID</strong
+                ><span>Shared by both tabs</span></label
+              >
+              <input id="appointmentId" placeholder="64f2..." />
+            </div>
+
+            <div class="field">
+              <label for="userId"
+                ><strong>User ID</strong
+                ><span>Doctor or customer ID</span></label
+              >
+              <input id="userId" placeholder="MongoDB _id or app user id" />
+            </div>
+
+            <div class="field">
+              <label for="role"
+                ><strong>Role</strong><span>Doctor or customer</span></label
+              >
+              <select id="role">
+                <option value="doctor">Doctor</option>
+                <option value="customer" selected>Customer</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="recordingUrl"
+                ><strong>Recording URL</strong
+                ><span>Optional on end</span></label
+              >
+              <input id="recordingUrl" placeholder="https://..." />
+            </div>
+
+            <div class="field">
+              <label for="notes"
+                ><strong>Doctor notes</strong
+                ><span>Optional on end</span></label
+              >
+              <textarea
+                id="notes"
+                placeholder="End-of-consultation notes"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="connectBtn" type="button">Connect Socket</button>
+            <button
+              id="joinBtn"
+              type="button"
+              class="button-secondary"
+              disabled
+            >
+              Join Room
+            </button>
+            <button
+              id="cameraBtn"
+              type="button"
+              class="button-secondary"
+              disabled
+            >
+              Start Camera
+            </button>
+            <button
+              id="shareVideoBtn"
+              type="button"
+              class="button-secondary"
+              disabled
+            >
+              Stop Sharing Video
+            </button>
+            <button
+              id="shareAudioBtn"
+              type="button"
+              class="button-secondary"
+              disabled
+            >
+              Stop Sharing Audio
+            </button>
+            <button id="offerBtn" type="button" class="button-warning" disabled>
+              Doctor: Start Consultation / Offer
+            </button>
+            <button
+              id="answerBtn"
+              type="button"
+              class="button-warning"
+              disabled
+            >
+              Customer: Answer Call
+            </button>
+            <button id="leaveBtn" type="button" class="button-danger" disabled>
+              Leave Room
+            </button>
+            <button id="endBtn" type="button" class="button-danger" disabled>
+              Doctor: End Consultation
+            </button>
+            <button
+              id="recordBtn"
+              type="button"
+              class="button-warning"
+              disabled
+            >
+              Doctor: Start Recording
+            </button>
+            <button id="resetBtn" type="button" class="button-secondary">
+              Reset Peer
+            </button>
+          </div>
+
+          <div class="status-row">
+            <div id="socketStatus" class="status-chip" data-tone="warn">
+              Socket: disconnected
+            </div>
+            <div id="roomStatus" class="status-chip" data-tone="warn">
+              Room: not joined
+            </div>
+            <div id="webrtcStatus" class="status-chip" data-tone="warn">
+              WebRTC: idle
+            </div>
+          </div>
+
+          <div class="footer-note">
+            Recommended sequence: connect socket, start camera, join room, let
+            the doctor start the consultation, then create the offer on the
+            doctor tab and answer on the customer tab.
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Video and Session</h2>
+          <p class="subtle">
+            The left video is your local stream. The right video receives the
+            remote tab stream once the WebRTC negotiation finishes.
+          </p>
+
+          <div class="video-grid">
+            <div class="video-box">
+              <header>
+                <span>Local video</span>
+                <span id="localState">camera off</span>
+              </header>
+              <video id="localVideo" autoplay playsinline muted></video>
+            </div>
+
+            <div class="video-box">
+              <header>
+                <span>Remote video</span>
+                <span id="remoteState">waiting</span>
+              </header>
+              <video id="remoteVideo" autoplay playsinline></video>
+            </div>
+          </div>
+
+          <div style="margin-top: 16px" class="split">
+            <div>
+              <h2 style="margin-bottom: 10px">Current session payload</h2>
+              <div id="sessionBox" class="json-box">No session data yet.</div>
+            </div>
+
+            <div>
+              <h2 style="margin-bottom: 10px">Negotiation state</h2>
+              <div id="negotiationBox" class="json-box">
+                No peer connection yet.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Event log</h2>
+          <p class="subtle">
+            Every socket and WebRTC event lands here so you can compare both
+            tabs side by side while testing the live consultation flow.
+          </p>
+
+          <div id="logList" class="log-list">
+            <div class="empty">
+              Connect two tabs and start the consultation to see live events.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tool-grid">
+        <div class="panel">
+          <h2>Live Chat</h2>
+          <p class="subtle">
+            Doctor and customer can both send text, images, audio, video, or
+            files. Attached media is converted into a transferable data URL for
+            the consultation message payload.
+          </p>
+
+          <div id="chatFeed" class="chat-feed">
+            <div class="empty">No chat messages yet.</div>
+          </div>
+
+          <div class="composer">
+            <div class="field">
+              <label for="chatMessage">
+                <strong>Message</strong
+                ><span>Shared by doctor and customer</span>
+              </label>
+              <textarea
+                id="chatMessage"
+                placeholder="Type a consultation message"
+              ></textarea>
+            </div>
+
+            <div class="field">
+              <label for="chatMedia">
+                <strong>Attach media</strong
+                ><span>Image, audio, video, file</span>
+              </label>
+              <input
+                id="chatMedia"
+                type="file"
+                accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.txt,.zip"
+              />
+            </div>
+
+            <div id="attachmentPreview" class="attachment-preview"></div>
+
+            <div class="section-actions">
+              <button
+                id="sendBtn"
+                type="button"
+                class="button-secondary"
+                disabled
+              >
+                Send Chat Message
+              </button>
+              <button
+                id="clearAttachmentBtn"
+                type="button"
+                class="button-secondary"
+                disabled
+              >
+                Clear Attachment
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div
+          id="prescriptionPanel"
+          class="panel prescription-panel"
+          style="display: none"
+        >
+          <h2>Prescription Builder</h2>
+          <p class="subtle">
+            Doctor only. Fields auto-fill from the active consultation session
+            when available, then submit to the backend prescription API.
+          </p>
+
+          <div class="prescription-form">
+            <div class="field">
+              <label for="prescriptionAppointmentId">
+                <strong>Appointment ID</strong
+                ><span>Auto-filled from session</span>
+              </label>
+              <input
+                id="prescriptionAppointmentId"
+                placeholder="Appointment ID"
+              />
+            </div>
+
+            <div class="field">
+              <label for="prescriptionPatientId">
+                <strong>Patient ID</strong><span>Auto-filled from session</span>
+              </label>
+              <input id="prescriptionPatientId" placeholder="Patient ID" />
+            </div>
+
+            <div class="field">
+              <label for="prescriptionDiagnosis">
+                <strong>Diagnosis</strong><span>Required</span>
+              </label>
+              <textarea
+                id="prescriptionDiagnosis"
+                placeholder="Diagnosis or medical impression"
+              ></textarea>
+            </div>
+
+            <div class="field">
+              <label for="prescriptionNotes">
+                <strong>Notes</strong><span>Optional</span>
+              </label>
+              <textarea
+                id="prescriptionNotes"
+                placeholder="Special instructions or notes"
+              ></textarea>
+            </div>
+
+            <div class="field">
+              <label for="prescriptionValidTill">
+                <strong>Valid till</strong><span>Future date</span>
+              </label>
+              <input id="prescriptionValidTill" type="date" />
+            </div>
+
+            <div>
+              <h2 style="margin-bottom: 10px; font-size: 16px">Medicines</h2>
+              <div id="medicineList" class="medicine-list"></div>
+              <div class="section-actions">
+                <button
+                  id="addMedicineBtn"
+                  type="button"
+                  class="button-secondary"
+                >
+                  Add Medicine
+                </button>
+              </div>
+            </div>
+
+            <div class="section-actions">
+              <button
+                id="createPrescriptionBtn"
+                type="button"
+                class="button-warning"
+                disabled
+              >
+                Create Prescription
+              </button>
+            </div>
+
+            <div class="prescription-result">
+              <h2 style="margin-bottom: 10px; font-size: 16px">
+                Last prescription response
+              </h2>
+              <div id="prescriptionResult" class="json-box">
+                No prescription created yet.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const serverUrlInput = document.getElementById('serverUrl');
+      const appointmentIdInput = document.getElementById('appointmentId');
+      const userIdInput = document.getElementById('userId');
+      const roleInput = document.getElementById('role');
+      const chatMessageInput = document.getElementById('chatMessage');
+      const recordingUrlInput = document.getElementById('recordingUrl');
+      const notesInput = document.getElementById('notes');
+
+      const connectBtn = document.getElementById('connectBtn');
+      const joinBtn = document.getElementById('joinBtn');
+      const cameraBtn = document.getElementById('cameraBtn');
+      const shareVideoBtn = document.getElementById('shareVideoBtn');
+      const shareAudioBtn = document.getElementById('shareAudioBtn');
+      const offerBtn = document.getElementById('offerBtn');
+      const answerBtn = document.getElementById('answerBtn');
+      const sendBtn = document.getElementById('sendBtn');
+      const leaveBtn = document.getElementById('leaveBtn');
+      const endBtn = document.getElementById('endBtn');
+      const recordBtn = document.getElementById('recordBtn');
+      const resetBtn = document.getElementById('resetBtn');
+
+      const socketStatus = document.getElementById('socketStatus');
+      const roomStatus = document.getElementById('roomStatus');
+      const webrtcStatus = document.getElementById('webrtcStatus');
+      const localState = document.getElementById('localState');
+      const remoteState = document.getElementById('remoteState');
+      const sessionBox = document.getElementById('sessionBox');
+      const negotiationBox = document.getElementById('negotiationBox');
+      const logList = document.getElementById('logList');
+      const localVideo = document.getElementById('localVideo');
+      const remoteVideo = document.getElementById('remoteVideo');
+      const pageOrigin = document.getElementById('pageOrigin');
+      const prescriptionPanel = document.getElementById('prescriptionPanel');
+      const chatFeed = document.getElementById('chatFeed');
+      const chatMediaInput = document.getElementById('chatMedia');
+      const attachmentPreview = document.getElementById('attachmentPreview');
+      const clearAttachmentBtn = document.getElementById('clearAttachmentBtn');
+      const prescriptionAppointmentIdInput = document.getElementById(
+        'prescriptionAppointmentId'
+      );
+      const prescriptionPatientIdInput = document.getElementById(
+        'prescriptionPatientId'
+      );
+      const prescriptionDiagnosisInput = document.getElementById(
+        'prescriptionDiagnosis'
+      );
+      const prescriptionNotesInput =
+        document.getElementById('prescriptionNotes');
+      const prescriptionValidTillInput = document.getElementById(
+        'prescriptionValidTill'
+      );
+      const medicineList = document.getElementById('medicineList');
+      const addMedicineBtn = document.getElementById('addMedicineBtn');
+      const createPrescriptionBtn = document.getElementById(
+        'createPrescriptionBtn'
+      );
+      const prescriptionResult = document.getElementById('prescriptionResult');
+
+      pageOrigin.textContent = window.location.origin || 'file://';
+
+      let socket = null;
+      let peerConnection = null;
+      let localStream = null;
+      let localTracksAttached = false;
+      let activeRoomName = '';
+      let pendingOffer = null;
+      let pendingIceCandidates = [];
+      let sessionPayload = null;
+      let hasSentOffer = false;
+      let pendingChatAttachment = null;
+      let chatMessages = [];
+      let medicineRowCounter = 0;
+      let videoSharingEnabled = true;
+      let audioSharingEnabled = true;
+      let recordingMediaRecorder = null;
+      let recordingChunks = [];
+      let recordingTimerId = null;
+      let recordingUploadInFlight = false;
+      let recordingActive = false;
+      let recordingCompletionPromise = null;
+      let resolveRecordingCompletion = null;
+
+      const PRESCRIPTION_FORM_OPTIONS = [
+        'tablet',
+        'syrup',
+        'injection',
+        'inhaler',
+        'ointment',
+      ];
+
+      const PRESCRIPTION_FREQUENCY_OPTIONS = [
+        'once a day',
+        'twice a day',
+        'thrice a day',
+        'every 8 hours',
+      ];
+
+      const state = {
+        socketConnected: false,
+        roomJoined: false,
+      };
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
+      function pretty(value) {
+        if (value == null) {
+          return '';
+        }
+
+        if (typeof value === 'string') {
+          return value;
+        }
+
+        return JSON.stringify(value, null, 2);
+      }
+
+      function logEvent(title, details = '', tone = 'info') {
+        if (logList.querySelector('.empty')) {
+          logList.innerHTML = '';
+        }
+
+        const isMetaObject =
+          tone !== null && typeof tone === 'object' && !Array.isArray(tone);
+        const logTone = isMetaObject ? 'info' : tone;
+        const logDetails = isMetaObject
+          ? { message: details, ...tone }
+          : details;
+
+        const item = document.createElement('article');
+        item.className = 'log-item';
+
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        meta.innerHTML = `<span>${escapeHtml(new Date().toLocaleTimeString())}</span><span>${escapeHtml(logTone)}</span>`;
+
+        const heading = document.createElement('div');
+        heading.className = 'title';
+        heading.textContent = title;
+
+        const pre = document.createElement('pre');
+        pre.textContent = pretty(logDetails);
+
+        item.append(meta, heading, pre);
+        logList.prepend(item);
+      }
+
+      function setStatus(element, tone, text) {
+        element.dataset.tone = tone;
+        element.textContent = text;
+      }
+
+      function renderSessionBox() {
+        sessionBox.textContent = sessionPayload
+          ? pretty(sessionPayload)
+          : 'No session data yet.';
+      }
+
+      function getSessionAppointmentId() {
+        return (
+          sessionPayload?._id ||
+          sessionPayload?.appointment_id ||
+          sessionPayload?.appointmentId ||
+          appointmentIdInput.value.trim() ||
+          ''
+        );
+      }
+
+      function getSessionPatientId() {
+        const patient = sessionPayload?.patient_id;
+        if (patient && typeof patient === 'object') {
+          return patient._id || patient.id || '';
+        }
+
+        return patient || '';
+      }
+
+      function updatePrescriptionDefaults() {
+        const appointmentId = getSessionAppointmentId();
+        const patientId = getSessionPatientId();
+
+        if (appointmentId && !prescriptionAppointmentIdInput.value.trim()) {
+          prescriptionAppointmentIdInput.value = appointmentId;
+        }
+
+        if (patientId && !prescriptionPatientIdInput.value.trim()) {
+          prescriptionPatientIdInput.value = patientId;
+        }
+
+        if (!prescriptionValidTillInput.value) {
+          const nextWeek = new Date();
+          nextWeek.setDate(nextWeek.getDate() + 7);
+          prescriptionValidTillInput.value = nextWeek
+            .toISOString()
+            .slice(0, 10);
+        }
+      }
+
+      function getSlotDurationMinutes() {
+        const slotDuration = Number(sessionPayload?.slot_id?.slot_duration);
+        return Number.isFinite(slotDuration) && slotDuration > 0
+          ? slotDuration
+          : 20;
+      }
+
+      function getRecordingMaxMs() {
+        return getSlotDurationMinutes() * 60 * 1000;
+      }
+
+      function updateShareButtonLabels() {
+        shareVideoBtn.textContent = videoSharingEnabled
+          ? 'Stop Sharing Video'
+          : 'Share Video';
+        shareAudioBtn.textContent = audioSharingEnabled
+          ? 'Stop Sharing Audio'
+          : 'Share Audio';
+        recordBtn.textContent = recordingActive
+          ? 'Doctor: Stop Recording'
+          : recordingUploadInFlight
+            ? 'Uploading Recording...'
+            : 'Doctor: Start Recording';
+      }
+
+      function setTrackSharing(kind, enabled) {
+        if (!localStream) {
+          return;
+        }
+
+        const tracks =
+          kind === 'video'
+            ? localStream.getVideoTracks()
+            : localStream.getAudioTracks();
+
+        tracks.forEach(track => {
+          track.enabled = enabled;
+        });
+      }
+
+      function toggleVideoSharing() {
+        if (!localStream) {
+          return;
+        }
+
+        videoSharingEnabled = !videoSharingEnabled;
+        setTrackSharing('video', videoSharingEnabled);
+        updateShareButtonLabels();
+        syncControls();
+      }
+
+      function toggleAudioSharing() {
+        if (!localStream) {
+          return;
+        }
+
+        audioSharingEnabled = !audioSharingEnabled;
+        setTrackSharing('audio', audioSharingEnabled);
+        updateShareButtonLabels();
+        syncControls();
+      }
+
+      function buildRecordingStream() {
+        const recordingStream = new MediaStream();
+
+        const localVideoTrack = localStream?.getVideoTracks()?.[0];
+        if (localVideoTrack) {
+          recordingStream.addTrack(localVideoTrack);
+        }
+
+        localStream?.getAudioTracks().forEach(track => {
+          recordingStream.addTrack(track);
+        });
+
+        const remoteStream = remoteVideo.srcObject;
+        remoteStream?.getAudioTracks().forEach(track => {
+          if (
+            !recordingStream
+              .getAudioTracks()
+              .some(current => current.id === track.id)
+          ) {
+            recordingStream.addTrack(track);
+          }
+        });
+
+        if (!recordingStream.getVideoTracks().length) {
+          remoteStream?.getVideoTracks().forEach(track => {
+            recordingStream.addTrack(track);
+          });
+        }
+
+        return recordingStream;
+      }
+
+      function getPreferredRecordingMimeType() {
+        const candidates = [
+          'video/webm;codecs=vp9,opus',
+          'video/webm;codecs=vp8,opus',
+          'video/webm',
+          'audio/webm',
+        ];
+
+        return (
+          candidates.find(
+            candidate =>
+              typeof MediaRecorder !== 'undefined' &&
+              MediaRecorder.isTypeSupported(candidate)
+          ) || ''
+        );
+      }
+
+      async function uploadRecordingBlob(blob) {
+        const consultationId = getSessionAppointmentId();
+
+        if (!consultationId) {
+          throw new Error(
+            'Consultation ID is required to upload the recording.'
+          );
+        }
+
+        const fileName = `consultation-${consultationId}-${Date.now()}.webm`;
+        const file = new File([blob], fileName, {
+          type: blob.type || 'video/webm',
+        });
+        const formData = new FormData();
+        formData.append('doctorId', userIdInput.value.trim());
+        formData.append('recordingFile', file, fileName);
+
+        const backendUrl =
+          serverUrlInput.value.trim() || 'http://localhost:5000';
+        const response = await fetch(
+          `${backendUrl}/api/doctor/consultations/${consultationId}/recording?doctorId=${encodeURIComponent(
+            userIdInput.value.trim()
+          )}`,
+          {
+            method: 'POST',
+            credentials: 'include',
+            body: formData,
+          }
+        );
+
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(
+            result?.message || 'Failed to upload consultation recording'
+          );
+        }
+
+        const recordedUrl =
+          result?.data?.recording_url ||
+          result?.data?.recordingUrl ||
+          result?.recording_url ||
+          result?.recordingUrl ||
+          '';
+
+        if (recordedUrl) {
+          recordingUrlInput.value = recordedUrl;
+        }
+
+        logEvent('recording:upload', 'Consultation recording uploaded', result);
+        return result;
+      }
+
+      async function stopRecording(autoStopped = false) {
+        if (
+          !recordingMediaRecorder ||
+          recordingMediaRecorder.state !== 'recording'
+        ) {
+          return recordingCompletionPromise || Promise.resolve();
+        }
+
+        clearTimeout(recordingTimerId);
+        recordingTimerId = null;
+
+        const mode = autoStopped ? 'auto-stop' : 'manual-stop';
+        logEvent('recording:stop', `Recording ${mode} requested`);
+
+        const completionPromise =
+          recordingCompletionPromise || Promise.resolve();
+        recordingMediaRecorder.stop();
+        return completionPromise;
+      }
+
+      async function startRecording() {
+        if (roleInput.value !== 'doctor') {
+          throw new Error('Only the doctor can record the consultation.');
+        }
+
+        if (!state.socketConnected || !state.roomJoined) {
+          throw new Error('Join the consultation before recording.');
+        }
+
+        await ensurePeerConnection();
+
+        if (!localStream) {
+          throw new Error('Start the camera before recording.');
+        }
+
+        if (
+          recordingMediaRecorder &&
+          recordingMediaRecorder.state === 'recording'
+        ) {
+          return;
+        }
+
+        if (typeof MediaRecorder === 'undefined') {
+          throw new Error('This browser does not support recording.');
+        }
+
+        const recordingStream = buildRecordingStream();
+        const mimeType = getPreferredRecordingMimeType();
+        recordingChunks = [];
+        recordingActive = true;
+        recordingCompletionPromise = new Promise(resolve => {
+          resolveRecordingCompletion = resolve;
+        });
+
+        recordingMediaRecorder = mimeType
+          ? new MediaRecorder(recordingStream, { mimeType })
+          : new MediaRecorder(recordingStream);
+
+        recordingMediaRecorder.ondataavailable = event => {
+          if (event.data && event.data.size > 0) {
+            recordingChunks.push(event.data);
+          }
+        };
+
+        recordingMediaRecorder.onerror = event => {
+          logEvent('recording:error', 'Recording failed', {
+            message:
+              event.error?.message || event.message || 'Unknown recorder error',
+          });
+        };
+
+        recordingMediaRecorder.onstop = async () => {
+          try {
+            recordingUploadInFlight = true;
+            updateShareButtonLabels();
+
+            const blob = new Blob(recordingChunks, {
+              type: recordingMediaRecorder?.mimeType || 'video/webm',
+            });
+            recordingChunks = [];
+
+            if (!blob.size) {
+              throw new Error('Recording stopped without media data.');
+            }
+
+            await uploadRecordingBlob(blob);
+          } catch (error) {
+            logEvent('recording:error', 'Recording upload failed', {
+              message: error.message,
+            });
+          } finally {
+            recordingUploadInFlight = false;
+            recordingActive = false;
+            recordingMediaRecorder = null;
+            if (resolveRecordingCompletion) {
+              resolveRecordingCompletion();
+            }
+            resolveRecordingCompletion = null;
+            recordingCompletionPromise = null;
+            updateShareButtonLabels();
+            syncControls();
+          }
+        };
+
+        recordingMediaRecorder.start();
+        recordingTimerId = window.setTimeout(() => {
+          stopRecording(true).catch(error => {
+            logEvent('recording:error', 'Failed to auto-stop recording', {
+              message: error.message,
+            });
+          });
+        }, getRecordingMaxMs());
+
+        logEvent('recording:start', 'Doctor recording started', {
+          slotDurationMinutes: getSlotDurationMinutes(),
+          maxRecordingMs: getRecordingMaxMs(),
+        });
+
+        updateShareButtonLabels();
+        syncControls();
+      }
+
+      function renderChatFeed() {
+        if (!chatMessages.length) {
+          chatFeed.innerHTML = '<div class="empty">No chat messages yet.</div>';
+          return;
+        }
+
+        chatFeed.innerHTML = '';
+        chatMessages.forEach(message => {
+          chatFeed.appendChild(createChatBubble(message));
+        });
+      }
+
+      function normalizeChatMessage(payload) {
+        return {
+          from:
+            payload.from ||
+            payload.role ||
+            payload.senderRole ||
+            payload.sender_role ||
+            payload.user_role ||
+            '',
+          text: payload.text || payload.message || '',
+          media_url: payload.media_url || payload.mediaUrl || '',
+          media_name: payload.media_name || payload.mediaName || '',
+          created_at:
+            payload.created_at || payload.createdAt || new Date().toISOString(),
+        };
+      }
+
+      function getRoleLabel(role) {
+        const normalized = String(role || '').toLowerCase();
+
+        if (normalized === 'doctor') {
+          return 'Doctor';
+        }
+
+        if (normalized === 'patient' || normalized === 'customer') {
+          return 'Customer';
+        }
+
+        return 'Participant';
+      }
+
+      function isSelfMessage(message) {
+        const currentRole = String(roleInput.value || '').toLowerCase();
+        const senderRole = String(message.from || '').toLowerCase();
+
+        if (currentRole === 'doctor') {
+          return senderRole === 'doctor';
+        }
+
+        return senderRole === 'patient' || senderRole === 'customer';
+      }
+
+      function formatMediaElement(mediaUrl, fallbackName = 'Attachment') {
+        if (!mediaUrl) {
+          return null;
+        }
+
+        const mediaContainer = document.createElement('div');
+        mediaContainer.className = 'chat-media';
+
+        const lowerUrl = String(mediaUrl).toLowerCase();
+
+        if (lowerUrl.startsWith('data:image/')) {
+          const img = document.createElement('img');
+          img.src = mediaUrl;
+          img.alt = fallbackName;
+          mediaContainer.appendChild(img);
+          return mediaContainer;
+        }
+
+        if (lowerUrl.startsWith('data:video/')) {
+          const video = document.createElement('video');
+          video.src = mediaUrl;
+          video.controls = true;
+          video.playsInline = true;
+          mediaContainer.appendChild(video);
+          return mediaContainer;
+        }
+
+        if (lowerUrl.startsWith('data:audio/')) {
+          const audio = document.createElement('audio');
+          audio.src = mediaUrl;
+          audio.controls = true;
+          mediaContainer.appendChild(audio);
+          return mediaContainer;
+        }
+
+        const link = document.createElement('a');
+        link.href = mediaUrl;
+        link.target = '_blank';
+        link.rel = 'noreferrer noopener';
+        link.textContent = fallbackName;
+        mediaContainer.appendChild(link);
+        return mediaContainer;
+      }
+
+      function createChatBubble(message) {
+        const bubble = document.createElement('article');
+        bubble.className = 'chat-bubble';
+        bubble.dataset.self = String(isSelfMessage(message));
+
+        const meta = document.createElement('div');
+        meta.className = 'chat-meta';
+
+        const sender = document.createElement('span');
+        sender.textContent = getRoleLabel(message.from) || 'Participant';
+
+        const time = document.createElement('span');
+        time.textContent = message.created_at
+          ? new Date(message.created_at).toLocaleTimeString()
+          : new Date().toLocaleTimeString();
+
+        meta.append(sender, time);
+
+        const text = document.createElement('p');
+        text.className = 'chat-text';
+        text.textContent =
+          message.text || (message.media_url ? 'Media attachment' : '');
+
+        bubble.append(meta, text);
+
+        if (message.media_url) {
+          const media = formatMediaElement(
+            message.media_url,
+            message.media_name || 'Consultation media'
+          );
+          if (media) {
+            bubble.appendChild(media);
+          }
+        }
+
+        return bubble;
+      }
+
+      function pushChatMessage(message) {
+        chatMessages.push(message);
+        renderChatFeed();
+      }
+
+      function syncChatControls() {
+        const hasContent = Boolean(
+          chatMessageInput.value.trim() || pendingChatAttachment
+        );
+
+        sendBtn.disabled =
+          !state.socketConnected || !state.roomJoined || !hasContent;
+      }
+
+      function setChatAttachmentPreview(fileInfo) {
+        if (!fileInfo) {
+          attachmentPreview.style.display = 'none';
+          attachmentPreview.innerHTML = '';
+          clearAttachmentBtn.disabled = true;
+          return;
+        }
+
+        attachmentPreview.innerHTML = '';
+        attachmentPreview.style.display = 'flex';
+
+        const media = formatMediaElement(fileInfo.dataUrl, fileInfo.name);
+        if (media) {
+          attachmentPreview.appendChild(media);
+        }
+
+        const description = document.createElement('div');
+        description.innerHTML = `
+          <strong>${escapeHtml(fileInfo.name)}</strong>
+          <div>${escapeHtml(fileInfo.type || 'file')} · ${(fileInfo.size / 1024).toFixed(1)} KB</div>
+        `;
+        attachmentPreview.appendChild(description);
+
+        clearAttachmentBtn.disabled = false;
+      }
+
+      function clearChatAttachment() {
+        pendingChatAttachment = null;
+        chatMediaInput.value = '';
+        setChatAttachmentPreview(null);
+      }
+
+      function readFileAsDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ''));
+          reader.onerror = () => reject(new Error('Failed to read attachment'));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      async function handleChatMediaChange() {
+        const file = chatMediaInput.files && chatMediaInput.files[0];
+
+        if (!file) {
+          clearChatAttachment();
+          return;
+        }
+
+        const dataUrl = await readFileAsDataUrl(file);
+        pendingChatAttachment = {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          dataUrl,
+        };
+
+        setChatAttachmentPreview(pendingChatAttachment);
+        syncChatControls();
+      }
+
+      function normalizePrescriptionForm(value) {
+        const normalized = String(value || '')
+          .trim()
+          .toLowerCase();
+
+        if (PRESCRIPTION_FORM_OPTIONS.includes(normalized)) {
+          return normalized;
+        }
+
+        if (normalized.includes('tab')) {
+          return 'tablet';
+        }
+
+        if (normalized.includes('syr')) {
+          return 'syrup';
+        }
+
+        if (normalized.includes('inj')) {
+          return 'injection';
+        }
+
+        if (normalized.includes('inh')) {
+          return 'inhaler';
+        }
+
+        if (normalized.includes('oint') || normalized.includes('cream')) {
+          return 'ointment';
+        }
+
+        return 'tablet';
+      }
+
+      function getMedicineDisplayLabel(medicine) {
+        const name = String(
+          medicine?.Name || medicine?.name || 'Unnamed medicine'
+        ).trim();
+        const strength = String(medicine?.mgs || '').trim();
+        const dosageForm = String(medicine?.dosage_form || '').trim();
+
+        const bits = [name];
+        if (strength) bits.push(strength);
+        if (dosageForm) bits.push(dosageForm);
+
+        return bits.join(' • ');
+      }
+
+      function getMedicineSearchUrl(searchTerm) {
+        const backendUrl =
+          serverUrlInput.value.trim() || 'http://localhost:5000';
+        const url = new URL('/api/customer/medicines/search', backendUrl);
+        url.searchParams.set('searchTerm', searchTerm);
+        url.searchParams.set('limit', '8');
+        return url;
+      }
+
+      async function searchMedicinesCatalog(searchTerm) {
+        const response = await fetch(getMedicineSearchUrl(searchTerm), {
+          credentials: 'include',
+        });
+
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(body?.message || 'Failed to search medicines');
+        }
+
+        return Array.isArray(body?.data?.medicines) ? body.data.medicines : [];
+      }
+
+      function renderMedicineSummary(summaryBox, medicine) {
+        if (!medicine) {
+          summaryBox.innerHTML =
+            '<div class="empty">Search and select a medicine from the dropdown.</div>';
+          return;
+        }
+
+        const name = escapeHtml(String(medicine.Name || 'Unnamed medicine'));
+        const alias = String(medicine.alias_name || '').trim();
+        const strength = escapeHtml(String(medicine.mgs || 'Not specified'));
+        const form = escapeHtml(
+          String(medicine.dosage_form || 'Not specified')
+        );
+        const ready = Boolean(
+          String(medicine.mgs || '').trim() &&
+            String(medicine.dosage_form || '').trim()
+        );
+        const status = medicine.prescription_required
+          ? 'Prescription required'
+          : 'OTC';
+        const active = medicine.active ? 'Active' : 'Inactive';
+
+        summaryBox.innerHTML = `
+          <strong>${name}</strong>
+          <div class="selected-chip">${ready ? 'Ready for prescription' : 'Missing catalog data'}</div>
+          <div class="selected-chip">${escapeHtml(status)} · ${escapeHtml(active)}</div>
+          <div class="summary-grid">
+            <div class="summary-item"><span>Strength</span><strong>${strength}</strong></div>
+            <div class="summary-item"><span>Form</span><strong>${form}</strong></div>
+            <div class="summary-item"><span>Alias</span><strong>${escapeHtml(alias || 'None')}</strong></div>
+            <div class="summary-item"><span>Record ID</span><strong>${escapeHtml(String(medicine._id || ''))}</strong></div>
+          </div>
+        `;
+      }
+
+      function createMedicineRow(seed = {}) {
+        medicineRowCounter += 1;
+
+        const card = document.createElement('section');
+        card.className = 'medicine-card';
+        card.dataset.medicineRow = 'true';
+        card.__selectedMedicine = seed.selectedMedicine || null;
+
+        const header = document.createElement('header');
+        header.innerHTML = `
+          <div>
+            <strong>Medicine ${medicineRowCounter}</strong>
+            <div class="empty">Search the catalog and pick one medicine</div>
+          </div>
+        `;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'button-secondary';
+        removeBtn.textContent = 'Remove';
+        removeBtn.addEventListener('click', () => {
+          card.remove();
+          syncControls();
+          if (!medicineList.children.length) {
+            medicineList.appendChild(createMedicineRow());
+          }
+        });
+
+        header.appendChild(removeBtn);
+
+        const searchWrap = document.createElement('div');
+        searchWrap.className = 'medicine-search-wrap';
+
+        const searchField = document.createElement('div');
+        searchField.className = 'field';
+        searchField.style.margin = '0';
+        searchField.innerHTML = `
+          <label><strong>Search medicine</strong><span>Type at least 2 characters</span></label>
+        `;
+
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.placeholder = 'Search by medicine name, strength, or form';
+        searchField.appendChild(searchInput);
+
+        const resultsBox = document.createElement('div');
+        resultsBox.className = 'medicine-results';
+        resultsBox.hidden = true;
+
+        const summaryBox = document.createElement('div');
+        summaryBox.className = 'medicine-summary';
+
+        const frequencyField = document.createElement('div');
+        frequencyField.className = 'field';
+        frequencyField.innerHTML = `
+          <label><strong>Frequency</strong><span>Required</span></label>
+        `;
+
+        const frequencySelect = document.createElement('select');
+        PRESCRIPTION_FREQUENCY_OPTIONS.forEach(optionValue => {
+          const option = document.createElement('option');
+          option.value = optionValue;
+          option.textContent = optionValue;
+          if ((seed.frequency || 'twice a day') === optionValue) {
+            option.selected = true;
+          }
+          frequencySelect.appendChild(option);
+        });
+        frequencySelect.dataset.medicineField = 'frequency';
+        frequencyField.appendChild(frequencySelect);
+
+        const grid = document.createElement('div');
+        grid.className = 'medicine-grid';
+
+        const durationField = document.createElement('div');
+        durationField.className = 'field';
+        durationField.innerHTML = `
+          <label><strong>Duration days</strong><span>Required</span></label>
+        `;
+
+        const durationInput = document.createElement('input');
+        durationInput.type = 'number';
+        durationInput.min = '1';
+        durationInput.value = seed.durationDays || 1;
+        durationInput.dataset.medicineField = 'durationDays';
+        durationField.appendChild(durationInput);
+
+        const quantityField = document.createElement('div');
+        quantityField.className = 'field';
+        quantityField.innerHTML = `
+          <label><strong>Quantity</strong><span>Required</span></label>
+        `;
+
+        const quantityInput = document.createElement('input');
+        quantityInput.type = 'number';
+        quantityInput.min = '1';
+        quantityInput.value = seed.quantityPrescribed || 1;
+        quantityInput.dataset.medicineField = 'quantityPrescribed';
+        quantityField.appendChild(quantityInput);
+
+        grid.append(durationField, quantityField);
+
+        const instructionsField = document.createElement('div');
+        instructionsField.className = 'field';
+        instructionsField.style.gridColumn = '1 / -1';
+        instructionsField.innerHTML = `
+          <label><strong>Instructions</strong><span>Optional</span></label>
+        `;
+
+        const instructions = document.createElement('textarea');
+        instructions.placeholder = 'Instructions for the patient';
+        instructions.value = seed.instructions || '';
+        instructions.dataset.medicineField = 'instructions';
+        instructionsField.appendChild(instructions);
+
+        const clearSelection = () => {
+          card.__selectedMedicine = null;
+          resultsBox.hidden = true;
+          resultsBox.innerHTML = '';
+          renderMedicineSummary(summaryBox, null);
+        };
+
+        const selectMedicine = medicine => {
+          card.__selectedMedicine = medicine;
+          searchInput.value = getMedicineDisplayLabel(medicine);
+          resultsBox.hidden = true;
+          resultsBox.innerHTML = '';
+          renderMedicineSummary(summaryBox, medicine);
+          syncPrescriptionControls();
+        };
+
+        let searchTimeout = null;
+        let searchToken = 0;
+
+        const renderResults = medicines => {
+          resultsBox.innerHTML = '';
+
+          const readyMedicines = medicines.filter(
+            medicine =>
+              String(medicine.mgs || '').trim() &&
+              String(medicine.dosage_form || '').trim()
+          );
+
+          if (!readyMedicines.length) {
+            resultsBox.innerHTML =
+              '<div class="empty">No matching medicines with complete strength and form data were found.</div>';
+            resultsBox.hidden = false;
+            return;
+          }
+
+          readyMedicines.forEach(medicine => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'medicine-option';
+            button.innerHTML = `
+              <strong>${escapeHtml(String(medicine.Name || 'Unnamed medicine'))}</strong>
+              <span>${escapeHtml(getMedicineDisplayLabel(medicine))}</span>
+            `;
+            button.addEventListener('click', () => selectMedicine(medicine));
+            resultsBox.appendChild(button);
+          });
+
+          resultsBox.hidden = false;
+        };
+
+        searchInput.addEventListener('focus', () => {
+          if (
+            searchInput.value.trim().length >= 2 &&
+            resultsBox.childElementCount
+          ) {
+            resultsBox.hidden = false;
+          }
+        });
+
+        searchInput.addEventListener('input', () => {
+          const rawValue = searchInput.value.trim();
+
+          if (
+            card.__selectedMedicine &&
+            rawValue !== getMedicineDisplayLabel(card.__selectedMedicine)
+          ) {
+            clearSelection();
+          }
+
+          if (searchTimeout) {
+            clearTimeout(searchTimeout);
+          }
+
+          if (rawValue.length < 2) {
+            resultsBox.hidden = true;
+            resultsBox.innerHTML =
+              '<div class="empty">Type at least 2 characters to search.</div>';
+            return;
+          }
+
+          const currentToken = ++searchToken;
+          searchTimeout = window.setTimeout(async () => {
+            try {
+              resultsBox.hidden = false;
+              resultsBox.innerHTML =
+                '<div class="empty">Searching medicines...</div>';
+              const medicines = await searchMedicinesCatalog(rawValue);
+
+              if (currentToken !== searchToken) {
+                return;
+              }
+
+              renderResults(medicines);
+            } catch (error) {
+              if (currentToken !== searchToken) {
+                return;
+              }
+
+              resultsBox.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
+              resultsBox.hidden = false;
+            }
+          }, 250);
+        });
+
+        searchInput.addEventListener('blur', () => {
+          window.setTimeout(() => {
+            resultsBox.hidden = true;
+          }, 150);
+        });
+
+        frequencySelect.addEventListener('change', syncPrescriptionControls);
+        durationInput.addEventListener('input', syncPrescriptionControls);
+        quantityInput.addEventListener('input', syncPrescriptionControls);
+        instructions.addEventListener('input', syncPrescriptionControls);
+
+        searchWrap.append(searchField, resultsBox);
+
+        renderMedicineSummary(summaryBox, card.__selectedMedicine);
+
+        card.append(header, searchWrap, summaryBox, grid, instructionsField);
+        return card;
+      }
+
+      function getMedicinePayload() {
+        const cards = medicineList.querySelectorAll('[data-medicine-row]');
+        const medicines = [];
+
+        cards.forEach(card => {
+          const selectedMedicine = card.__selectedMedicine;
+          if (!selectedMedicine || !selectedMedicine._id) {
+            throw new Error(
+              'Select a medicine from the dropdown for each row.'
+            );
+          }
+
+          const frequencyField = card.querySelector(
+            '[data-medicine-field="frequency"]'
+          );
+          const durationField = card.querySelector(
+            '[data-medicine-field="durationDays"]'
+          );
+          const quantityField = card.querySelector(
+            '[data-medicine-field="quantityPrescribed"]'
+          );
+          const instructionsField = card.querySelector(
+            '[data-medicine-field="instructions"]'
+          );
+
+          const dosage = String(
+            selectedMedicine.mgs ||
+              selectedMedicine.dosage ||
+              selectedMedicine.strength ||
+              ''
+          ).trim();
+          const formSource =
+            selectedMedicine.dosage_form ||
+            selectedMedicine.form ||
+            selectedMedicine.dosageForm ||
+            '';
+          const form = normalizePrescriptionForm(formSource);
+
+          if (!dosage || !String(formSource).trim()) {
+            throw new Error(
+              `Selected medicine ${selectedMedicine.Name || ''} is missing strength or dosage form data.`
+            );
+          }
+
+          const frequency = String(
+            frequencyField?.value || 'twice a day'
+          ).trim();
+          const durationDays = Number.parseInt(durationField?.value || '1', 10);
+          const quantityPrescribed = Number.parseInt(
+            quantityField?.value || '1',
+            10
+          );
+
+          medicines.push({
+            medicineId: selectedMedicine._id,
+            form,
+            dosage,
+            frequency,
+            durationDays:
+              Number.isFinite(durationDays) && durationDays > 0
+                ? durationDays
+                : 1,
+            quantityPrescribed:
+              Number.isFinite(quantityPrescribed) && quantityPrescribed > 0
+                ? quantityPrescribed
+                : 1,
+            instructions: instructionsField
+              ? instructionsField.value.trim()
+              : '',
+          });
+        });
+
+        return medicines;
+      }
+
+      function syncPrescriptionControls() {
+        const doctor = roleInput.value === 'doctor';
+        const hasContext = Boolean(state.socketConnected && state.roomJoined);
+
+        createPrescriptionBtn.disabled = !doctor || !hasContext;
+        addMedicineBtn.disabled = !doctor;
+        prescriptionPanel.style.display = doctor ? '' : 'none';
+      }
+
+      function setPrescriptionResult(payload) {
+        prescriptionResult.textContent = pretty(payload);
+      }
+
+      async function createPrescription() {
+        ensureSocketReady();
+
+        if (roleInput.value !== 'doctor') {
+          throw new Error('Only the doctor can create a prescription.');
+        }
+
+        updatePrescriptionDefaults();
+
+        const payload = {
+          appointmentId: prescriptionAppointmentIdInput.value.trim(),
+          patientId: prescriptionPatientIdInput.value.trim(),
+          diagnosis: prescriptionDiagnosisInput.value.trim(),
+          notes: prescriptionNotesInput.value.trim(),
+          validTill: prescriptionValidTillInput.value,
+          medicines: getMedicinePayload(),
+          doctorId: userIdInput.value.trim(),
+        };
+
+        if (!payload.appointmentId) {
+          throw new Error('Appointment ID is required.');
+        }
+
+        if (!payload.patientId) {
+          throw new Error('Patient ID is required.');
+        }
+
+        if (!payload.diagnosis) {
+          throw new Error('Diagnosis is required.');
+        }
+
+        if (!payload.validTill) {
+          throw new Error('Valid till is required.');
+        }
+
+        if (!payload.medicines.length) {
+          throw new Error('Add at least one medicine.');
+        }
+
+        const backendUrl =
+          serverUrlInput.value.trim() || 'http://localhost:5000';
+        const response = await fetch(`${backendUrl}/api/doctor/prescriptions`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(result?.message || 'Failed to create prescription');
+        }
+
+        setPrescriptionResult(result);
+        logEvent(
+          'prescription:create',
+          'Prescription created successfully',
+          result
+        );
+      }
+
+      function ensurePrescriptionRow() {
+        if (!medicineList.children.length) {
+          medicineList.appendChild(createMedicineRow());
+        }
+      }
+
+      function renderNegotiationBox(extra = {}) {
+        const snapshot = {
+          hasSocket: Boolean(socket),
+          socketConnected: state.socketConnected,
+          hasPeer: Boolean(peerConnection),
+          roomJoined: state.roomJoined,
+          roomName: activeRoomName || null,
+          localStream: Boolean(localStream),
+          pendingOffer: Boolean(pendingOffer),
+          pendingIceCandidates: pendingIceCandidates.length,
+          ...extra,
+        };
+
+        negotiationBox.textContent = pretty(snapshot);
+      }
+
+      function syncControls() {
+        const doctor = roleInput.value === 'doctor';
+
+        joinBtn.disabled = !state.socketConnected;
+        cameraBtn.disabled = !state.socketConnected;
+        shareVideoBtn.disabled = !localStream;
+        shareAudioBtn.disabled = !localStream;
+        leaveBtn.disabled = !state.socketConnected || !state.roomJoined;
+        endBtn.disabled =
+          !state.socketConnected || !state.roomJoined || !doctor;
+        offerBtn.disabled =
+          !state.socketConnected ||
+          !state.roomJoined ||
+          !doctor ||
+          hasSentOffer;
+        answerBtn.disabled =
+          !state.socketConnected ||
+          !state.roomJoined ||
+          doctor ||
+          !pendingOffer;
+        recordBtn.style.display = doctor ? '' : 'none';
+        recordBtn.disabled =
+          !doctor ||
+          !state.socketConnected ||
+          !state.roomJoined ||
+          !localStream ||
+          recordingUploadInFlight;
+
+        const socketText = state.socketConnected
+          ? `Socket: connected as ${roleInput.value}`
+          : 'Socket: disconnected';
+        const roomText = state.roomJoined
+          ? `Room: joined ${activeRoomName || appointmentIdInput.value || 'consultation room'}`
+          : 'Room: not joined';
+        const peerText = peerConnection
+          ? `WebRTC: ${peerConnection.connectionState || 'initialized'}`
+          : 'WebRTC: idle';
+
+        setStatus(
+          socketStatus,
+          state.socketConnected ? 'ok' : 'warn',
+          socketText
+        );
+        setStatus(roomStatus, state.roomJoined ? 'ok' : 'warn', roomText);
+        setStatus(webrtcStatus, peerConnection ? 'ok' : 'warn', peerText);
+
+        localState.textContent = localStream ? 'camera on' : 'camera off';
+        remoteState.textContent = peerConnection ? 'listening' : 'waiting';
+
+        renderSessionBox();
+        renderNegotiationBox();
+        updatePrescriptionDefaults();
+        updateShareButtonLabels();
+        syncChatControls();
+        syncPrescriptionControls();
+      }
+
+      function getPayload() {
+        return {
+          appointmentId: appointmentIdInput.value.trim(),
+          userId: userIdInput.value.trim(),
+          role: roleInput.value,
+        };
+      }
+
+      function requireBasics() {
+        const { appointmentId, userId, role } = getPayload();
+
+        if (!appointmentId) {
+          throw new Error('Appointment ID is required.');
+        }
+
+        if (!userId) {
+          throw new Error('User ID is required.');
+        }
+
+        if (!role) {
+          throw new Error('Role is required.');
+        }
+
+        return { appointmentId, userId, role };
+      }
+
+      function ensureSocketReady() {
+        if (!socket || !state.socketConnected) {
+          throw new Error('Connect the socket first.');
+        }
+
+        return socket;
+      }
+
+      async function startCamera() {
+        if (localStream) {
+          logEvent('camera', 'Reusing existing local camera stream');
+          syncControls();
+          return localStream;
+        }
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('This browser does not support camera access.');
+        }
+
+        localStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+
+        videoSharingEnabled = true;
+        audioSharingEnabled = true;
+
+        localVideo.srcObject = localStream;
+        logEvent('camera', 'Local media stream is active', {
+          videoTracks: localStream.getVideoTracks().map(track => track.label),
+          audioTracks: localStream.getAudioTracks().map(track => track.label),
+        });
+
+        updateShareButtonLabels();
+        syncControls();
+        return localStream;
+      }
+
+      function createPeerConnection() {
+        if (peerConnection) {
+          return peerConnection;
+        }
+
+        peerConnection = new RTCPeerConnection({
+          iceServers: [],
+        });
+
+        const remoteStream = new MediaStream();
+        remoteVideo.srcObject = remoteStream;
+        remoteVideo.muted = false;
+        remoteVideo.volume = 1;
+        localTracksAttached = false;
+
+        peerConnection.ontrack = event => {
+          const incomingStream = event.streams && event.streams[0];
+
+          event.streams[0].getTracks().forEach(track => {
+            if (
+              !remoteStream.getTracks().some(current => current.id === track.id)
+            ) {
+              remoteStream.addTrack(track);
+            }
+          });
+
+          if (incomingStream) {
+            remoteVideo.srcObject = incomingStream;
+          }
+
+          remoteVideo.play().catch(error => {
+            logEvent('webrtc:play', 'Remote video playback was blocked', {
+              message: error.message,
+            });
+          });
+
+          remoteState.textContent = 'remote stream active';
+          logEvent('webrtc:track', 'Remote media track received', {
+            kinds: event.streams[0].getTracks().map(track => track.kind),
+          });
+        };
+
+        peerConnection.onicecandidate = event => {
+          if (!event.candidate) {
+            return;
+          }
+
+          const { appointmentId, userId, role } = getPayload();
+          socket.emit('consultation:ice-candidate', {
+            appointmentId,
+            candidate: event.candidate,
+            userId,
+            role,
+          });
+
+          logEvent(
+            'webrtc:ice-out',
+            'Sent ICE candidate to room',
+            event.candidate
+          );
+          renderNegotiationBox({ lastOutgoingCandidate: true });
+        };
+
+        peerConnection.onconnectionstatechange = () => {
+          const connectionState = peerConnection.connectionState;
+          setStatus(
+            webrtcStatus,
+            connectionState === 'connected'
+              ? 'ok'
+              : connectionState === 'failed'
+                ? 'bad'
+                : 'warn',
+            `WebRTC: ${connectionState}`
+          );
+          logEvent(
+            'webrtc:state',
+            `Connection state changed to ${connectionState}`
+          );
+          renderNegotiationBox({ connectionState });
+        };
+
+        peerConnection.oniceconnectionstatechange = () => {
+          logEvent(
+            'webrtc:ice-state',
+            `ICE connection state: ${peerConnection.iceConnectionState}`
+          );
+        };
+
+        syncLocalTracks();
+        logEvent('webrtc', 'Peer connection created');
+        syncControls();
+        return peerConnection;
+      }
+
+      function syncLocalTracks() {
+        if (!peerConnection || !localStream || localTracksAttached) {
+          return;
+        }
+
+        localStream.getTracks().forEach(track => {
+          peerConnection.addTrack(track, localStream);
+        });
+
+        localTracksAttached = true;
+      }
+
+      async function ensurePeerConnection() {
+        await startCamera();
+        createPeerConnection();
+        syncLocalTracks();
+        return peerConnection;
+      }
+
+      async function sendOffer() {
+        ensureSocketReady();
+        await ensurePeerConnection();
+
+        const { appointmentId, userId, role } = requireBasics();
+        const offer = await peerConnection.createOffer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: true,
+        });
+
+        await peerConnection.setLocalDescription(offer);
+
+        socket.emit('consultation:offer', {
+          appointmentId,
+          offer: peerConnection.localDescription,
+          userId,
+          role,
+        });
+
+        logEvent(
+          'webrtc:offer',
+          'Doctor offer sent',
+          peerConnection.localDescription
+        );
+        renderNegotiationBox({
+          localDescription: peerConnection.localDescription,
+        });
+      }
+
+      async function triggerDoctorOffer() {
+        if (hasSentOffer) {
+          return;
+        }
+
+        hasSentOffer = true;
+
+        try {
+          await sendOffer();
+        } catch (error) {
+          hasSentOffer = false;
+          throw error;
+        }
+      }
+
+      async function sendAnswer() {
+        ensureSocketReady();
+        await ensurePeerConnection();
+
+        if (!peerConnection.remoteDescription) {
+          if (!pendingOffer) {
+            throw new Error('No incoming offer is available yet.');
+          }
+
+          await peerConnection.setRemoteDescription(
+            new RTCSessionDescription(pendingOffer)
+          );
+          pendingOffer = null;
+        }
+
+        const { appointmentId, userId, role } = requireBasics();
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+
+        socket.emit('consultation:answer', {
+          appointmentId,
+          answer: peerConnection.localDescription,
+          userId,
+          role,
+        });
+
+        logEvent(
+          'webrtc:answer',
+          'Customer answer sent',
+          peerConnection.localDescription
+        );
+        renderNegotiationBox({
+          localDescription: peerConnection.localDescription,
+        });
+        syncControls();
+      }
+
+      async function applyRemoteOffer(offer) {
+        await ensurePeerConnection();
+        pendingOffer = null;
+
+        await peerConnection.setRemoteDescription(
+          new RTCSessionDescription(offer)
+        );
+        flushPendingCandidates();
+        logEvent('webrtc:offer-in', 'Remote offer received and applied', offer);
+        renderNegotiationBox({ remoteDescription: offer });
+      }
+
+      async function applyRemoteAnswer(answer) {
+        await ensurePeerConnection();
+
+        await peerConnection.setRemoteDescription(
+          new RTCSessionDescription(answer)
+        );
+        flushPendingCandidates();
+        logEvent(
+          'webrtc:answer-in',
+          'Remote answer received and applied',
+          answer
+        );
+        renderNegotiationBox({ remoteDescription: answer });
+      }
+
+      function flushPendingCandidates() {
+        if (!peerConnection || !peerConnection.remoteDescription) {
+          return;
+        }
+
+        const queued = [...pendingIceCandidates];
+        pendingIceCandidates = [];
+
+        queued.forEach(async candidate => {
+          try {
+            await peerConnection.addIceCandidate(
+              new RTCIceCandidate(candidate)
+            );
+            logEvent(
+              'webrtc:ice-in',
+              'Applied queued ICE candidate',
+              candidate
+            );
+          } catch (error) {
+            logEvent(
+              'webrtc:ice-error',
+              'Failed to apply queued ICE candidate',
+              {
+                message: error.message,
+                candidate,
+              }
+            );
+          }
+        });
+      }
+
+      async function handleIncomingCandidate(candidate) {
+        if (!peerConnection || !peerConnection.remoteDescription) {
+          pendingIceCandidates.push(candidate);
+          logEvent(
+            'webrtc:ice-queued',
+            'Queued incoming ICE candidate',
+            candidate
+          );
+          renderNegotiationBox({
+            queuedIceCandidates: pendingIceCandidates.length,
+          });
+          return;
+        }
+
+        try {
+          await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+          logEvent(
+            'webrtc:ice-in',
+            'Applied incoming ICE candidate',
+            candidate
+          );
+          renderNegotiationBox({ lastIncomingCandidate: true });
+        } catch (error) {
+          logEvent(
+            'webrtc:ice-error',
+            'Failed to apply incoming ICE candidate',
+            {
+              message: error.message,
+              candidate,
+            }
+          );
+        }
+      }
+
+      function resetPeerConnection() {
+        stopRecording(false).catch(() => {});
+
+        if (peerConnection) {
+          peerConnection.ontrack = null;
+          peerConnection.onicecandidate = null;
+          peerConnection.onconnectionstatechange = null;
+          peerConnection.oniceconnectionstatechange = null;
+          peerConnection.close();
+        }
+
+        peerConnection = null;
+        localTracksAttached = false;
+        pendingOffer = null;
+        pendingIceCandidates = [];
+        hasSentOffer = false;
+        remoteVideo.srcObject = null;
+        remoteState.textContent = 'waiting';
+        recordingActive = false;
+        recordingUploadInFlight = false;
+        recordingChunks = [];
+        recordingMediaRecorder = null;
+        recordingCompletionPromise = null;
+        resolveRecordingCompletion = null;
+        clearTimeout(recordingTimerId);
+        recordingTimerId = null;
+
+        logEvent('webrtc', 'Peer connection reset');
+        renderNegotiationBox();
+        syncControls();
+      }
+
+      function disconnectSocket() {
+        if (!socket) {
+          return;
+        }
+
+        socket.disconnect();
+        socket = null;
+        hasSentOffer = false;
+      }
+
+      async function connectSocket() {
+        const { userId, role } = requireBasics();
+
+        if (socket) {
+          disconnectSocket();
+        }
+
+        const backendUrl =
+          serverUrlInput.value.trim() || 'http://localhost:5000';
+        socket = io(backendUrl, {
+          transports: ['websocket', 'polling'],
+          withCredentials: true,
+          auth: { userId, role },
+        });
+
+        setStatus(socketStatus, 'warn', 'Socket: connecting...');
+
+        socket.on('connect', () => {
+          state.socketConnected = true;
+          logEvent('socket:connect', 'Socket connected', {
+            socketId: socket.id,
+            backendUrl,
+            auth: { userId, role },
+          });
+          syncControls();
+        });
+
+        socket.on('connect_error', error => {
+          state.socketConnected = false;
+          logEvent('socket:error', 'Socket connection failed', {
+            message: error.message,
+            backendUrl,
+          });
+          setStatus(
+            socketStatus,
+            'bad',
+            `Socket: connection failed (${error.message})`
+          );
+          syncControls();
+        });
+
+        socket.on('disconnect', reason => {
+          state.socketConnected = false;
+          state.roomJoined = false;
+          activeRoomName = '';
+          logEvent('socket:disconnect', 'Socket disconnected', { reason });
+          syncControls();
+        });
+
+        socket.on('consultation:error', payload => {
+          const message = payload?.message || 'Backend returned an error';
+          logEvent('consultation:error', message, payload);
+          setStatus(roomStatus, 'bad', `Room: ${message}`);
+        });
+
+        socket.on('consultation:joined', payload => {
+          state.roomJoined = true;
+          activeRoomName = payload?.room_name || '';
+          sessionPayload = payload?.session || null;
+          logEvent('consultation:joined', 'Joined consultation room', payload);
+          updatePrescriptionDefaults();
+          syncControls();
+        });
+
+        socket.on('consultation:participant-joined', payload => {
+          logEvent(
+            'consultation:participant-joined',
+            'Another participant joined the room',
+            payload
+          );
+        });
+
+        socket.on('consultation:started', payload => {
+          state.roomJoined = true;
+          activeRoomName = payload?.room_name || activeRoomName;
+          sessionPayload = payload?.session || sessionPayload;
+          logEvent('consultation:started', 'Consultation started', payload);
+          updatePrescriptionDefaults();
+          syncControls();
+
+          if (roleInput.value === 'doctor') {
+            triggerDoctorOffer().catch(error => {
+              logEvent('ui:error', 'Failed to auto-send doctor offer', {
+                message: error.message,
+              });
+            });
+          }
+        });
+
+        socket.on('consultation:ended', payload => {
+          sessionPayload = payload?.session || sessionPayload;
+          logEvent('consultation:ended', 'Consultation ended', payload);
+          updatePrescriptionDefaults();
+          syncControls();
+        });
+
+        socket.on('consultation:participant-left', payload => {
+          logEvent(
+            'consultation:participant-left',
+            'Participant left the room',
+            payload
+          );
+        });
+
+        socket.on('consultation:message', payload => {
+          logEvent(
+            'consultation:message',
+            'Consultation chat message',
+            payload
+          );
+          pushChatMessage(normalizeChatMessage(payload));
+        });
+
+        socket.on('consultation:offer', async offer => {
+          logEvent('consultation:offer', 'Offer received from room', offer);
+          pendingOffer = offer;
+
+          if (roleInput.value === 'customer') {
+            await applyRemoteOffer(offer);
+            await sendAnswer();
+            return;
+          }
+
+          renderNegotiationBox({ pendingOffer: true });
+        });
+
+        socket.on('consultation:answer', async answer => {
+          logEvent('consultation:answer', 'Answer received from room', answer);
+          await applyRemoteAnswer(answer);
+        });
+
+        socket.on('consultation:ice-candidate', async candidate => {
+          await handleIncomingCandidate(candidate);
+        });
+
+        syncControls();
+      }
+
+      async function joinRoom() {
+        ensureSocketReady();
+        const payload = requireBasics();
+
+        socket.emit('consultation:join', payload);
+        logEvent(
+          'consultation:join',
+          'Requested to join the consultation room',
+          payload
+        );
+      }
+
+      async function startConsultation() {
+        ensureSocketReady();
+        const payload = requireBasics();
+
+        socket.emit('consultation:start', payload);
+        logEvent(
+          'consultation:start',
+          'Doctor requested the consultation to start',
+          payload
+        );
+      }
+
+      async function leaveRoom() {
+        ensureSocketReady();
+        const payload = requireBasics();
+
+        socket.emit('consultation:leave', payload);
+        state.roomJoined = false;
+        activeRoomName = '';
+        logEvent('consultation:leave', 'Left the consultation room', payload);
+        syncControls();
+      }
+
+      async function endConsultation() {
+        ensureSocketReady();
+        await stopRecording(false).catch(error => {
+          logEvent(
+            'recording:error',
+            'Failed to stop recording before ending consultation',
+            {
+              message: error.message,
+            }
+          );
+        });
+        const payload = {
+          ...requireBasics(),
+          recordingUrl: recordingUrlInput.value.trim() || null,
+          notes: notesInput.value.trim() || null,
+        };
+
+        socket.emit('consultation:end', payload);
+        logEvent(
+          'consultation:end',
+          'Doctor requested consultation end',
+          payload
+        );
+      }
+
+      async function sendMessage() {
+        ensureSocketReady();
+        const message = chatMessageInput.value.trim();
+        const mediaUrl = pendingChatAttachment?.dataUrl || '';
+
+        if (!message && !mediaUrl) {
+          throw new Error('Consultation message or media is required.');
+        }
+
+        const payload = {
+          ...requireBasics(),
+          text: message || null,
+          mediaUrl: mediaUrl || null,
+          media_url: mediaUrl || null,
+          mediaName: pendingChatAttachment?.name || null,
+          media_name: pendingChatAttachment?.name || null,
+        };
+
+        socket.emit('consultation:message', payload);
+        logEvent('consultation:message-out', 'Message sent to room', payload);
+        chatMessageInput.value = '';
+        clearChatAttachment();
+        syncChatControls();
+      }
+
+      connectBtn.addEventListener('click', async () => {
+        try {
+          await connectSocket();
+        } catch (error) {
+          logEvent('ui:error', 'Failed to connect socket', {
+            message: error.message,
+          });
+          setStatus(socketStatus, 'bad', `Socket: ${error.message}`);
+        }
+      });
+
+      joinBtn.addEventListener('click', async () => {
+        try {
+          await joinRoom();
+        } catch (error) {
+          logEvent('ui:error', 'Failed to join consultation room', {
+            message: error.message,
+          });
+          setStatus(roomStatus, 'bad', `Room: ${error.message}`);
+        }
+      });
+
+      cameraBtn.addEventListener('click', async () => {
+        try {
+          await startCamera();
+        } catch (error) {
+          logEvent('ui:error', 'Failed to start camera', {
+            message: error.message,
+          });
+        }
+      });
+
+      offerBtn.addEventListener('click', async () => {
+        try {
+          await startConsultation();
+          await triggerDoctorOffer();
+        } catch (error) {
+          logEvent('ui:error', 'Failed to send offer', {
+            message: error.message,
+          });
+        }
+      });
+
+      answerBtn.addEventListener('click', async () => {
+        try {
+          if (!pendingOffer) {
+            throw new Error('No pending offer to answer.');
+          }
+
+          await applyRemoteOffer(pendingOffer);
+          await sendAnswer();
+        } catch (error) {
+          logEvent('ui:error', 'Failed to answer offer', {
+            message: error.message,
+          });
+        }
+      });
+
+      sendBtn.addEventListener('click', async () => {
+        try {
+          await sendMessage();
+        } catch (error) {
+          logEvent('ui:error', 'Failed to send consultation message', {
+            message: error.message,
+          });
+        }
+      });
+
+      chatMessageInput.addEventListener('input', () => {
+        syncChatControls();
+      });
+
+      chatMediaInput.addEventListener('change', async () => {
+        try {
+          await handleChatMediaChange();
+        } catch (error) {
+          clearChatAttachment();
+          logEvent('ui:error', 'Failed to read chat attachment', {
+            message: error.message,
+          });
+        }
+      });
+
+      clearAttachmentBtn.addEventListener('click', () => {
+        clearChatAttachment();
+        syncChatControls();
+      });
+
+      addMedicineBtn.addEventListener('click', () => {
+        medicineList.appendChild(createMedicineRow());
+        syncPrescriptionControls();
+      });
+
+      createPrescriptionBtn.addEventListener('click', async () => {
+        try {
+          await createPrescription();
+        } catch (error) {
+          logEvent('ui:error', 'Failed to create prescription', {
+            message: error.message,
+          });
+          setPrescriptionResult({ error: error.message });
+        }
+      });
+
+      leaveBtn.addEventListener('click', async () => {
+        try {
+          await leaveRoom();
+        } catch (error) {
+          logEvent('ui:error', 'Failed to leave consultation room', {
+            message: error.message,
+          });
+        }
+      });
+
+      endBtn.addEventListener('click', async () => {
+        try {
+          await endConsultation();
+        } catch (error) {
+          logEvent('ui:error', 'Failed to end consultation', {
+            message: error.message,
+          });
+        }
+      });
+
+      resetBtn.addEventListener('click', () => {
+        resetPeerConnection();
+        syncControls();
+      });
+
+      [roleInput, appointmentIdInput, userIdInput].forEach(input => {
+        input.addEventListener('change', () => {
+          syncControls();
+        });
+      });
+
+      shareVideoBtn.addEventListener('click', () => {
+        try {
+          toggleVideoSharing();
+        } catch (error) {
+          logEvent('ui:error', 'Failed to toggle video sharing', {
+            message: error.message,
+          });
+        }
+      });
+
+      shareAudioBtn.addEventListener('click', () => {
+        try {
+          toggleAudioSharing();
+        } catch (error) {
+          logEvent('ui:error', 'Failed to toggle audio sharing', {
+            message: error.message,
+          });
+        }
+      });
+
+      recordBtn.addEventListener('click', async () => {
+        try {
+          if (recordingActive) {
+            await stopRecording(false);
+          } else {
+            await startRecording();
+          }
+        } catch (error) {
+          logEvent('ui:error', 'Failed to toggle recording', {
+            message: error.message,
+          });
+        }
+      });
+
+      ensurePrescriptionRow();
+      renderChatFeed();
+      syncChatControls();
+      syncPrescriptionControls();
+
+      syncControls();
+      logEvent('ready', 'Video consultation test lab loaded', {
+        origin: window.location.origin,
+        backendDefault: serverUrlInput.value,
+      });
+    </script>
+  </body>
+</html>

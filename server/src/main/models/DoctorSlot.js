@@ -32,8 +32,8 @@ const Schema = {
 
   status: {
     type: String,
-    enum: ['available', 'booked', 'unavailable'],
-    default: 'available',
+    enum: ['booked', 'unbooked'],
+    default: 'unbooked',
   },
 
   // For recurring slots

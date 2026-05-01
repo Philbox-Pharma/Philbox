@@ -12,8 +12,23 @@ const orderItemSchema = new mongoose.Schema(
       ref: 'Medicine',
       required: true,
     },
+    branch_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Branch',
+      index: true,
+    },
     prescription_file_url: {
       type: String,
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    medicine_name: {
+      type: String,
+      trim: true,
+      required: true,
     },
     quantity: {
       type: Number,

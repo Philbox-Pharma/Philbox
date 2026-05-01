@@ -164,6 +164,9 @@ class BranchService {
    */
   async listBranches(queryParams, req) {
     const { search = '', status, page = 1, limit = 10 } = queryParams;
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const skip = (pageNum - 1) * limitNum;
 
     const query = {};
 
@@ -180,10 +183,24 @@ class BranchService {
       query.status = status;
     }
 
-    const result = await paginate(Branch, query, page, limit, [
-      'under_administration_of',
-      'salespersons_assigned',
-      'address_id',
+    const [branches, total] = await Promise.all([
+      Branch.find(query)
+        .select(
+          'name code phone status cover_img_url under_administration_of salespersons_assigned address_id created_at'
+        )
+        .sort({ created_at: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .populate('under_administration_of', 'name email status')
+        .populate(
+          'salespersons_assigned',
+          'fullName email status contactNumber'
+        )
+        .populate(
+          'address_id',
+          'street town city province country latitude longitude google_map_link zip_code'
+        ),
+      Branch.countDocuments(query),
     ]);
 
     // Log activity
@@ -191,7 +208,7 @@ class BranchService {
       await logAdminActivity(
         req,
         'view_branches',
-        `Viewed branch list (${result.total} branches, page ${result.currentPage})`,
+        `Viewed branch list (${total} branches, page ${pageNum})`,
         'branches',
         null,
         { query_params: { search, status, page, limit } }
@@ -199,12 +216,12 @@ class BranchService {
     }
 
     return {
-      branches: result.list,
+      branches,
       pagination: {
-        total: result.total,
-        page: result.currentPage,
-        pages: result.totalPages,
-        limit: result.limit,
+        total,
+        page: pageNum,
+        pages: Math.ceil(total / limitNum),
+        limit: limitNum,
       },
     };
   }

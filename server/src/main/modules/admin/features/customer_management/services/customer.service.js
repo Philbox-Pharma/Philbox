@@ -156,7 +156,7 @@ class CustomerManagementService {
         })
         .populate({
           path: 'order_items',
-          select: 'product_name quantity price total',
+          select: 'medicine_name quantity price subtotal',
         })
         .sort({ created_at: -1 })
         .limit(50);

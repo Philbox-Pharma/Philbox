@@ -10,6 +10,52 @@ import { logCustomerActivity } from '../../../utils/logCustomerActivities.js';
 import { ROUTES } from '../../../../../constants/global.routes.constants.js';
 
 class CustomerAuthService {
+  _sanitizeCustomer(customer) {
+    if (!customer) return customer;
+
+    const normalizedCustomer =
+      typeof customer.toObject === 'function'
+        ? customer.toObject()
+        : { ...customer };
+
+    const fieldsToRemove = [
+      'passwordHash',
+      'refreshTokens',
+      'oauthId',
+      'resetPasswordToken',
+      'resetPasswordExpiresAt',
+      'verificationToken',
+      'verificationTokenExpiresAt',
+      '__v',
+      'created_at',
+      'updated_at',
+      'last_login',
+    ];
+
+    for (const field of fieldsToRemove) {
+      delete normalizedCustomer[field];
+    }
+
+    return normalizedCustomer;
+  }
+
+  async _findCustomerForAuth(customerIdOrEmail) {
+    return Customer.findOne({
+      $or:
+        typeof customerIdOrEmail === 'string' && customerIdOrEmail.includes('@')
+          ? [{ email: customerIdOrEmail.toLowerCase() }]
+          : [{ _id: customerIdOrEmail }, { email: customerIdOrEmail }],
+    })
+      .populate({
+        path: 'address_id',
+        select: 'street town city province zip_code country google_map_link',
+      })
+      .populate({
+        path: 'roleId',
+        select: 'name description',
+      });
+  }
+
   /**
    * Helper function to determine next step for Customer
    * Logic: Verify Email -> Complete Profile (Add Address) -> Dashboard
@@ -156,6 +202,16 @@ class CustomerAuthService {
     customer.last_login = Date.now();
     await customer.save();
 
+    const populatedCustomer = await Customer.findById(customer._id)
+      .populate({
+        path: 'address_id',
+        select: 'street town city province zip_code country google_map_link',
+      })
+      .populate({
+        path: 'roleId',
+        select: 'name description',
+      });
+
     req.customer = { _id: customer._id, email: customer.email };
     await logCustomerActivity(
       req,
@@ -168,13 +224,10 @@ class CustomerAuthService {
     // Determine next step
     const nextStep = await this.determineNextStep(customer._id);
 
-    const safeCustomer = customer.toObject();
-    delete safeCustomer.passwordHash;
-
     return {
       customerId: customer._id.toString(),
       accountStatus: customer.account_status,
-      customer: safeCustomer,
+      customer: this._sanitizeCustomer(populatedCustomer),
       nextStep,
     };
   }
@@ -204,11 +257,22 @@ class CustomerAuthService {
     // Determine next step
     const nextStep = await this.determineNextStep(customer._id);
 
+    const populatedCustomer = await Customer.findById(customer._id)
+      .populate({
+        path: 'address_id',
+        select: 'street town city province zip_code country google_map_link',
+      })
+      .populate({
+        path: 'roleId',
+        select: 'name description',
+      });
+
     return {
       customerId: customer._id.toString(),
       accountStatus: customer.account_status,
       isNewUser: customer.created_at > Date.now() - 60000,
       nextStep,
+      customer: this._sanitizeCustomer(populatedCustomer),
     };
   }
 

@@ -4,9 +4,14 @@ import { logDoctorActivity } from '../../../utils/logDoctorActivities.js';
 import {
   sendAppointmentRequestAccepted,
   sendAppointmentRequestRejected,
+  sendAppointmentAcceptedSMS,
 } from '../../../../../utils/sendEmail.js';
 
 class DoctorAppointmentsService {
+  _normalizeNullableEnum(value, allowedValues) {
+    return allowedValues.includes(value) ? value : undefined;
+  }
+
   /**
    * Get pending appointment requests for a doctor with pagination and filters
    */
@@ -40,7 +45,10 @@ class DoctorAppointmentsService {
       // Execute query with pagination
       const [appointments, total] = await Promise.all([
         Appointment.find(query)
-          .populate('patient_id', 'first_name last_name email phone_number')
+          .select(
+            '_id doctor_id patient_id status appointment_request appointment_type consultation_reason preferred_date preferred_time rejection_reason notes slot_id'
+          )
+          .populate('patient_id', 'fullName email phone_number profile_img_url')
           .populate('slot_id', 'date start_time end_time')
           .sort(sortObj)
           .skip(skip)
@@ -77,7 +85,10 @@ class DoctorAppointmentsService {
         _id: appointmentId,
         doctor_id: doctorId,
       })
-        .populate('patient_id', 'first_name last_name email phone_number')
+        .select(
+          '_id doctor_id patient_id status appointment_request appointment_type consultation_reason preferred_date preferred_time rejection_reason notes slot_id'
+        )
+        .populate('patient_id', 'fullName email phone_number profile_img_url')
         .populate('slot_id', 'date start_time end_time slot_duration')
         .lean();
 
@@ -138,6 +149,16 @@ class DoctorAppointmentsService {
         appointment.notes = notes;
       }
 
+      // Clear legacy invalid enum values so validation does not fail on save.
+      appointment.consultation_started_by = this._normalizeNullableEnum(
+        appointment.consultation_started_by,
+        ['doctor', 'patient']
+      );
+      appointment.missed_by = this._normalizeNullableEnum(
+        appointment.missed_by,
+        ['doctor', 'patient']
+      );
+
       await appointment.save();
 
       // Log activity
@@ -184,8 +205,22 @@ class DoctorAppointmentsService {
           notes || '',
           dashboardLink
         );
+
+        // Send SMS notification to patient
+        if (appointment.patient_id.phone_number) {
+          await sendAppointmentAcceptedSMS(
+            appointment.patient_id.phone_number,
+            patientName,
+            doctorName,
+            appointmentDate,
+            appointment.appointment_type
+          );
+        }
       } catch (emailError) {
-        console.error('Error sending appointment accepted email:', emailError);
+        console.error(
+          'Error sending appointment accepted email/SMS:',
+          emailError
+        );
         // Don't throw - appointment is still accepted even if email fails
       }
 
@@ -314,7 +349,10 @@ class DoctorAppointmentsService {
       // Execute query with pagination
       const [appointments, total] = await Promise.all([
         Appointment.find(query)
-          .populate('patient_id', 'first_name last_name email phone_number')
+          .select(
+            '_id doctor_id patient_id status appointment_request appointment_type preferred_date preferred_time notes slot_id'
+          )
+          .populate('patient_id', 'fullName email phone_number profile_img_url')
           .populate('slot_id', 'date start_time end_time slot_duration')
           .sort(sortObj)
           .skip(skip)

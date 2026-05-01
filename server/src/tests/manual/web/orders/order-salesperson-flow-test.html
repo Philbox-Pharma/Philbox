@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Philbox Salesperson Order Lab</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+      :root {
+        --bg: #07111f;
+        --bg-2: #0c1728;
+        --panel: rgba(255, 255, 255, 0.08);
+        --panel-strong: rgba(255, 255, 255, 0.12);
+        --border: rgba(255, 255, 255, 0.12);
+        --text: #eff5ff;
+        --muted: #9cb1cf;
+        --accent: #77f0cf;
+        --accent-2: #86a8ff;
+        --warning: #ffd166;
+        --danger: #ff7f7f;
+        --success: #77f0cf;
+        --shadow: 0 24px 90px rgba(0, 0, 0, 0.35);
+        --radius: 20px;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { min-height: 100%; }
+
+      body {
+        margin: 0;
+        color: var(--text);
+        font-family: Inter, Segoe UI, sans-serif;
+        background: radial-gradient(circle at top left, rgba(119, 240, 207, 0.16), transparent 24%),
+                    radial-gradient(circle at top right, rgba(134, 168, 255, 0.18), transparent 28%),
+                    linear-gradient(160deg, var(--bg), var(--bg-2));
+      }
+
+      .wrap { width: min(1520px, calc(100vw - 32px)); margin: 0 auto; padding: 24px 0 42px; }
+      .hero, .panel { border: 1px solid var(--border); background: var(--panel); backdrop-filter: blur(18px); border-radius: var(--radius); box-shadow: var(--shadow); }
+      .hero { display: grid; grid-template-columns: 1.35fr 0.95fr; gap: 18px; padding: 24px; margin-bottom: 18px; }
+      .eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: rgba(119, 240, 207, 0.12); color: var(--accent); font-size: 12px; font-weight: 800; text-transform: uppercase; }
+      h1 { margin: 14px 0 10px; font-size: clamp(30px, 4vw, 54px); line-height: 1.02; }
+      .lead { margin: 0; max-width: 78ch; color: var(--muted); line-height: 1.65; }
+      .hero-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 20px; }
+      .stat { padding: 14px 16px; border-radius: 16px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.09); }
+      .stat span { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; }
+      .stat strong { display: block; margin-top: 6px; font-size: 15px; }
+
+      .chip { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.05); font-size: 13px; font-weight: 700; }
+      .chip[data-tone='ok'] { color: #8ef0d9; background: rgba(119, 240, 207, 0.12); }
+      .chip[data-tone='warn'] { color: #ffd166; background: rgba(255, 209, 102, 0.14); }
+      .chip[data-tone='info'] { color: #b9ccff; background: rgba(134, 168, 255, 0.12); }
+
+      .panel { padding: 18px; margin-bottom: 18px; }
+      .panel h2 { margin: 0 0 10px; font-size: 18px; }
+      .subtle { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
+      .section { padding: 14px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.04); margin-bottom: 14px; }
+      .section h3 { margin: 0 0 12px; font-size: 14px; }
+      .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      .form-grid.one { grid-template-columns: 1fr; }
+      .inline-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+
+      .field label { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; color: var(--muted); font-size: 12px; }
+      .field label strong { color: var(--text); }
+      input, select, textarea { width: 100%; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 14px; padding: 11px 13px; background: rgba(6, 12, 21, 0.82); color: var(--text); font: inherit; outline: none; }
+      .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+      button { appearance: none; border: 0; border-radius: 14px; padding: 11px 14px; cursor: pointer; font: inherit; font-weight: 800; color: #07111f; background: linear-gradient(135deg, #77f0cf, #86a8ff); transition: all 0.14s ease; }
+      button:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(134, 168, 255, 0.2); }
+      .button-secondary { color: var(--text); background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.12); }
+      .button-danger { color: #fff; background: linear-gradient(135deg, #ff7f7f, #ff9d5c); }
+      .button-warning { color: #241700; background: linear-gradient(135deg, #ffd166, #ffb703); }
+
+      .data-box { min-height: 120px; max-height: 400px; overflow: auto; margin: 0; padding: 14px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(6, 12, 21, 0.8); color: #dce9ff; font: 12px/1.5 Monaco, monospace; white-space: pre-wrap; word-break: break-all; }
+      .socket-feed { display: grid; gap: 10px; max-height: 300px; overflow: auto; }
+      .socket-event { border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.09); background: rgba(255, 255, 255, 0.04); padding: 12px; }
+      .socket-event .type { font-size: 12px; color: var(--accent-2); font-weight: 800; margin-bottom: 4px; }
+      .log-list { display: grid; gap: 10px; max-height: 600px; overflow: auto; }
+      .log-item { border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.09); background: rgba(255, 255, 255, 0.04); padding: 12px; }
+      .log-top { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+      .log-title { font-weight: 800; color: var(--text); }
+      .notice { border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.09); padding: 12px 14px; line-height: 1.55; font-size: 13px; background: rgba(255, 209, 102, 0.12); color: #ffe6a6; }
+      .hidden { display: none !important; }
+      .empty { color: var(--muted); font-size: 13px; }
+
+      @media (max-width: 1200px) { .hero, .inline-row { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <section class="hero">
+        <div>
+          <span class="eyebrow">Salesperson Order Lab</span>
+          <h1>Order Processing & Fulfillment</h1>
+          <p class="lead">
+            Manage incoming orders, monitor branch queues, and handle fulfillment 
+            actions with realtime updates via Socket.IO.
+          </p>
+          <div class="hero-stats">
+            <div class="stat">
+              <span>Realtime monitoring</span>
+              <strong>Live notifications and auto-refreshing queues</strong>
+            </div>
+            <div class="stat">
+              <span>Fulfillment control</span>
+              <strong>Pack, ship, and manage cancellations</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-side panel">
+          <h2>Environment</h2>
+          <div id="originWarning" class="notice hidden"></div>
+          <div class="form-grid one">
+            <div class="field">
+              <label for="apiBaseUrl"><strong>API Base URL</strong><span>Backend host</span></label>
+              <input id="apiBaseUrl" type="text" />
+            </div>
+            <div class="field">
+              <label for="socketUrl"><strong>Socket URL</strong><span>Realtime host</span></label>
+              <input id="socketUrl" type="text" />
+            </div>
+          </div>
+          <div class="actions">
+            <button id="saveConfigBtn">Save config</button>
+            <button id="resetConfigBtn" class="button-secondary">Reset defaults</button>
+          </div>
+          <div class="status-line" style="margin-top: 12px;">
+            <span id="salespersonStatusChip" class="chip" data-tone="warn">Salesperson: idle</span>
+            <span id="socketStatusChip" class="chip" data-tone="warn">Socket: disconnected</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <article class="panel">
+          <h2>Salesperson Session</h2>
+          <div class="section">
+            <div class="form-grid">
+              <div class="field">
+                <label for="salespersonEmail"><strong>Email</strong></label>
+                <input id="salespersonEmail" type="email" placeholder="salesperson@example.com" />
+              </div>
+              <div class="field">
+                <label for="salespersonPassword"><strong>Password</strong></label>
+                <input id="salespersonPassword" type="password" placeholder="••••••••" />
+              </div>
+              <div class="field">
+                <label for="salespersonOtp"><strong>OTP</strong><span>2FA</span></label>
+                <input id="salespersonOtp" type="text" placeholder="123456" />
+              </div>
+              <div class="field">
+                <label for="salespersonBranchId"><strong>Active Branch</strong></label>
+                <select id="salespersonBranchId"><option value="">Select after login</option></select>
+              </div>
+            </div>
+            <div class="actions">
+              <button id="salespersonLoginBtn">Login</button>
+              <button id="salespersonVerifyOtpBtn" class="button-secondary">Verify OTP</button>
+              <button id="salespersonLogoutBtn" class="button-secondary">Logout</button>
+              <button id="salespersonMeBtn" class="button-secondary">Load Me</button>
+            </div>
+            <div class="status-line">
+              <span id="salespersonSessionSummary" class="chip" data-tone="info">Not logged in</span>
+            </div>
+          </div>
+
+          <div class="section">
+            <h3>Socket Notifications</h3>
+            <div class="actions">
+              <button id="connectSocketBtn">Connect</button>
+              <button id="disconnectSocketBtn" class="button-danger">Disconnect</button>
+              <button id="clearSocketFeedBtn" class="button-secondary">Clear feed</button>
+            </div>
+            <div class="status-line">
+              <span id="socketRoomSummary" class="chip" data-tone="info">No rooms joined</span>
+            </div>
+            <div id="socketFeed" class="socket-feed" style="margin-top: 12px;">
+              <div class="empty">Events will appear here...</div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h3>Processing Queue</h3>
+            <div class="inline-row">
+              <div class="field">
+                <label for="orderSearchQuery"><strong>Search</strong></label>
+                <input id="orderSearchQuery" type="text" placeholder="ID or Customer" />
+              </div>
+              <div class="field">
+                <label for="orderSearchStatus"><strong>Status</strong></label>
+                <select id="orderSearchStatus">
+                  <option value="all">All</option>
+                  <option value="pending">Pending</option>
+                  <option value="processing">Processing</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="orderSortBy"><strong>Sort</strong></label>
+                <select id="orderSortBy">
+                  <option value="newest">Newest</option>
+                  <option value="oldest">Oldest</option>
+                </select>
+              </div>
+            </div>
+            <div class="inline-row" style="margin-top: 12px;">
+              <div class="field">
+                <label for="orderId"><strong>Order ID</strong></label>
+                <input id="orderId" type="text" />
+              </div>
+              <div class="field">
+                <label for="orderItemId"><strong>Item ID</strong></label>
+                <input id="orderItemId" type="text" />
+              </div>
+              <div class="field">
+                <label for="actionNotes"><strong>Notes</strong></label>
+                <input id="actionNotes" type="text" />
+              </div>
+            </div>
+            <div class="actions">
+              <button id="processingBtn">Load Processing</button>
+              <button id="pendingBtn" class="button-secondary">Load Pending</button>
+              <button id="cancellationBtn" class="button-secondary">Cancellations</button>
+              <button id="searchOrdersBtn" class="button-secondary">Search</button>
+              <button id="orderDetailsBtn" class="button-secondary">Details</button>
+            </div>
+            <div class="actions">
+              <button id="markPackedBtn" class="button-warning">Mark Packed</button>
+              <button id="markReadyBtn" class="button-warning">Ready for Delivery</button>
+              <button id="approveCancelBtn" class="button-danger">Approve Cancel</button>
+              <button id="rejectCancelBtn" class="button-danger">Reject Cancel</button>
+              <button id="autoRefreshToggleBtn" class="button-secondary">Start Auto Refresh</button>
+            </div>
+            <div class="status-line">
+              <span id="orderCountChip" class="chip" data-tone="info">No queue loaded</span>
+            </div>
+            <div class="form-grid" style="margin-top: 12px;">
+              <pre id="salespersonOutput" class="data-box">Queue result...</pre>
+              <pre id="salespersonDetailOutput" class="data-box">Detail/Action result...</pre>
+            </div>
+          </div>
+        </article>
+
+        <section class="panel logs">
+          <div class="log-toolbar">
+            <h2>Activity Log</h2>
+            <div class="filters">
+              <button class="button-secondary button-small active" data-filter="all">All</button>
+              <button class="button-secondary button-small" data-filter="error">Errors</button>
+              <button id="clearLogsBtn" class="button-secondary button-small">Clear</button>
+            </div>
+          </div>
+          <div id="logList" class="log-list"></div>
+        </section>
+      </section>
+    </div>
+
+    <script>
+      const defaultApi = 'http://localhost:5000', defaultSocket = 'http://localhost:5000';
+      const state = {
+        config: {
+          apiBaseUrl: localStorage.getItem('opf_api_sp') || defaultApi,
+          socketUrl: localStorage.getItem('opf_sock_sp') || defaultSocket
+        },
+        salesperson: { session: null, socket: null, socketConnected: false, autoRefreshTimer: null, autoRefreshEnabled: false },
+        logs: []
+      };
+
+      const $ = s => document.querySelector(s), qsa = s => [...document.querySelectorAll(s)];
+      const els = {
+        apiBaseUrl: $('#apiBaseUrl'), socketUrl: $('#socketUrl'), salespersonStatusChip: $('#salespersonStatusChip'),
+        socketStatusChip: $('#socketStatusChip'), salespersonSessionSummary: $('#salespersonSessionSummary'),
+        socketRoomSummary: $('#socketRoomSummary'), salespersonOutput: $('#salespersonOutput'),
+        salespersonDetailOutput: $('#salespersonDetailOutput'), orderCountChip: $('#orderCountChip'),
+        socketFeed: $('#socketFeed'), logList: $('#logList'), orderId: $('#orderId'),
+        orderItemId: $('#orderItemId'), actionNotes: $('#actionNotes'),
+        orderSearchQuery: $('#orderSearchQuery'), orderSearchStatus: $('#orderSearchStatus'),
+        orderSortBy: $('#orderSortBy'), salespersonBranchId: $('#salespersonBranchId'), originWarning: $('#originWarning')
+      };
+
+      function saveConfig() {
+        state.config.apiBaseUrl = els.apiBaseUrl.value.trim().replace(/\/$/, '');
+        state.config.socketUrl = els.socketUrl.value.trim().replace(/\/$/, '');
+        localStorage.setItem('opf_api_sp', state.config.apiBaseUrl);
+        localStorage.setItem('opf_sock_sp', state.config.socketUrl);
+        pushLog('system', 'info', 'Config saved');
+        refresh();
+      }
+
+      function resetConfig() {
+        state.config.apiBaseUrl = defaultApi; state.config.socketUrl = defaultSocket;
+        localStorage.removeItem('opf_api_sp'); localStorage.removeItem('opf_sock_sp');
+        els.apiBaseUrl.value = defaultApi; els.socketUrl.value = defaultSocket;
+        pushLog('system', 'info', 'Config reset');
+        refresh();
+      }
+
+      function pushLog(scope, level, title, detail = null) {
+        state.logs.unshift({ scope, level, title, detail, time: new Date() });
+        renderLogs();
+      }
+
+      function renderLogs() {
+        els.logList.innerHTML = state.logs.map(l => `
+          <div class="log-item">
+            <div class="log-top"><span>${l.time.toLocaleTimeString()}</span><span>${l.scope} • ${l.level}</span></div>
+            <div class="log-title">${l.title}</div>
+            ${l.detail ? `<pre class="data-box" style="margin-top:8px">${JSON.stringify(l.detail, null, 2)}</pre>` : ''}
+          </div>`).join('');
+      }
+
+      function refresh() {
+        const name = state.salesperson.session?.fullName || state.salesperson.session?.salesperson?.fullName || 'Idle';
+        els.salespersonStatusChip.textContent = `Salesperson: ${name}`;
+        els.salespersonStatusChip.dataset.tone = state.salesperson.session ? 'ok' : 'warn';
+        els.socketStatusChip.textContent = state.salesperson.socketConnected ? 'Socket: connected' : 'Socket: disconnected';
+        els.socketStatusChip.dataset.tone = state.salesperson.socketConnected ? 'ok' : 'warn';
+        els.salespersonSessionSummary.textContent = state.salesperson.session ? `Ready • Branch: ${els.salespersonBranchId.value || 'None'}` : 'Not logged in';
+      }
+
+      async function api(path, options = {}) {
+        const url = `${state.config.apiBaseUrl}${path}`;
+        const fetchOptions = { credentials: 'include', ...options, headers: { 'Content-Type': 'application/json', ...options.headers } };
+        if (options.body && typeof options.body !== 'string') fetchOptions.body = JSON.stringify(options.body);
+        const res = await fetch(url, fetchOptions);
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) { const e = new Error(payload.message || 'Error'); e.payload = payload; throw e; }
+        return payload;
+      }
+
+      async function login() {
+        const email = $('#salespersonEmail').value, password = $('#salespersonPassword').value;
+        try {
+          const res = await api('/api/salesperson/auth/login', { method: 'POST', body: { email, password } });
+          const data = res.data || res;
+          if (data.isTwoFactorEnabled) { pushLog('salesperson', 'warn', 'OTP Required'); return; }
+          state.salesperson.session = data.salesperson || data;
+          syncBranches(state.salesperson.session.branches_to_be_managed);
+          pushLog('salesperson', 'info', 'Logged in', state.salesperson.session);
+          connect();
+          refresh();
+        } catch (e) { pushLog('salesperson', 'error', 'Login failed', e.payload); }
+      }
+
+      async function verifyOtp() {
+        const email = $('#salespersonEmail').value, otp = $('#salespersonOtp').value;
+        try {
+          const res = await api('/api/salesperson/auth/verify-otp', { method: 'POST', body: { email, otp } });
+          state.salesperson.session = res.data?.salesperson || res.data;
+          syncBranches(state.salesperson.session.branches_to_be_managed);
+          pushLog('salesperson', 'info', 'OTP Verified');
+          connect();
+          refresh();
+        } catch (e) { pushLog('salesperson', 'error', 'OTP failed', e.payload); }
+      }
+
+      function syncBranches(list = []) {
+        els.salespersonBranchId.innerHTML = '<option value="">Select Branch</option>';
+        list.forEach(b => {
+          const id = b._id || b.id || b;
+          const opt = document.createElement('option'); opt.value = id; opt.textContent = b.branch_name || b.name || id;
+          els.salespersonBranchId.appendChild(opt);
+        });
+      }
+
+      function connect() {
+        const id = state.salesperson.session?._id || state.salesperson.session?.id;
+        const bid = els.salespersonBranchId.value;
+        if (!id) return;
+        if (state.salesperson.socket) state.salesperson.socket.disconnect();
+        const s = io(state.config.socketUrl, { withCredentials: true });
+        state.salesperson.socket = s;
+        s.on('connect', () => {
+          state.salesperson.socketConnected = true; refresh();
+          s.emit('join', { room: `salesperson:${id}` });
+          if (bid) s.emit('join:branch', bid);
+          pushLog('socket', 'info', 'Connected');
+        });
+        s.on('new_order_available', d => { appendEv('new_order', d); pushLog('socket', 'info', 'New Order', d); });
+        s.on('order:status_updated', d => { appendEv('status_update', d); pushLog('socket', 'info', 'Status Update', d); });
+        s.on('disconnect', () => { state.salesperson.socketConnected = false; refresh(); });
+      }
+
+      function appendEv(type, data) {
+        if (els.socketFeed.querySelector('.empty')) els.socketFeed.innerHTML = '';
+        const d = document.createElement('div'); d.className = 'socket-event';
+        d.innerHTML = `<div class="type">${type}</div><pre>${JSON.stringify(data, null, 2)}</pre>`;
+        els.socketFeed.prepend(d);
+      }
+
+      async function loadQueue(path, label) {
+        try {
+          const res = await api(path);
+          els.salespersonOutput.textContent = JSON.stringify(res, null, 2);
+          const count = (res.data?.orders || res.orders || []).length;
+          els.orderCountChip.textContent = `${label}: ${count}`;
+          pushLog('salesperson', 'info', `${label} loaded`);
+        } catch (e) { pushLog('salesperson', 'error', `Load ${label} failed`, e.payload); }
+      }
+
+      async function action(path, body = {}, label) {
+        const id = els.orderId.value; if (!id) return;
+        try {
+          const res = await api(`/api/salesperson/order-processing/${id}${path}`, { method: 'POST', body });
+          els.salespersonDetailOutput.textContent = JSON.stringify(res, null, 2);
+          pushLog('salesperson', 'info', label, res);
+        } catch (e) { pushLog('salesperson', 'error', `${label} failed`, e.payload); }
+      }
+
+      function wire() {
+        $('#saveConfigBtn').onclick = saveConfig; $('#resetConfigBtn').onclick = resetConfig;
+        $('#salespersonLoginBtn').onclick = login; $('#salespersonVerifyOtpBtn').onclick = verifyOtp;
+        $('#salespersonLogoutBtn').onclick = () => { state.salesperson.session = null; if(state.salesperson.socket) state.salesperson.socket.disconnect(); refresh(); };
+        $('#salespersonMeBtn').onclick = async () => { try { const res = await api('/api/salesperson/auth/me'); state.salesperson.session = res.data; syncBranches(state.salesperson.session.branches_to_be_managed); connect(); refresh(); } catch(e){} };
+        $('#connectSocketBtn').onclick = connect; $('#disconnectSocketBtn').onclick = () => state.salesperson.socket?.disconnect();
+        $('#clearSocketFeedBtn').onclick = () => els.socketFeed.innerHTML = '<div class="empty">Cleared</div>';
+        $('#processingBtn').onclick = () => loadQueue('/api/salesperson/order-processing/processing', 'Processing');
+        $('#pendingBtn').onclick = () => loadQueue('/api/salesperson/order-processing/pending', 'Pending');
+        $('#cancellationBtn').onclick = () => loadQueue('/api/salesperson/order-processing/cancellation-requests', 'Cancellations');
+        $('#orderDetailsBtn').onclick = async () => { const id = els.orderId.value; if(!id) return; try { const res = await api(`/api/salesperson/order-processing/${id}`); els.salespersonDetailOutput.textContent = JSON.stringify(res, null, 2); } catch(e){} };
+        $('#markPackedBtn').onclick = () => action('/mark-packed', { packing_notes: els.actionNotes.value }, 'Mark Packed');
+        $('#markReadyBtn').onclick = () => action('/mark-ready-delivery', {}, 'Mark Ready');
+        $('#approveCancelBtn').onclick = () => action('/cancel-approve', { approval_reason: els.actionNotes.value }, 'Approve Cancel');
+        $('#rejectCancelBtn').onclick = () => action('/cancel-reject', { rejection_reason: els.actionNotes.value }, 'Reject Cancel');
+        $('#clearLogsBtn').onclick = () => { state.logs = []; renderLogs(); };
+        els.salespersonBranchId.onchange = () => { refresh(); if (state.salesperson.socketConnected) connect(); };
+      }
+
+      els.apiBaseUrl.value = state.config.apiBaseUrl; els.socketUrl.value = state.config.socketUrl;
+      if (location.protocol === 'file:') { els.originWarning.textContent = 'file:// detected. Login may fail.'; els.originWarning.classList.remove('hidden'); }
+      wire(); refresh();
+    </script>
+  </body>
+</html>

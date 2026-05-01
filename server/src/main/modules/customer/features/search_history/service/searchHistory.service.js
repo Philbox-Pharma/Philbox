@@ -14,6 +14,55 @@ class CustomerSearchHistoryService {
     return String(value).trim().toLowerCase();
   }
 
+  _levenshteinDistance(a = '', b = '') {
+    const left = this._normalizeSuggestion(a);
+    const right = this._normalizeSuggestion(b);
+
+    if (!left.length) return right.length;
+    if (!right.length) return left.length;
+
+    const rows = left.length + 1;
+    const cols = right.length + 1;
+    const dp = Array.from({ length: rows }, () => Array(cols).fill(0));
+
+    for (let i = 0; i < rows; i += 1) dp[i][0] = i;
+    for (let j = 0; j < cols; j += 1) dp[0][j] = j;
+
+    for (let i = 1; i < rows; i += 1) {
+      for (let j = 1; j < cols; j += 1) {
+        const cost = left[i - 1] === right[j - 1] ? 0 : 1;
+        dp[i][j] = Math.min(
+          dp[i - 1][j] + 1,
+          dp[i][j - 1] + 1,
+          dp[i - 1][j - 1] + cost
+        );
+      }
+    }
+
+    return dp[left.length][right.length];
+  }
+
+  _maxTypoDistance(searchTerm = '') {
+    const len = this._normalizeSuggestion(searchTerm).length;
+    if (len <= 4) return 1;
+    if (len <= 8) return 2;
+    return 3;
+  }
+
+  _isTypoCandidate(searchTerm = '', candidate = '') {
+    const query = this._normalizeSuggestion(searchTerm);
+    const term = this._normalizeSuggestion(candidate);
+    if (!query || !term || query === term) return false;
+
+    if (term.startsWith(query)) {
+      // Prefix matches are already covered by autocomplete buckets.
+      return false;
+    }
+
+    const distance = this._levenshteinDistance(query, term);
+    return distance > 0 && distance <= this._maxTypoDistance(query);
+  }
+
   _pushSuggestion(suggestions, seen, suggestion) {
     const key = this._normalizeSuggestion(suggestion.value);
     if (!key || seen.has(key)) {
@@ -25,11 +74,57 @@ class CustomerSearchHistoryService {
     return true;
   }
 
+  _normalizeFilterValue(value) {
+    if (value === null || value === undefined) return null;
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed.length ? trimmed : null;
+    }
+
+    if (typeof value === 'boolean') {
+      return value;
+    }
+
+    return value;
+  }
+
+  _sanitizeFilters(rawFilters = {}) {
+    if (!rawFilters || typeof rawFilters !== 'object') {
+      return undefined;
+    }
+
+    const normalizedFilters = {
+      category: this._normalizeFilterValue(rawFilters.category),
+      brand: this._normalizeFilterValue(rawFilters.brand),
+      branch: this._normalizeFilterValue(rawFilters.branch),
+      dosage: this._normalizeFilterValue(
+        rawFilters.dosage ?? rawFilters.dosageForm
+      ),
+      prescriptionStatus: this._normalizeFilterValue(
+        rawFilters.prescriptionStatus ?? rawFilters.prescriptionRequired
+      ),
+      sortBy: this._normalizeFilterValue(rawFilters.sortBy),
+    };
+
+    const filteredEntries = Object.entries(normalizedFilters).filter(
+      ([, value]) => value !== null && value !== undefined
+    );
+
+    if (!filteredEntries.length) {
+      return undefined;
+    }
+
+    return Object.fromEntries(filteredEntries);
+  }
+
   /**
    * Save a search query to history
    */
   async saveSearch(customerId, searchData, req) {
     try {
+      const sanitizedFilters = this._sanitizeFilters(searchData.filters);
+
       // Check if this exact query already exists recently (within last 5 minutes)
       const recentSearch = await SearchHistory.findOne({
         customer_id: customerId,
@@ -40,7 +135,13 @@ class CustomerSearchHistoryService {
       // If recent duplicate exists, just update its timestamp
       if (recentSearch) {
         recentSearch.searched_at = new Date();
-        recentSearch.filters = searchData.filters || {};
+
+        if (sanitizedFilters) {
+          recentSearch.filters = sanitizedFilters;
+        } else {
+          recentSearch.set('filters', undefined);
+        }
+
         await recentSearch.save();
 
         return {
@@ -50,12 +151,17 @@ class CustomerSearchHistoryService {
       }
 
       // Create new search history entry
-      const searchHistory = await SearchHistory.create({
+      const payload = {
         customer_id: customerId,
         query: searchData.query,
         searched_at: new Date(),
-        filters: searchData.filters || {},
-      });
+      };
+
+      if (sanitizedFilters) {
+        payload.filters = sanitizedFilters;
+      }
+
+      const searchHistory = await SearchHistory.create(payload);
 
       // Log activity
       await logCustomerActivity(
@@ -87,6 +193,19 @@ class CustomerSearchHistoryService {
         .limit(20)
         .lean();
 
+      const cleanedHistory = searchHistory.map(item => {
+        const cleanedFilters = this._sanitizeFilters(item.filters);
+        if (cleanedFilters) {
+          return {
+            ...item,
+            filters: cleanedFilters,
+          };
+        }
+
+        const { filters, ...rest } = item;
+        return rest;
+      });
+
       // Log activity
       await logCustomerActivity(
         req,
@@ -96,7 +215,7 @@ class CustomerSearchHistoryService {
         customerId
       );
 
-      return searchHistory;
+      return cleanedHistory;
     } catch (error) {
       throw error;
     }
@@ -222,12 +341,13 @@ class CustomerSearchHistoryService {
       return [];
     }
 
+    const parsedLimit = Math.max(5, Math.min(Number(limit) || 10, 20));
     const escapedQuery = this._escapeRegex(normalizedQuery);
     const suggestions = [];
     const seen = new Set();
-    const personalLimit = Math.max(2, Math.ceil(limit / 2));
-    const historyScanLimit = Math.max(limit * 4, 20);
-    const medicineScanLimit = Math.max(limit * 3, 15);
+    const personalLimit = Math.max(2, Math.ceil(parsedLimit / 2));
+    const historyScanLimit = Math.max(parsedLimit * 4, 20);
+    const medicineScanLimit = Math.max(parsedLimit * 3, 15);
     const customerObjectId = new mongoose.Types.ObjectId(customerId);
 
     const personalHistory = await SearchHistory.find({
@@ -290,12 +410,12 @@ class CustomerSearchHistoryService {
         score: item.count,
       });
 
-      if (suggestions.length >= limit) {
+      if (suggestions.length >= parsedLimit) {
         break;
       }
     }
 
-    if (suggestions.length < limit) {
+    if (suggestions.length < parsedLimit) {
       const matchedCategories = await MedicineCategory.find({
         name: { $regex: escapedQuery, $options: 'i' },
       })
@@ -337,13 +457,166 @@ class CustomerSearchHistoryService {
           className: medicine.class?.name || null,
         });
 
-        if (suggestions.length >= limit) {
+        if (suggestions.length >= parsedLimit) {
           break;
         }
       }
     }
 
-    return suggestions.slice(0, limit);
+    const typoCandidatePool = [];
+    const typoSeen = new Set();
+
+    const addTypoCandidate = value => {
+      const normalized = this._normalizeSuggestion(value);
+      if (!normalized || typoSeen.has(normalized)) return;
+      typoSeen.add(normalized);
+      typoCandidatePool.push(String(value).trim());
+    };
+
+    for (const item of personalHistory) {
+      addTypoCandidate(item.query);
+    }
+    for (const item of popularHistory) {
+      addTypoCandidate(item.query);
+    }
+
+    if (typoCandidatePool.length < historyScanLimit) {
+      const fallbackMedicines = await Medicine.find({ active: true })
+        .select('Name alias_name')
+        .sort({ Name: 1 })
+        .limit(historyScanLimit)
+        .lean();
+
+      for (const medicine of fallbackMedicines) {
+        addTypoCandidate(medicine.Name);
+        addTypoCandidate(medicine.alias_name);
+      }
+    }
+
+    const typoMatches = [];
+    for (const candidate of typoCandidatePool) {
+      if (!this._isTypoCandidate(normalizedQuery, candidate)) continue;
+
+      typoMatches.push({
+        value: candidate,
+        distance: this._levenshteinDistance(normalizedQuery, candidate),
+      });
+    }
+
+    typoMatches.sort((a, b) => {
+      if (a.distance !== b.distance) return a.distance - b.distance;
+      return a.value.localeCompare(b.value);
+    });
+
+    for (const item of typoMatches.slice(0, 3)) {
+      this._pushSuggestion(suggestions, seen, {
+        value: item.value,
+        label: item.value,
+        source: 'typo_correction',
+        score: item.distance,
+      });
+
+      if (suggestions.length >= parsedLimit) {
+        break;
+      }
+    }
+
+    const bestDidYouMean = typoMatches[0]?.value || null;
+    if (bestDidYouMean) {
+      const normalizedDidYouMean = this._normalizeSuggestion(bestDidYouMean);
+      const existingIndex = suggestions.findIndex(
+        suggestion =>
+          this._normalizeSuggestion(suggestion.value) === normalizedDidYouMean
+      );
+
+      if (existingIndex >= 0) {
+        suggestions[existingIndex] = {
+          ...suggestions[existingIndex],
+          label: `Did you mean "${bestDidYouMean}"?`,
+          source: 'did_you_mean',
+          didYouMean: true,
+        };
+      } else {
+        suggestions.unshift({
+          value: bestDidYouMean,
+          label: `Did you mean "${bestDidYouMean}"?`,
+          source: 'did_you_mean',
+          didYouMean: true,
+        });
+      }
+    }
+
+    if (suggestions.length < 5) {
+      const fallbackPopularHistory = await SearchHistory.aggregate([
+        {
+          $project: {
+            normalizedQuery: {
+              $toLower: { $trim: { input: '$query' } },
+            },
+            query: 1,
+            searched_at: 1,
+          },
+        },
+        {
+          $group: {
+            _id: '$normalizedQuery',
+            query: { $first: '$query' },
+            count: { $sum: 1 },
+            lastSearchedAt: { $max: '$searched_at' },
+          },
+        },
+        {
+          $sort: { count: -1, lastSearchedAt: -1 },
+        },
+        {
+          $limit: 20,
+        },
+      ]);
+
+      for (const item of fallbackPopularHistory) {
+        this._pushSuggestion(suggestions, seen, {
+          value: item.query,
+          label: item.query,
+          source: 'popular_history',
+          score: item.count,
+        });
+
+        if (suggestions.length >= 5) {
+          break;
+        }
+      }
+    }
+
+    if (suggestions.length < 5) {
+      const fallbackMedicineMatches = await Medicine.find({ active: true })
+        .select('Name alias_name category mgs dosage_form class')
+        .populate('category', 'name')
+        .populate('class', 'name')
+        .sort({ Name: 1 })
+        .limit(20)
+        .lean();
+
+      for (const medicine of fallbackMedicineMatches) {
+        const label = medicine.Name || medicine.alias_name;
+        if (!label) continue;
+
+        this._pushSuggestion(suggestions, seen, {
+          value: label,
+          label,
+          source: 'medicine',
+          medicineId: medicine._id,
+          medicineCategory: medicine.category?.name || null,
+          dosageForm: medicine.dosage_form || medicine.mgs || null,
+          className: medicine.class?.name || null,
+        });
+
+        if (suggestions.length >= 5) {
+          break;
+        }
+      }
+    }
+
+    return suggestions.slice(0, parsedLimit);
   }
 }
 

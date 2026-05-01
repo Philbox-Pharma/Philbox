@@ -20,6 +20,7 @@ import {
 } from '../controllers/auth.controller.js';
 import { authRoutesLimiter } from '../../../../../utils/authRoutesLimiter.js';
 import { authenticate } from '../../../middleware/auth.middleware.js';
+import { roleMiddleware } from '../../../../../middlewares/rbac.middleware.js';
 
 import passport from '../config/passport.config.js';
 
@@ -69,9 +70,9 @@ router.post(
 );
 
 // ✅ 6. Logout (NOT rate limited)
-router.post(`/logout`, authenticate, logout);
+router.post(`/logout`, authenticate, roleMiddleware(['customer']), logout);
 
 // ✅ 7. Get Current User (NOT rate limited)
-router.get(`/me`, authenticate, getMe);
+router.get(`/me`, authenticate, roleMiddleware(['customer']), getMe);
 
 export default router;

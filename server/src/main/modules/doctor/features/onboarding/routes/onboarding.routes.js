@@ -7,15 +7,25 @@ import {
   completeProfile,
   resubmitApplication,
 } from '../controllers/onboarding.controller.js';
-import { authenticate } from '../../../middleware/auth.middleware.js';
+import {
+  authenticate,
+  isApprovedDoctor,
+} from '../../../middleware/auth.middleware.js';
+import {
+  roleMiddleware,
+  rbacMiddleware,
+} from '../../../../../middlewares/rbac.middleware.js';
 import { upload } from '../../../../../middlewares/multer.middleware.js';
 
 const router = express.Router();
 
+router.use(authenticate);
+router.use(roleMiddleware(['doctor']));
+
 // ✅ 1. Application Submission (authenticated users only)
 router.post(
   `/submit-application`,
-  authenticate,
+  rbacMiddleware(['submit_application']),
   upload.fields([
     { name: 'cnic', maxCount: 1 },
     { name: 'medical_license', maxCount: 1 },
@@ -27,12 +37,16 @@ router.post(
 );
 
 // ✅ 2. Get Application Status (authenticated users only)
-router.get(`/application-status`, authenticate, getApplicationStatus);
+router.get(
+  `/application-status`,
+  rbacMiddleware(['check_application_status']),
+  getApplicationStatus
+);
 
 // ✅ 3. Resubmit Application (for rejected applications)
 router.post(
   `/resubmit-application`,
-  authenticate,
+  rbacMiddleware(['resubmit_application']),
   upload.fields([
     { name: 'cnic', maxCount: 1 },
     { name: 'medical_license', maxCount: 1 },
@@ -46,7 +60,8 @@ router.post(
 // ✅ 4. Complete Profile (authenticated users only)
 router.post(
   `/complete-profile`,
-  authenticate,
+  rbacMiddleware(['complete_profile']),
+  isApprovedDoctor,
   validate(completeProfileDTO),
   upload.fields([
     { name: 'education_files', maxCount: 5 },

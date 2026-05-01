@@ -45,6 +45,7 @@ const Schema = {
 
   consultation_fee: { type: Number }, // Float is stored as Number in Mongo
   onlineProfileURL: { type: String },
+  bio: { type: String, default: '' },
   digital_signature: { type: String },
 
   passwordHash: {
@@ -58,7 +59,7 @@ const Schema = {
   // Status with hyphen requires quotes in key
   account_status: {
     type: String,
-    enum: ['active', 'under_consideration', 'blocked/removed'],
+    enum: ['active', 'under_consideration', 'rejected', 'blocked/removed'],
     default: 'under_consideration', // Default to under_consideration until approved
   },
 
@@ -70,6 +71,8 @@ const Schema = {
       'documents-submitted',
       'documents-approved',
       'documents-rejected',
+      'approved',
+      'rejected',
       'completed',
     ],
     default: 'pending',

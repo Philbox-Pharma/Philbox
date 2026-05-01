@@ -74,11 +74,11 @@ export const updateRefillReminderDTO = Joi.object({
 }).min(1);
 
 /**
- * DTO for marking reminder as completed
+ * DTO for deactivating a reminder
  */
-export const markCompletedDTO = Joi.object({
+export const deactivateReminderDTO = Joi.object({
   isActive: Joi.boolean().valid(false).required().messages({
     'any.required': 'isActive field is required',
-    'any.only': 'isActive must be false to mark as completed',
+    'any.only': 'isActive must be false to deactivate reminder',
   }),
 });

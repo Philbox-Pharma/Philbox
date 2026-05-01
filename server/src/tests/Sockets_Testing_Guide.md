@@ -2,6 +2,19 @@
 
 ## ✅ What Has Been Implemented
 
+## FCM Token Quick Test Page
+
+- File added: `server/src/tests/fcm-token-test.html`
+- Purpose: generate an FCM web token quickly for Postman testing of `/api/notifications/device-tokens/register`.
+
+### How to use
+
+1. Open `server/src/tests/fcm-token-test.html` in a browser.
+2. Paste your Firebase web config values.
+3. Paste your Web Push VAPID public key.
+4. Click **Get FCM Token** and allow notification permission.
+5. Copy token and use it as `deviceToken` in Postman.
+
 ### 1. Socket.IO Real-Time Infrastructure
 
 - ✅ Socket.IO v4.7.5 installed and configured

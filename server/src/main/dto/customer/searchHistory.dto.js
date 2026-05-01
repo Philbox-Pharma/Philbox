@@ -26,10 +26,10 @@ export const searchSuggestionsDTO = Joi.object({
     'string.empty': 'Search query cannot be empty',
     'string.min': 'Search query must have at least 1 character',
   }),
-  limit: Joi.number().integer().min(1).max(20).default(10).messages({
+  limit: Joi.number().integer().min(5).max(20).default(10).messages({
     'number.base': 'Limit must be a number',
     'number.integer': 'Limit must be an integer',
-    'number.min': 'Limit must be at least 1',
+    'number.min': 'Limit must be at least 5',
     'number.max': 'Limit cannot exceed 20',
   }),
 });

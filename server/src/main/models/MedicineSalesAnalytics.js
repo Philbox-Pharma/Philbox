@@ -2,9 +2,14 @@ import mongoose from 'mongoose';
 
 const medicineSalesAnalyticsSchema = new mongoose.Schema(
   {
+    order_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Order',
+      required: true,
+    },
     medicine_id: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'OrderItem',
+      ref: 'Medicine',
       required: true,
     },
     branch_id: {
@@ -16,7 +21,7 @@ const medicineSalesAnalyticsSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
-    total_sold: {
+    quantity: {
       type: Number,
       default: 0,
     },
@@ -37,6 +42,11 @@ const medicineSalesAnalyticsSchema = new mongoose.Schema(
 // Indexes for better query performance
 medicineSalesAnalyticsSchema.index({ date: -1 });
 medicineSalesAnalyticsSchema.index({ branch_id: 1, date: -1 });
+medicineSalesAnalyticsSchema.index({ medicine_id: 1, date: -1 });
+medicineSalesAnalyticsSchema.index(
+  { order_id: 1, medicine_id: 1 },
+  { unique: true }
+);
 
 const MedicineSalesAnalytics = mongoose.model(
   'MedicineSalesAnalytics',

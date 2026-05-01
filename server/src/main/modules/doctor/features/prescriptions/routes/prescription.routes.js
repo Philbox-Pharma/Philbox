@@ -4,6 +4,10 @@ import {
   authenticate,
   isApprovedDoctor,
 } from '../../../middleware/auth.middleware.js';
+import {
+  roleMiddleware,
+  rbacMiddleware,
+} from '../../../../../middlewares/rbac.middleware.js';
 import { validate } from '../../../../../validator/joiValidate.middleware.js';
 import {
   createPrescriptionSchema,
@@ -15,6 +19,10 @@ import {
 
 const router = express.Router();
 
+router.use(authenticate);
+router.use(isApprovedDoctor);
+router.use(roleMiddleware(['doctor']));
+
 /**
  * @route   POST /api/doctor/prescriptions
  * @desc    Create a new prescription for an appointment
@@ -22,8 +30,7 @@ const router = express.Router();
  */
 router.post(
   '/',
-  authenticate,
-  isApprovedDoctor,
+  rbacMiddleware(['create_prescriptions']),
   validate(createPrescriptionSchema, 'body'),
   prescriptionsController.createPrescription
 );
@@ -35,8 +42,7 @@ router.post(
  */
 router.get(
   '/appointment/:appointmentId',
-  authenticate,
-  isApprovedDoctor,
+  rbacMiddleware(['read_prescriptions']),
   validate(getPrescriptionByAppointmentSchema, 'params'),
   prescriptionsController.getPrescriptionByAppointment
 );
@@ -48,8 +54,7 @@ router.get(
  */
 router.get(
   '/patient/:patientId',
-  authenticate,
-  isApprovedDoctor,
+  rbacMiddleware(['read_prescriptions']),
   validate(getPrescriptionsByPatientSchema, 'params'),
   prescriptionsController.getPrescriptionsByPatient
 );
@@ -61,8 +66,7 @@ router.get(
  */
 router.put(
   '/:prescriptionId',
-  authenticate,
-  isApprovedDoctor,
+  rbacMiddleware(['update_prescriptions']),
   validate(prescriptionIdSchema, 'params'),
   validate(updatePrescriptionSchema, 'body'),
   prescriptionsController.updatePrescription
@@ -75,8 +79,7 @@ router.put(
  */
 router.get(
   '/:prescriptionId/pdf',
-  authenticate,
-  isApprovedDoctor,
+  rbacMiddleware(['export_prescriptions']),
   validate(prescriptionIdSchema, 'params'),
   prescriptionsController.getPrescriptionPDF
 );

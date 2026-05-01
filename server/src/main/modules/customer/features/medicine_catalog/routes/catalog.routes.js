@@ -1,16 +1,12 @@
 import express from 'express';
 import MedicineCatalogController from '../controllers/catalog.controller.js';
-import { authenticate } from '../../../middleware/auth.middleware.js';
 
 const router = express.Router();
 
 /**
  * Medicine Catalog Routes
- * All routes require customer authentication
+ * Public read-only routes
  */
-
-// Apply auth middleware to all routes
-router.use(authenticate);
 
 /**
  * GET /api/customer/medicines
@@ -104,6 +100,17 @@ router.get(
 router.get(
   '/search',
   MedicineCatalogController.searchMedicines.bind(MedicineCatalogController)
+);
+
+/**
+ * GET /api/customer/medicines/recommendations
+ * Get personalized medicine recommendations for the logged-in customer
+ */
+router.get(
+  '/recommendations',
+  MedicineCatalogController.getMedicineRecommendations.bind(
+    MedicineCatalogController
+  )
 );
 
 /**

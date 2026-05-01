@@ -6,25 +6,28 @@ const cartItemSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Cart',
       required: true,
-      index: true,
     },
     medicine_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Medicine',
       required: true,
-      index: true,
     },
     branch_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Branch',
       required: true,
-      index: true,
     },
     quantity: {
       type: Number,
       required: true,
       min: 1,
       default: 1,
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
     },
     subtotal: {
       type: Number,

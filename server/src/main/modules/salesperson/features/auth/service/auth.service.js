@@ -3,7 +3,11 @@ import Salesperson from '../../../../../models/Salesperson.js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { generateOTPAndExpiryDate } from '../../../../../utils/generateOTP.js';
-import { sendOTP, sendResetEmail } from '../../../../../utils/sendEmail.js';
+import {
+  sendOTP,
+  sendOTPSMS,
+  sendResetEmail,
+} from '../../../../../utils/sendEmail.js';
 import { logSalespersonActivity } from '../../../utils/logSalespersonActivity.js';
 import { ROUTES } from '../../../../../constants/global.routes.constants.js';
 
@@ -46,6 +50,13 @@ class SalespersonAuthService {
         salesperson.fullName,
         'Salesperson'
       );
+
+      // Send SMS OTP if phone number is available
+      if (salesperson.phoneNumber) {
+        await sendOTPSMS(salesperson.phoneNumber, otp, 'Salesperson').catch(
+          err => console.warn('Failed to send OTP SMS:', err)
+        );
+      }
 
       // Return salesperson ID to store in session for OTP verification
       return {

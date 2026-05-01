@@ -78,6 +78,16 @@ const medicineSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    revenue_generated: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    refunds_count: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     purchase_price: {
       type: Number,
       default: 0,
@@ -89,6 +99,11 @@ const medicineSchema = new mongoose.Schema(
     pack_unit: {
       type: Number,
       default: 1,
+    },
+    quantity_sold: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
     active: {
       type: Boolean,

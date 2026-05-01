@@ -11,6 +11,17 @@ import {
 } from '../../../../../utils/sendEmail.js';
 
 class DoctorManagementService {
+  _shapeReviewedApplicationResponse(application, doctor, message) {
+    const applicationData = application.toObject();
+    applicationData.doctor_id = doctor._id.toString();
+
+    return {
+      application: applicationData,
+      doctor,
+      message,
+    };
+  }
+
   /**
    * Get All Doctor Applications
    */
@@ -171,11 +182,11 @@ class DoctorManagementService {
         application._id
       );
 
-      return {
+      return this._shapeReviewedApplicationResponse(
         application,
         doctor,
-        message: 'Application approved successfully',
-      };
+        'Application approved successfully'
+      );
     } catch (error) {
       console.error('Error in approveDoctorApplication:', error);
       throw error;
@@ -209,7 +220,7 @@ class DoctorManagementService {
       const doctor = await Doctor.findByIdAndUpdate(
         application.doctor_id._id,
         {
-          account_status: 'suspended/freezed',
+          account_status: 'rejected',
           onboarding_status: 'rejected',
         },
         { new: true }
@@ -233,11 +244,11 @@ class DoctorManagementService {
         application._id
       );
 
-      return {
+      return this._shapeReviewedApplicationResponse(
         application,
         doctor,
-        message: 'Application rejected',
-      };
+        'Application rejected'
+      );
     } catch (error) {
       console.error('Error in rejectDoctorApplication:', error);
       throw error;
@@ -421,7 +432,7 @@ class DoctorManagementService {
         const statusMessage =
           status === 'active'
             ? 'Your account has been activated. You can now login and access all features.'
-            : `Your account has been ${status === 'suspended/freezed' ? 'suspended' : 'blocked'}. ${reason || ''}`;
+            : `Your account has been ${status === 'rejected' ? 'rejected' : 'blocked'}. ${reason || ''}`;
 
         await sendDoctorStatusUpdateEmail(
           doctor.email,
@@ -448,7 +459,7 @@ class DoctorManagementService {
           email: doctor.email,
           account_status: doctor.account_status,
         },
-        message: `Doctor account ${status === 'active' ? 'activated' : status === 'suspended/freezed' ? 'suspended' : 'blocked'} successfully`,
+        message: `Doctor account ${status === 'active' ? 'activated' : status === 'rejected' ? 'rejected' : 'blocked'} successfully`,
       };
     } catch (error) {
       console.error('Error in updateDoctorStatus:', error);

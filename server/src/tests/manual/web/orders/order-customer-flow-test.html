@@ -1,0 +1,1449 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Philbox Customer Order Lab</title>
+    <style>
+      :root {
+        --bg: #07111f;
+        --bg-2: #0c1728;
+        --panel: rgba(255, 255, 255, 0.08);
+        --panel-strong: rgba(255, 255, 255, 0.12);
+        --border: rgba(255, 255, 255, 0.12);
+        --text: #eff5ff;
+        --muted: #9cb1cf;
+        --accent: #77f0cf;
+        --accent-2: #86a8ff;
+        --warning: #ffd166;
+        --danger: #ff7f7f;
+        --success: #77f0cf;
+        --shadow: 0 24px 90px rgba(0, 0, 0, 0.35);
+        --radius: 20px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        color: var(--text);
+        font-family:
+          Inter,
+          Segoe UI,
+          Tahoma,
+          sans-serif;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(119, 240, 207, 0.16),
+            transparent 24%
+          ),
+          radial-gradient(
+            circle at top right,
+            rgba(134, 168, 255, 0.18),
+            transparent 28%
+          ),
+          linear-gradient(160deg, var(--bg), var(--bg-2));
+      }
+
+      .wrap {
+        width: min(1520px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 24px 0 42px;
+      }
+
+      .hero,
+      .panel {
+        border: 1px solid var(--border);
+        background: var(--panel);
+        backdrop-filter: blur(18px);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.35fr 0.95fr;
+        gap: 18px;
+        padding: 24px;
+        margin-bottom: 18px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(119, 240, 207, 0.12);
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 14px 0 10px;
+        font-size: clamp(30px, 4vw, 54px);
+        line-height: 1.02;
+      }
+
+      .lead {
+        margin: 0;
+        max-width: 78ch;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      .hero-stats {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 20px;
+      }
+
+      .stat {
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+      }
+
+      .stat span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .stat strong {
+        display: block;
+        margin-top: 6px;
+        font-size: 15px;
+      }
+
+      .hero-side {
+        display: grid;
+        gap: 12px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .chip[data-tone='ok'] {
+        color: #8ef0d9;
+        background: rgba(119, 240, 207, 0.12);
+      }
+      .chip[data-tone='warn'] {
+        color: #ffd166;
+        background: rgba(255, 209, 102, 0.14);
+      }
+      .chip[data-tone='bad'] {
+        color: #ff9d9d;
+        background: rgba(255, 127, 127, 0.12);
+      }
+      .chip[data-tone='info'] {
+        color: #b9ccff;
+        background: rgba(134, 168, 255, 0.12);
+      }
+
+      .panel-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 18px;
+        margin-bottom: 18px;
+      }
+
+      .panel {
+        padding: 18px;
+      }
+
+      .panel h2 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+
+      .subtle {
+        margin: 0 0 14px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .section {
+        padding: 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        margin-bottom: 14px;
+      }
+
+      .section h3 {
+        margin: 0 0 12px;
+        font-size: 14px;
+        letter-spacing: 0.02em;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .form-grid.one {
+        grid-template-columns: 1fr;
+      }
+
+      .field label {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.03em;
+      }
+
+      .field label strong {
+        color: var(--text);
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 14px;
+        padding: 11px 13px;
+        background: rgba(6, 12, 21, 0.82);
+        color: var(--text);
+        font: inherit;
+        outline: none;
+      }
+
+      textarea {
+        min-height: 88px;
+        resize: vertical;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: rgba(134, 168, 255, 0.8);
+        box-shadow: 0 0 0 4px rgba(134, 168, 255, 0.12);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 14px;
+        padding: 11px 14px;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 800;
+        color: #07111f;
+        background: linear-gradient(135deg, #77f0cf, #86a8ff);
+        transition:
+          transform 0.14s ease,
+          box-shadow 0.14s ease,
+          opacity 0.14s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 22px rgba(134, 168, 255, 0.2);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .button-secondary {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .button-danger {
+        color: #fff;
+        background: linear-gradient(135deg, #ff7f7f, #ff9d5c);
+      }
+
+      .button-warning {
+        color: #241700;
+        background: linear-gradient(135deg, #ffd166, #ffb703);
+      }
+
+      .button-small {
+        padding: 9px 11px;
+        border-radius: 12px;
+        font-size: 13px;
+      }
+
+      .status-line {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .data-box {
+        min-height: 120px;
+        max-height: 400px;
+        overflow: auto;
+        margin: 0;
+        padding: 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(6, 12, 21, 0.8);
+        color: #dce9ff;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font:
+          12px/1.5 Consolas,
+          Monaco,
+          monospace;
+      }
+
+      .stripe-card-box {
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(6, 12, 21, 0.82);
+      }
+
+      .stripe-card-box .StripeElement {
+        min-height: 42px;
+        padding: 11px 13px;
+      }
+
+      .helper-text {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .helper-text code {
+        padding: 1px 6px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--accent);
+      }
+
+      .logs {
+        display: grid;
+        gap: 12px;
+      }
+
+      .log-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+
+      .log-list {
+        display: grid;
+        gap: 10px;
+        max-height: 600px;
+        overflow: auto;
+        padding-right: 4px;
+      }
+
+      .log-item {
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 12px;
+      }
+
+      .log-top {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .log-title {
+        font-weight: 800;
+        color: var(--text);
+        margin-bottom: 4px;
+      }
+      .log-detail {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font:
+          12px/1.5 Consolas,
+          Monaco,
+          monospace;
+        color: #dce9ff;
+      }
+
+      .empty {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .notice {
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        padding: 12px 14px;
+        line-height: 1.55;
+        font-size: 13px;
+      }
+
+      .notice-warning {
+        background: rgba(255, 209, 102, 0.12);
+        border-color: rgba(255, 209, 102, 0.25);
+        color: #ffe6a6;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 1200px) {
+        .hero {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <section class="hero">
+        <div>
+          <span class="eyebrow">Customer Order Lab</span>
+          <h1>Cart and Checkout Flow</h1>
+          <p class="lead">
+            Use this page to simulate a customer's journey: login, manage cart,
+            upload prescriptions, and place orders.
+            <strong>Note:</strong> This session is isolated to this browser
+            profile.
+          </p>
+          <div class="hero-stats">
+            <div class="stat">
+              <span>Customer identity</span>
+              <strong>Login, profile, and session management</strong>
+            </div>
+            <div class="stat">
+              <span>Order flow</span>
+              <strong>Cart operations and multi-branch checkout</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-side panel">
+          <h2>Environment</h2>
+          <div id="originWarning" class="notice notice-warning hidden"></div>
+          <div class="form-grid one">
+            <div class="field">
+              <label for="apiBaseUrl"
+                ><strong>API Base URL</strong><span>Backend host</span></label
+              >
+              <input id="apiBaseUrl" type="text" />
+            </div>
+          </div>
+          <div class="actions">
+            <button id="saveConfigBtn" type="button">Save config</button>
+            <button id="resetConfigBtn" type="button" class="button-secondary">
+              Reset defaults
+            </button>
+          </div>
+          <div class="status-line">
+            <span id="customerStatusChip" class="chip" data-tone="warn"
+              >Customer: idle</span
+            >
+          </div>
+        </div>
+      </section>
+
+      <section class="panel-grid">
+        <article class="panel">
+          <h2>Customer Flow</h2>
+
+          <div class="section">
+            <h3>Authentication</h3>
+            <div class="form-grid">
+              <div class="field">
+                <label for="customerEmail"
+                  ><strong>Email</strong><span>Login</span></label
+                >
+                <input
+                  id="customerEmail"
+                  type="email"
+                  placeholder="customer@example.com"
+                />
+              </div>
+              <div class="field">
+                <label for="customerPassword"
+                  ><strong>Password</strong><span>Login</span></label
+                >
+                <input
+                  id="customerPassword"
+                  type="password"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+            <div class="actions">
+              <button id="customerLoginBtn" type="button">
+                Login customer
+              </button>
+              <button
+                id="customerLogoutBtn"
+                type="button"
+                class="button-secondary"
+              >
+                Logout customer
+              </button>
+              <button id="customerMeBtn" type="button" class="button-secondary">
+                Load me
+              </button>
+            </div>
+            <div class="status-line">
+              <span id="customerSessionSummary" class="chip" data-tone="info"
+                >Not logged in</span
+              >
+            </div>
+          </div>
+
+          <div class="section">
+            <h3>Cart management</h3>
+            <div class="form-grid">
+              <div class="field">
+                <label for="cartMedicineId"
+                  ><strong>Medicine ID</strong><span>Add to cart</span></label
+                >
+                <input
+                  id="cartMedicineId"
+                  type="text"
+                  placeholder="Medicine ObjectId"
+                />
+              </div>
+              <div class="field">
+                <label for="cartQuantity"
+                  ><strong>Quantity</strong><span>Add to cart</span></label
+                >
+                <input id="cartQuantity" type="number" min="1" value="1" />
+              </div>
+              <div class="field">
+                <label for="cartItemId"
+                  ><strong>Cart Item ID</strong
+                  ><span>Update/remove</span></label
+                >
+                <input
+                  id="cartItemId"
+                  type="text"
+                  placeholder="Cart item ObjectId"
+                />
+              </div>
+              <div class="field">
+                <label for="cartUpdateQty"
+                  ><strong>Update quantity</strong
+                  ><span>Update item</span></label
+                >
+                <input id="cartUpdateQty" type="number" min="1" value="1" />
+              </div>
+            </div>
+            <div class="actions">
+              <button id="addToCartBtn" type="button">Add to cart</button>
+              <button
+                id="refreshCartBtn"
+                type="button"
+                class="button-secondary"
+              >
+                Refresh cart
+              </button>
+              <button id="updateCartBtn" type="button" class="button-secondary">
+                Update cart item
+              </button>
+              <button id="removeCartBtn" type="button" class="button-warning">
+                Remove item
+              </button>
+              <button id="clearCartBtn" type="button" class="button-danger">
+                Clear cart
+              </button>
+            </div>
+            <div class="form-grid one" style="margin-top: 12px">
+              <div class="field">
+                <label for="customerCartOutput"
+                  ><strong>Cart response</strong><span>JSON</span></label
+                >
+                <pre id="customerCartOutput" class="data-box">
+No cart data loaded yet.</pre
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h3>Prescription upload</h3>
+            <div class="form-grid one">
+              <div class="field">
+                <label for="prescriptionFile"
+                  ><strong>Prescription file</strong
+                  ><span>Optional</span></label
+                >
+                <input
+                  id="prescriptionFile"
+                  type="file"
+                  accept="image/*,.pdf"
+                />
+              </div>
+              <div class="field">
+                <label for="prescriptionNotes"
+                  ><strong>Notes</strong><span>Optional</span></label
+                >
+                <textarea
+                  id="prescriptionNotes"
+                  placeholder="Upload notes for the prescription..."
+                ></textarea>
+              </div>
+            </div>
+            <div class="actions">
+              <button id="uploadPrescriptionBtn" type="button">
+                Upload prescription
+              </button>
+            </div>
+            <div class="form-grid one" style="margin-top: 12px">
+              <div class="field">
+                <label for="prescriptionOutput"
+                  ><strong>Prescription response</strong
+                  ><span>JSON</span></label
+                >
+                <pre id="prescriptionOutput" class="data-box">
+No prescription uploaded yet.</pre
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h3>Checkout</h3>
+            <div class="form-grid">
+              <div class="field">
+                <label for="checkoutAddressId"
+                  ><strong>Address ID</strong
+                  ><span>Required or use map link</span></label
+                >
+                <input
+                  id="checkoutAddressId"
+                  type="text"
+                  placeholder="Address ObjectId"
+                />
+              </div>
+              <div class="field">
+                <label for="checkoutMapLink"
+                  ><strong>Map link</strong><span>Checkout summary</span></label
+                >
+                <input
+                  id="checkoutMapLink"
+                  type="url"
+                  placeholder="https://maps.google.com/..."
+                />
+              </div>
+              <div class="field">
+                <label for="checkoutCoupon"
+                  ><strong>Coupon code</strong><span>Optional</span></label
+                >
+                <input id="checkoutCoupon" type="text" placeholder="SAVE10" />
+              </div>
+              <div class="field">
+                <label for="paymentMethod"
+                  ><strong>Payment method</strong
+                  ><span>Place order</span></label
+                >
+                <select id="paymentMethod">
+                  <option value="jazzcash">JazzCash</option>
+                  <option value="easypaisa">EasyPaisa</option>
+                  <option value="stripe">Stripe</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="walletNumber"
+                  ><strong>Wallet number</strong
+                  ><span>JazzCash/EasyPaisa</span></label
+                >
+                <input
+                  id="walletNumber"
+                  type="text"
+                  placeholder="03xx-xxxxxxx"
+                />
+              </div>
+              <div class="field">
+                <label for="stripePaymentMethodId"
+                  ><strong>Stripe payment method ID</strong
+                  ><span>Stripe only</span></label
+                >
+                <input
+                  id="stripePaymentMethodId"
+                  type="text"
+                  placeholder="pm_..."
+                />
+                <div class="empty" style="margin-top: 6px">
+                  Use the helper below to create a Stripe PaymentMethod from raw
+                  test card details. The returned value starts with
+                  <code>pm_</code>.
+                </div>
+              </div>
+              <div class="field">
+                <label for="checkoutPrescriptionId"
+                  ><strong>Prescription ID</strong
+                  ><span>For prescription-required medicines</span></label
+                >
+                <input
+                  id="checkoutPrescriptionId"
+                  type="text"
+                  placeholder="Uploaded prescription ObjectId"
+                />
+              </div>
+              <div class="field">
+                <label for="checkoutCountry"
+                  ><strong>Country</strong><span>Defaults to PK</span></label
+                >
+                <input id="checkoutCountry" type="text" value="PK" />
+              </div>
+            </div>
+            <div class="field" style="margin-top: 12px">
+              <label for="checkoutNotes"
+                ><strong>Notes</strong><span>Optional</span></label
+              >
+              <textarea
+                id="checkoutNotes"
+                placeholder="Delivery or fulfillment notes..."
+              ></textarea>
+            </div>
+            <div class="actions">
+              <button
+                id="checkoutSummaryBtn"
+                type="button"
+                class="button-secondary"
+              >
+                Get checkout summary
+              </button>
+              <button id="placeOrderBtn" type="button">Place order</button>
+            </div>
+
+            <div class="section" style="margin-top: 12px">
+              <h3>Stripe test card helper</h3>
+              <div class="form-grid">
+                <div class="field">
+                  <label for="stripeCardNumber"
+                    ><strong>Card number</strong
+                    ><span>Test mode only</span></label
+                  >
+                  <input
+                    id="stripeCardNumber"
+                    type="text"
+                    placeholder="4242 4242 4242 4242"
+                  />
+                  <div class="helper-text">
+                    Use a Stripe test card number, for example
+                    <code>4242 4242 4242 4242</code>.
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="stripeCardholderName"
+                    ><strong>Cardholder name</strong
+                    ><span>Optional</span></label
+                  >
+                  <input
+                    id="stripeCardholderName"
+                    type="text"
+                    placeholder="Test Customer"
+                  />
+                  <div class="helper-text">
+                    The helper returns Stripe's built-in test PaymentMethod id
+                    pm_card_visa, so no publishable key or raw-card API access
+                    is needed here.
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="stripeExpMonth"
+                    ><strong>Expiry month</strong><span>MM</span></label
+                  >
+                  <input
+                    id="stripeExpMonth"
+                    type="number"
+                    min="1"
+                    max="12"
+                    placeholder="12"
+                  />
+                </div>
+                <div class="field">
+                  <label for="stripeExpYear"
+                    ><strong>Expiry year</strong><span>YYYY</span></label
+                  >
+                  <input
+                    id="stripeExpYear"
+                    type="number"
+                    min="2026"
+                    placeholder="2028"
+                  />
+                </div>
+                <div class="field">
+                  <label for="stripeCvc"
+                    ><strong>CVC</strong><span>3 or 4 digits</span></label
+                  >
+                  <input id="stripeCvc" type="text" placeholder="123" />
+                </div>
+              </div>
+              <div class="actions">
+                <button id="createStripePaymentMethodBtn" type="button">
+                  Load test PaymentMethod
+                </button>
+                <button
+                  id="copyStripePaymentMethodBtn"
+                  type="button"
+                  class="button-secondary"
+                >
+                  Copy to checkout field
+                </button>
+              </div>
+              <div class="helper-text" id="stripeHelperStatus">
+                Use the helper to load Stripe test PaymentMethod id
+                pm_card_visa.
+              </div>
+            </div>
+
+            <div class="form-grid one" style="margin-top: 12px">
+              <div class="field">
+                <label for="checkoutOutput"
+                  ><strong>Checkout response</strong><span>JSON</span></label
+                >
+                <pre id="checkoutOutput" class="data-box">
+No checkout activity yet.</pre
+                >
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel logs">
+        <div class="log-toolbar">
+          <div>
+            <h2 style="margin: 0 0 6px">Activity Log</h2>
+          </div>
+          <div class="filters">
+            <button
+              class="button-secondary button-small active"
+              data-filter="all"
+              type="button"
+            >
+              All
+            </button>
+            <button
+              class="button-secondary button-small"
+              data-filter="error"
+              type="button"
+            >
+              Errors
+            </button>
+            <button
+              class="button-secondary button-small"
+              id="clearLogsBtn"
+              type="button"
+            >
+              Clear logs
+            </button>
+          </div>
+        </div>
+        <div id="logList" class="log-list">
+          <div class="empty">Logs will appear here once you start actions.</div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const defaultApiBase = 'http://localhost:5000';
+
+      const state = {
+        config: {
+          apiBaseUrl:
+            localStorage.getItem('opf_apiBaseUrl_cust') || defaultApiBase,
+        },
+        customer: {
+          session: null,
+          cart: null,
+          summary: null,
+          lastResponse: null,
+          lastPrescription: null,
+          lastOrder: null,
+        },
+        logs: [],
+        logFilter: 'all',
+      };
+
+      const $ = selector => document.querySelector(selector);
+      const qsa = selector => [...document.querySelectorAll(selector)];
+
+      const els = {
+        apiBaseUrl: $('#apiBaseUrl'),
+        customerStatusChip: $('#customerStatusChip'),
+        originWarning: $('#originWarning'),
+        customerSessionSummary: $('#customerSessionSummary'),
+        customerCartOutput: $('#customerCartOutput'),
+        checkoutOutput: $('#checkoutOutput'),
+        prescriptionOutput: $('#prescriptionOutput'),
+        logList: $('#logList'),
+        stripeHelperStatus: $('#stripeHelperStatus'),
+      };
+
+      function loadConfigToInputs() {
+        els.apiBaseUrl.value = state.config.apiBaseUrl;
+      }
+
+      function saveConfig() {
+        state.config.apiBaseUrl = (els.apiBaseUrl.value || defaultApiBase)
+          .trim()
+          .replace(/\/$/, '');
+        localStorage.setItem('opf_apiBaseUrl_cust', state.config.apiBaseUrl);
+        pushLog('system', 'info', 'Config saved', state.config);
+        refreshStatusChips();
+      }
+
+      function resetConfig() {
+        state.config.apiBaseUrl = defaultApiBase;
+        localStorage.removeItem('opf_apiBaseUrl_cust');
+        loadConfigToInputs();
+        pushLog('system', 'info', 'Config reset to defaults', state.config);
+        refreshStatusChips();
+      }
+
+      function updateOriginWarning() {
+        if (location.protocol === 'file:') {
+          els.originWarning.textContent =
+            'Opened from file://. Login may fail. Use an HTTP server for cookie-based auth.';
+          els.originWarning.classList.remove('hidden');
+          return;
+        }
+        els.originWarning.classList.add('hidden');
+      }
+
+      function pushLog(scope, level, title, detail = null) {
+        state.logs.unshift({ scope, level, title, detail, time: new Date() });
+        renderLogs();
+      }
+
+      function renderLogs() {
+        const items = state.logs.filter(item => {
+          if (state.logFilter === 'all') return true;
+          if (state.logFilter === 'error') return item.level === 'error';
+          return true;
+        });
+
+        if (!items.length) {
+          els.logList.innerHTML = '<div class="empty">No log entries.</div>';
+          return;
+        }
+
+        els.logList.innerHTML = items
+          .map(item => {
+            const detail = item.detail
+              ? JSON.stringify(item.detail, null, 2)
+              : '';
+            return `
+            <div class="log-item">
+              <div class="log-top">
+                <span>${item.time.toLocaleTimeString()}</span>
+                <span>${item.scope.toUpperCase()} • ${item.level.toUpperCase()}</span>
+              </div>
+              <div class="log-title">${escapeHtml(item.title)}</div>
+              ${detail ? `<pre class="log-detail">${escapeHtml(detail)}</pre>` : ''}
+            </div>`;
+          })
+          .join('');
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      }
+
+      function setJson(el, value, fallback = 'No data loaded yet.') {
+        el.textContent = value ? JSON.stringify(value, null, 2) : fallback;
+      }
+
+      function setChip(el, label, tone = 'info') {
+        el.textContent = label;
+        el.dataset.tone = tone;
+      }
+
+      function setStripeHelperStatus(message, tone = 'info') {
+        els.stripeHelperStatus.textContent = message;
+        els.stripeHelperStatus.dataset.tone = tone;
+      }
+
+      function setStripePaymentMethodId(paymentMethodId) {
+        const normalizedPaymentMethodId = paymentMethodId || '';
+        $('#stripePaymentMethodId').value = normalizedPaymentMethodId;
+        if (normalizedPaymentMethodId) {
+          setStripeHelperStatus(
+            `Created PaymentMethod: ${normalizedPaymentMethodId}`,
+            'ok'
+          );
+        }
+      }
+
+      async function createStripePaymentMethod() {
+        try {
+          const payloadBody = {
+            card_number: $('#stripeCardNumber').value.trim(),
+            exp_month: $('#stripeExpMonth').value.trim(),
+            exp_year: $('#stripeExpYear').value.trim(),
+            cvc: $('#stripeCvc').value.trim(),
+            cardholder_name:
+              $('#stripeCardholderName').value.trim() || undefined,
+          };
+
+          const { payload } = await api(
+            '/api/customer/checkout/stripe/payment-method',
+            {
+              method: 'POST',
+              body: JSON.stringify(payloadBody),
+            }
+          );
+
+          const paymentMethodId =
+            payload?.data?.payment_method_id || payload?.data?.id || null;
+
+          if (!paymentMethodId) {
+            setStripeHelperStatus(
+              'Stripe did not return a PaymentMethod ID.',
+              'bad'
+            );
+            return;
+          }
+
+          setStripePaymentMethodId(paymentMethodId);
+          setStripeHelperStatus(
+            `Stripe test PaymentMethod ready: ${paymentMethodId}`,
+            'ok'
+          );
+          pushLog('customer', 'info', 'Stripe test PaymentMethod ready', {
+            paymentMethodId,
+          });
+        } catch (error) {
+          setStripeHelperStatus(
+            error.message || 'Failed to create PaymentMethod.',
+            'bad'
+          );
+          pushLog(
+            'customer',
+            'error',
+            'Stripe PaymentMethod failed',
+            error.payload || error.message
+          );
+        }
+      }
+
+      function copyStripePaymentMethodToCheckout() {
+        const paymentMethodId = $('#stripePaymentMethodId').value.trim();
+
+        if (!paymentMethodId) {
+          setStripeHelperStatus('Create a PaymentMethod first.', 'warn');
+          return;
+        }
+
+        $('#stripePaymentMethodId').value = paymentMethodId;
+        setStripeHelperStatus(`Ready to submit ${paymentMethodId}.`, 'ok');
+        pushLog('customer', 'info', 'Copied PaymentMethod to checkout field', {
+          paymentMethodId,
+        });
+      }
+
+      function refreshStatusChips() {
+        const customerName =
+          state.customer.session?.fullName || 'Not logged in';
+        setChip(
+          els.customerStatusChip,
+          state.customer.session
+            ? `Customer: ${customerName}`
+            : 'Customer: idle',
+          state.customer.session ? 'ok' : 'warn'
+        );
+        setChip(
+          els.customerSessionSummary,
+          state.customer.session
+            ? `Customer session ready • ${state.customer.session._id || 'logged in'}`
+            : 'Not logged in',
+          state.customer.session ? 'ok' : 'info'
+        );
+      }
+
+      async function api(path, options = {}) {
+        const url = `${state.config.apiBaseUrl}${path}`;
+        const fetchOptions = {
+          credentials: 'include',
+          ...options,
+          headers: { ...(options.headers || {}) },
+        };
+        if (
+          options.body &&
+          !(options.body instanceof FormData) &&
+          !fetchOptions.headers['Content-Type']
+        ) {
+          fetchOptions.headers['Content-Type'] = 'application/json';
+        }
+        const response = await fetch(url, fetchOptions);
+        const text = await response.text();
+        let payload = null;
+        try {
+          payload = text ? JSON.parse(text) : null;
+        } catch (e) {
+          payload = { raw: text };
+        }
+        if (!response.ok) {
+          const error = new Error(
+            payload?.message || `HTTP ${response.status}`
+          );
+          error.status = response.status;
+          error.payload = payload;
+          throw error;
+        }
+        return { response, payload };
+      }
+
+      async function customerLogin() {
+        const email = $('#customerEmail').value.trim();
+        const password = $('#customerPassword').value;
+        if (!email || !password) return;
+        try {
+          const { payload } = await api('/api/customer/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ email, password }),
+          });
+          state.customer.session =
+            payload?.data?.customer || payload?.data || null;
+          setJson(els.customerCartOutput, payload);
+          refreshStatusChips();
+          pushLog('customer', 'info', 'Login succeeded', payload);
+          await loadCustomerCart(true);
+        } catch (error) {
+          pushLog(
+            'customer',
+            'error',
+            'Login failed',
+            error.payload || error.message
+          );
+        }
+      }
+
+      async function customerLogout() {
+        try {
+          const { payload } = await api('/api/customer/auth/logout', {
+            method: 'POST',
+          });
+          state.customer.session = null;
+          refreshStatusChips();
+          pushLog('customer', 'info', 'Logged out', payload);
+        } catch (error) {
+          pushLog(
+            'customer',
+            'error',
+            'Logout failed',
+            error.payload || error.message
+          );
+        }
+      }
+
+      async function loadCustomerMe() {
+        try {
+          const { payload } = await api('/api/customer/auth/me');
+          state.customer.session =
+            payload?.data?.customer || payload?.data || null;
+          refreshStatusChips();
+          pushLog('customer', 'info', 'Session loaded', state.customer.session);
+        } catch (error) {
+          pushLog(
+            'customer',
+            'error',
+            'Load session failed',
+            error.payload || error.message
+          );
+        }
+      }
+
+      async function loadCustomerCart(silent = false) {
+        try {
+          const { payload } = await api('/api/customer/cart');
+          state.customer.cart = payload?.data || payload;
+          setJson(els.customerCartOutput, payload);
+          if (!silent) pushLog('customer', 'info', 'Cart loaded', payload);
+        } catch (error) {
+          if (!silent)
+            pushLog(
+              'customer',
+              'error',
+              'Load cart failed',
+              error.payload || error.message
+            );
+        }
+      }
+
+      async function addToCart() {
+        const medicineId = $('#cartMedicineId').value.trim();
+        const quantity = Number($('#cartQuantity').value || 1);
+        if (!medicineId) return;
+        try {
+          const { payload } = await api('/api/customer/cart/items', {
+            method: 'POST',
+            body: JSON.stringify({ medicineId, quantity }),
+          });
+          setJson(els.customerCartOutput, payload);
+          pushLog('customer', 'info', 'Added to cart', payload);
+          await loadCustomerCart(true);
+        } catch (error) {
+          pushLog(
+            'customer',
+            'error',
+            'Add to cart failed',
+            error.payload || error.message
+          );
+        }
+      }
+
+      async function updateCustomerCartItem() {
+        const itemId = $('#cartItemId').value.trim();
+        const quantity = Number($('#cartUpdateQty').value || 1);
+        if (!itemId) return;
+        try {
+          const { payload } = await api(
+            `/api/customer/cart/items/${encodeURIComponent(itemId)}`,
+            { method: 'PATCH', body: JSON.stringify({ quantity }) }
+          );
+          setJson(els.customerCartOutput, payload);
+          pushLog('customer', 'info', 'Cart item updated', payload);
+          await loadCustomerCart(true);
+        } catch (error) {
+          pushLog(
+            'customer',
+            'error',
+            'Update failed',
+            error.payload || error.message
+          );
+        }
+      }
+
+      async function removeCustomerCartItem() {
+        const itemId = $('#cartItemId').value.trim();
+        if (!itemId) return;
+        try {
+          const { payload } = await api(
+            `/api/customer/cart/items/${encodeURIComponent(itemId)}`,
+            { method: 'DELETE' }
+          );
+          setJson(els.customerCartOutput, payload);
+          pushLog('customer', 'info', 'Item removed', payload);
+          await loadCustomerCart(true);
+        } catch (error) {
+          pushLog(
+            'customer',
+            'error',
+            'Remove failed',
+            error.payload || error.message
+          );
+        }
+      }
+
+      async function clearCustomerCart() {
+        try {
+          const { payload } = await api('/api/customer/cart/clear', {
+            method: 'DELETE',
+          });
+          setJson(els.customerCartOutput, payload);
+          pushLog('customer', 'info', 'Cart cleared', payload);
+          await loadCustomerCart(true);
+        } catch (error) {
+          pushLog(
+            'customer',
+            'error',
+            'Clear failed',
+            error.payload || error.message
+          );
+        }
+      }
+
+      async function uploadPrescription() {
+        const file = $('#prescriptionFile').files?.[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append('prescription', file);
+        formData.append('notes', $('#prescriptionNotes').value);
+        try {
+          const { payload } = await api('/api/customer/checkout/prescription', {
+            method: 'POST',
+            body: formData,
+          });
+          setJson(els.prescriptionOutput, payload);
+          const rid = (payload?.data || payload)?._id;
+          if (rid) $('#checkoutPrescriptionId').value = rid;
+          pushLog('customer', 'info', 'Prescription uploaded', payload);
+        } catch (error) {
+          pushLog(
+            'customer',
+            'error',
+            'Upload failed',
+            error.payload || error.message
+          );
+        }
+      }
+
+      async function getCheckoutSummary() {
+        const params = new URLSearchParams();
+        const addr = $('#checkoutAddressId').value.trim();
+        const map = $('#checkoutMapLink').value.trim();
+        const coup = $('#checkoutCoupon').value.trim();
+        if (addr) params.set('address_id', addr);
+        if (map) params.set('delivery_google_map_link', map);
+        if (coup) params.set('coupon_code', coup);
+        try {
+          const { payload } = await api(
+            `/api/customer/checkout/summary?${params.toString()}`
+          );
+          setJson(els.checkoutOutput, payload);
+          pushLog('customer', 'info', 'Summary loaded', payload);
+        } catch (error) {
+          pushLog(
+            'customer',
+            'error',
+            'Summary failed',
+            error.payload || error.message
+          );
+        }
+      }
+
+      async function placeOrder() {
+        const paymentMethod = $('#paymentMethod').value;
+        const stripePaymentMethodId = $('#stripePaymentMethodId').value.trim();
+
+        if (paymentMethod === 'stripe' && !stripePaymentMethodId) {
+          pushLog(
+            'customer',
+            'error',
+            'Stripe payment method ID required',
+            'Use the helper to load pm_card_visa, or paste a Stripe test PaymentMethod id here.'
+          );
+          return;
+        }
+
+        const body = {
+          address_id: $('#checkoutAddressId').value.trim() || undefined,
+          delivery_google_map_link:
+            $('#checkoutMapLink').value.trim() || undefined,
+          coupon_code: $('#checkoutCoupon').value.trim() || undefined,
+          payment_method: paymentMethod,
+          wallet_number: $('#walletNumber').value.trim() || undefined,
+          stripe_payment_method_id: stripePaymentMethodId || undefined,
+          prescription_id:
+            $('#checkoutPrescriptionId').value.trim() || undefined,
+          notes: $('#checkoutNotes').value.trim() || undefined,
+          country: $('#checkoutCountry').value.trim() || 'PK',
+        };
+        try {
+          const { payload } = await api('/api/customer/checkout/place-order', {
+            method: 'POST',
+            body: JSON.stringify(body),
+          });
+          setJson(els.checkoutOutput, payload);
+          pushLog('customer', 'info', 'Order placed!', payload);
+        } catch (error) {
+          pushLog(
+            'customer',
+            'error',
+            'Order failed',
+            error.payload || error.message
+          );
+        }
+      }
+
+      function wire() {
+        $('#saveConfigBtn').addEventListener('click', saveConfig);
+        $('#resetConfigBtn').addEventListener('click', resetConfig);
+        $('#createStripePaymentMethodBtn').addEventListener(
+          'click',
+          createStripePaymentMethod
+        );
+        $('#copyStripePaymentMethodBtn').addEventListener(
+          'click',
+          copyStripePaymentMethodToCheckout
+        );
+        $('#customerLoginBtn').addEventListener('click', customerLogin);
+        $('#customerLogoutBtn').addEventListener('click', customerLogout);
+        $('#customerMeBtn').addEventListener('click', loadCustomerMe);
+        $('#addToCartBtn').addEventListener('click', addToCart);
+        $('#refreshCartBtn').addEventListener('click', () =>
+          loadCustomerCart()
+        );
+        $('#updateCartBtn').addEventListener('click', updateCustomerCartItem);
+        $('#removeCartBtn').addEventListener('click', removeCustomerCartItem);
+        $('#clearCartBtn').addEventListener('click', clearCustomerCart);
+        $('#uploadPrescriptionBtn').addEventListener(
+          'click',
+          uploadPrescription
+        );
+        $('#checkoutSummaryBtn').addEventListener('click', getCheckoutSummary);
+        $('#placeOrderBtn').addEventListener('click', placeOrder);
+        $('#clearLogsBtn').addEventListener('click', () => {
+          state.logs = [];
+          renderLogs();
+        });
+        qsa('[data-filter]').forEach(b =>
+          b.addEventListener('click', () => {
+            state.logFilter = b.dataset.filter;
+            renderLogs();
+            qsa('[data-filter]').forEach(x => x.classList.remove('active'));
+            b.classList.add('active');
+          })
+        );
+      }
+
+      loadConfigToInputs();
+      wire();
+      updateOriginWarning();
+      refreshStatusChips();
+      setStripeHelperStatus(
+        'Use the helper to load Stripe test PaymentMethod id pm_card_visa.',
+        'info'
+      );
+    </script>
+  </body>
+</html>

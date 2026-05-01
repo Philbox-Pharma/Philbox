@@ -1,5 +1,6 @@
 import doctorSlotsService from '../service/slots.service.js';
 import sendResponse from '../../../../../utils/sendResponse.js';
+import { logDoctorActivity } from '../../../utils/logDoctorActivities.js';
 import {
   createSlotSchema,
   createRecurringSlotSchema,
@@ -41,6 +42,14 @@ export const createSlot = async (req, res) => {
         res,
         400,
         'This time slot overlaps with an existing slot'
+      );
+    }
+
+    if (error.message === 'INVALID_SLOT_DURATION_RANGE') {
+      return sendResponse(
+        res,
+        400,
+        'Start time and end time difference must exactly match slot duration'
       );
     }
 
@@ -92,6 +101,30 @@ export const createRecurringSlots = async (req, res) => {
       return sendResponse(res, 400, 'End time must be after start time');
     }
 
+    if (error.message === 'INVALID_SLOT_DURATION_RANGE') {
+      return sendResponse(
+        res,
+        400,
+        'Start time and end time difference must exactly match slot duration'
+      );
+    }
+
+    if (error.message === 'RECURRING_SLOT_ALREADY_EXISTS') {
+      return sendResponse(
+        res,
+        400,
+        'A recurring slot with same date range and time already exists'
+      );
+    }
+
+    if (error.message === 'SLOT_OVERLAP') {
+      return sendResponse(
+        res,
+        400,
+        'Recurring slot conflicts with an existing slot'
+      );
+    }
+
     return sendResponse(
       res,
       500,
@@ -122,6 +155,15 @@ export const getSlots = async (req, res) => {
     }
 
     const slots = await doctorSlotsService.getSlots(doctorId, value);
+
+    await logDoctorActivity(
+      req,
+      'view_slots',
+      `Viewed time slots with filters: ${JSON.stringify(value)}`,
+      'slots',
+      null,
+      { filters: value, slotsCount: slots.length }
+    );
 
     return sendResponse(res, 200, 'Time slots retrieved successfully', {
       count: slots.length,
@@ -155,6 +197,14 @@ export const getSlotById = async (req, res) => {
     }
 
     const slot = await doctorSlotsService.getSlotById(doctorId, slotId);
+
+    await logDoctorActivity(
+      req,
+      'view_slot_details',
+      `Viewed time slot details for slot ${slotId}`,
+      'slots',
+      slotId
+    );
 
     return sendResponse(res, 200, 'Time slot retrieved successfully', slot);
   } catch (error) {
@@ -240,6 +290,108 @@ export const updateSlot = async (req, res) => {
 };
 
 /**
+ * @desc    Book a time slot (mark as booked)
+ * @route   PATCH /api/doctor/slots/:slotId/book
+ * @access  Private (Doctor)
+ */
+export const bookSlot = async (req, res) => {
+  try {
+    const doctorId = req.session.doctorId || req.user?.id;
+    const { slotId } = req.params;
+
+    if (!doctorId) {
+      return sendResponse(res, 401, 'Unauthorized');
+    }
+
+    const slot = await doctorSlotsService.updateSlot(
+      doctorId,
+      slotId,
+      { status: 'booked' },
+      req
+    );
+
+    await logDoctorActivity(
+      req,
+      'slot_book',
+      `Booked time slot ${slotId}`,
+      'slots',
+      slotId
+    );
+
+    return sendResponse(res, 200, 'Time slot booked successfully', slot);
+  } catch (error) {
+    console.error('Error in bookSlot:', error);
+
+    if (error.message === 'SLOT_NOT_FOUND') {
+      return sendResponse(res, 404, 'Time slot not found');
+    }
+
+    if (error.message === 'CANNOT_UPDATE_PAST_SLOT') {
+      return sendResponse(res, 400, 'Cannot book a past time slot');
+    }
+
+    return sendResponse(
+      res,
+      500,
+      'Failed to book time slot',
+      null,
+      error.message
+    );
+  }
+};
+
+/**
+ * @desc    Unbook a time slot (mark as unbooked)
+ * @route   PATCH /api/doctor/slots/:slotId/unbook
+ * @access  Private (Doctor)
+ */
+export const unbookSlot = async (req, res) => {
+  try {
+    const doctorId = req.session.doctorId || req.user?.id;
+    const { slotId } = req.params;
+
+    if (!doctorId) {
+      return sendResponse(res, 401, 'Unauthorized');
+    }
+
+    const slot = await doctorSlotsService.updateSlot(
+      doctorId,
+      slotId,
+      { status: 'unbooked' },
+      req
+    );
+
+    await logDoctorActivity(
+      req,
+      'slot_unbook',
+      `Unbooked time slot ${slotId}`,
+      'slots',
+      slotId
+    );
+
+    return sendResponse(res, 200, 'Time slot unbooked successfully', slot);
+  } catch (error) {
+    console.error('Error in unbookSlot:', error);
+
+    if (error.message === 'SLOT_NOT_FOUND') {
+      return sendResponse(res, 404, 'Time slot not found');
+    }
+
+    if (error.message === 'CANNOT_UPDATE_PAST_SLOT') {
+      return sendResponse(res, 400, 'Cannot unbook a past time slot');
+    }
+
+    return sendResponse(
+      res,
+      500,
+      'Failed to unbook time slot',
+      null,
+      error.message
+    );
+  }
+};
+
+/**
  * @desc    Delete a time slot
  * @route   DELETE /api/doctor/slots/:slotId
  * @access  Private (Doctor)
@@ -306,6 +458,15 @@ export const getCalendarView = async (req, res) => {
       doctorId,
       yearNum,
       monthNum
+    );
+
+    await logDoctorActivity(
+      req,
+      'view_calendar',
+      `Viewed calendar for ${monthNum}/${yearNum}`,
+      'slots',
+      null,
+      { year: yearNum, month: monthNum }
     );
 
     return sendResponse(res, 200, 'Calendar view retrieved successfully', {

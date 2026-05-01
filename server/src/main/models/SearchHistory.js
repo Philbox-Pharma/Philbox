@@ -25,12 +25,21 @@ const searchHistorySchema = new mongoose.Schema(
         type: String,
         trim: true,
       },
-      dosageForm: {
+      branch: {
         type: String,
         trim: true,
       },
-      prescriptionRequired: {
-        type: Boolean,
+      dosage: {
+        type: String,
+        trim: true,
+      },
+      prescriptionStatus: {
+        type: String,
+        trim: true,
+      },
+      sortBy: {
+        type: String,
+        trim: true,
       },
     },
   },

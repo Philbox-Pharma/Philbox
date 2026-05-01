@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FCM Token Test</title>
+    <style>
+      body {
+        font-family:
+          Segoe UI,
+          Tahoma,
+          sans-serif;
+        max-width: 860px;
+        margin: 24px auto;
+        padding: 0 16px;
+        line-height: 1.45;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+      }
+
+      p {
+        margin: 0 0 12px;
+      }
+
+      .card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 14px;
+        margin: 12px 0;
+      }
+
+      label {
+        display: block;
+        margin: 10px 0 4px;
+        font-weight: 600;
+      }
+
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px;
+        font-size: 14px;
+      }
+
+      button {
+        margin-top: 12px;
+        margin-right: 8px;
+        padding: 8px 14px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #f6f8fa;
+        padding: 10px;
+        border-radius: 6px;
+        min-height: 80px;
+      }
+
+      .ok {
+        color: #0f7b0f;
+      }
+
+      .error {
+        color: #b00020;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>FCM Token Test (Web)</h1>
+    <p>
+      Fill your Firebase config + VAPID key, click
+      <strong>Get FCM Token</strong>, and copy the printed token for
+      Postman/device-token registration testing.
+    </p>
+
+    <div class="card">
+      <label for="apiKey">apiKey</label>
+      <input id="apiKey" placeholder="AIza..." />
+
+      <label for="authDomain">authDomain</label>
+      <input id="authDomain" placeholder="your-project.firebaseapp.com" />
+
+      <label for="projectId">projectId</label>
+      <input id="projectId" placeholder="your-project-id" />
+
+      <label for="storageBucket">storageBucket (optional)</label>
+      <input id="storageBucket" placeholder="your-project.appspot.com" />
+
+      <label for="messagingSenderId">messagingSenderId</label>
+      <input id="messagingSenderId" placeholder="1234567890" />
+
+      <label for="appId">appId</label>
+      <input id="appId" placeholder="1:1234567890:web:abcd1234" />
+
+      <label for="vapidKey">Web Push VAPID Public Key</label>
+      <input id="vapidKey" placeholder="BEl..." />
+
+      <button id="btnGetToken">Get FCM Token</button>
+      <button id="btnCopy" type="button">Copy Token</button>
+    </div>
+
+    <div class="card">
+      <strong>Status</strong>
+      <pre id="status">Idle</pre>
+    </div>
+
+    <div class="card">
+      <strong>Environment</strong>
+      <pre id="envInfo">Checking...</pre>
+    </div>
+
+    <div class="card">
+      <strong>FCM Token</strong>
+      <pre id="token">(empty)</pre>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+      import {
+        getMessaging,
+        getToken,
+      } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging.js';
+
+      const statusEl = document.getElementById('status');
+      const envInfoEl = document.getElementById('envInfo');
+      const tokenEl = document.getElementById('token');
+      const btnGetToken = document.getElementById('btnGetToken');
+      const btnCopy = document.getElementById('btnCopy');
+
+      const defaultFirebaseConfig = {
+        apiKey: 'AIzaSyCDEsmP4UsKIgUyMQG-RdRHtM0_oqnLsgY',
+        authDomain: 'philbox-b9993.firebaseapp.com',
+        projectId: 'philbox-b9993',
+        storageBucket: 'philbox-b9993.firebasestorage.app',
+        messagingSenderId: '768802416097',
+        appId: '1:768802416097:web:e03e8cd5284df057b85ea0',
+      };
+
+      const defaultVapidKey =
+        'BBzaBMlo8evVKHJW3lhHwXDCm15l1imMMTYFMfbVIxDvUnTAUHIsrm6jD100Vg5rchwi4oH7EfOu4PR4R-APzJo';
+
+      function setStatus(message, isError = false) {
+        statusEl.textContent = message;
+        statusEl.className = isError ? 'error' : 'ok';
+      }
+
+      function getConfigFromInputs() {
+        return {
+          apiKey: document.getElementById('apiKey').value.trim(),
+          authDomain: document.getElementById('authDomain').value.trim(),
+          projectId: document.getElementById('projectId').value.trim(),
+          storageBucket:
+            document.getElementById('storageBucket').value.trim() || undefined,
+          messagingSenderId: document
+            .getElementById('messagingSenderId')
+            .value.trim(),
+          appId: document.getElementById('appId').value.trim(),
+        };
+      }
+
+      function applyDefaults() {
+        const fields = {
+          apiKey: defaultFirebaseConfig.apiKey,
+          authDomain: defaultFirebaseConfig.authDomain,
+          projectId: defaultFirebaseConfig.projectId,
+          storageBucket: defaultFirebaseConfig.storageBucket,
+          messagingSenderId: defaultFirebaseConfig.messagingSenderId,
+          appId: defaultFirebaseConfig.appId,
+          vapidKey: defaultVapidKey,
+        };
+
+        Object.entries(fields).forEach(([id, value]) => {
+          const el = document.getElementById(id);
+          if (el && !el.value.trim()) {
+            el.value = value;
+          }
+        });
+      }
+
+      function validateConfig(config, vapidKey) {
+        const requiredFields = [
+          'apiKey',
+          'authDomain',
+          'projectId',
+          'messagingSenderId',
+          'appId',
+        ];
+        const missing = requiredFields.filter(field => !config[field]);
+        if (missing.length) {
+          throw new Error(`Missing Firebase fields: ${missing.join(', ')}`);
+        }
+        if (!vapidKey) {
+          throw new Error('Missing VAPID key');
+        }
+      }
+
+      function getPermissionHelpText(permission) {
+        if (permission === 'denied') {
+          return [
+            'Notification permission is blocked in browser settings.',
+            'Fix:',
+            '1) Open chrome://settings/content/notifications',
+            '2) Enable "Sites can ask to send notifications"',
+            '3) Remove localhost/127.0.0.1 from Block list',
+            '4) Reopen a fresh incognito window and try again on http://localhost:8000',
+          ].join('\n');
+        }
+        if (permission === 'default') {
+          return 'Permission not chosen yet. Click Get FCM Token and allow notifications when prompted.';
+        }
+        return 'Permission granted. You can request an FCM token.';
+      }
+
+      function updateEnvironmentInfo() {
+        const protocol = window.location.protocol;
+        const origin = window.location.origin;
+        const secure = window.isSecureContext;
+        const permission =
+          typeof Notification !== 'undefined'
+            ? Notification.permission
+            : 'unavailable';
+
+        const lines = [
+          `Protocol: ${protocol}`,
+          `Origin: ${origin}`,
+          `Secure context: ${secure ? 'yes' : 'no'}`,
+          `Notification permission: ${permission}`,
+        ];
+
+        if (protocol === 'file:') {
+          lines.push(
+            'Warning: file:// origin is not valid for reliable FCM web push testing.'
+          );
+          lines.push(
+            'Run this page from http://localhost:8000/manual/web/fcm/fcm-token-test.html instead.'
+          );
+        }
+
+        envInfoEl.textContent = lines.join('\n');
+      }
+
+      function validateRuntimePreconditions() {
+        if (window.location.protocol === 'file:') {
+          throw new Error(
+            [
+              'This page is opened with file:// which breaks web push/FCM flow.',
+              'Run a local server and open:',
+              'http://localhost:8000/manual/web/fcm/fcm-token-test.html',
+            ].join('\n')
+          );
+        }
+
+        if (!window.isSecureContext) {
+          throw new Error(
+            'Notifications require a secure context (HTTPS or localhost).'
+          );
+        }
+
+        if (typeof Notification === 'undefined') {
+          throw new Error(
+            'This browser does not support the Notification API.'
+          );
+        }
+
+        if (Notification.permission === 'denied') {
+          throw new Error(getPermissionHelpText('denied'));
+        }
+      }
+
+      async function registerMessagingServiceWorker() {
+        if (!('serviceWorker' in navigator)) {
+          throw new Error('This browser does not support service workers.');
+        }
+
+        const registration = await navigator.serviceWorker.register(
+          './firebase-messaging-sw.js'
+        );
+        await navigator.serviceWorker.ready;
+        return registration;
+      }
+
+      applyDefaults();
+      updateEnvironmentInfo();
+
+      btnGetToken.addEventListener('click', async () => {
+        tokenEl.textContent = '(empty)';
+        setStatus('Requesting notification permission...');
+
+        try {
+          validateRuntimePreconditions();
+          const vapidKey = document.getElementById('vapidKey').value.trim();
+          const firebaseConfig = getConfigFromInputs();
+
+          validateConfig(firebaseConfig, vapidKey);
+
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') {
+            throw new Error(getPermissionHelpText(permission));
+          }
+
+          updateEnvironmentInfo();
+
+          setStatus('Initializing Firebase and requesting token...');
+          const app = initializeApp(firebaseConfig);
+          const messaging = getMessaging(app);
+          const serviceWorkerRegistration =
+            await registerMessagingServiceWorker();
+
+          const token = await getToken(messaging, {
+            vapidKey,
+            serviceWorkerRegistration,
+          });
+
+          if (!token) {
+            throw new Error('Firebase returned an empty token');
+          }
+
+          tokenEl.textContent = token;
+          setStatus('Token generated successfully.');
+        } catch (error) {
+          setStatus(error.message || 'Failed to get token', true);
+          updateEnvironmentInfo();
+        }
+      });
+
+      btnCopy.addEventListener('click', async () => {
+        const value = tokenEl.textContent.trim();
+        if (!value || value === '(empty)') {
+          setStatus('No token to copy.', true);
+          return;
+        }
+
+        try {
+          await navigator.clipboard.writeText(value);
+          setStatus('Token copied to clipboard.');
+        } catch (error) {
+          setStatus(
+            'Clipboard copy failed. Copy manually from token box.',
+            true
+          );
+        }
+      });
+    </script>
+  </body>
+</html>
