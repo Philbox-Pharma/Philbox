@@ -44,12 +44,17 @@ export default function OrdersAnalytics() {
         // Fetch overview data which contains all analytics
         const overviewRes = await ordersAnalyticsApi
           .getOverview(filters)
-          .catch(() => ({ data: null }));
+          .catch(err => {
+            console.error('Orders overview error:', err);
+            return { data: null };
+          });
+
+        console.log('Orders Analytics Response:', overviewRes.data);
 
         if (overviewRes.data) {
           const data = overviewRes.data;
 
-          // Parse status breakdown
+          // Parse status breakdown - it's already an object with pending, processing, delivered, cancelled, total
           const statusData = data.statusBreakdown || {};
           setStatusBreakdown(statusData);
 
@@ -62,33 +67,33 @@ export default function OrdersAnalytics() {
             totalRevenue: categoryData.total?.revenue || 0,
           });
 
-          // Parse top medicines
+          // Parse top medicines - it's an array
           const medicines = (data.topMedicines || []).map(med => ({
-            name: med.medicineName,
-            soldCount: med.totalQuantitySold,
-            revenue: med.totalRevenue,
+            name: med.medicineName || 'Unknown Medicine',
+            soldCount: med.totalQuantitySold || 0,
+            revenue: med.totalRevenue || 0,
           }));
           setTopMedicines(medicines);
 
-          // Parse revenue by category
+          // Parse revenue by category - it's an object with category names as keys
           const categories = Object.keys(categoryData)
-            .filter(key => key !== 'total' && categoryData[key].revenue > 0)
+            .filter(key => key !== 'total' && categoryData[key]?.revenue > 0)
             .map(category => ({
               category,
-              revenue: categoryData[category].revenue,
+              revenue: categoryData[category]?.revenue || 0,
             }))
             .sort((a, b) => b.revenue - a.revenue);
           setRevenueByCategory(categories);
 
-          // Parse stock alerts
+          // Parse stock alerts - it's an object with lowStock and expiringStock arrays
           const stockData = data.stockAlerts || {};
           const lowStockItems = (stockData.lowStock || []).map(item => ({
-            name: item.medicineName,
-            stock: item.currentStock,
+            name: item.medicineName || 'Unknown Medicine',
+            stock: item.currentStock || 0,
           }));
           setStockAlerts(lowStockItems);
 
-          // Set refund rate
+          // Set refund rate - it's an object with refundRate field
           setRefundRate({
             rate: data.refundRate?.refundRate || 0,
           });

@@ -18,7 +18,7 @@ class AnnouncementService {
         delivery_methods: data.delivery_methods,
         scheduled_at: data.scheduled_at,
         notes: data.notes,
-        created_by: req.user._id || req.admin._id,
+        created_by: req.user?._id || req.admin?._id || req.user?.id || req.admin?.id,
         status: 'draft',
       });
 

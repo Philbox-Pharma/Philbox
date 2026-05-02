@@ -1,16 +1,8 @@
 // src/portals/admin/modules/analytics/RevenueAnalytics.jsx
 import { useState, useEffect } from 'react';
-import {
-  FaMoneyBillWave,
-  FaChartLine,
-  FaCalendarAlt,
-  FaFilter,
-  FaArrowUp,
-  FaArrowDown,
-} from 'react-icons/fa';
+import { FaMoneyBillWave, FaChartLine, FaCalendarAlt, FaFilter, FaArrowUp, FaArrowDown, FaBuilding } from 'react-icons/fa';
 import adminApi from '../../../../core/api/admin/adminApi';
-
-const { revenue: revenueApi } = adminApi;
+import { useAuth } from '../../../../shared/context/AuthContext';
 
 // KPI Card Component
 
@@ -47,8 +39,19 @@ const KPICard = ({ title, value, icon, color, trend, trendValue, loading }) => {
   );
 };
 
+// Currency Formatter
+const formatCurrency = (amount) => {
+  if (amount >= 1000000) {
+    return `Rs ${(amount / 1000000).toFixed(1)}M`;
+  }
+  if (amount >= 1000) {
+    return `Rs ${(amount / 1000).toFixed(1)}K`;
+  }
+  return `Rs ${amount.toFixed(0)}`;
+};
+
 // Simple Bar Chart Component
-const SimpleBarChart = ({ data, loading, title }) => {
+const SimpleBarChart = ({ data, loading, title, period, setPeriod }) => {
   if (loading) {
     return (
       <div className="animate-pulse">
@@ -70,25 +73,43 @@ const SimpleBarChart = ({ data, loading, title }) => {
 
   return (
     <div>
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+        <select
+          value={period}
+          onChange={(e) => setPeriod(e.target.value)}
+          className="text-xs border border-gray-200 rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-[#1a365d]"
+        >
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </div>
       <div className="flex items-end gap-3 h-48">
-        {data?.map((item, index) => (
-          <div key={index} className="flex-1 flex flex-col items-center">
-            <div
-              className="w-full bg-gradient-to-t from-[#1a365d] to-[#3182ce] rounded-t transition-all duration-500 hover:opacity-80"
-              style={{
-                height: `${(item.value / maxValue) * 100}%`,
-                minHeight: '20px',
-              }}
-            ></div>
-            <p className="text-xs text-gray-500 mt-2 truncate w-full text-center">
-              {item.label}
-            </p>
-            <p className="text-xs font-medium text-gray-700">
-              Rs {(item.value / 1000).toFixed(0)}K
-            </p>
+        {data?.length > 0 ? (
+          data.map((item, index) => (
+            <div key={index} className="flex-1 flex flex-col items-center group relative">
+              <div
+                className="w-full bg-gradient-to-t from-[#1a365d] to-[#3182ce] rounded-t transition-all duration-300 hover:brightness-110"
+                style={{
+                  height: `${Math.max((item.value / maxValue) * 100, 5)}%`,
+                }}
+              >
+                {/* Tooltip */}
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                  {formatCurrency(item.value)}
+                </div>
+              </div>
+              <p className="text-[10px] text-gray-500 mt-2 truncate w-full text-center">
+                {item.label}
+              </p>
+            </div>
+          ))
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+            No trend data
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
@@ -156,11 +177,15 @@ const SimplePieChart = ({ data, loading, title }) => {
 };
 
 export default function RevenueAnalytics() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState(null);
   const [trends, setTrends] = useState([]);
   const [split, setSplit] = useState([]);
   const [topBranches, setTopBranches] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [selectedBranch, setSelectedBranch] = useState('');
+  const [period, setPeriod] = useState('daily');
   const [dateRange, setDateRange] = useState({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
       .toISOString()
@@ -168,18 +193,35 @@ export default function RevenueAnalytics() {
     endDate: new Date().toISOString().split('T')[0],
   });
 
+  // Fetch branches for filter (Super Admin only)
+  useEffect(() => {
+    if (user?.category === 'super-admin') {
+      const fetchBranches = async () => {
+        try {
+          const res = await adminApi.branches.getAll(1, 100);
+          setBranches(res.data?.branches || res.data?.docs || []);
+        } catch (err) {
+          console.error('Failed to fetch branches:', err);
+        }
+      };
+      fetchBranches();
+    }
+  }, [user]);
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await revenueApi.getOverview(
+        const response = await adminApi.revenue.getOverview(
           dateRange.startDate,
-          dateRange.endDate
+          dateRange.endDate,
+          period,
+          selectedBranch || undefined
         );
 
         const data = response.data;
         setOverview(data);
-        setTrends(data.trends || []);
+        setTrends(data.trends?.trends || []);
 
         const splitData = [];
         if (data.revenueSplit) {
@@ -202,7 +244,7 @@ export default function RevenueAnalytics() {
     };
 
     fetchData();
-  }, [dateRange]);
+  }, [dateRange, selectedBranch, period]);
 
   return (
     <div className="space-y-4 sm:space-y-6 w-full min-w-0">
@@ -219,59 +261,94 @@ export default function RevenueAnalytics() {
 
       {/* Date Filter */}
       <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="flex items-center gap-2 text-gray-700 font-semibold shrink-0">
-            <FaFilter className="text-gray-400" /> Filters
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
+            <div className="flex items-center gap-2 text-gray-700 font-semibold shrink-0">
+              <FaFilter className="text-gray-400" /> Filters
+            </div>
+            
+            {/* Branch Filter - Only for Super Admin */}
+            {user?.category === 'super-admin' && (
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <FaBuilding className="text-gray-400" />
+                <select
+                  value={selectedBranch}
+                  onChange={(e) => setSelectedBranch(e.target.value)}
+                  className="w-full sm:w-48 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1a365d] outline-none text-sm"
+                >
+                  <option value="">All Branches</option>
+                  {branches.map((branch) => (
+                    <option key={branch._id} value={branch._id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+              <FaCalendarAlt className="text-gray-400 hidden sm:block" />
+              <input
+                type="date"
+                value={dateRange.startDate}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, startDate: e.target.value }))
+                }
+                className="w-full sm:w-auto px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1a365d] outline-none text-sm"
+              />
+              <span className="text-gray-400 hidden sm:block">to</span>
+              <input
+                type="date"
+                value={dateRange.endDate}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, endDate: e.target.value }))
+                }
+                className="w-full sm:w-auto px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1a365d] outline-none text-sm"
+              />
+            </div>
           </div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
-            <FaCalendarAlt className="text-gray-400 hidden sm:block" />
-            <input
-              type="date"
-              value={dateRange.startDate}
-              onChange={e =>
-                setDateRange(prev => ({ ...prev, startDate: e.target.value }))
-              }
-              className="w-full sm:w-auto px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1a365d] outline-none"
-            />
-            <span className="text-gray-400 hidden sm:block">to</span>
-            <input
-              type="date"
-              value={dateRange.endDate}
-              onChange={e =>
-                setDateRange(prev => ({ ...prev, endDate: e.target.value }))
-              }
-              className="w-full sm:w-auto px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1a365d] outline-none"
-            />
-          </div>
+          
+          <button 
+            onClick={() => {
+              setDateRange({
+                startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                endDate: new Date().toISOString().split('T')[0]
+              });
+              setSelectedBranch('');
+              setPeriod('daily');
+            }}
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            Reset Filters
+          </button>
         </div>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
           title="Total Revenue"
-          value={`Rs ${((overview?.revenueSplit?.total?.revenue || 0) / 1000).toFixed(0)}K`}
+          value={formatCurrency(overview?.revenueSplit?.total?.revenue || 0)}
           icon={FaMoneyBillWave}
           color="#1a365d"
           loading={loading}
         />
         <KPICard
           title="Orders Revenue"
-          value={`Rs ${((overview?.revenueSplit?.order?.revenue || 0) / 1000).toFixed(0)}K`}
+          value={formatCurrency(overview?.revenueSplit?.order?.revenue || 0)}
           icon={FaChartLine}
           color="#38a169"
           loading={loading}
         />
         <KPICard
           title="Appointments Revenue"
-          value={`Rs ${((overview?.revenueSplit?.appointment?.revenue || 0) / 1000).toFixed(0)}K`}
+          value={formatCurrency(overview?.revenueSplit?.appointment?.revenue || 0)}
           icon={FaCalendarAlt}
           color="#d69e2e"
           loading={loading}
         />
         <KPICard
           title="Avg Per Customer"
-          value={`Rs ${(overview?.avgRevenuePerCustomer?.averageRevenue || 0).toFixed(0)}`}
+          value={formatCurrency(overview?.avgRevenuePerCustomer?.averageRevenue || 0)}
           icon={FaMoneyBillWave}
           color="#805ad5"
           loading={loading}
@@ -280,23 +357,26 @@ export default function RevenueAnalytics() {
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue Trends */}
         <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
           <SimpleBarChart
-            data={(Array.isArray(trends) ? trends : []).slice(-7).map(t => {
-              const label =
-                t._id?.day && t._id?.month
-                  ? `${t._id.day}/${t._id.month}`
-                  : t._id?.month && t._id?.year
-                    ? `${t._id.month}/${t._id.year}`
-                    : 'N/A';
+            data={(Array.isArray(trends) ? trends : []).map(t => {
+              let label = 'N/A';
+              if (period === 'daily') {
+                label = t._id?.day && t._id?.month ? `${t._id.day}/${t._id.month}` : 'N/A';
+              } else if (period === 'weekly') {
+                label = t._id?.week ? `W${t._id.week}` : 'N/A';
+              } else {
+                label = t._id?.month ? `${t._id.month}/${t._id.year}` : 'N/A';
+              }
               return {
                 label: label,
                 value: t.totalRevenue || 0,
               };
             })}
             loading={loading}
-            title="Revenue Trends (Last 7 Days)"
+            title={`Revenue Trends (${period.charAt(0).toUpperCase() + period.slice(1)})`}
+            period={period}
+            setPeriod={setPeriod}
           />
         </div>
 
@@ -353,11 +433,7 @@ export default function RevenueAnalytics() {
                     <p className="text-sm text-gray-500">{branch.code || ''}</p>
                   </div>
                   <p className="text-lg font-bold text-[#1a365d]">
-                    Rs{' '}
-                    {(
-                      (branch.revenue || branch.totalRevenue || 0) / 1000
-                    ).toFixed(0)}
-                    K
+                    {formatCurrency(branch.revenue || branch.totalRevenue || 0)}
                   </p>
                 </div>
               ))}

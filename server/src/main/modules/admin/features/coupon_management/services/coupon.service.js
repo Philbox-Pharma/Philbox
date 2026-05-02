@@ -40,14 +40,15 @@ class CouponService {
         await logAdminActivity(
           req,
           'create_coupon',
-          `Created coupon ${coupon.cupon_code} for ${coupon.for} with ${coupon.percent_off}% off`,
+          `Created coupon ${coupon.cupon_code} for ${coupon.for} with ${coupon.discount_value}${coupon.discount_type === 'percentage' ? '%' : ' PKR'} off`,
           'coupons',
           coupon._id,
           {
             coupon_data: {
               cupon_code: coupon.cupon_code,
               for: coupon.for,
-              percent_off: coupon.percent_off,
+              discount_type: coupon.discount_type,
+              discount_value: coupon.discount_value,
               expiry_time: coupon.expiry_time,
             },
           }
@@ -230,7 +231,7 @@ class CouponService {
             deleted_coupon: {
               cupon_code: coupon.cupon_code,
               for: coupon.for,
-              percent_off: coupon.percent_off,
+              discount_value: coupon.discount_value,
             },
           }
         );
@@ -336,7 +337,10 @@ class CouponService {
 
       return {
         valid: true,
-        percent_off: coupon.percent_off,
+        discount_type: coupon.discount_type,
+        discount_value: coupon.discount_value,
+        min_order_amount: coupon.min_order_amount,
+        max_discount: coupon.max_discount,
         coupon,
       };
     } catch (error) {

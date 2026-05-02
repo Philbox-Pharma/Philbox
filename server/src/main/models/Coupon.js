@@ -8,19 +8,35 @@ const couponSchema = new mongoose.Schema(
       uppercase: true,
       trim: true,
     },
+    discount_type: {
+      type: String,
+      enum: ['percentage', 'fixed'],
+      default: 'percentage',
+      required: true,
+    },
+    discount_value: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    min_order_amount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    max_discount: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
     expiry_time: {
       type: Date,
       required: true,
     },
-    percent_off: {
-      type: Number,
-      required: true,
-      min: 0,
-      max: 100,
-    },
     for: {
       type: String,
-      enum: ['appointments', 'medicine'],
+      enum: ['appointments', 'medicine', 'all'],
+      default: 'all',
       required: true,
     },
     is_active: {

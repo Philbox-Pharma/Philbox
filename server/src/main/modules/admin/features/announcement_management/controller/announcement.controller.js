@@ -1,4 +1,5 @@
 import AnnouncementService from '../services/announcement.service.js';
+import sendResponse from '../../../../../utils/sendResponse.js';
 
 class AnnouncementController {
   /**
@@ -12,16 +13,14 @@ class AnnouncementController {
         req
       );
 
-      return res.status(201).json({
-        success: true,
-        message: 'Announcement created successfully',
-        data: announcement,
-      });
+      return sendResponse(
+        res,
+        201,
+        'Announcement created successfully',
+        announcement
+      );
     } catch (error) {
-      return res.status(500).json({
-        success: false,
-        message: error.message,
-      });
+      return sendResponse(res, 500, error.message);
     }
   }
 
@@ -40,17 +39,12 @@ class AnnouncementController {
 
       const result = await AnnouncementService.getAnnouncements(filters, req);
 
-      return res.status(200).json({
-        success: true,
-        message: 'Announcements retrieved successfully',
-        data: result.data,
+      return sendResponse(res, 200, 'Announcements retrieved successfully', {
+        announcements: result.data,
         pagination: result.pagination,
       });
     } catch (error) {
-      return res.status(500).json({
-        success: false,
-        message: error.message,
-      });
+      return sendResponse(res, 500, error.message);
     }
   }
 
@@ -64,16 +58,18 @@ class AnnouncementController {
         req.params.id
       );
 
-      return res.status(200).json({
-        success: true,
-        message: 'Announcement retrieved successfully',
-        data: announcement,
-      });
+      return sendResponse(
+        res,
+        200,
+        'Announcement retrieved successfully',
+        announcement
+      );
     } catch (error) {
-      return res.status(error.message.includes('not found') ? 404 : 500).json({
-        success: false,
-        message: error.message,
-      });
+      return sendResponse(
+        res,
+        error.message.includes('not found') ? 404 : 500,
+        error.message
+      );
     }
   }
 
@@ -89,11 +85,12 @@ class AnnouncementController {
         req
       );
 
-      return res.status(200).json({
-        success: true,
-        message: 'Announcement updated successfully',
-        data: announcement,
-      });
+      return sendResponse(
+        res,
+        200,
+        'Announcement updated successfully',
+        announcement
+      );
     } catch (error) {
       const statusCode = error.message.includes('not found')
         ? 404
@@ -101,10 +98,7 @@ class AnnouncementController {
           ? 400
           : 500;
 
-      return res.status(statusCode).json({
-        success: false,
-        message: error.message,
-      });
+      return sendResponse(res, statusCode, error.message);
     }
   }
 
@@ -121,10 +115,8 @@ class AnnouncementController {
         io
       );
 
-      return res.status(200).json({
-        success: true,
-        message: 'Announcement sent successfully',
-        data: result.announcement,
+      return sendResponse(res, 200, 'Announcement sent successfully', {
+        announcement: result.announcement,
         delivery_results: result.deliveryResults,
       });
     } catch (error) {
@@ -136,10 +128,7 @@ class AnnouncementController {
             ? 400
             : 500;
 
-      return res.status(statusCode).json({
-        success: false,
-        message: error.message,
-      });
+      return sendResponse(res, statusCode, error.message);
     }
   }
 
@@ -154,11 +143,12 @@ class AnnouncementController {
         req
       );
 
-      return res.status(200).json({
-        success: true,
-        message: 'Announcement cancelled successfully',
-        data: announcement,
-      });
+      return sendResponse(
+        res,
+        200,
+        'Announcement cancelled successfully',
+        announcement
+      );
     } catch (error) {
       const statusCode = error.message.includes('not found')
         ? 404
@@ -166,10 +156,7 @@ class AnnouncementController {
           ? 400
           : 500;
 
-      return res.status(statusCode).json({
-        success: false,
-        message: error.message,
-      });
+      return sendResponse(res, statusCode, error.message);
     }
   }
 
@@ -181,10 +168,7 @@ class AnnouncementController {
     try {
       await AnnouncementService.deleteAnnouncement(req.params.id, req);
 
-      return res.status(200).json({
-        success: true,
-        message: 'Announcement deleted successfully',
-      });
+      return sendResponse(res, 200, 'Announcement deleted successfully');
     } catch (error) {
       const statusCode = error.message.includes('not found')
         ? 404
@@ -192,10 +176,7 @@ class AnnouncementController {
           ? 400
           : 500;
 
-      return res.status(statusCode).json({
-        success: false,
-        message: error.message,
-      });
+      return sendResponse(res, statusCode, error.message);
     }
   }
 
@@ -209,16 +190,18 @@ class AnnouncementController {
         req.params.id
       );
 
-      return res.status(200).json({
-        success: true,
-        message: 'Delivery history retrieved successfully',
-        data: history,
-      });
+      return sendResponse(
+        res,
+        200,
+        'Delivery history retrieved successfully',
+        history
+      );
     } catch (error) {
-      return res.status(error.message.includes('not found') ? 404 : 500).json({
-        success: false,
-        message: error.message,
-      });
+      return sendResponse(
+        res,
+        error.message.includes('not found') ? 404 : 500,
+        error.message
+      );
     }
   }
 }

@@ -1,5 +1,7 @@
 import SalespersonTask from '../../../../../../models/SalespersonTask.js';
 import Salesperson from '../../../../../../models/Salesperson.js';
+import Order from '../../../../../../models/Order.js';
+import mongoose from 'mongoose';
 
 /**
  * Get tasks completion statistics for salespersons
@@ -14,9 +16,11 @@ export const getTasksCompletionStats = async (
 
   // Apply branch filter for branch-admin
   if (adminCategory === 'branch-admin' && adminBranchesManaged?.length > 0) {
-    matchStage.branch_id = { $in: adminBranchesManaged };
+    matchStage.branch_id = { 
+      $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)) 
+    };
   } else if (filters.branch_id) {
-    matchStage.branch_id = filters.branch_id;
+    matchStage.branch_id = new mongoose.Types.ObjectId(filters.branch_id);
   }
 
   // Apply salesperson filter
@@ -41,7 +45,11 @@ export const getTasksCompletionStats = async (
       $group: {
         _id: '$salesperson_id',
         totalAssigned: { $sum: 1 },
+        total: { $sum: 1 },
         completed: {
+          $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] },
+        },
+        completedTasks: {
           $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] },
         },
         pending: {
@@ -66,15 +74,30 @@ export const getTasksCompletionStats = async (
     { $unwind: { path: '$salesperson', preserveNullAndEmptyArrays: true } },
     { $match: { salesperson: { $ne: null } } },
     {
+      $lookup: {
+        from: 'branches',
+        localField: 'salesperson.branches_to_be_managed',
+        foreignField: '_id',
+        as: 'branches',
+      },
+    },
+    {
       $project: {
-        salesperson_id: '$_id',
-        salesperson: {
-          _id: '$salesperson._id',
-          fullName: '$salesperson.fullName',
-          email: '$salesperson.email',
+        _id: 1,
+        fullName: '$salesperson.fullName',
+        name: '$salesperson.fullName',
+        email: '$salesperson.email',
+        branch: { $arrayElemAt: ['$branches', 0] },
+        branchName: {
+          $arrayElemAt: [
+            { $map: { input: '$branches', as: 'b', in: '$$b.name' } },
+            0,
+          ],
         },
         totalAssigned: 1,
+        total: 1,
         completed: 1,
+        completedTasks: 1,
         pending: 1,
         inProgress: 1,
         cancelled: 1,
@@ -115,9 +138,11 @@ export const getSalespersonLeaderboard = async (
 
   // Apply branch filter for branch-admin
   if (adminCategory === 'branch-admin' && adminBranchesManaged?.length > 0) {
-    matchStage.branch_id = { $in: adminBranchesManaged };
+    matchStage.branch_id = { 
+      $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)) 
+    };
   } else if (filters.branch_id) {
-    matchStage.branch_id = filters.branch_id;
+    matchStage.branch_id = new mongoose.Types.ObjectId(filters.branch_id);
   }
 
   // Apply date range filter
@@ -159,13 +184,26 @@ export const getSalespersonLeaderboard = async (
     { $unwind: { path: '$salesperson', preserveNullAndEmptyArrays: true } },
     { $match: { salesperson: { $ne: null } } },
     {
+      $lookup: {
+        from: 'branches',
+        localField: 'salesperson.branches_to_be_managed',
+        foreignField: '_id',
+        as: 'branches',
+      },
+    },
+    {
       $project: {
-        salesperson_id: '$_id',
-        salesperson: {
-          _id: '$salesperson._id',
-          fullName: '$salesperson.fullName',
-          email: '$salesperson.email',
-          contactNumber: '$salesperson.contactNumber',
+        _id: '$salesperson._id',
+        fullName: '$salesperson.fullName',
+        name: '$salesperson.fullName',
+        email: '$salesperson.email',
+        contactNumber: '$salesperson.contactNumber',
+        branch: { $arrayElemAt: ['$branches', 0] },
+        branchName: {
+          $arrayElemAt: [
+            { $map: { input: '$branches', as: 'b', in: '$$b.name' } },
+            0,
+          ],
         },
         totalTasks: 1,
         completedTasks: 1,
@@ -193,8 +231,49 @@ export const getSalespersonLeaderboard = async (
     { $sort: { completedTasks: -1, completionRate: -1 } },
   ]);
 
+  // Add revenue and orders from Order collection
+  const salespersonIds = leaderboard.map(entry => entry._id);
+
+  const orderStats = await Order.aggregate([
+    {
+      $match: {
+        salesperson_id: { $in: salespersonIds },
+        status: 'completed',
+        ...(matchStage.created_at ? { created_at: matchStage.created_at } : {}),
+      },
+    },
+    {
+      $group: {
+        _id: '$salesperson_id',
+        totalOrders: { $sum: 1 },
+        totalRevenue: { $sum: '$total' },
+      },
+    },
+  ]);
+
+  const orderStatsMap = new Map(
+    orderStats.map(s => [
+      s._id.toString(),
+      {
+        totalOrders: s.totalOrders,
+        totalRevenue: s.totalRevenue,
+      },
+    ])
+  );
+
+  const enrichedLeaderboard = leaderboard.map(entry => {
+    const stats = orderStatsMap.get(entry._id.toString()) || {
+      totalOrders: 0,
+      totalRevenue: 0,
+    };
+    return {
+      ...entry,
+      ...stats,
+    };
+  });
+
   // Add rank
-  const rankedLeaderboard = leaderboard.map((entry, index) => ({
+  const rankedLeaderboard = enrichedLeaderboard.map((entry, index) => ({
     rank: index + 1,
     ...entry,
   }));
@@ -214,9 +293,11 @@ export const getTaskPerformanceTrends = async (
 
   // Apply branch filter for branch-admin
   if (adminCategory === 'branch-admin' && adminBranchesManaged?.length > 0) {
-    matchStage.branch_id = { $in: adminBranchesManaged };
+    matchStage.branch_id = { 
+      $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)) 
+    };
   } else if (filters.branch_id) {
-    matchStage.branch_id = filters.branch_id;
+    matchStage.branch_id = new mongoose.Types.ObjectId(filters.branch_id);
   }
 
   // Apply salesperson filter
@@ -342,9 +423,11 @@ export const getAverageCompletionTimeByPriority = async (
 
   // Apply branch filter for branch-admin
   if (adminCategory === 'branch-admin' && adminBranchesManaged?.length > 0) {
-    matchStage.branch_id = { $in: adminBranchesManaged };
+    matchStage.branch_id = { 
+      $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)) 
+    };
   } else if (filters.branch_id) {
-    matchStage.branch_id = filters.branch_id;
+    matchStage.branch_id = new mongoose.Types.ObjectId(filters.branch_id);
   }
 
   // Apply salesperson filter
@@ -388,6 +471,9 @@ export const getAverageCompletionTimeByPriority = async (
     {
       $project: {
         priority: '$_id',
+        averageCompletionTime: {
+          $round: ['$averageCompletionTimeHours', 1],
+        },
         averageCompletionTimeHours: {
           $round: ['$averageCompletionTimeHours', 2],
         },
@@ -409,6 +495,7 @@ export const getAverageCompletionTimeByPriority = async (
     return (
       found || {
         priority,
+        averageCompletionTime: 0,
         averageCompletionTimeHours: 0,
         averageCompletionTimeDays: 0,
         totalTasks: 0,
@@ -433,9 +520,11 @@ export const getPerformanceOverview = async (
 
   // Apply branch filter for branch-admin
   if (adminCategory === 'branch-admin' && adminBranchesManaged?.length > 0) {
-    matchStage.branch_id = { $in: adminBranchesManaged };
+    matchStage.branch_id = { 
+      $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)) 
+    };
   } else if (filters.branch_id) {
-    matchStage.branch_id = filters.branch_id;
+    matchStage.branch_id = new mongoose.Types.ObjectId(filters.branch_id);
   }
 
   // Apply date range filter
@@ -511,14 +600,80 @@ export const getPerformanceOverview = async (
     },
   ]);
 
+  // Calculate average completion time (in hours)
+  const completionTimeStats = await SalespersonTask.aggregate([
+    {
+      $match: {
+        ...matchStage,
+        status: 'completed',
+        completed_at: { $exists: true },
+      },
+    },
+    {
+      $project: {
+        completionTimeMs: {
+          $subtract: ['$completed_at', '$created_at'],
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        avgCompletionTimeMs: { $avg: '$completionTimeMs' },
+      },
+    },
+  ]);
+
+  const avgCompletionTimeMs = completionTimeStats[0]?.avgCompletionTimeMs || 0;
+  const avgCompletionTimeHours = avgCompletionTimeMs / (1000 * 60 * 60);
+
+  // Calculate trend by comparing with previous period
+  let taskCompletionTrend = 0;
+  if (filters.startDate && filters.endDate) {
+    const startDate = new Date(filters.startDate);
+    const endDate = new Date(filters.endDate);
+    const periodLength = endDate - startDate;
+
+    // Previous period
+    const prevStartDate = new Date(startDate.getTime() - periodLength);
+    const prevMatchStage = {
+      ...matchStage,
+      created_at: { $gte: prevStartDate, $lt: startDate },
+    };
+
+    const prevTaskStats = await SalespersonTask.aggregate([
+      { $match: prevMatchStage },
+      {
+        $group: {
+          _id: null,
+          completedTasks: {
+            $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] },
+          },
+          totalTasks: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const prevCompleted = prevTaskStats[0]?.completedTasks || 0;
+    const currentCompleted = taskStats[0]?.completedTasks || 0;
+
+    if (prevCompleted > 0) {
+      taskCompletionTrend = Math.round(
+        ((currentCompleted - prevCompleted) / prevCompleted) * 100
+      );
+    } else if (currentCompleted > 0) {
+      taskCompletionTrend = 100;
+    }
+  }
+
   // Active salespersons count
   const salespersonMatchStage = {};
   if (adminCategory === 'branch-admin' && adminBranchesManaged?.length > 0) {
     salespersonMatchStage.branches_to_be_managed = {
-      $in: adminBranchesManaged,
+      $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)),
     };
   } else if (filters.branch_id) {
-    salespersonMatchStage.branches_to_be_managed = filters.branch_id;
+    salespersonMatchStage.branches_to_be_managed = new mongoose.Types.ObjectId(filters.branch_id);
   }
 
   const activeSalespersons = await Salesperson.countDocuments(
@@ -526,6 +681,11 @@ export const getPerformanceOverview = async (
   );
 
   return {
+    totalSalespersons: activeSalespersons,
+    totalTasksCompleted: taskStats[0]?.completedTasks || 0,
+    avgCompletionRate: taskStats[0]?.completionRate || 0,
+    avgCompletionTime: Math.round(avgCompletionTimeHours * 10) / 10, // Round to 1 decimal place
+    taskCompletionTrend,
     tasks: taskStats[0] || {
       totalTasks: 0,
       completedTasks: 0,

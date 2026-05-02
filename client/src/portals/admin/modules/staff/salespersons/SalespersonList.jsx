@@ -71,7 +71,9 @@ export default function SalespersonList() {
 
     try {
       const filters = {};
-      if (search) filters.search = search;
+      if (search && search.trim()) {
+        filters.search = search.trim();
+      }
       if (statusFilter) filters.status = statusFilter;
 
       const response = await staffApi.getSalespersons(page, limit, filters);
@@ -84,7 +86,14 @@ export default function SalespersonList() {
       }
     } catch (err) {
       console.error('Failed to fetch salespersons:', err);
-      setError(err.message || 'Failed to load salespersons');
+      const errorMessage =
+        err?.data?.message ||
+        (Array.isArray(err?.data?.error)
+          ? err.data.error.join(', ')
+          : null) ||
+        err?.message ||
+        'Failed to load salespersons. Please try again.';
+      setError(errorMessage);
       setSalespersons([]);
       setPagination(null);
     } finally {
@@ -463,8 +472,6 @@ export default function SalespersonList() {
               <option value="blocked">Blocked</option>
             </select>
           </div>
-
-
         </div>
       </div>
 

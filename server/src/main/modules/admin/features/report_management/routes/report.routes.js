@@ -28,22 +28,12 @@ router.post('/generate', reportController.generateReport);
 router.get('/', reportController.getReports);
 
 /**
- * GET /api/admin/reports/:reportId
- * Get single report details
+ * GET /api/admin/reports/scheduled
+ * Get all scheduled reports for the admin
+ * Query: ?page=1&limit=10
+ * NOTE: Must be defined before /:reportId to avoid route shadowing
  */
-router.get('/:reportId', reportController.getReport);
-
-/**
- * POST /api/admin/reports/:reportId/save
- * Save/bookmark a report for future reference
- */
-router.post('/:reportId/save', reportController.saveReport);
-
-/**
- * DELETE /api/admin/reports/:reportId
- * Delete a report
- */
-router.delete('/:reportId', reportController.deleteReport);
+router.get('/scheduled', reportController.getScheduledReports);
 
 /**
  * POST /api/admin/reports/schedule
@@ -58,6 +48,31 @@ router.delete('/:reportId', reportController.deleteReport);
 router.post('/schedule', reportController.scheduleReport);
 
 /**
+ * GET /api/admin/reports/:reportId
+ * Get single report details
+ */
+router.get('/:reportId', reportController.getReport);
+
+/**
+ * GET /api/admin/reports/:reportId/download
+ * Download report in specified format (pdf, xlsx, csv)
+ * Query: ?format=pdf
+ */
+router.get('/:reportId/download', reportController.downloadReport);
+
+/**
+ * POST /api/admin/reports/:reportId/save
+ * Save/bookmark a report for future reference
+ */
+router.post('/:reportId/save', reportController.saveReport);
+
+/**
+ * DELETE /api/admin/reports/:reportId
+ * Delete a report
+ */
+router.delete('/:reportId', reportController.deleteReport);
+
+/**
  * PUT /api/admin/reports/:reportId/schedule
  * Update scheduled report (activate/deactivate)
  * Body: {
@@ -66,12 +81,5 @@ router.post('/schedule', reportController.scheduleReport);
  * }
  */
 router.put('/:reportId/schedule', reportController.updateScheduledReport);
-
-/**
- * GET /api/admin/reports/scheduled
- * Get all scheduled reports for the admin
- * Query: ?page=1&limit=10
- */
-router.get('/scheduled', reportController.getScheduledReports);
 
 export default router;

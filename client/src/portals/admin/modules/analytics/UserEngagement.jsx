@@ -1,33 +1,42 @@
 // src/portals/admin/modules/analytics/UserEngagement.jsx
 import { useState, useEffect } from 'react';
-import {
-  FaUsers,
-  FaUserPlus,
-  FaCalendarAlt,
-  FaFilter,
-  FaCrown,
-  FaUserMd,
-  FaSyncAlt,
-} from 'react-icons/fa';
+import { FaUsers, FaUserPlus, FaCalendarAlt, FaFilter, FaCrown, FaUserMd, FaSyncAlt, FaBuilding, FaChartLine } from 'react-icons/fa';
 import adminApi from '../../../../core/api/admin/adminApi';
+import { useAuth } from '../../../../shared/context/AuthContext';
 
-const { userEngagement: userEngagementApi } = adminApi;
+const { userEngagement: userEngagementApi, branches: branchApi } = adminApi;
 
 export default function UserEngagement() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState(null);
   const [customerStatus, setCustomerStatus] = useState({
     active: 0,
-    inactive: 0,
+    suspended: 0,
+    blocked: 0,
+    total: 0
   });
   const [topCustomers, setTopCustomers] = useState([]);
   const [doctorApplications, setDoctorApplications] = useState(null);
+  const [trends, setTrends] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [selectedBranch, setSelectedBranch] = useState('');
+  const [period, setPeriod] = useState('daily');
   const [dateRange, setDateRange] = useState({
-    startDate: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
       .toISOString()
       .split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
   });
+
+  // Fetch branches for filter
+  useEffect(() => {
+    if (user?.category === 'super-admin') {
+      branchApi.getAll(1, 100).then(res => {
+        setBranches(res.data?.branches || res.data?.docs || []);
+      }).catch(err => console.error('Failed to fetch branches', err));
+    }
+  }, [user]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,14 +45,14 @@ export default function UserEngagement() {
         const filters = {
           startDate: dateRange.startDate,
           endDate: dateRange.endDate,
-          limit: 5,
+          period: period,
+          branchId: selectedBranch,
+          limit: 10,
         };
 
-        const overviewRes = await userEngagementApi
-          .getOverview(filters)
-          .catch(() => ({ data: null }));
+        const overviewRes = await userEngagementApi.getOverview(filters);
 
-        if (overviewRes.data) {
+        if (overviewRes?.data) {
           const data = overviewRes.data;
 
           // Parse retention rate data
@@ -53,9 +62,13 @@ export default function UserEngagement() {
           const statusData = data.customerActivityStatus || {};
 
           // Parse new customers data (trends)
-          const newCustomersData = data.newCustomersTrends?.trends || [];
+          const newCustomersData = Array.isArray(data.newCustomersTrends?.trends) 
+            ? data.newCustomersTrends.trends 
+            : [];
+          setTrends(newCustomersData);
+
           const totalNewCustomers = newCustomersData.reduce(
-            (sum, item) => sum + (item.newCustomers || 0),
+            (sum, item) => sum + (Number(item.newCustomers) || 0),
             0
           );
 
@@ -63,22 +76,29 @@ export default function UserEngagement() {
           const doctorAppsData = data.doctorApplications?.summary || {};
 
           setOverview({
-            totalCustomers: statusData.total || 0,
+            totalCustomers: Number(statusData.total) || 0,
             newCustomers: totalNewCustomers,
-            retentionRate: retentionData.retentionRate || 0,
+            retentionRate: Number(retentionData.retentionRate) || 0,
+            churnRate: Number(retentionData.churnRate) || 0,
+            retainedCustomers: Number(retentionData.retainedCustomers) || 0,
           });
 
           setCustomerStatus({
-            active: statusData.active || 0,
-            inactive: (statusData.total || 0) - (statusData.active || 0),
+            active: Number(statusData.active) || 0,
+            suspended: Number(statusData['suspended/freezed']) || 0,
+            blocked: Number(statusData['blocked/removed']) || 0,
+            total: Number(statusData.total) || 0,
           });
 
-          setTopCustomers(data.topCustomers?.topCustomers || []);
+          setTopCustomers(Array.isArray(data.topCustomers?.topCustomers) 
+            ? data.topCustomers.topCustomers 
+            : []);
 
           setDoctorApplications({
-            pending: doctorAppsData.pending || 0,
-            approved: doctorAppsData.approved || 0,
-            rejected: doctorAppsData.rejected || 0,
+            pending: Number(doctorAppsData.pending) || 0,
+            processing: Number(doctorAppsData.processing) || 0,
+            approved: Number(doctorAppsData.approved) || 0,
+            rejected: Number(doctorAppsData.rejected) || 0,
           });
         }
       } catch (err) {
@@ -88,10 +108,12 @@ export default function UserEngagement() {
       }
     };
     fetchData();
-  }, [dateRange]);
+  }, [dateRange, selectedBranch, period]);
 
-  const total = customerStatus.active + customerStatus.inactive;
-  const activePercent = total > 0 ? (customerStatus.active / total) * 100 : 0;
+  const totalSafe = Number(customerStatus?.total) || 0;
+  const activePercent = totalSafe > 0 ? ((Number(customerStatus?.active) || 0) / totalSafe) * 100 : 0;
+  const suspendedPercent = totalSafe > 0 ? ((Number(customerStatus?.suspended) || 0) / totalSafe) * 100 : 0;
+  const blockedPercent = totalSafe > 0 ? ((Number(customerStatus?.blocked) || 0) / totalSafe) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -106,30 +128,67 @@ export default function UserEngagement() {
         </p>
       </div>
 
-      {/* Date Filter */}
+      {/* Date & Branch Filter */}
       <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <FaFilter className="text-gray-400" />
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
-            <FaCalendarAlt className="text-gray-400 shrink-0" />
-            <input
-              type="date"
-              value={dateRange.startDate}
-              onChange={e =>
-                setDateRange(prev => ({ ...prev, startDate: e.target.value }))
-              }
-              className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#38a169] outline-none"
-            />
-            <span className="text-gray-400">to</span>
-            <input
-              type="date"
-              value={dateRange.endDate}
-              onChange={e =>
-                setDateRange(prev => ({ ...prev, endDate: e.target.value }))
-              }
-              className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#38a169] outline-none"
-            />
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2 text-gray-700 font-semibold shrink-0">
+              <FaFilter className="text-gray-400" /> Filters
+            </div>
+
+            {/* Branch Filter - Only for Super Admin */}
+            {user?.category === 'super-admin' && (
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <FaBuilding className="text-gray-400" />
+                <select
+                  value={selectedBranch}
+                  onChange={(e) => setSelectedBranch(e.target.value)}
+                  className="w-full sm:w-48 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#38a169] outline-none text-sm"
+                >
+                  <option value="">All Branches</option>
+                  {branches.map((branch) => (
+                    <option key={branch._id} value={branch._id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+              <FaCalendarAlt className="text-gray-400 hidden sm:block" />
+              <input
+                type="date"
+                value={dateRange.startDate}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, startDate: e.target.value }))
+                }
+                className="w-full sm:w-auto px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#38a169] outline-none text-sm"
+              />
+              <span className="text-gray-400 hidden sm:block">to</span>
+              <input
+                type="date"
+                value={dateRange.endDate}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, endDate: e.target.value }))
+                }
+                className="w-full sm:w-auto px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#38a169] outline-none text-sm"
+              />
+            </div>
           </div>
+          
+          <button 
+            onClick={() => {
+              setDateRange({
+                startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                endDate: new Date().toISOString().split('T')[0]
+              });
+              setSelectedBranch('');
+            }}
+            className="text-sm text-[#38a169] hover:text-[#2f855a] font-medium"
+          >
+            Reset Filters
+          </button>
         </div>
       </div>
 
@@ -221,42 +280,105 @@ export default function UserEngagement() {
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* New Customers Trends */}
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <FaChartLine className="text-[#38a169]" /> New Customers
+            </h3>
+            <select
+              value={period}
+              onChange={(e) => setPeriod(e.target.value)}
+              className="text-xs border border-gray-200 rounded-md px-2 py-1 outline-none focus:ring-1 focus:ring-[#38a169]"
+            >
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          {loading ? (
+            <div className="flex items-end gap-3 h-48 animate-pulse">
+              {[...Array(7)].map((_, i) => (
+                <div key={i} className="flex-1 bg-gray-100 rounded-t" style={{ height: `${20 + i * 10}%` }}></div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-end gap-2 h-48">
+              {(Array.isArray(trends) ? trends : []).length > 0 ? (
+                trends.map((t, i) => {
+                  const max = Math.max(...trends.map(x => Number(x.newCustomers) || 0), 1);
+                  const label = period === 'daily' ? `${t?._id?.day}/${t?._id?.month}` : period === 'weekly' ? `W${t?._id?.week}` : `${t?._id?.month}/${t?._id?.year}`;
+                  return (
+                    <div key={i} className="flex-1 flex flex-col items-center group relative">
+                      <div 
+                        className="w-full bg-[#38a169] rounded-t opacity-80 hover:opacity-100 transition-all duration-300"
+                        style={{ height: `${Math.max(((Number(t.newCustomers) || 0) / max) * 100, 5)}%` }}
+                      >
+                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                          {t.newCustomers} New
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-gray-400 mt-2 rotate-45 sm:rotate-0">{label}</span>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">No data available</div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Customer Status */}
         <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
             Customer Activity Status
           </h3>
           {loading ? (
-            <div className="animate-pulse">
-              <div className="w-32 h-32 bg-gray-200 rounded-full mx-auto"></div>
+            <div className="animate-pulse flex items-center justify-center h-48">
+              <div className="w-32 h-32 bg-gray-200 rounded-full"></div>
             </div>
           ) : (
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 flex-wrap">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-8 h-48">
               <div
-                className="w-32 h-32 rounded-full relative"
+                className="w-32 h-32 rounded-full relative shrink-0"
                 style={{
-                  background: `conic-gradient(#38a169 0% ${activePercent}%, #e53e3e ${activePercent}% 100%)`,
+                  background: `conic-gradient(#38a169 0% ${activePercent}%, #d69e2e ${activePercent}% ${activePercent + suspendedPercent}%, #e53e3e ${activePercent + suspendedPercent}% ${activePercent + suspendedPercent + blockedPercent}%)`,
                 }}
               >
-                <div className="absolute inset-4 bg-white rounded-full flex items-center justify-center">
+                <div className="absolute inset-4 bg-white rounded-full flex items-center justify-center flex-col">
                   <span className="text-xl font-bold text-gray-800">
-                    {total}
+                    {totalSafe}
                   </span>
+                  <span className="text-[10px] text-gray-400 uppercase">Total</span>
                 </div>
               </div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  <span className="text-sm text-gray-600">Active</span>
-                  <span className="font-bold text-gray-800 ml-auto">
+              <div className="space-y-4 w-full max-w-[200px]">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#38a169]"></div>
+                    <span className="text-sm text-gray-600">Active</span>
+                  </div>
+                  <span className="font-bold text-gray-800">
                     {customerStatus.active}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  <span className="text-sm text-gray-600">Inactive</span>
-                  <span className="font-bold text-gray-800 ml-auto">
-                    {customerStatus.inactive}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#d69e2e]"></div>
+                    <span className="text-sm text-gray-600">Suspended</span>
+                  </div>
+                  <span className="font-bold text-gray-800">
+                    {customerStatus.suspended}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#e53e3e]"></div>
+                    <span className="text-sm text-gray-600">Blocked</span>
+                  </div>
+                  <span className="font-bold text-gray-800">
+                    {customerStatus.blocked}
                   </span>
                 </div>
               </div>
@@ -281,6 +403,12 @@ export default function UserEngagement() {
                 <span className="font-medium text-yellow-700">Pending</span>
                 <span className="text-2xl font-bold text-yellow-600">
                   {doctorApplications?.pending || 0}
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                <span className="font-medium text-blue-700">Processing</span>
+                <span className="text-2xl font-bold text-blue-600">
+                  {doctorApplications?.processing || 0}
                 </span>
               </div>
               <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
@@ -313,7 +441,7 @@ export default function UserEngagement() {
             </div>
           ) : topCustomers.length > 0 ? (
             <div className="space-y-3">
-              {topCustomers.map((customer, index) => (
+              {(Array.isArray(topCustomers) ? topCustomers : []).map((customer, index) => (
                 <div
                   key={index}
                   className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
@@ -325,17 +453,26 @@ export default function UserEngagement() {
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-gray-800">
-                      {customer.name || customer.fullName || 'Unknown'}
+                      {customer.customerName || 'Unknown'}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {customer.email || 'No email'}
+                      {customer.customerEmail || 'No email'}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-[#1a365d]">
-                      {customer.ordersCount || customer.orders || 0}
-                    </p>
-                    <p className="text-xs text-gray-400">orders</p>
+                  <div className="text-right flex items-center gap-4">
+                    <div>
+                      <p className="font-bold text-[#1a365d]">
+                        {customer.orderCount || 0}
+                      </p>
+                      <p className="text-[10px] text-gray-400 uppercase">orders</p>
+                    </div>
+                    <div className="hidden sm:block w-px h-8 bg-gray-200"></div>
+                    <div className="hidden sm:block">
+                      <p className="font-bold text-[#d69e2e]">
+                        {customer.appointmentCount || 0}
+                      </p>
+                      <p className="text-[10px] text-gray-400 uppercase">appts</p>
+                    </div>
                   </div>
                 </div>
               ))}

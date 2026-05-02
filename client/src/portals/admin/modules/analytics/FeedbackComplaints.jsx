@@ -13,24 +13,38 @@ import {
   FaFilter,
   FaChartBar,
   FaChartPie,
+  FaBuilding,
 } from 'react-icons/fa';
 import adminApi from '../../../../core/api/admin/adminApi';
+import { useAuth } from '../../../../shared/context/AuthContext';
 
 const { feedbackComplaints: feedbackComplaintsApi } = adminApi;
 
 export default function FeedbackComplaints() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState(null);
   const [sentiment, setSentiment] = useState(null);
   const [resolutionStatus, setResolutionStatus] = useState(null);
   const [complaintsByCategory, setComplaintsByCategory] = useState([]);
   const [feedbackByCategory, setFeedbackByCategory] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [selectedBranch, setSelectedBranch] = useState('');
   const [dateRange, setDateRange] = useState({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
       .toISOString()
       .split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
   });
+
+  // Fetch branches
+  useEffect(() => {
+    if (user?.category === 'super-admin') {
+      adminApi.branches.getAll(1, 100).then(res => {
+        setBranches(res.data?.branches || res.data?.docs || []);
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,6 +53,7 @@ export default function FeedbackComplaints() {
         const filters = {
           startDate: dateRange.startDate,
           endDate: dateRange.endDate,
+          branchId: selectedBranch,
         };
         const [
           summaryRes,
@@ -68,10 +83,10 @@ export default function FeedbackComplaints() {
         setSentiment(sentimentRes.data);
         setResolutionStatus(resStatusRes.data);
         setComplaintsByCategory(
-          complaintsCatRes.data?.categories || complaintsCatRes.data || []
+          complaintsCatRes.data?.categoryBreakdown || complaintsCatRes.data || []
         );
         setFeedbackByCategory(
-          feedbackCatRes.data?.categories || feedbackCatRes.data || []
+          feedbackCatRes.data?.categoryBreakdown || feedbackCatRes.data || []
         );
       } catch (err) {
         console.error('Failed to fetch feedback analytics:', err);
@@ -80,7 +95,7 @@ export default function FeedbackComplaints() {
       }
     };
     fetchData();
-  }, [dateRange]);
+  }, [dateRange, selectedBranch]);
 
   const totalSentiment =
     (sentiment?.positive || 0) +
@@ -118,30 +133,61 @@ export default function FeedbackComplaints() {
         </p>
       </div>
 
-      {/* Date Filter */}
+      {/* Filter Bar */}
       <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <FaFilter className="text-gray-400 shrink-0" />
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
-            <FaCalendarAlt className="text-gray-400 shrink-0" />
-            <input
-              type="date"
-              value={dateRange.startDate}
-              onChange={e =>
-                setDateRange(prev => ({ ...prev, startDate: e.target.value }))
-              }
-              className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#e53e3e] outline-none"
-            />
-            <span className="text-gray-400">to</span>
-            <input
-              type="date"
-              value={dateRange.endDate}
-              onChange={e =>
-                setDateRange(prev => ({ ...prev, endDate: e.target.value }))
-              }
-              className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#e53e3e] outline-none"
-            />
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2 text-gray-700 font-semibold">
+              <FaFilter className="text-gray-400" /> Filters
+            </div>
+
+            {/* Branch Filter - Super Admin only */}
+            {user?.category === 'super-admin' && (
+              <div className="flex items-center gap-2">
+                <FaBuilding className="text-gray-400" />
+                <select
+                  value={selectedBranch}
+                  onChange={(e) => setSelectedBranch(e.target.value)}
+                  className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#e53e3e] outline-none text-sm"
+                >
+                  <option value="">All Branches</option>
+                  {branches.map(b => (
+                    <option key={b._id} value={b._id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <FaCalendarAlt className="text-gray-400" />
+              <input
+                type="date"
+                value={dateRange.startDate}
+                onChange={e => setDateRange(p => ({ ...p, startDate: e.target.value }))}
+                className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#e53e3e] outline-none text-sm"
+              />
+              <span className="text-gray-400">to</span>
+              <input
+                type="date"
+                value={dateRange.endDate}
+                onChange={e => setDateRange(p => ({ ...p, endDate: e.target.value }))}
+                className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#e53e3e] outline-none text-sm"
+              />
+            </div>
           </div>
+
+          <button 
+            onClick={() => {
+              setSelectedBranch('');
+              setDateRange({
+                startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                endDate: new Date().toISOString().split('T')[0]
+              });
+            }}
+            className="text-sm text-[#e53e3e] hover:text-[#c53030] font-medium"
+          >
+            Reset Filters
+          </button>
         </div>
       </div>
 
@@ -212,6 +258,31 @@ export default function FeedbackComplaints() {
               style={{ backgroundColor: '#d69e2e15' }}
             >
               <FaClock className="text-2xl" style={{ color: '#d69e2e' }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Avg Rating */}
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm">Avg Customer Rating</p>
+              {loading ? (
+                <div className="h-8 w-24 bg-gray-200 animate-pulse rounded mt-1"></div>
+              ) : (
+                <div className="flex items-center gap-1 mt-1">
+                   <p className="text-2xl font-bold text-gray-800">
+                    {summary?.averageRating?.toFixed(1) || 0}
+                  </p>
+                  <span className="text-yellow-500 text-xl">★</span>
+                </div>
+              )}
+            </div>
+            <div
+              className="w-14 h-14 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: '#f6ad5515' }}
+            >
+              <FaSmile className="text-2xl" style={{ color: '#f6ad55' }} />
             </div>
           </div>
         </div>

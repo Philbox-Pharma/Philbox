@@ -7,6 +7,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ reportType: 'sales', startDate: '', endDate: '', format: 'pdf' });
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchReports();
@@ -25,29 +26,46 @@ export default function Reports() {
 
   const handleGenerate = async (e) => {
     e.preventDefault();
+    setError('');
     try {
-      await adminApi.reports.generate(formData);
+      const payload = {
+        report_type: formData.reportType === 'customers' ? 'customer_activity' : formData.reportType,
+        date_from: formData.startDate,
+        date_to: formData.endDate,
+        format: formData.format
+      };
+      
+      await adminApi.reports.generate(payload);
       setShowModal(false);
       fetchReports();
     } catch (err) {
-      alert(err.message || 'Failed to generate');
+      setError(err.data?.error || err.message || 'Failed to generate');
     }
   };
 
-  const handleDownload = async (id) => {
+  const handleDownload = async (id, format = 'pdf') => {
     try {
-      const res = await adminApi.reports.download(id);
-      // Create a blob link to download
-      const url = window.URL.createObjectURL(new Blob([res]));
+      setError('');
+      const blob = await adminApi.reports.download(id, format);
+      
+      const mimeTypes = {
+        pdf: 'application/pdf',
+        xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        csv: 'text/csv',
+        excel: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      };
+
+      const url = window.URL.createObjectURL(new Blob([blob], { type: mimeTypes[format] || 'application/octet-stream' }));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `report-${id}.pdf`);
+      link.setAttribute('download', `report-${id}.${format === 'excel' ? 'xlsx' : format}`);
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error(err);
-      alert('Failed to download');
+      setError('Failed to download report in ' + format.toUpperCase());
     }
   };
 
@@ -64,6 +82,8 @@ export default function Reports() {
         </button>
       </div>
 
+      {error && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{error}</div>}
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -71,28 +91,30 @@ export default function Reports() {
               <th className="p-4 font-semibold text-gray-600">Type</th>
               <th className="p-4 font-semibold text-gray-600">Generated At</th>
               <th className="p-4 font-semibold text-gray-600">Status</th>
-              <th className="p-4 font-semibold text-gray-600 text-right">Download</th>
+              <th className="p-4 font-semibold text-gray-600 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {reports.map(r => (
               <tr key={r._id} className="hover:bg-gray-50">
                 <td className="p-4">
-                  <p className="font-medium text-gray-800 capitalize">{r.reportType}</p>
+                  <p className="font-medium text-gray-800 capitalize">{(r.report_type || r.reportType || '').replace(/_/g, ' ')}</p>
                 </td>
                 <td className="p-4 text-sm text-gray-600">
                   {new Date(r.created_at || r.createdAt).toLocaleString()}
                 </td>
                 <td className="p-4">
-                  <span className={`px-2 py-1 text-xs rounded-full font-medium ${r.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                  <span className={`px-2 py-1 text-xs rounded-full font-medium ${r.status === 'generated' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
                     {r.status}
                   </span>
                 </td>
                 <td className="p-4 text-right">
-                  {r.status === 'completed' && (
-                    <button onClick={() => handleDownload(r._id)} className="p-2 text-indigo-600 bg-indigo-50 rounded hover:bg-indigo-100">
-                      <FaDownload />
-                    </button>
+                  {r.status === 'generated' && (
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => handleDownload(r._id, 'pdf')} className="px-2 py-1 text-xs text-red-600 border border-red-200 rounded hover:bg-red-50">PDF</button>
+                      <button onClick={() => handleDownload(r._id, 'xlsx')} className="px-2 py-1 text-xs text-green-600 border border-green-200 rounded hover:bg-green-50">Excel</button>
+                      <button onClick={() => handleDownload(r._id, 'csv')} className="px-2 py-1 text-xs text-blue-600 border border-blue-200 rounded hover:bg-blue-50">CSV</button>
+                    </div>
                   )}
                 </td>
               </tr>
@@ -111,14 +133,22 @@ export default function Reports() {
               <h2 className="text-xl font-bold">Generate Report</h2>
               <button onClick={() => setShowModal(false)}><FaTimes /></button>
             </div>
+            
+            {error && (
+              <div className="mb-4 p-2 bg-red-50 text-red-600 text-sm rounded border border-red-100">
+                {error}
+              </div>
+            )}
+
             <form onSubmit={handleGenerate} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Report Type</label>
                 <select className="w-full border p-2 rounded focus:ring-2 focus:ring-indigo-500" value={formData.reportType} onChange={e => setFormData({...formData, reportType: e.target.value})}>
                   <option value="sales">Sales Report</option>
                   <option value="inventory">Inventory Report</option>
-                  <option value="customers">Customers Report</option>
                   <option value="appointments">Appointments Report</option>
+                  <option value="doctor_performance">Doctor Performance</option>
+                  <option value="customer_activity">Customer Activity</option>
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">

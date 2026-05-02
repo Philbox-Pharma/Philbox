@@ -15,7 +15,9 @@ import {
   FaHourglass,
   FaExclamationTriangle,
 } from 'react-icons/fa';
-import apiClient from '../../../../core/api/client';
+import adminApi from '../../../../core/api/admin/adminApi';
+import { useAuth } from '../../../../shared/context/AuthContext';
+import { FaBuilding } from 'react-icons/fa';
 
 // ==========================================
 // STAT CARD
@@ -223,6 +225,7 @@ function CompletionTimeCard({ data }) {
 // MAIN COMPONENT
 // ==========================================
 export default function SalespersonPerformance() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -232,12 +235,22 @@ export default function SalespersonPerformance() {
   const [taskCompletion, setTaskCompletion] = useState([]);
   const [trends, setTrends] = useState([]);
   const [completionTime, setCompletionTime] = useState([]);
+  const [branches, setBranches] = useState([]);
 
   // Filters
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [branchId, setBranchId] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Fetch branches
+  useEffect(() => {
+    if (user?.category === 'super-admin') {
+      adminApi.branches.getAll(1, 100).then(res => {
+        setBranches(res.data?.branches || res.data?.docs || []);
+      });
+    }
+  }, [user]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -249,18 +262,18 @@ export default function SalespersonPerformance() {
       if (branchId) params.branchId = branchId;
 
       const [overviewRes, leaderboardRes, tasksRes, trendsRes, timeRes] = await Promise.allSettled([
-        apiClient.get('/admin/salesperson-performance/overview', { params }),
-        apiClient.get('/admin/salesperson-performance/leaderboard', { params }),
-        apiClient.get('/admin/salesperson-performance/tasks-completion', { params }),
-        apiClient.get('/admin/salesperson-performance/trends', { params }),
-        apiClient.get('/admin/salesperson-performance/completion-time', { params }),
+        adminApi.salespersonPerformance.getOverview(params),
+        adminApi.salespersonPerformance.getLeaderboard(params),
+        adminApi.salespersonPerformance.getTasksCompletion(params),
+        adminApi.salespersonPerformance.getTrends(params),
+        adminApi.salespersonPerformance.getCompletionTime(params),
       ]);
 
-      if (overviewRes.status === 'fulfilled') setOverview(overviewRes.value.data?.data || overviewRes.value.data);
-      if (leaderboardRes.status === 'fulfilled') setLeaderboard(leaderboardRes.value.data?.data?.leaderboard || leaderboardRes.value.data?.data || leaderboardRes.value.data?.leaderboard || []);
-      if (tasksRes.status === 'fulfilled') setTaskCompletion(tasksRes.value.data?.data?.salespersons || tasksRes.value.data?.salespersons || tasksRes.value.data?.data || []);
-      if (trendsRes.status === 'fulfilled') setTrends(trendsRes.value.data?.data?.trends || trendsRes.value.data?.trends || trendsRes.value.data?.data || []);
-      if (timeRes.status === 'fulfilled') setCompletionTime(timeRes.value.data?.data?.completionTimes || timeRes.value.data?.completionTimes || timeRes.value.data?.data || []);
+      if (overviewRes.status === 'fulfilled') setOverview(overviewRes.value.data?.overview || overviewRes.value.data || overviewRes.value);
+      if (leaderboardRes.status === 'fulfilled') setLeaderboard(leaderboardRes.value.data?.leaderboard || leaderboardRes.value.data || []);
+      if (tasksRes.status === 'fulfilled') setTaskCompletion(tasksRes.value.data?.stats || tasksRes.value.data || []);
+      if (trendsRes.status === 'fulfilled') setTrends(trendsRes.value.data?.trends || trendsRes.value.data || []);
+      if (timeRes.status === 'fulfilled') setCompletionTime(timeRes.value.data?.completionTimes || timeRes.value.data || []);
 
       const allFailed = [overviewRes, leaderboardRes, tasksRes, trendsRes, timeRes].every(r => r.status === 'rejected');
       if (allFailed) {
@@ -330,10 +343,23 @@ export default function SalespersonPerformance() {
               <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">To Date</label>
               <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Branch ID</label>
-              <input type="text" value={branchId} onChange={(e) => setBranchId(e.target.value)} placeholder="Filter by branch..." className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
+            {user?.category === 'super-admin' && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5 flex items-center gap-1">
+                  <FaBuilding size={10} /> Branch
+                </label>
+                <select 
+                  value={branchId} 
+                  onChange={(e) => setBranchId(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">All Branches</option>
+                  {branches.map(b => (
+                    <option key={b._id} value={b._id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           {hasActiveFilters && (
             <div className="mt-4 pt-3 border-t border-gray-100">

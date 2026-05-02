@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import AdminActivityLog from '../../../../../../models/AdminActivityLog.js';
 import SalespersonActivityLog from '../../../../../../models/SalespersonActivityLog.js';
 import { logAdminActivity } from '../../../../utils/logAdminActivities.js';
@@ -14,6 +15,7 @@ class ActivityLogsAnalyticsService {
         userId,
         actionType,
         userRole,
+        branchId,
         page = 1,
         limit = 50,
       } = query;
@@ -25,7 +27,11 @@ class ActivityLogsAnalyticsService {
       if (startDate || endDate) {
         matchFilter.created_at = {};
         if (startDate) matchFilter.created_at.$gte = new Date(startDate);
-        if (endDate) matchFilter.created_at.$lte = new Date(endDate);
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          matchFilter.created_at.$lte = end;
+        }
       }
 
       // Add userId filter
@@ -37,7 +43,7 @@ class ActivityLogsAnalyticsService {
 
       // Add action type filter
       if (actionType) {
-        matchFilter.action_type = actionType;
+        matchFilter.action_type = { $regex: actionType, $options: 'i' };
       }
 
       // Fetch admin logs
@@ -55,18 +61,22 @@ class ActivityLogsAnalyticsService {
           userName: log.admin_id?.name || 'Unknown Admin',
           userEmail: log.admin_id?.email || 'N/A',
           userCategory: log.admin_id?.category || 'N/A',
+          actionType: log.action_type,
         }));
       }
 
       // Fetch salesperson logs
+      let spMatchFilter = { ...matchFilter };
+      if (matchFilter.admin_id) {
+        spMatchFilter.salesperson_id = matchFilter.admin_id;
+        delete spMatchFilter.admin_id;
+      }
+      if (branchId) {
+        spMatchFilter.branch_id = new mongoose.Types.ObjectId(branchId);
+      }
+
       let salespersonLogs = [];
       if (!userRole || userRole === 'salesperson') {
-        const spMatchFilter = { ...matchFilter };
-        if (matchFilter.admin_id) {
-          spMatchFilter.salesperson_id = matchFilter.admin_id;
-          delete spMatchFilter.admin_id;
-        }
-
         salespersonLogs = await SalespersonActivityLog.find(spMatchFilter)
           .populate('salesperson_id', 'fullName email status')
           .sort({ created_at: -1 })
@@ -79,6 +89,7 @@ class ActivityLogsAnalyticsService {
           userName: log.salesperson_id?.fullName || 'Unknown Salesperson',
           userEmail: log.salesperson_id?.email || 'N/A',
           userCategory: 'salesperson',
+          actionType: log.action_type,
         }));
       }
 
@@ -94,9 +105,7 @@ class ActivityLogsAnalyticsService {
           : AdminActivityLog.countDocuments(matchFilter),
         userRole === 'admin'
           ? 0
-          : SalespersonActivityLog.countDocuments(
-              userRole === 'admin' ? {} : matchFilter
-            ),
+          : SalespersonActivityLog.countDocuments(spMatchFilter),
       ]);
 
       const totalCount = adminCount + salespersonCount;
@@ -115,7 +124,7 @@ class ActivityLogsAnalyticsService {
           page: parseInt(page),
           limit: parseInt(limit),
           total: totalCount,
-          pages: Math.ceil(totalCount / limit),
+          totalPages: Math.ceil(totalCount / limit),
         },
       };
     } catch (error) {
@@ -128,7 +137,7 @@ class ActivityLogsAnalyticsService {
    */
   async getMostFrequentActions(query, req) {
     try {
-      const { startDate, endDate, userRole, topN = 10 } = query;
+      const { startDate, endDate, userRole, branchId, topN = 10 } = query;
 
       const matchFilter = {};
       if (startDate || endDate) {
@@ -157,8 +166,11 @@ class ActivityLogsAnalyticsService {
       // Get salesperson actions
       let salespersonActions = [];
       if (!userRole || userRole === 'salesperson') {
+        const spMatch = { ...matchFilter };
+        if (branchId) spMatch.branch_id = new mongoose.Types.ObjectId(branchId);
+
         salespersonActions = await SalespersonActivityLog.aggregate([
-          { $match: matchFilter },
+          { $match: spMatch },
           {
             $group: {
               _id: '$action_type',
@@ -214,7 +226,7 @@ class ActivityLogsAnalyticsService {
    */
   async getLoginAttemptsByRole(query, req) {
     try {
-      const { startDate, endDate } = query;
+      const { startDate, endDate, branchId } = query;
 
       const matchFilter = {
         action_type: { $in: ['login', 'login_success', 'login_failed'] },
@@ -251,7 +263,14 @@ class ActivityLogsAnalyticsService {
 
       // Get salesperson login attempts
       const salespersonLogins = await SalespersonActivityLog.aggregate([
-        { $match: matchFilter },
+        {
+          $match: {
+            ...matchFilter,
+            ...(branchId
+              ? { branch_id: new mongoose.Types.ObjectId(branchId) }
+              : {}),
+          },
+        },
         {
           $group: {
             _id: {
@@ -300,7 +319,23 @@ class ActivityLogsAnalyticsService {
         null
       );
 
+      const totalAttempts = chartData.reduce(
+        (sum, item) => sum + item.totalAttempts,
+        0
+      );
+      const successful = chartData.reduce(
+        (sum, item) => sum + item.successfulLogins,
+        0
+      );
+      const failed = chartData.reduce(
+        (sum, item) => sum + item.failedLogins,
+        0
+      );
+
       return {
+        total: totalAttempts,
+        successful,
+        failed,
         loginAttempts: chartData,
       };
     } catch (error) {
@@ -313,7 +348,7 @@ class ActivityLogsAnalyticsService {
    */
   async getSuspiciousActivities(query, req) {
     try {
-      const { startDate, endDate, page = 1, limit = 20 } = query;
+      const { startDate, endDate, branchId, page = 1, limit = 20 } = query;
 
       const skip = (page - 1) * limit;
 
@@ -360,9 +395,12 @@ class ActivityLogsAnalyticsService {
         .lean();
 
       // Get suspicious salesperson activities
-      const salespersonActivities = await SalespersonActivityLog.find(
-        matchFilter
-      )
+      const salespersonActivities = await SalespersonActivityLog.find({
+        ...matchFilter,
+        ...(branchId
+          ? { branch_id: new mongoose.Types.ObjectId(branchId) }
+          : {}),
+      })
         .populate('salesperson_id', 'fullName email status')
         .sort({ created_at: -1 })
         .skip(skip)
@@ -405,7 +443,12 @@ class ActivityLogsAnalyticsService {
 
       const totalCount =
         (await AdminActivityLog.countDocuments(matchFilter)) +
-        (await SalespersonActivityLog.countDocuments(matchFilter));
+        (await SalespersonActivityLog.countDocuments({
+          ...matchFilter,
+          ...(branchId
+            ? { branch_id: new mongoose.Types.ObjectId(branchId) }
+            : {}),
+        }));
 
       await logAdminActivity(
         req,
@@ -463,7 +506,7 @@ class ActivityLogsAnalyticsService {
    */
   async getActivityOverview(query, req) {
     try {
-      const { startDate, endDate } = query;
+      const { startDate, endDate, branchId } = query;
 
       const matchFilter = {};
       if (startDate || endDate) {
@@ -480,9 +523,19 @@ class ActivityLogsAnalyticsService {
         suspiciousCount,
       ] = await Promise.all([
         AdminActivityLog.countDocuments(matchFilter),
-        SalespersonActivityLog.countDocuments(matchFilter),
+        SalespersonActivityLog.countDocuments({
+          ...matchFilter,
+          ...(branchId
+            ? { branch_id: new mongoose.Types.ObjectId(branchId) }
+            : {}),
+        }),
         AdminActivityLog.distinct('admin_id', matchFilter),
-        SalespersonActivityLog.distinct('salesperson_id', matchFilter),
+        SalespersonActivityLog.distinct('salesperson_id', {
+          ...matchFilter,
+          ...(branchId
+            ? { branch_id: new mongoose.Types.ObjectId(branchId) }
+            : {}),
+        }),
         AdminActivityLog.countDocuments({
           ...matchFilter,
           $or: [
@@ -507,9 +560,10 @@ class ActivityLogsAnalyticsService {
       return {
         totalAdminActions,
         totalSalespersonActions,
-        totalActions: totalAdminActions + totalSalespersonActions,
+        totalActivities: totalAdminActions + totalSalespersonActions,
         uniqueAdmins: uniqueAdmins.length,
         uniqueSalespersons: uniqueSalespersons.length,
+        uniqueUsers: uniqueAdmins.length + uniqueSalespersons.length,
         suspiciousActivitiesCount: suspiciousCount,
       };
     } catch (error) {

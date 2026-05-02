@@ -2,6 +2,7 @@ import Order from '../../../../../../models/Order.js';
 import OrderItem from '../../../../../../models/OrderItem.js';
 import StockInHand from '../../../../../../models/StockInHand.js';
 import Transaction from '../../../../../../models/Transaction.js';
+import mongoose from 'mongoose';
 import { logAdminActivity } from '../../../../utils/logAdminActivities.js';
 
 class OrdersAnalyticsService {
@@ -11,6 +12,8 @@ class OrdersAnalyticsService {
   async getOrdersTrends(query, req) {
     try {
       const { startDate, endDate, period = 'daily', branchId } = query;
+      const adminCategory = req.admin?.category;
+      const adminBranchesManaged = req.admin?.branches_managed || [];
 
       const start = startDate
         ? new Date(startDate)
@@ -21,8 +24,13 @@ class OrdersAnalyticsService {
         created_at: { $gte: start, $lte: end },
       };
 
-      if (branchId) {
-        matchFilter.branch_id = branchId;
+      // Branch security scoping
+      if (adminCategory === 'branch-admin' && adminBranchesManaged.length > 0) {
+        matchFilter.branch_id = { 
+          $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)) 
+        };
+      } else if (branchId) {
+        matchFilter.branch_id = new mongoose.Types.ObjectId(branchId);
       }
 
       // Group by period
@@ -55,13 +63,19 @@ class OrdersAnalyticsService {
               $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] },
             },
             processingOrders: {
-              $sum: { $cond: [{ $eq: ['$status', 'processing'] }, 1, 0] },
+              $sum: {
+                $cond: [{ $eq: ['$status', 'processing'] }, 1, 0],
+              },
             },
             deliveredOrders: {
-              $sum: { $cond: [{ $eq: ['$status', 'delivered'] }, 1, 0] },
+              $sum: {
+                $cond: [{ $eq: ['$status', 'completed'] }, 1, 0],
+              },
             },
             cancelledOrders: {
-              $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] },
+              $sum: {
+                $cond: [{ $eq: ['$status', 'cancelled-by-customer'] }, 1, 0],
+              },
             },
           },
         },
@@ -99,8 +113,16 @@ class OrdersAnalyticsService {
         created_at: { $gte: start, $lte: end },
       };
 
-      if (branchId) {
-        matchFilter.branch_id = branchId;
+      const adminCategory = req.admin?.category;
+      const adminBranchesManaged = req.admin?.branches_managed || [];
+
+      // Branch security scoping
+      if (adminCategory === 'branch-admin' && adminBranchesManaged.length > 0) {
+        matchFilter.branch_id = { 
+          $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)) 
+        };
+      } else if (branchId) {
+        matchFilter.branch_id = new mongoose.Types.ObjectId(branchId);
       }
 
       const breakdown = await Order.aggregate([
@@ -122,7 +144,14 @@ class OrdersAnalyticsService {
       };
 
       breakdown.forEach(item => {
-        result[item._id] = item.count;
+        // Map 'completed' to 'delivered' and 'cancelled-by-customer' to 'cancelled'
+        if (item._id === 'completed') {
+          result.delivered = item.count;
+        } else if (item._id === 'cancelled-by-customer') {
+          result.cancelled = item.count;
+        } else if (result.hasOwnProperty(item._id)) {
+          result[item._id] = item.count;
+        }
         result.total += item.count;
       });
 
@@ -165,11 +194,19 @@ class OrdersAnalyticsService {
 
       const matchFilter = {
         created_at: { $gte: start, $lte: end },
-        status: { $in: ['delivered'] },
+        status: { $in: ['completed'] }, // Only count completed orders
       };
 
-      if (branchId) {
-        matchFilter.branch_id = branchId;
+      const adminCategory = req.admin?.category;
+      const adminBranchesManaged = req.admin?.branches_managed || [];
+
+      // Branch security scoping
+      if (adminCategory === 'branch-admin' && adminBranchesManaged.length > 0) {
+        matchFilter.branch_id = { 
+          $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)) 
+        };
+      } else if (branchId) {
+        matchFilter.branch_id = new mongoose.Types.ObjectId(branchId);
       }
 
       const orders = await Order.find(matchFilter).select('_id');
@@ -247,11 +284,21 @@ class OrdersAnalyticsService {
 
       // Get low stock items (quantity < 10)
       const lowStockFilter = { quantity: { $lt: 10 } };
+      
+      const adminCategory = req.admin?.category;
+      const adminBranchesManaged = req.admin?.branches_managed || [];
+      
+      let branchFilter = {};
+      if (adminCategory === 'branch-admin' && adminBranchesManaged.length > 0) {
+        branchFilter = { branch_id: { $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)) } };
+      } else if (branchId) {
+        branchFilter = { branch_id: new mongoose.Types.ObjectId(branchId) };
+      }
 
       const lowStockItems = await StockInHand.find(lowStockFilter)
         .populate({
           path: 'medicine_id',
-          match: branchId ? { branch_id: branchId } : {},
+          match: branchFilter,
           select: 'Name branch_id category img_url',
           populate: {
             path: 'category',
@@ -265,6 +312,8 @@ class OrdersAnalyticsService {
       const filteredLowStock = lowStockItems
         .filter(item => item.medicine_id !== null)
         .map(item => ({
+          name: item.medicine_id.Name,
+          stock: item.quantity,
           medicineId: item.medicine_id._id,
           medicineName: item.medicine_id.Name,
           category: item.medicine_id.category?.name || null,
@@ -272,8 +321,6 @@ class OrdersAnalyticsService {
           alertType: 'low_stock',
           imgUrl: item.medicine_id.img_url,
         }));
-
-      const filteredExpiringStock = [];
 
       await logAdminActivity(
         req,
@@ -285,7 +332,7 @@ class OrdersAnalyticsService {
 
       return {
         lowStock: filteredLowStock,
-        expiringStock: filteredExpiringStock,
+        expiringStock: [],
       };
     } catch (error) {
       console.error('Error in getStockAlerts:', error);
@@ -307,11 +354,19 @@ class OrdersAnalyticsService {
 
       const matchFilter = {
         created_at: { $gte: start, $lte: end },
-        status: 'delivered',
+        status: 'completed', // Only revenue from completed orders
       };
 
-      if (branchId) {
-        matchFilter.branch_id = branchId;
+      const adminCategory = req.admin?.category;
+      const adminBranchesManaged = req.admin?.branches_managed || [];
+
+      // Branch security scoping
+      if (adminCategory === 'branch-admin' && adminBranchesManaged.length > 0) {
+        matchFilter.branch_id = { 
+          $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)) 
+        };
+      } else if (branchId) {
+        matchFilter.branch_id = new mongoose.Types.ObjectId(branchId);
       }
 
       const orders = await Order.find(matchFilter).select('_id');
@@ -351,35 +406,44 @@ class OrdersAnalyticsService {
         },
       ]);
 
-      // Initialize result object dynamically
-      const result = {
-        total: { revenue: 0, itemCount: 0 },
-      };
-
-      // Populate with actual data
-      categoryRevenue.forEach(item => {
-        if (item._id) {
-          result[item._id] = {
-            revenue: item.revenue,
-            itemCount: item.itemCount,
-          };
-          result.total.revenue += item.revenue;
-          result.total.itemCount += item.itemCount;
-        }
+      // Calculate total revenue
+      let totalRevenue = 0;
+      const categories = categoryRevenue.map(item => {
+        totalRevenue += item.revenue;
+        return {
+          category: item._id,
+          revenue: item.revenue,
+          itemCount: item.itemCount,
+        };
       });
 
-      // Calculate percentages for each category
-      Object.keys(result)
-        .filter(key => key !== 'total')
-        .forEach(category => {
-          result[category].percentage =
-            result.total.revenue > 0
-              ? (
-                  (result[category].revenue / result.total.revenue) *
-                  100
-                ).toFixed(2)
-              : 0;
-        });
+      // Add percentage for each category
+      const result = categories.map(cat => ({
+        ...cat,
+        percentage:
+          totalRevenue > 0
+            ? ((cat.revenue / totalRevenue) * 100).toFixed(2)
+            : 0,
+      }));
+
+      // Also include total in the response structure for backward compatibility
+      result.total = {
+        revenue: totalRevenue,
+        itemCount: categories.reduce((sum, cat) => sum + cat.itemCount, 0),
+      };
+
+      // Store as object for backward compatibility
+      const resultObj = {
+        total: result.total,
+      };
+
+      categories.forEach(cat => {
+        resultObj[cat.category] = {
+          revenue: cat.revenue,
+          itemCount: cat.itemCount,
+          percentage: cat.percentage,
+        };
+      });
 
       await logAdminActivity(
         req,
@@ -389,7 +453,7 @@ class OrdersAnalyticsService {
         null
       );
 
-      return result;
+      return resultObj;
     } catch (error) {
       console.error('Error in getRevenueByCategory:', error);
       throw error;
@@ -412,8 +476,16 @@ class OrdersAnalyticsService {
         created_at: { $gte: start, $lte: end },
       };
 
-      if (branchId) {
-        matchFilter.branch_id = branchId;
+      const adminCategory = req.admin?.category;
+      const adminBranchesManaged = req.admin?.branches_managed || [];
+
+      // Branch security scoping
+      if (adminCategory === 'branch-admin' && adminBranchesManaged.length > 0) {
+        matchFilter.branch_id = { 
+          $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)) 
+        };
+      } else if (branchId) {
+        matchFilter.branch_id = new mongoose.Types.ObjectId(branchId);
       }
 
       // Get all orders in the period

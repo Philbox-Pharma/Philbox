@@ -6,7 +6,15 @@ export default function Announcements() {
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ title: '', content: '', type: 'info', target_audience: 'all' });
+  const [formData, setFormData] = useState({ 
+    title: '', 
+    message: '', 
+    type: 'info', 
+    target_audience: 'all',
+    delivery_methods: ['in-app'],
+    scheduled_at: new Date().toISOString().split('T')[0]
+  });
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchAnnouncements();
@@ -15,7 +23,7 @@ export default function Announcements() {
   const fetchAnnouncements = async () => {
     try {
       const res = await adminApi.announcements.getAll();
-      if (res.status === 200) setAnnouncements(res.data?.announcements || []);
+      if (res.status === 200) setAnnouncements(res.data?.data || res.data?.announcements || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -23,23 +31,55 @@ export default function Announcements() {
     }
   };
 
+  const validate = () => {
+    if (formData.title.length < 5) return "Title must be at least 5 characters";
+    if (formData.message.length < 10) return "Message must be at least 10 characters";
+    if (formData.delivery_methods.length === 0) return "Select at least one delivery method";
+    if (!formData.scheduled_at) return "Scheduled date is required";
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     try {
       await adminApi.announcements.create(formData);
       setShowModal(false);
+      setFormData({
+        title: '', 
+        message: '', 
+        type: 'info', 
+        target_audience: 'all',
+        delivery_methods: ['in-app'],
+        scheduled_at: new Date().toISOString().split('T')[0]
+      });
       fetchAnnouncements();
     } catch (err) {
-      alert(err.message || 'Failed to create');
+      const msg = err.response?.data?.details 
+        ? (Array.isArray(err.response.data.details) ? err.response.data.details.join(', ') : err.response.data.details)
+        : (err.response?.data?.message || err.message || 'Failed to create');
+      setError(msg);
     }
   };
 
   const handleSend = async (id) => {
+    if (!window.confirm('Send this announcement now?')) return;
     try {
+      setError('');
       await adminApi.announcements.send(id, {});
       fetchAnnouncements();
     } catch (err) {
-      alert(err.message || 'Failed to send');
+      const msg = err.response?.data?.details 
+        ? (Array.isArray(err.response.data.details) ? err.response.data.details.join(', ') : err.response.data.details)
+        : (err.response?.data?.message || err.message || 'Failed to send');
+      setError(msg);
     }
   };
 
@@ -77,7 +117,12 @@ export default function Announcements() {
                 <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{a.target_audience}</span>
               </div>
               <h3 className="font-bold text-lg text-gray-800">{a.title}</h3>
-              <p className="text-gray-600 mt-1">{a.content}</p>
+              <p className="text-gray-600 mt-1 whitespace-pre-wrap">{a.message || a.content}</p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {(a.delivery_methods || []).map(m => (
+                  <span key={m} className="text-[10px] uppercase font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">{m}</span>
+                ))}
+              </div>
             </div>
             <div className="flex gap-2 items-start shrink-0">
               {a.status === 'draft' && (
@@ -97,25 +142,59 @@ export default function Announcements() {
               <h2 className="text-xl font-bold">New Announcement</h2>
               <button onClick={() => setShowModal(false)}><FaTimes /></button>
             </div>
+
+            {error && (
+              <div className="mb-4 p-2 bg-red-50 text-red-600 text-sm rounded border border-red-100">
+                {error}
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                <input required type="text" className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
+                <input required minLength={3} type="text" className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} placeholder="Announcement title" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
-                <textarea required rows="4" className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500" value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})}></textarea>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                <textarea required minLength={10} rows="4" className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500" value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} placeholder="Announcement content"></textarea>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Audience</label>
+                  <select className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500" value={formData.target_audience} onChange={e => setFormData({...formData, target_audience: e.target.value})}>
+                    <option value="all">All</option>
+                    <option value="customers">Customers</option>
+                    <option value="doctors">Doctors</option>
+                    <option value="salespersons">Salespersons</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Scheduled Date</label>
+                  <input required type="date" className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500" value={formData.scheduled_at} onChange={e => setFormData({...formData, scheduled_at: e.target.value})} />
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Audience</label>
-                <select className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500" value={formData.target_audience} onChange={e => setFormData({...formData, target_audience: e.target.value})}>
-                  <option value="all">All</option>
-                  <option value="customers">Customers</option>
-                  <option value="doctors">Doctors</option>
-                  <option value="salespersons">Salespersons</option>
-                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Methods</label>
+                <div className="flex flex-wrap gap-4 mt-2">
+                  {['email', 'in-app', 'sms', 'push'].map(method => (
+                    <label key={method} className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={formData.delivery_methods.includes(method)}
+                        onChange={(e) => {
+                          const methods = e.target.checked 
+                            ? [...formData.delivery_methods, method]
+                            : formData.delivery_methods.filter(m => m !== method);
+                          setFormData({...formData, delivery_methods: methods});
+                        }}
+                        className="rounded text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm capitalize">{method}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
-              <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">Create</button>
+              <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 font-semibold">Create Announcement</button>
             </form>
           </div>
         </div>

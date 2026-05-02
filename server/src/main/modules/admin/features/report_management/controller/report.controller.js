@@ -2,6 +2,7 @@ import Report from '../../../../../models/Report.js';
 import reportGenerationService from '../service/reportGeneration.service.js';
 import sendResponse from '../../../../../utils/sendResponse.js';
 import { logAdminActivity } from '../../../utils/logAdminActivities.js';
+import exportService from '../../../../../utils/exportService.js';
 
 class ReportController {
   /**
@@ -10,7 +11,8 @@ class ReportController {
    */
   async generateReport(req, res) {
     try {
-      const adminId = req.user?.id || req.user?._id;
+      const adminId =
+        req.admin?._id || req.admin?.id || req.user?._id || req.user?.id;
       const { report_type, date_from, date_to, branch_id, title } = req.body;
 
       if (!report_type || !date_from || !date_to) {
@@ -117,12 +119,85 @@ class ReportController {
   }
 
   /**
+   * Download report in specified format
+   * GET /api/admin/reports/:reportId/download?format=pdf|xlsx|csv
+   */
+  async downloadReport(req, res) {
+    try {
+      const { reportId } = req.params;
+      const { format = 'pdf' } = req.query;
+      const adminId =
+        req.admin?._id || req.admin?.id || req.user?._id || req.user?.id;
+
+      const report = await Report.findOne({ _id: reportId, admin_id: adminId });
+
+      if (!report) {
+        return sendResponse(res, 404, 'REPORT_NOT_FOUND');
+      }
+
+      // Prepare data for export
+      // Extract the main data array or object
+      let exportData = [];
+      const reportType = report.report_type;
+
+      // Extract specific data based on report type structure
+      if (report.data && Array.isArray(report.data)) {
+        exportData = report.data;
+      } else if (report.data && typeof report.data === 'object') {
+        // Handle object data (e.g., summary stats)
+        // Convert summary object to a single-row array or list of key-value pairs
+        exportData = [report.data];
+      } else {
+        // Fallback: use the whole report document except metadata
+        const doc = report.toObject();
+        delete doc._id;
+        delete doc.admin_id;
+        delete doc.__v;
+        exportData = [doc];
+      }
+
+      const filename = `${reportType}_report_${Date.now()}`;
+      let filePath;
+
+      if (format === 'csv') {
+        filePath = await exportService.exportToCSV(exportData, filename);
+      } else if (format === 'xlsx') {
+        filePath = await exportService.exportToExcel(
+          exportData,
+          filename,
+          report.title
+        );
+      } else {
+        // Default is PDF
+        filePath = await exportService.exportToPDF(
+          exportData,
+          filename,
+          report.title
+        );
+      }
+
+      const finalFilename = `${filename}.${format}`;
+
+      // Set headers for download
+      res.download(filePath, finalFilename, err => {
+        if (err) {
+          console.error('Error in file download:', err);
+        }
+      });
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      return sendResponse(res, 500, 'DOWNLOAD_FAILED', null, error.message);
+    }
+  }
+
+  /**
    * Get all reports for admin
    * GET /api/admin/reports
    */
   async getReports(req, res) {
     try {
-      const adminId = req.user?.id || req.user?._id;
+      const adminId =
+        req.admin?._id || req.admin?.id || req.user?._id || req.user?.id;
       const {
         report_type,
         page = 1,
@@ -174,7 +249,8 @@ class ReportController {
   async getReport(req, res) {
     try {
       const { reportId } = req.params;
-      const adminId = req.user?.id || req.user?._id;
+      const adminId =
+        req.admin?._id || req.admin?.id || req.user?._id || req.user?.id;
 
       const report = await Report.findOne({
         _id: reportId,
@@ -205,7 +281,8 @@ class ReportController {
   async saveReport(req, res) {
     try {
       const { reportId } = req.params;
-      const adminId = req.user?.id || req.user?._id;
+      const adminId =
+        req.admin?._id || req.admin?.id || req.user?._id || req.user?.id;
 
       const report = await Report.findOneAndUpdate(
         { _id: reportId, admin_id: adminId },
@@ -248,7 +325,8 @@ class ReportController {
   async deleteReport(req, res) {
     try {
       const { reportId } = req.params;
-      const adminId = req.user?.id || req.user?._id;
+      const adminId =
+        req.admin?._id || req.admin?.id || req.user?._id || req.user?.id;
 
       const report = await Report.findOneAndDelete({
         _id: reportId,
@@ -292,7 +370,8 @@ class ReportController {
    */
   async scheduleReport(req, res) {
     try {
-      const adminId = req.user?.id || req.user?._id;
+      const adminId =
+        req.admin?._id || req.admin?.id || req.user?._id || req.user?.id;
       const {
         report_type,
         frequency, // daily, weekly, monthly
@@ -352,7 +431,8 @@ class ReportController {
   async updateScheduledReport(req, res) {
     try {
       const { reportId } = req.params;
-      const adminId = req.user?.id || req.user?._id;
+      const adminId =
+        req.admin?._id || req.admin?.id || req.user?._id || req.user?.id;
       const { is_active_schedule, frequency } = req.body;
 
       const report = await Report.findOneAndUpdate(
@@ -401,7 +481,8 @@ class ReportController {
    */
   async getScheduledReports(req, res) {
     try {
-      const adminId = req.user?.id || req.user?._id;
+      const adminId =
+        req.admin?._id || req.admin?.id || req.user?._id || req.user?.id;
       const { page = 1, limit = 10 } = req.query;
       const skip = (page - 1) * limit;
 

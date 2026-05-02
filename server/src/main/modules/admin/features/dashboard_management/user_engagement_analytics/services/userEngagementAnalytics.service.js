@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Customer from '../../../../../../models/Customer.js';
 import DoctorApplication from '../../../../../../models/DoctorApplication.js';
 import DoctorActivityLog from '../../../../../../models/DoctorActivityLog.js';
@@ -7,11 +8,54 @@ import { logAdminActivity } from '../../../../utils/logAdminActivities.js';
 
 class UserEngagementAnalyticsService {
   /**
+   * Helper to get customer IDs who interacted with specific branches
+   */
+  async getBranchInteractedCustomerIds(branchId, req, startDate, endDate) {
+    const filter = {};
+    if (branchId) {
+      filter.branch_id = new mongoose.Types.ObjectId(branchId);
+    } else if (req.admin && req.admin.category === 'branch-admin') {
+      const managedBranches = req.admin.branches_managed || [];
+      if (managedBranches.length > 0) {
+        filter.branch_id = {
+          $in: managedBranches.map(id => new mongoose.Types.ObjectId(id)),
+        };
+      } else {
+        return [];
+      }
+    } else {
+      return null; // Super admin, no filter
+    }
+
+    const timeFilter = {};
+    if (startDate) timeFilter.$gte = new Date(startDate);
+    if (endDate) timeFilter.$lte = new Date(endDate);
+
+    const [apptCustomers, orderCustomers] = await Promise.all([
+      Appointment.distinct('patient_id', {
+        ...filter,
+        ...(startDate || endDate ? { created_at: timeFilter } : {}),
+      }),
+      Order.distinct('customer_id', {
+        ...filter,
+        ...(startDate || endDate ? { created_at: timeFilter } : {}),
+      }),
+    ]);
+
+    return [
+      ...new Set([
+        ...apptCustomers.map(id => id.toString()),
+        ...orderCustomers.map(id => id.toString()),
+      ]),
+    ].map(id => new mongoose.Types.ObjectId(id));
+  }
+
+  /**
    * Get New Customers Over Time (Line Chart)
    */
   async getNewCustomersTrends(query, req) {
     try {
-      const { startDate, endDate, period = 'daily' } = query;
+      const { startDate, endDate, period = 'daily', branchId } = query;
 
       const start = startDate
         ? new Date(startDate)
@@ -22,24 +66,37 @@ class UserEngagementAnalyticsService {
         created_at: { $gte: start, $lte: end },
       };
 
+      // If branch filtering is active, we only care about customers whose FIRST interaction 
+      // was with these branches in this period. This is complex, so we'll simplify to 
+      // "Customers who interacted with these branches for the first time in this period".
+      const branchCustomerIds = await this.getBranchInteractedCustomerIds(branchId, req);
+      if (branchCustomerIds !== null) {
+        matchFilter._id = { $in: branchCustomerIds };
+      }
+
       // Group by period
       let groupBy;
+      let sortBy = { '_id.year': 1 };
+
       if (period === 'daily') {
         groupBy = {
           year: { $year: '$created_at' },
           month: { $month: '$created_at' },
           day: { $dayOfMonth: '$created_at' },
         };
+        sortBy = { ...sortBy, '_id.month': 1, '_id.day': 1 };
       } else if (period === 'weekly') {
         groupBy = {
           year: { $year: '$created_at' },
           week: { $week: '$created_at' },
         };
+        sortBy = { ...sortBy, '_id.week': 1 };
       } else {
         groupBy = {
           year: { $year: '$created_at' },
           month: { $month: '$created_at' },
         };
+        sortBy = { ...sortBy, '_id.month': 1 };
       }
 
       const trends = await Customer.aggregate([
@@ -53,7 +110,7 @@ class UserEngagementAnalyticsService {
             },
           },
         },
-        { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
+        { $sort: sortBy },
       ]);
 
       await logAdminActivity(
@@ -76,7 +133,7 @@ class UserEngagementAnalyticsService {
    */
   async getCustomerActivityStatus(query, req) {
     try {
-      const { endDate } = query;
+      const { endDate, branchId } = query;
 
       const end = endDate ? new Date(endDate) : new Date();
 
@@ -84,6 +141,12 @@ class UserEngagementAnalyticsService {
       const matchFilter = {
         created_at: { $lte: end },
       };
+
+      // Branch restrictions
+      const branchCustomerIds = await this.getBranchInteractedCustomerIds(branchId, req);
+      if (branchCustomerIds !== null) {
+        matchFilter._id = { $in: branchCustomerIds };
+      }
 
       const statusBreakdown = await Customer.aggregate([
         { $match: matchFilter },
@@ -103,8 +166,10 @@ class UserEngagementAnalyticsService {
       };
 
       statusBreakdown.forEach(item => {
-        result[item._id] = item.count;
-        result.total += item.count;
+        if (result[item._id] !== undefined) {
+          result[item._id] = item.count;
+          result.total += item.count;
+        }
       });
 
       // Calculate percentages
@@ -179,7 +244,7 @@ class UserEngagementAnalyticsService {
             count: { $sum: 1 },
           },
         },
-        { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
+        { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1, '_id.week': 1 } },
       ]);
 
       // Summary counts
@@ -360,17 +425,18 @@ class UserEngagementAnalyticsService {
           appointment_date: { $gte: start, $lte: end },
         };
 
-        if (branchId) {
-          appointmentFilter.branch_id = branchId;
+        const appBranchIds = await this.getManagedBranchIds(branchId, req);
+        if (appBranchIds) {
+          appointmentFilter.branch_id = { $in: appBranchIds };
         }
 
         const topByAppointments = await Appointment.aggregate([
           { $match: appointmentFilter },
           {
             $group: {
-              _id: '$customer_id',
+              _id: '$patient_id',
               appointmentCount: { $sum: 1 },
-              totalSpent: { $sum: '$consultation_fee' },
+              totalSpent: { $sum: '$consultation_fee' }, // Verify if consultation_fee exists or use 0
               completedAppointments: {
                 $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] },
               },
@@ -407,11 +473,12 @@ class UserEngagementAnalyticsService {
       if (metric === 'orders' || metric === 'both') {
         const orderFilter = {
           created_at: { $gte: start, $lte: end },
-          status: 'delivered',
+          status: 'completed',
         };
 
-        if (branchId) {
-          orderFilter.branch_id = branchId;
+        const orderBranchIds = await this.getManagedBranchIds(branchId, req);
+        if (orderBranchIds) {
+          orderFilter.branch_id = { $in: orderBranchIds };
         }
 
         const topByOrders = await Order.aggregate([
@@ -420,7 +487,7 @@ class UserEngagementAnalyticsService {
             $group: {
               _id: '$customer_id',
               orderCount: { $sum: 1 },
-              totalSpent: { $sum: '$total_amount' },
+              totalSpent: { $sum: '$total' },
             },
           },
           { $sort: { orderCount: -1 } },
@@ -504,6 +571,19 @@ class UserEngagementAnalyticsService {
   }
 
   /**
+   * Helper to get managed branch IDs
+   */
+  async getManagedBranchIds(branchId, req) {
+    if (branchId) return [new mongoose.Types.ObjectId(branchId)];
+    if (req.admin && req.admin.category === 'branch-admin') {
+      return (req.admin.branches_managed || []).map(
+        id => new mongoose.Types.ObjectId(id)
+      );
+    }
+    return null;
+  }
+
+  /**
    * Get Customer Retention Rate (KPI)
    */
   async getCustomerRetentionRate(query, req) {
@@ -521,20 +601,21 @@ class UserEngagementAnalyticsService {
 
       // Get customers who were active in the first period
       const appointmentFilter1 = {
-        appointment_date: { $gte: previousStart, $lt: start },
+        created_at: { $gte: previousStart, $lt: start },
       };
       const orderFilter1 = {
         created_at: { $gte: previousStart, $lt: start },
       };
 
-      if (branchId) {
-        appointmentFilter1.branch_id = branchId;
-        orderFilter1.branch_id = branchId;
+      const managedBranchIds = await this.getManagedBranchIds(branchId, req);
+      if (managedBranchIds) {
+        appointmentFilter1.branch_id = { $in: managedBranchIds };
+        orderFilter1.branch_id = { $in: managedBranchIds };
       }
 
       const [customersFromAppointments1, customersFromOrders1] =
         await Promise.all([
-          Appointment.distinct('customer_id', appointmentFilter1),
+          Appointment.distinct('patient_id', appointmentFilter1),
           Order.distinct('customer_id', orderFilter1),
         ]);
 
@@ -545,20 +626,20 @@ class UserEngagementAnalyticsService {
 
       // Get customers who were active in the second period
       const appointmentFilter2 = {
-        appointment_date: { $gte: start, $lte: end },
+        created_at: { $gte: start, $lte: end },
       };
       const orderFilter2 = {
         created_at: { $gte: start, $lte: end },
       };
 
-      if (branchId) {
-        appointmentFilter2.branch_id = branchId;
-        orderFilter2.branch_id = branchId;
+      if (managedBranchIds) {
+        appointmentFilter2.branch_id = { $in: managedBranchIds };
+        orderFilter2.branch_id = { $in: managedBranchIds };
       }
 
       const [customersFromAppointments2, customersFromOrders2] =
         await Promise.all([
-          Appointment.distinct('customer_id', appointmentFilter2),
+          Appointment.distinct('patient_id', appointmentFilter2),
           Order.distinct('customer_id', orderFilter2),
         ]);
 

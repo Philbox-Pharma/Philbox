@@ -5,17 +5,31 @@ import adminApi from '../../../../core/api/admin/adminApi';
 export default function Complaints() {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [pagination, setPagination] = useState({ current_page: 1, total_pages: 1 });
+
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchComplaints();
-  }, []);
+  }, [statusFilter]);
 
-  const fetchComplaints = async () => {
+  const fetchComplaints = async (page = 1) => {
     try {
-      const res = await adminApi.complaints.getAll();
-      if (res.status === 200) setComplaints(res.data?.list || []);
+      setLoading(true);
+      setError('');
+      const res = await adminApi.complaints.getAll({ 
+        status: statusFilter, 
+        page, 
+        limit: 10 
+      });
+      if (res.status === 200) {
+        setComplaints(res.data?.complaints || []);
+        setPagination(res.data?.pagination || { current_page: 1, total_pages: 1 });
+      }
     } catch (err) {
       console.error(err);
+      setError('Failed to load complaints. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -23,10 +37,13 @@ export default function Complaints() {
 
   const handleUpdateStatus = async (id, status) => {
     try {
-      await adminApi.complaints.updateStatus(id, status, 'Status updated via admin panel');
-      fetchComplaints();
+      setError('');
+      const notes = status === 'resolved' ? 'Complaint resolved by admin' : 'Complaint marked as in progress';
+      await adminApi.complaints.updateStatus(id, status, notes);
+      fetchComplaints(pagination.current_page);
     } catch (err) {
-      alert(err.message || 'Failed to update status');
+      console.error(err);
+      setError(err.response?.data?.message || err.message || 'Failed to update status');
     }
   };
 
@@ -38,7 +55,25 @@ export default function Complaints() {
         <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
           <FaExclamationCircle className="text-red-600" /> Complaints Management
         </h1>
+        <div className="flex gap-2">
+          <select 
+            value={statusFilter} 
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+          >
+            <option value="">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="in-progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+          </select>
+        </div>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+          <FaExclamationCircle className="flex-shrink-0" /> {error}
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <table className="w-full text-left border-collapse">
@@ -67,9 +102,14 @@ export default function Complaints() {
                   <p className="text-xs text-gray-500 truncate max-w-xs">{c.description}</p>
                 </td>
                 <td className="p-4">
-                  <span className={`px-2 py-1 text-xs rounded-full font-medium ${c.status === 'resolved' ? 'bg-green-100 text-green-700' : c.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                    {c.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 text-[10px] rounded uppercase font-bold ${c.priority === 'high' ? 'bg-red-50 text-red-600 border border-red-100' : c.priority === 'medium' ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
+                      {c.priority}
+                    </span>
+                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${c.status === 'resolved' ? 'bg-green-100 text-green-700' : c.status === 'in-progress' || c.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                      {c.status.replace('_', ' ')}
+                    </span>
+                  </div>
                 </td>
                 <td className="p-4 text-right flex justify-end gap-2">
                   {c.status !== 'resolved' && (
@@ -77,8 +117,8 @@ export default function Complaints() {
                       <FaCheck />
                     </button>
                   )}
-                  {c.status === 'open' && (
-                    <button onClick={() => handleUpdateStatus(c._id, 'in_progress')} className="p-1.5 bg-yellow-50 text-yellow-600 hover:bg-yellow-100 rounded" title="Mark In Progress">
+                  {(c.status === 'pending' || c.status === 'open') && (
+                    <button onClick={() => handleUpdateStatus(c._id, 'in-progress')} className="p-1.5 bg-yellow-50 text-yellow-600 hover:bg-yellow-100 rounded" title="Mark In Progress">
                       <FaEye />
                     </button>
                   )}
@@ -91,6 +131,28 @@ export default function Complaints() {
           </tbody>
         </table>
       </div>
+
+      {pagination.total_pages > 1 && (
+        <div className="flex justify-center items-center gap-4 mt-6">
+          <button 
+            disabled={pagination.current_page === 1}
+            onClick={() => fetchComplaints(pagination.current_page - 1)}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-gray-50 transition-colors"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-gray-600 font-medium">
+            Page {pagination.current_page} of {pagination.total_pages}
+          </span>
+          <button 
+            disabled={pagination.current_page === pagination.total_pages}
+            onClick={() => fetchComplaints(pagination.current_page + 1)}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-gray-50 transition-colors"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

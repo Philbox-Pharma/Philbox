@@ -1,6 +1,7 @@
 import Review from '../../../../../../models/Review.js';
 import Complaint from '../../../../../../models/Complaint.js';
 import Feedback from '../../../../../../models/Feedback.js';
+import mongoose from 'mongoose';
 import { logAdminActivity } from '../../../../utils/logAdminActivities.js';
 
 class FeedbackComplaintsAnalyticsService {
@@ -9,9 +10,21 @@ class FeedbackComplaintsAnalyticsService {
    */
   async getReviewSentimentAnalysis(query, req) {
     try {
-      const { startDate, endDate } = query;
+      const { startDate, endDate, branchId } = query;
 
       const matchFilter = {};
+
+      const adminCategory = req.admin?.category;
+      const adminBranchesManaged = req.admin?.branches_managed || [];
+
+      // Branch security scoping
+      if (adminCategory === 'branch-admin' && adminBranchesManaged.length > 0) {
+        matchFilter.assigned_branch_id = { 
+          $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)) 
+        };
+      } else if (branchId) {
+        matchFilter.assigned_branch_id = new mongoose.Types.ObjectId(branchId);
+      }
 
       if (startDate || endDate) {
         matchFilter.created_at = {};
@@ -68,8 +81,15 @@ class FeedbackComplaintsAnalyticsService {
         null
       );
 
+      const breakdown = {
+        positive: chartData.find(i => i.sentiment === 'positive')?.count || 0,
+        negative: chartData.find(i => i.sentiment === 'negative')?.count || 0,
+        neutral: chartData.find(i => i.sentiment === 'neutral')?.count || 0,
+      };
+
       return {
         totalReviews,
+        ...breakdown,
         sentimentBreakdown: chartData,
       };
     } catch (error) {
@@ -82,11 +102,23 @@ class FeedbackComplaintsAnalyticsService {
    */
   async getComplaintResolutionTime(query, req) {
     try {
-      const { startDate, endDate } = query;
+      const { startDate, endDate, branchId } = query;
 
       const matchFilter = {
         status: { $in: ['resolved', 'closed'] },
       };
+
+      const adminCategory = req.admin?.category;
+      const adminBranchesManaged = req.admin?.branches_managed || [];
+
+      // Branch security scoping
+      if (adminCategory === 'branch-admin' && adminBranchesManaged.length > 0) {
+        matchFilter.assigned_branch_id = { 
+          $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)) 
+        };
+      } else if (branchId) {
+        matchFilter.assigned_branch_id = new mongoose.Types.ObjectId(branchId);
+      }
 
       if (startDate || endDate) {
         matchFilter.created_at = {};
@@ -151,9 +183,21 @@ class FeedbackComplaintsAnalyticsService {
    */
   async getComplaintsByCategory(query, req) {
     try {
-      const { startDate, endDate } = query;
+      const { startDate, endDate, branchId } = query;
 
       const matchFilter = {};
+
+      const adminCategory = req.admin?.category;
+      const adminBranchesManaged = req.admin?.branches_managed || [];
+
+      // Branch security scoping
+      if (adminCategory === 'branch-admin' && adminBranchesManaged.length > 0) {
+        matchFilter.assigned_branch_id = { 
+          $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)) 
+        };
+      } else if (branchId) {
+        matchFilter.assigned_branch_id = new mongoose.Types.ObjectId(branchId);
+      }
 
       if (startDate || endDate) {
         matchFilter.created_at = {};
@@ -283,9 +327,21 @@ class FeedbackComplaintsAnalyticsService {
    */
   async getComplaintResolutionStatus(query, req) {
     try {
-      const { startDate, endDate } = query;
+      const { startDate, endDate, branchId } = query;
 
       const matchFilter = {};
+
+      const adminCategory = req.admin?.category;
+      const adminBranchesManaged = req.admin?.branches_managed || [];
+
+      // Branch security scoping
+      if (adminCategory === 'branch-admin' && adminBranchesManaged.length > 0) {
+        matchFilter.assigned_branch_id = { 
+          $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)) 
+        };
+      } else if (branchId) {
+        matchFilter.assigned_branch_id = new mongoose.Types.ObjectId(branchId);
+      }
 
       if (startDate || endDate) {
         matchFilter.created_at = {};
@@ -500,7 +556,7 @@ class FeedbackComplaintsAnalyticsService {
    */
   async getComplaintTrends(query, req) {
     try {
-      const { startDate, endDate, period = 'daily' } = query;
+      const { startDate, endDate, branchId } = query;
 
       const start = startDate
         ? new Date(startDate)
@@ -510,6 +566,18 @@ class FeedbackComplaintsAnalyticsService {
       const matchFilter = {
         created_at: { $gte: start, $lte: end },
       };
+
+      const adminCategory = req.admin?.category;
+      const adminBranchesManaged = req.admin?.branches_managed || [];
+
+      // Branch security scoping
+      if (adminCategory === 'branch-admin' && adminBranchesManaged.length > 0) {
+        matchFilter.assigned_branch_id = { 
+          $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)) 
+        };
+      } else if (branchId) {
+        matchFilter.assigned_branch_id = new mongoose.Types.ObjectId(branchId);
+      }
 
       // Group by period
       let groupBy;
@@ -605,9 +673,21 @@ class FeedbackComplaintsAnalyticsService {
    */
   async getOverallSummary(query, req) {
     try {
-      const { startDate, endDate } = query;
+      const { startDate, endDate, branchId } = query;
 
       const matchFilter = {};
+
+      const adminCategory = req.admin?.category;
+      const adminBranchesManaged = req.admin?.branches_managed || [];
+
+      // Branch security scoping
+      if (adminCategory === 'branch-admin' && adminBranchesManaged.length > 0) {
+        matchFilter.assigned_branch_id = { 
+          $in: adminBranchesManaged.map(id => new mongoose.Types.ObjectId(id)) 
+        };
+      } else if (branchId) {
+        matchFilter.assigned_branch_id = new mongoose.Types.ObjectId(branchId);
+      }
 
       if (startDate || endDate) {
         matchFilter.created_at = {};
@@ -622,6 +702,7 @@ class FeedbackComplaintsAnalyticsService {
         totalFeedback,
         resolvedComplaints,
         avgRating,
+        avgResolutionDays,
       ] = await Promise.all([
         Review.countDocuments(matchFilter),
         Complaint.countDocuments(matchFilter),
@@ -636,6 +717,30 @@ class FeedbackComplaintsAnalyticsService {
             $group: {
               _id: null,
               averageRating: { $avg: '$rating' },
+            },
+          },
+        ]),
+        Complaint.aggregate([
+          {
+            $match: {
+              ...matchFilter,
+              status: { $in: ['resolved', 'closed'] },
+            },
+          },
+          {
+            $project: {
+              resolutionDays: {
+                $divide: [
+                  { $subtract: ['$updated_at', '$created_at'] },
+                  1000 * 60 * 60 * 24,
+                ],
+              },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              averageResolutionDays: { $avg: '$resolutionDays' },
             },
           },
         ]),
@@ -661,6 +766,10 @@ class FeedbackComplaintsAnalyticsService {
         averageRating:
           avgRating.length > 0
             ? parseFloat(avgRating[0].averageRating.toFixed(2))
+            : 0,
+        avgResolutionTime:
+          avgResolutionDays.length > 0
+            ? parseFloat(avgResolutionDays[0].averageResolutionDays.toFixed(2))
             : 0,
         resolutionRate:
           totalComplaints > 0

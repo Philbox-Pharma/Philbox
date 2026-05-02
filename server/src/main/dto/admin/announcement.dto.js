@@ -27,13 +27,13 @@ export const createAnnouncementDTO = Joi.object({
       'any.only':
         "Delivery methods must be one of: 'email', 'sms', 'push', 'in-app'",
     }),
-  scheduled_at: Joi.date().required().min('now').messages({
+  scheduled_at: Joi.date().required().messages({
     'date.base': 'Scheduled time must be a valid date',
-    'date.min': 'Scheduled time must be in the future',
   }),
   notes: Joi.string().optional().trim().max(1000).messages({
     'string.max': 'Notes must not exceed 1000 characters',
   }),
+  type: Joi.string().optional(),
 });
 
 export const updateAnnouncementDTO = Joi.object({
@@ -61,13 +61,13 @@ export const updateAnnouncementDTO = Joi.object({
       'any.only':
         "Delivery methods must be one of: 'email', 'sms', 'push', 'in-app'",
     }),
-  scheduled_at: Joi.date().optional().min('now').messages({
+  scheduled_at: Joi.date().optional().messages({
     'date.base': 'Scheduled time must be a valid date',
-    'date.min': 'Scheduled time must be in the future',
   }),
   notes: Joi.string().optional().trim().max(1000).messages({
     'string.max': 'Notes must not exceed 1000 characters',
   }),
+  type: Joi.string().optional(),
 }).min(1);
 
 export const getAnnouncementsDTO = Joi.object({

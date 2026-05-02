@@ -63,10 +63,11 @@ export default function AdminList() {
     setLoading(true);
     setError(null);
 
-
     try {
       const filters = {};
-      if (searchRef.current) filters.search = searchRef.current;
+      if (searchRef.current && searchRef.current.trim()) {
+        filters.search = searchRef.current.trim();
+      }
       if (statusFilter) filters.status = statusFilter;
 
       const response = await staffApi.getAdmins(page, limit, filters);
@@ -79,7 +80,14 @@ export default function AdminList() {
       }
     } catch (err) {
       console.error('Failed to fetch admins:', err);
-      setError(err.message || 'Failed to load admins');
+      const errorMessage =
+        err?.data?.message ||
+        (Array.isArray(err?.data?.error)
+          ? err.data.error.join(', ')
+          : null) ||
+        err?.message ||
+        'Failed to load admins. Please try again.';
+      setError(errorMessage);
       setAdmins([]);
       setPagination(null);
     } finally {
@@ -447,8 +455,6 @@ export default function AdminList() {
               <option value="blocked">Blocked</option>
             </select>
           </div>
-
-
         </div>
       </div>
 

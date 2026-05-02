@@ -196,10 +196,12 @@ export const branchApi = {
 // Base: /api/admin/revenue-analytics
 export const revenueApi = {
   // GET /api/admin/revenue-analytics/overview
-  getOverview: (startDate, endDate) => {
+  getOverview: (startDate, endDate, period, branchId) => {
     const params = new URLSearchParams();
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
+    if (period) params.append('period', period);
+    if (branchId) params.append('branchId', branchId);
     const query = params.toString() ? `?${params}` : '';
     return fetchWithAuth(`/admin/revenue-analytics/overview${query}`);
   },
@@ -514,11 +516,12 @@ export const rolesApi = {
 // ============ ACTIVITY LOGS APIs ============
 export const activityLogsApi = {
   // GET /api/admin/activity-logs-analytics/overview
-  getOverview: (startDate, endDate) => {
+  getOverview: (filters = {}) => {
     const params = new URLSearchParams();
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-    return fetchWithAuth(`/admin/activity-logs-analytics/overview?${params}`);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
+    return fetchWithAuth(`/admin/activity-logs-analytics/overview?${params.toString()}`);
   },
 
   // GET /api/admin/activity-logs-analytics/timeline
@@ -529,9 +532,10 @@ export const activityLogsApi = {
     if (filters.userId) params.append('userId', filters.userId);
     if (filters.actionType) params.append('actionType', filters.actionType);
     if (filters.userRole) params.append('userRole', filters.userRole);
+    if (filters.branchId) params.append('branchId', filters.branchId);
     if (filters.page) params.append('page', filters.page);
     if (filters.limit) params.append('limit', filters.limit);
-    return fetchWithAuth(`/admin/activity-logs-analytics/timeline?${params}`);
+    return fetchWithAuth(`/admin/activity-logs-analytics/timeline?${params.toString()}`);
   },
 
   // GET /api/admin/activity-logs-analytics/frequent-actions
@@ -540,19 +544,21 @@ export const activityLogsApi = {
     if (filters.startDate) params.append('startDate', filters.startDate);
     if (filters.endDate) params.append('endDate', filters.endDate);
     if (filters.userRole) params.append('userRole', filters.userRole);
+    if (filters.branchId) params.append('branchId', filters.branchId);
     if (filters.topN) params.append('topN', filters.topN);
     return fetchWithAuth(
-      `/admin/activity-logs-analytics/frequent-actions?${params}`
+      `/admin/activity-logs-analytics/frequent-actions?${params.toString()}`
     );
   },
 
   // GET /api/admin/activity-logs-analytics/login-attempts
-  getLoginAttempts: (startDate, endDate) => {
+  getLoginAttempts: (filters = {}) => {
     const params = new URLSearchParams();
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
     return fetchWithAuth(
-      `/admin/activity-logs-analytics/login-attempts?${params}`
+      `/admin/activity-logs-analytics/login-attempts?${params.toString()}`
     );
   },
 
@@ -561,10 +567,11 @@ export const activityLogsApi = {
     const params = new URLSearchParams();
     if (filters.startDate) params.append('startDate', filters.startDate);
     if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branchId', filters.branchId);
     if (filters.page) params.append('page', filters.page);
     if (filters.limit) params.append('limit', filters.limit);
     return fetchWithAuth(
-      `/admin/activity-logs-analytics/suspicious-activities?${params}`
+      `/admin/activity-logs-analytics/suspicious-activities?${params.toString()}`
     );
   },
 };
@@ -579,7 +586,7 @@ export const userEngagementApi = {
     if (filters.period) params.append('period', filters.period);
     if (filters.branchId) params.append('branchId', filters.branchId);
     if (filters.limit) params.append('limit', filters.limit);
-    return fetchWithAuth(`/admin/user-engagement-analytics/overview?${params}`);
+    return fetchWithAuth(`/admin/user-engagement-analytics/overview?${params.toString()}`);
   },
 
   // GET /api/admin/user-engagement-analytics/new-customers
@@ -1050,6 +1057,67 @@ export const appointmentAnalyticsApi = {
   },
 };
 
+// ============ SALESPERSON PERFORMANCE ANALYTICS APIs ============
+// Base: /api/admin/salesperson-performance
+export const salespersonPerformanceApi = {
+  // GET /api/admin/salesperson-performance/overview
+  getOverview: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branch_id', filters.branchId);
+    return fetchWithAuth(`/admin/salesperson-performance/overview?${params}`);
+  },
+
+  // GET /api/admin/salesperson-performance/leaderboard
+  getLeaderboard: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branch_id', filters.branchId);
+    return fetchWithAuth(
+      `/admin/salesperson-performance/leaderboard?${params}`
+    );
+  },
+
+  // GET /api/admin/salesperson-performance/tasks-completion
+  getTasksCompletion: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branch_id', filters.branchId);
+    if (filters.salespersonId)
+      params.append('salesperson_id', filters.salespersonId);
+    return fetchWithAuth(
+      `/admin/salesperson-performance/tasks-completion?${params}`
+    );
+  },
+
+  // GET /api/admin/salesperson-performance/trends
+  getTrends: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branch_id', filters.branchId);
+    if (filters.salespersonId)
+      params.append('salesperson_id', filters.salespersonId);
+    return fetchWithAuth(`/admin/salesperson-performance/trends?${params}`);
+  },
+
+  // GET /api/admin/salesperson-performance/completion-time
+  getCompletionTime: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.branchId) params.append('branch_id', filters.branchId);
+    if (filters.salespersonId)
+      params.append('salesperson_id', filters.salespersonId);
+    return fetchWithAuth(
+      `/admin/salesperson-performance/completion-time?${params}`
+    );
+  },
+};
+
 // ============ GLOBAL SEARCH HELPER ============
 // Searches across all entities in parallel
 export const globalSearchApi = {
@@ -1185,7 +1253,7 @@ export const complaintsApi = {
   updateStatus: (id, status, notes) =>
     fetchWithAuth(`/admin/complaints/${id}/status`, {
       method: 'PATCH',
-      body: JSON.stringify({ status, internal_notes: notes }),
+      body: JSON.stringify({ status, resolution_note: notes }),
     }),
   assign: (id, adminId) =>
     fetchWithAuth(`/admin/complaints/${id}/assign`, {
@@ -1250,9 +1318,20 @@ export const reportsApi = {
     }),
   getHistory: (filters = {}) => {
     const params = new URLSearchParams(filters);
-    return fetchWithAuth(`/admin/reports/history?${params}`);
+    return fetchWithAuth(`/admin/reports?${params}`);
   },
-  download: id => fetchWithAuth(`/admin/reports/${id}/download`),
+  download: (id, format = 'pdf') => {
+    const baseUrl =
+      import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    return fetch(`${baseUrl}/admin/reports/${id}/download?format=${format}`, {
+      headers: {
+        // We use credentials for session cookies
+      },
+    }).then(res => {
+      if (!res.ok) throw new Error('Download failed');
+      return res.blob();
+    });
+  },
 };
 
 export const exportsApi = {
@@ -1282,6 +1361,7 @@ export default {
   doctors: doctorApi,
   feedbackComplaints: feedbackComplaintsApi,
   appointmentAnalytics: appointmentAnalyticsApi,
+  salespersonPerformance: salespersonPerformanceApi,
   globalSearch: globalSearchApi,
   announcements: announcementsApi,
   complaints: complaintsApi,

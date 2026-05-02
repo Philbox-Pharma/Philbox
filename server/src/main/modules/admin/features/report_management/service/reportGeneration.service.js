@@ -113,7 +113,7 @@ class ReportGenerationService {
     const outOfStockItems = stocks.filter(s => s.quantity === 0);
     const totalValue = stocks.reduce((sum, s) => {
       const medicine = medicines.find(
-        m => m._id.toString() === s.medicine_id._id?.toString()
+        m => m._id.toString() === s.medicine_id?._id?.toString()
       );
       return sum + (medicine?.sale_price || 0) * s.quantity;
     }, 0);
@@ -311,7 +311,7 @@ class ReportGenerationService {
 
     // Get unique customers
     const uniqueCustomerIds = new Set(
-      activityLogs.map(log => log.customer_id._id.toString())
+      activityLogs.map(log => log.customer_id?._id?.toString()).filter(Boolean)
     );
     const uniqueCustomers = uniqueCustomerIds.size;
 

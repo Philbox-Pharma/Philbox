@@ -1,9 +1,40 @@
+import mongoose from 'mongoose';
 import Transaction from '../../../../../../models/Transaction.js';
 import Branch from '../../../../../../models/Branch.js';
 import Order from '../../../../../../models/Order.js';
+import Appointment from '../../../../../../models/Appointment.js';
 import { logAdminActivity } from '../../../../utils/logAdminActivities.js';
 
 class RevenueAnalyticsService {
+  /**
+   * Helper to get branch filter based on admin category
+   */
+  async getBranchSpecificOrderIds(branchId, req) {
+    const filter = {};
+
+    // If branchId is provided in query, use it
+    if (branchId) {
+      filter.branch_id = new mongoose.Types.ObjectId(branchId);
+    } else if (req.admin && req.admin.category === 'branch-admin') {
+      // If branch admin and no specific branchId, use all managed branches
+      const managedBranches = req.admin.branches_managed || [];
+      if (managedBranches.length > 0) {
+        filter.branch_id = {
+          $in: managedBranches.map(id => new mongoose.Types.ObjectId(id)),
+        };
+      } else {
+        // No branches managed? Return empty to avoid global data
+        return [];
+      }
+    } else {
+      // Super admin with no branchId filter -> see everything
+      return null;
+    }
+
+    const orders = await Order.find(filter).select('_id');
+    return orders.map(o => o._id);
+  }
+
   /**
    * Get Revenue Trends (Daily/Weekly/Monthly)
    */
@@ -13,7 +44,7 @@ class RevenueAnalyticsService {
 
       const start = startDate
         ? new Date(startDate)
-        : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Default: last 30 days
+        : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const end = endDate ? new Date(endDate) : new Date();
 
       // Build match filter
@@ -23,35 +54,37 @@ class RevenueAnalyticsService {
         transaction_type: 'pay',
       };
 
-      // If branch admin or filtering by branch (orders only, appointments are not branch-specific)
-      if (branchId) {
-        const branchOrders = await Order.find({ branch_id: branchId }).select(
-          '_id'
-        );
-
+      // Handle branch restrictions
+      const targetOrderIds = await this.getBranchSpecificOrderIds(branchId, req);
+      if (targetOrderIds !== null) {
         matchFilter.target_class = 'order';
-        matchFilter.target_id = { $in: branchOrders.map(o => o._id) };
+        matchFilter.target_id = { $in: targetOrderIds };
       }
 
       // Group by period
       let groupBy;
+      let sortBy = { '_id.year': 1 };
+
       if (period === 'daily') {
         groupBy = {
           year: { $year: '$transaction_at' },
           month: { $month: '$transaction_at' },
           day: { $dayOfMonth: '$transaction_at' },
         };
+        sortBy = { ...sortBy, '_id.month': 1, '_id.day': 1 };
       } else if (period === 'weekly') {
         groupBy = {
           year: { $year: '$transaction_at' },
           week: { $week: '$transaction_at' },
         };
+        sortBy = { ...sortBy, '_id.week': 1 };
       } else {
         // monthly
         groupBy = {
           year: { $year: '$transaction_at' },
           month: { $month: '$transaction_at' },
         };
+        sortBy = { ...sortBy, '_id.month': 1 };
       }
 
       const trends = await Transaction.aggregate([
@@ -77,7 +110,7 @@ class RevenueAnalyticsService {
             },
           },
         },
-        { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
+        { $sort: sortBy },
       ]);
 
       // Log activity
@@ -114,13 +147,11 @@ class RevenueAnalyticsService {
         transaction_type: 'pay',
       };
 
-      if (branchId) {
-        const branchOrders = await Order.find({ branch_id: branchId }).select(
-          '_id'
-        );
-
+      // Handle branch restrictions
+      const targetOrderIds = await this.getBranchSpecificOrderIds(branchId, req);
+      if (targetOrderIds !== null) {
         matchFilter.target_class = 'order';
-        matchFilter.target_id = { $in: branchOrders.map(o => o._id) };
+        matchFilter.target_id = { $in: targetOrderIds };
       }
 
       const split = await Transaction.aggregate([
@@ -141,12 +172,14 @@ class RevenueAnalyticsService {
       };
 
       split.forEach(item => {
-        result[item._id] = {
-          revenue: item.revenue,
-          count: item.count,
-        };
-        result.total.revenue += item.revenue;
-        result.total.count += item.count;
+        if (result[item._id]) {
+          result[item._id] = {
+            revenue: item.revenue,
+            count: item.count,
+          };
+          result.total.revenue += item.revenue;
+          result.total.count += item.count;
+        }
       });
 
       result.appointment.percentage =
@@ -187,54 +220,52 @@ class RevenueAnalyticsService {
         : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const end = endDate ? new Date(endDate) : new Date();
 
-      // Get all branches with their transactions
-      const branches = await Branch.find({ status: 'Active' });
-
-      const branchRevenues = [];
-
-      for (const branch of branches) {
-        // Get orders for this branch (appointments are not branch-specific)
-        const branchOrders = await Order.find({
-          branch_id: branch._id,
-        }).select('_id');
-
-        const targetIds = branchOrders.map(o => o._id);
-
-        if (targetIds.length > 0) {
-          const revenue = await Transaction.aggregate([
-            {
-              $match: {
-                transaction_at: { $gte: start, $lte: end },
-                payment_status: 'successful',
-                transaction_type: 'pay',
-                target_id: { $in: targetIds },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                totalRevenue: { $sum: '$total_bill' },
-                transactionCount: { $sum: 1 },
-              },
-            },
-          ]);
-
-          if (revenue.length > 0) {
-            branchRevenues.push({
-              branchId: branch._id,
-              branchName: branch.name,
-              address: branch.address_id,
-              totalRevenue: revenue[0].totalRevenue,
-              transactionCount: revenue[0].transactionCount,
-            });
-          }
-        }
-      }
-
-      // Sort by revenue and limit
-      const topBranches = branchRevenues
-        .sort((a, b) => b.totalRevenue - a.totalRevenue)
-        .slice(0, parseInt(limit));
+      const topBranches = await Transaction.aggregate([
+        {
+          $match: {
+            transaction_at: { $gte: start, $lte: end },
+            payment_status: 'successful',
+            transaction_type: 'pay',
+            target_class: 'order',
+          },
+        },
+        {
+          $lookup: {
+            from: 'orders',
+            localField: 'target_id',
+            foreignField: '_id',
+            as: 'order_details',
+          },
+        },
+        { $unwind: '$order_details' },
+        {
+          $group: {
+            _id: '$order_details.branch_id',
+            revenue: { $sum: '$total_bill' },
+            transactionCount: { $sum: 1 },
+          },
+        },
+        {
+          $lookup: {
+            from: 'branches',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'branch_info',
+          },
+        },
+        { $unwind: '$branch_info' },
+        {
+          $project: {
+            branchId: '$_id',
+            name: '$branch_info.name',
+            code: '$branch_info.code',
+            revenue: 1,
+            transactionCount: 1,
+          },
+        },
+        { $sort: { revenue: -1 } },
+        { $limit: parseInt(limit) },
+      ]);
 
       await logAdminActivity(
         req,
@@ -269,13 +300,11 @@ class RevenueAnalyticsService {
         payment_status: 'successful',
       };
 
-      if (branchId) {
-        const branchOrders = await Order.find({ branch_id: branchId }).select(
-          '_id'
-        );
-
+      // Handle branch restrictions
+      const targetOrderIds = await this.getBranchSpecificOrderIds(branchId, req);
+      if (targetOrderIds !== null) {
         matchFilter.target_class = 'order';
-        matchFilter.target_id = { $in: branchOrders.map(o => o._id) };
+        matchFilter.target_id = { $in: targetOrderIds };
       }
 
       const refundStats = await Transaction.aggregate([
@@ -296,12 +325,14 @@ class RevenueAnalyticsService {
       };
 
       refundStats.forEach(item => {
-        result[item._id] = {
-          amount: item.totalRefundAmount,
-          count: item.refundCount,
-        };
-        result.total.amount += item.totalRefundAmount;
-        result.total.count += item.refundCount;
+        if (result[item._id]) {
+          result[item._id] = {
+            amount: item.totalRefundAmount,
+            count: item.refundCount,
+          };
+          result.total.amount += item.totalRefundAmount;
+          result.total.count += item.refundCount;
+        }
       });
 
       await logAdminActivity(
@@ -337,42 +368,70 @@ class RevenueAnalyticsService {
         transaction_type: 'pay',
       };
 
-      if (branchId) {
-        const branchOrders = await Order.find({ branch_id: branchId }).select(
-          '_id'
-        );
-
+      // Handle branch restrictions
+      const targetOrderIds = await this.getBranchSpecificOrderIds(branchId, req);
+      if (targetOrderIds !== null) {
         matchFilter.target_class = 'order';
-        matchFilter.target_id = { $in: branchOrders.map(o => o._id) };
+        matchFilter.target_id = { $in: targetOrderIds };
       }
 
-      // Get unique customers who made transactions
-      const transactions = await Transaction.find(matchFilter).populate([
+      const customerStats = await Transaction.aggregate([
+        { $match: matchFilter },
         {
-          path: 'target_id',
-          select: 'customer_id',
+          $lookup: {
+            from: 'orders',
+            localField: 'target_id',
+            foreignField: '_id',
+            as: 'order_info',
+          },
+        },
+        {
+          $lookup: {
+            from: 'appointments',
+            localField: 'target_id',
+            foreignField: '_id',
+            as: 'appointment_info',
+          },
+        },
+        {
+          $project: {
+            total_bill: 1,
+            customer_id: {
+              $ifNull: [
+                { $arrayElemAt: ['$order_info.customer_id', 0] },
+                { $arrayElemAt: ['$appointment_info.patient_id', 0] },
+              ],
+            },
+          },
+        },
+        { $match: { customer_id: { $ne: null } } },
+        {
+          $group: {
+            _id: '$customer_id',
+            totalSpent: { $sum: '$total_bill' },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: '$totalSpent' },
+            totalCustomers: { $sum: 1 },
+          },
         },
       ]);
 
-      const customerRevenues = {};
-
-      transactions.forEach(transaction => {
-        if (transaction.target_id && transaction.target_id.customer_id) {
-          const customerId = transaction.target_id.customer_id.toString();
-          if (!customerRevenues[customerId]) {
-            customerRevenues[customerId] = 0;
-          }
-          customerRevenues[customerId] += transaction.total_bill;
-        }
-      });
-
-      const totalCustomers = Object.keys(customerRevenues).length;
-      const totalRevenue = Object.values(customerRevenues).reduce(
-        (sum, rev) => sum + rev,
-        0
-      );
-      const averageRevenue =
-        totalCustomers > 0 ? (totalRevenue / totalCustomers).toFixed(2) : 0;
+      const result =
+        customerStats.length > 0
+          ? {
+              totalRevenue: customerStats[0].totalRevenue,
+              totalCustomers: customerStats[0].totalCustomers,
+              averageRevenue: parseFloat(
+                (
+                  customerStats[0].totalRevenue / customerStats[0].totalCustomers
+                ).toFixed(2)
+              ),
+            }
+          : { totalRevenue: 0, totalCustomers: 0, averageRevenue: 0 };
 
       await logAdminActivity(
         req,
@@ -382,11 +441,7 @@ class RevenueAnalyticsService {
         null
       );
 
-      return {
-        totalRevenue,
-        totalCustomers,
-        averageRevenue: parseFloat(averageRevenue),
-      };
+      return result;
     } catch (error) {
       console.error('Error in getAverageRevenuePerCustomer:', error);
       throw error;
@@ -411,13 +466,11 @@ class RevenueAnalyticsService {
         transaction_type: 'pay',
       };
 
-      if (branchId) {
-        const branchOrders = await Order.find({ branch_id: branchId }).select(
-          '_id'
-        );
-
+      // Handle branch restrictions
+      const targetOrderIds = await this.getBranchSpecificOrderIds(branchId, req);
+      if (targetOrderIds !== null) {
         matchFilter.target_class = 'order';
-        matchFilter.target_id = { $in: branchOrders.map(o => o._id) };
+        matchFilter.target_id = { $in: targetOrderIds };
       }
 
       const breakdown = await Transaction.aggregate([
@@ -432,9 +485,6 @@ class RevenueAnalyticsService {
       ]);
 
       const result = {
-        'Stripe-Card': { revenue: 0, count: 0 },
-        'JazzCash-Wallet': { revenue: 0, count: 0 },
-        'EasyPaisa-Wallet': { revenue: 0, count: 0 },
         total: { revenue: 0, count: 0 },
       };
 
@@ -447,12 +497,21 @@ class RevenueAnalyticsService {
         result.total.count += item.count;
       });
 
-      // Calculate percentages
-      Object.keys(result).forEach(key => {
-        if (key !== 'total') {
-          result[key].percentage =
+      // Calculate percentages and ensure standard keys exist (even if 0)
+      const standardMethods = [
+        'Stripe-Card',
+        'JazzCash-Wallet',
+        'EasyPaisa-Wallet',
+      ];
+      standardMethods.forEach(method => {
+        if (!result[method]) {
+          result[method] = { revenue: 0, count: 0, percentage: 0 };
+        } else {
+          result[method].percentage =
             result.total.revenue > 0
-              ? ((result[key].revenue / result.total.revenue) * 100).toFixed(2)
+              ? ((result[method].revenue / result.total.revenue) * 100).toFixed(
+                  2
+                )
               : 0;
         }
       });
