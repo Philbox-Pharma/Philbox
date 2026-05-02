@@ -29,10 +29,17 @@ export const createTaskDTO = Joi.object({
 
 // Update task DTO
 export const updateTaskDTO = Joi.object({
-  title: Joi.string().trim().min(3).max(200).optional(),
+  salesperson_id: Joi.string().optional(),
+  branch_id: Joi.string().optional(),
+  title: Joi.string().trim().min(3).max(200).optional().messages({
+    'string.min': 'Title must be at least 3 characters',
+    'string.max': 'Title must not exceed 200 characters',
+  }),
   description: Joi.string().trim().max(1000).optional().allow(''),
   priority: Joi.string().valid('low', 'medium', 'high', 'urgent').optional(),
-  deadline: Joi.date().iso().optional(),
+  deadline: Joi.date().iso().optional().messages({
+    'date.base': 'Deadline must be a valid date',
+  }),
   status: Joi.string()
     .valid('pending', 'in-progress', 'completed', 'cancelled')
     .optional(),

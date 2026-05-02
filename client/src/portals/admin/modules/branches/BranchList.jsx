@@ -155,9 +155,17 @@ export default function BranchList() {
       sortable: true,
       render: (value, row) => (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[#1a365d]/10 flex items-center justify-center">
-            <FaCodeBranch className="text-[#1a365d]" />
-          </div>
+          {row.cover_img_url ? (
+            <img
+              src={row.cover_img_url}
+              alt={value}
+              className="w-10 h-10 rounded-lg object-cover border border-gray-100"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-[#1a365d]/10 flex items-center justify-center">
+              <FaCodeBranch className="text-[#1a365d]" />
+            </div>
+          )}
           <div>
             <p className="font-medium text-gray-800">{value}</p>
             <p className="text-xs text-gray-500">{row.code}</p>
@@ -344,9 +352,6 @@ export default function BranchList() {
           <option value="Active">Active</option>
           <option value="Inactive">Inactive</option>
         </select>
-        <button className="inline-flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50">
-          <FaDownload /> Export
-        </button>
       </div>
 
       {/* Table */}
@@ -363,9 +368,17 @@ export default function BranchList() {
           <div className="p-4 space-y-3">
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#1a365d]/10 flex items-center justify-center">
-                  <FaCodeBranch className="text-[#1a365d]" />
-                </div>
+                {row.cover_img_url ? (
+                  <img
+                    src={row.cover_img_url}
+                    alt={row.name}
+                    className="w-10 h-10 rounded-lg object-cover border border-gray-100"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-lg bg-[#1a365d]/10 flex items-center justify-center">
+                    <FaCodeBranch className="text-[#1a365d]" />
+                  </div>
+                )}
                 <div>
                   <p className="font-medium text-gray-800 break-all">
                     {row.name}

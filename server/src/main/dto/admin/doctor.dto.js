@@ -10,7 +10,7 @@ export const getDoctorsDTO = Joi.object({
   search: Joi.string().optional(),
   specialization: Joi.string().optional(),
   account_status: Joi.string()
-    .valid('active', 'rejected', 'blocked/removed')
+    .valid('active', 'under_consideration', 'rejected', 'suspended/freezed', 'blocked/removed')
     .optional(),
   sortBy: Joi.string()
     .valid('fullName', 'created_at', 'averageRating', 'consultation_fee')
@@ -38,10 +38,10 @@ export const updateDoctorProfileDTO = Joi.object({
  */
 export const updateDoctorStatusDTO = Joi.object({
   status: Joi.string()
-    .valid('active', 'rejected', 'blocked/removed')
+    .valid('active', 'suspended/freezed', 'blocked/removed')
     .required(),
-  reason: Joi.string().when('status', {
-    is: Joi.valid('rejected', 'blocked/removed'),
+  reason: Joi.string().allow('', null).when('status', {
+    is: Joi.valid('rejected', 'suspended/freezed', 'blocked/removed'),
     then: Joi.required(),
     otherwise: Joi.optional(),
   }),

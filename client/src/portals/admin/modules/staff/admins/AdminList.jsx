@@ -192,15 +192,23 @@ export default function AdminList() {
       label: 'Admin',
       sortable: true,
       render: (value, row) => {
-        const avatar = getAvatarStyles(row);
         const name = getAdminName(row);
+        const avatar = getAvatarStyles(row);
         return (
           <div className="flex items-center gap-3">
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center ${avatar.bg}`}
-            >
-              <FaUserShield className={avatar.text} />
-            </div>
+            {row.profile_img_url ? (
+              <img
+                src={row.profile_img_url}
+                alt={name}
+                className="w-10 h-10 rounded-full object-cover border border-gray-100"
+              />
+            ) : (
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center ${avatar.bg}`}
+              >
+                <FaUserShield className={avatar.text} />
+              </div>
+            )}
             <div>
               <p className="font-medium text-gray-800">{name}</p>
               <p className="text-xs text-gray-500">{row.email}</p>
@@ -262,13 +270,15 @@ export default function AdminList() {
       >
         <FaEye />
       </Link>
-      <Link
-        to={`/admin/staff/admins/${row._id}/edit`}
-        className="p-2 text-[#d69e2e] hover:bg-yellow-50 rounded-lg transition-colors"
-        title="Edit"
-      >
-        <FaEdit />
-      </Link>
+      {!isSuperAdmin(row) && (
+        <Link
+          to={`/admin/staff/admins/${row._id}/edit`}
+          className="p-2 text-[#d69e2e] hover:bg-yellow-50 rounded-lg transition-colors"
+          title="Edit"
+        >
+          <FaEdit />
+        </Link>
+      )}
     </div>
   );
 
@@ -283,11 +293,19 @@ export default function AdminList() {
         {/* Header: Avatar + Name + Status */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div
-              className={`w-12 h-12 rounded-full flex items-center justify-center ${avatar.bg}`}
-            >
-              <FaUserShield className={`text-xl ${avatar.text}`} />
-            </div>
+            {row.profile_img_url ? (
+              <img
+                src={row.profile_img_url}
+                alt={name}
+                className="w-12 h-12 rounded-full object-cover border border-gray-100 shadow-sm"
+              />
+            ) : (
+              <div
+                className={`w-12 h-12 rounded-full flex items-center justify-center ${avatar.bg}`}
+              >
+                <FaUserShield className={`text-xl ${avatar.text}`} />
+              </div>
+            )}
             <div>
               <h3 className="font-semibold text-gray-800">{name}</h3>
               <span
@@ -349,13 +367,15 @@ export default function AdminList() {
             <FaEye className="text-xs" />
             <span>View</span>
           </Link>
-          <Link
-            to={`/admin/staff/admins/${row._id}/edit`}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#d69e2e] bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors"
-          >
-            <FaEdit className="text-xs" />
-            <span>Edit</span>
-          </Link>
+          {!isSuperAdmin(row) && (
+            <Link
+              to={`/admin/staff/admins/${row._id}/edit`}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-[#d69e2e] bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors"
+            >
+              <FaEdit className="text-xs" />
+              <span>Edit</span>
+            </Link>
+          )}
         </div>
       </div>
     );
@@ -428,11 +448,7 @@ export default function AdminList() {
             </select>
           </div>
 
-          {/* Export - Hidden on mobile */}
-          <button className="hidden sm:inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-            <FaDownload />
-            <span>Export</span>
-          </button>
+
         </div>
       </div>
 

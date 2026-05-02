@@ -153,9 +153,17 @@ export default function SalespersonList() {
       sortable: true,
       render: (value, row) => (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-            <FaUserTie className="text-orange-600" />
-          </div>
+          {row.profile_img_url ? (
+            <img
+              src={row.profile_img_url}
+              alt={value}
+              className="w-10 h-10 rounded-full object-cover border border-gray-100"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+              <FaUserTie className="text-orange-600" />
+            </div>
+          )}
           <div>
             <p className="font-medium text-gray-800">{value}</p>
             <p className="text-xs text-gray-500">{row.email}</p>
@@ -264,9 +272,17 @@ export default function SalespersonList() {
       {/* Header: Avatar + Name + Status */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
-            <FaUserTie className="text-orange-600 text-xl" />
-          </div>
+          {row.profile_img_url ? (
+            <img
+              src={row.profile_img_url}
+              alt={row.fullName}
+              className="w-12 h-12 rounded-full object-cover border border-gray-100 shadow-sm"
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+              <FaUserTie className="text-orange-600 text-xl" />
+            </div>
+          )}
           <div>
             <h3 className="font-semibold text-gray-800">{row.fullName}</h3>
             <span
@@ -448,11 +464,7 @@ export default function SalespersonList() {
             </select>
           </div>
 
-          {/* Export - Hidden on mobile */}
-          <button className="hidden sm:inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-            <FaDownload />
-            <span>Export</span>
-          </button>
+
         </div>
       </div>
 

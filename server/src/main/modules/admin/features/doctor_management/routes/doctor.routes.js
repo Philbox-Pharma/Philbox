@@ -10,6 +10,7 @@ import {
   updateDoctorProfile,
   updateDoctorStatus,
   getDoctorPerformanceMetrics,
+  getDoctorStats,
 } from '../controller/doctor.controller.js';
 import { validate } from '../../../../../validator/joiValidate.middleware.js';
 import {
@@ -63,6 +64,9 @@ router.patch(
 
 // 🩺 GET All Doctors (with filters & search)
 router.get('/', validate(getDoctorsDTO, 'query'), getAllDoctors);
+
+// 📊 GET Doctor Stats (Counts by status)
+router.get('/stats', getDoctorStats);
 
 // 📊 GET Doctor Performance Metrics (must come before /:id to avoid conflicts)
 router.get('/:id/metrics', getDoctorPerformanceMetrics);

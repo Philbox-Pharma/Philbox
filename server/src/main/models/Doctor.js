@@ -59,7 +59,13 @@ const Schema = {
   // Status with hyphen requires quotes in key
   account_status: {
     type: String,
-    enum: ['active', 'under_consideration', 'rejected', 'blocked/removed'],
+    enum: [
+      'active',
+      'under_consideration',
+      'rejected',
+      'suspended/freezed',
+      'blocked/removed',
+    ],
     default: 'under_consideration', // Default to under_consideration until approved
   },
 

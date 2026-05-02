@@ -32,11 +32,23 @@ const StatusBadge = ({ status }) => {
       icon: FaClock,
       label: 'Onboarding',
     },
+    'suspended/freezed': {
+      bg: 'bg-orange-100',
+      text: 'text-orange-700',
+      icon: FaClock,
+      label: 'Suspended',
+    },
     'blocked/removed': {
       bg: 'bg-red-100',
       text: 'text-red-700',
       icon: FaBan,
       label: 'Blocked',
+    },
+    rejected: {
+      bg: 'bg-gray-100',
+      text: 'text-gray-700',
+      icon: FaBan,
+      label: 'Rejected',
     },
     pending: {
       bg: 'bg-blue-100',
@@ -63,9 +75,17 @@ const StatusBadge = ({ status }) => {
 const DoctorCard = ({ doctor }) => (
   <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5 hover:shadow-lg transition-all duration-300">
     <div className="flex items-start gap-4">
-      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#1a365d] to-[#2c5282] flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-        {doctor.fullName?.charAt(0) || 'D'}
-      </div>
+      {doctor.profile_img_url ? (
+        <img
+          src={doctor.profile_img_url}
+          alt={doctor.fullName}
+          className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-md flex-shrink-0"
+        />
+      ) : (
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#1a365d] to-[#2c5282] flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
+          {doctor.fullName?.charAt(0) || 'D'}
+        </div>
+      )}
 
       {/* Info */}
       <div className="flex-1 min-w-0">
@@ -136,6 +156,14 @@ export default function DoctorList() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalDoctors, setTotalDoctors] = useState(0);
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    under_consideration: 0,
+    rejected: 0,
+    'suspended/freezed': 0,
+    'blocked/removed': 0,
+  });
   const [filters, setFilters] = useState({
     search: '',
     status: '',
@@ -149,15 +177,19 @@ export default function DoctorList() {
     setError(null);
 
     try {
-      const response = await doctorApi.getAllDoctors({
-        page,
-        limit,
-        ...filters,
-      });
+      const [listRes, statsRes] = await Promise.all([
+        doctorApi.getAllDoctors({
+          page,
+          limit,
+          ...filters,
+        }),
+        doctorApi.getDoctorStats(),
+      ]);
 
-      setDoctors(response.data?.list || []);
-      setTotalPages(response.data?.totalPages || 1);
-      setTotalDoctors(response.data?.total || 0);
+      setDoctors(listRes.data?.list || []);
+      setTotalPages(listRes.data?.totalPages || 1);
+      setTotalDoctors(listRes.data?.total || 0);
+      setStats(statsRes.data);
     } catch (err) {
       console.error('Failed to fetch doctors:', err);
       setError(err.message || 'Failed to load doctors');
@@ -211,42 +243,47 @@ export default function DoctorList() {
       </div>
 
       {/* Stats Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
           <p className="text-gray-500 text-sm">Total Doctors</p>
-          <p className="text-2xl font-bold text-gray-800">{totalDoctors}</p>
+          <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+          <div className="mt-2 text-xs text-gray-400">All registered</div>
         </div>
-        <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5 p-4 sm:p-5">
-            <p className="text-sm text-gray-500 mb-1">Active Doctors</p>
-            <p className="text-2xl font-bold text-gray-800">
-              {doctors.filter(d => d.account_status === 'active').length}
-            </p>
-            <div className="mt-2 text-xs text-green-600 flex items-center gap-1">
-              <FaCheckCircle /> Verifed & Active
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5 p-4 sm:p-5">
-            <p className="text-sm text-gray-500 mb-1">Onboarding</p>
-            <p className="text-2xl font-bold text-gray-800">
-              {
-                doctors.filter(d => d.account_status === 'under_consideration')
-                  .length
-              }
-            </p>
-            <div className="mt-2 text-xs text-yellow-600 flex items-center gap-1">
-              <FaClock /> Reviewing Documents
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5 p-4 sm:p-5">
-            <p className="text-sm text-gray-500 mb-1">Blocked</p>
-            <p className="text-2xl font-bold text-gray-800">
-              {doctors.filter(d => d.account_status === 'blocked/removed').length}
-            </p>
-            <div className="mt-2 text-xs text-red-600 flex items-center gap-1">
-              <FaBan /> Account restricted
-            </div>
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4 sm:p-5">
+          <p className="text-sm text-gray-500 mb-1">Active</p>
+          <p className="text-2xl font-bold text-gray-800">{stats.active}</p>
+          <div className="mt-2 text-xs text-green-600 flex items-center gap-1">
+            <FaCheckCircle /> Verified & Active
           </div>
         </div>
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4 sm:p-5">
+          <p className="text-sm text-gray-500 mb-1">Onboarding</p>
+          <p className="text-2xl font-bold text-gray-800">
+            {stats.under_consideration}
+          </p>
+          <div className="mt-2 text-xs text-yellow-600 flex items-center gap-1">
+            <FaClock /> Reviewing
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4 sm:p-5">
+          <p className="text-sm text-gray-500 mb-1">Suspended</p>
+          <p className="text-2xl font-bold text-gray-800">
+            {stats['suspended/freezed']}
+          </p>
+          <div className="mt-2 text-xs text-orange-600 flex items-center gap-1">
+            <FaClock /> Temporarily Off
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4 sm:p-5">
+          <p className="text-sm text-gray-500 mb-1">Blocked</p>
+          <p className="text-2xl font-bold text-gray-800">
+            {stats['blocked/removed']}
+          </p>
+          <div className="mt-2 text-xs text-red-600 flex items-center gap-1">
+            <FaBan /> Restricted
+          </div>
+        </div>
+      </div>
 
 
       {/* Search & Filters */}
@@ -301,7 +338,9 @@ export default function DoctorList() {
                 <option value="">All Statuses</option>
                 <option value="active">Active</option>
                 <option value="under_consideration">Onboarding</option>
+                <option value="suspended/freezed">Suspended</option>
                 <option value="blocked/removed">Blocked</option>
+                <option value="rejected">Rejected</option>
               </select>
             </div>
 

@@ -62,6 +62,17 @@ const Timestamp = {
 
 const adminSchema = new mongoose.Schema(Schema, Timestamp);
 
+// Clean up empty strings for status before validation
+adminSchema.pre('validate', function (next) {
+  if (this.status === '') {
+    this.status = undefined;
+  }
+  if (this.category === 'super-admin' && this.status) {
+    this.status = undefined;
+  }
+  next();
+});
+
 const Admin = mongoose.model('Admin', adminSchema);
 
 export default Admin;

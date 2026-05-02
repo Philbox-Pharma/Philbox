@@ -1,25 +1,28 @@
 import Joi from 'joi';
 
 export const createBranchDTO = Joi.object({
-  name: Joi.string().trim().min(2).max(100).required().messages({
-    'string.base': 'Branch name must be a string',
-    'string.min': 'Branch name must be at least 2 characters',
-    'string.max': 'Branch name must not exceed 100 characters',
-    'any.required': 'Branch name is required',
-  }),
+  name: Joi.string()
+    .trim()
+    .pattern(/^[a-zA-Z0-9\s.-]+$/)
+    .min(2)
+    .max(100)
+    .required()
+    .messages({
+      'string.base': 'Branch name must be a string',
+      'string.pattern.base': 'Branch name can only contain letters, numbers, spaces, dots, and hyphens',
+      'string.min': 'Branch name must be at least 2 characters',
+      'string.max': 'Branch name must not exceed 100 characters',
+      'any.required': 'Branch name is required',
+    }),
 
   // Phone number for branch contact
   phone: Joi.string()
     .trim()
-    .pattern(/^[\d\s\+\-\(\)]+$/)
-    .min(10)
-    .max(20)
+    .pattern(/^(03\d{9}|\+923\d{9})$/)
     .optional()
     .messages({
       'string.base': 'Phone must be a string',
-      'string.pattern.base': 'Phone must be a valid phone number',
-      'string.min': 'Phone must be at least 10 characters',
-      'string.max': 'Phone must not exceed 20 characters',
+      'string.pattern.base': 'Phone must be a valid Pakistani number starting with 03 or +923 (e.g., 03XXXXXXXXX)',
     }),
 
   // Address fields (handled separately by seedAddress)
@@ -65,27 +68,39 @@ export const createBranchDTO = Joi.object({
       'array.base': 'under_administration_of must be an array of admin IDs',
       'string.length': 'Each admin ID must be a valid ObjectId',
     }),
+
+  salespersons_assigned: Joi.array()
+    .items(Joi.string().hex().length(24))
+    .optional()
+    .messages({
+      'array.base':
+        'salespersons_assigned must be an array of salespersons Ids IDs',
+      'string.length': 'Each salespersons ID must be a valid ObjectId',
+    }),
 });
 
 export const updateBranchDTO = Joi.object({
-  name: Joi.string().trim().min(2).max(100).optional().messages({
-    'string.base': 'Branch name must be a string',
-    'string.min': 'Branch name must be at least 2 characters',
-    'string.max': 'Branch name must not exceed 100 characters',
-  }),
+  name: Joi.string()
+    .trim()
+    .pattern(/^[a-zA-Z0-9\s.-]+$/)
+    .min(2)
+    .max(100)
+    .optional()
+    .messages({
+      'string.base': 'Branch name must be a string',
+      'string.pattern.base': 'Branch name can only contain letters, numbers, spaces, dots, and hyphens',
+      'string.min': 'Branch name must be at least 2 characters',
+      'string.max': 'Branch name must not exceed 100 characters',
+    }),
 
   // Phone number for branch contact
   phone: Joi.string()
     .trim()
-    .pattern(/^[\d\s\+\-\(\)]+$/)
-    .min(10)
-    .max(20)
+    .pattern(/^(03\d{9}|\+923\d{9})$/)
     .optional()
     .messages({
       'string.base': 'Phone must be a string',
-      'string.pattern.base': 'Phone must be a valid phone number',
-      'string.min': 'Phone must be at least 10 characters',
-      'string.max': 'Phone must not exceed 20 characters',
+      'string.pattern.base': 'Phone must be a valid Pakistani number starting with 03 or +923 (e.g., 03XXXXXXXXX)',
     }),
 
   status: Joi.string().valid('Active', 'Inactive').optional().messages({

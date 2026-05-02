@@ -152,9 +152,17 @@ const ApplicationCard = ({ application, onApprove, onReject }) => (
   <div className="bg-white rounded-xl shadow-md border border-gray-100 p-5 hover:shadow-lg transition-all duration-300">
     <div className="flex items-start gap-4">
       {/* Avatar */}
-      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#d69e2e] to-[#b7891f] flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
-        {application.doctor_id?.fullName?.charAt(0) || 'D'}
-      </div>
+      {application.doctor_id?.profile_img_url ? (
+        <img
+          src={application.doctor_id.profile_img_url}
+          alt={application.doctor_id.fullName}
+          className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md flex-shrink-0"
+        />
+      ) : (
+        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#d69e2e] to-[#b7891f] flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
+          {application.doctor_id?.fullName?.charAt(0) || 'D'}
+        </div>
+      )}
 
       {/* Info */}
       <div className="flex-1 min-w-0">

@@ -15,6 +15,7 @@ import profileService from '../../../../core/api/customer/profile.service';
 import cartService from '../../../../core/api/customer/cart.service';
 import SearchBar from './SearchBar';
 import NotificationDropdown from '../../../../shared/components/Dropdown/NotificationDropdown';
+import notificationService from '../../../../core/api/customer/notification.service';
 
 export default function Header() {
   const navigate = useNavigate();
@@ -28,8 +29,11 @@ export default function Header() {
 
   // Cart count from API
   const [cartCount, setCartCount] = useState(0);
-  // Mock notification count (no backend notifications API)
-  const notificationCount = 2;
+  
+  // Real notifications data
+  const [notifications, setNotifications] = useState([]);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -49,16 +53,58 @@ export default function Header() {
         console.error('Failed to load cart count:', error);
       }
     };
+    
+    const fetchNotifications = async () => {
+      setNotificationsLoading(true);
+      try {
+        const response = await notificationService.getNotifications({ page: 1, limit: 10 });
+        const fetchedNotifications = response.data?.data?.notifications || response.data?.notifications || [];
+        const formatted = fetchedNotifications.map((n) => {
+          const date = new Date(n.created_at);
+          // simple format
+          let timeAgo = '';
+          const diffMins = Math.floor((new Date() - date) / 60000);
+          if (diffMins < 60) timeAgo = `${diffMins || 1} min ago`;
+          else if (diffMins < 1440) timeAgo = `${Math.floor(diffMins / 60)} hours ago`;
+          else timeAgo = `${Math.floor(diffMins / 1440)} days ago`;
+
+          let type = 'info';
+          if (n.notification_type === 'order_status') type = 'success';
+          if (n.notification_type === 'appointment_reminder') type = 'warning';
+
+          return {
+            id: n._id,
+            text: n.message,
+            time: timeAgo,
+            type: type,
+            unread: n.status === 'unread'
+          };
+        });
+        setNotifications(formatted);
+        setNotificationCount(formatted.filter(x => x.unread).length);
+      } catch (error) {
+        console.error('Failed to load notifications:', error);
+      } finally {
+        setNotificationsLoading(false);
+      }
+    };
+
     fetchProfile();
     fetchCartCount();
+    fetchNotifications();
 
     const handleProfileUpdate = () => fetchProfile();
     const handleCartUpdate = () => fetchCartCount();
     window.addEventListener('profileUpdated', handleProfileUpdate);
     window.addEventListener('cartUpdated', handleCartUpdate);
+    
+    // Refresh notifications every 2 mins
+    const intervalId = setInterval(fetchNotifications, 120000);
+    
     return () => {
       window.removeEventListener('profileUpdated', handleProfileUpdate);
       window.removeEventListener('cartUpdated', handleCartUpdate);
+      clearInterval(intervalId);
     };
   }, []);
 
@@ -70,6 +116,26 @@ export default function Header() {
     } catch (err) {
       console.error('Logout failed:', err);
       navigate('/login');
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+      setNotificationCount(0);
+    } catch (err) {
+      console.error('Failed to mark all as read:', err);
+    }
+  };
+
+  const handleMarkRead = async (id) => {
+    try {
+      await notificationService.markAsRead(id);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
+      setNotificationCount(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('Failed to mark as read:', err);
     }
   };
 
@@ -106,12 +172,11 @@ export default function Header() {
 
             {/* Notifications Dropdown */}
             <NotificationDropdown 
-              notifications={[
-                { id: 1, text: 'Your order #123 has been shipped!', time: '2 hours ago', type: 'info', unread: true },
-                { id: 2, text: 'Appointment confirmed with Dr. Smith', time: '1 day ago', type: 'success', unread: true },
-                { id: 3, text: 'New prescription available from Dr. Khan', time: '2 days ago', type: 'info', unread: false },
-              ]}
+              notifications={notifications}
+              loading={notificationsLoading}
               unreadCount={notificationCount}
+              onMarkRead={handleMarkRead}
+              onMarkAllRead={handleMarkAllRead}
               viewAllPath="/notifications"
               portalColor="blue"
             />

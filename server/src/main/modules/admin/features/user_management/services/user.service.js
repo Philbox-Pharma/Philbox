@@ -142,7 +142,7 @@ class UserManagementService {
   /**
    * Create Salesperson User
    */
-  async createSalesperson(data, req) {
+  async createSalesperson(data, profileImage, coverImage, req) {
     const {
       fullName,
       email,
@@ -195,6 +195,20 @@ class UserManagementService {
       roleId,
     });
 
+    if (profileImage) {
+      newSalesperson.profile_img_url = await uploadToCloudinary(
+        profileImage.path,
+        'salespersons/profiles'
+      );
+    }
+
+    if (coverImage) {
+      newSalesperson.cover_img_url = await uploadToCloudinary(
+        coverImage.path,
+        'salespersons/covers'
+      );
+    }
+
     await newSalesperson.save();
 
     // Send welcome email
@@ -229,7 +243,7 @@ class UserManagementService {
   async getAllAdmins(query, req) {
     const { page = 1, limit = 10, search, status, branch } = query;
 
-    const filter = { category: 'branch-admin' };
+    const filter = {};
 
     // Build search filter
     if (search) {
@@ -418,7 +432,7 @@ class UserManagementService {
   async searchAdmin(searchParams, req) {
     const { id, email, name } = searchParams;
 
-    let query = { category: 'branch-admin' };
+    let query = {};
     if (id) query._id = id;
     if (email) query.email = email.toLowerCase();
     if (name) query.name = { $regex: name, $options: 'i' };
@@ -495,11 +509,11 @@ class UserManagementService {
       status,
       roleId,
       isTwoFactorEnabled,
+      remove_profile_img,
+      remove_cover_img,
     } = updateData;
 
     const admin = await Admin.findById(adminId);
-    console.log(adminId);
-    console.log(admin);
     if (!admin || admin.category !== 'branch-admin') {
       throw new Error('ADMIN_NOT_FOUND');
     }
@@ -522,6 +536,8 @@ class UserManagementService {
         profileImage.path,
         'admins/profiles'
       );
+    } else if (remove_profile_img === 'true') {
+      admin.profile_img_url = null;
     }
 
     // Upload and update cover image only if provided
@@ -530,6 +546,8 @@ class UserManagementService {
         coverImage.path,
         'admins/covers'
       );
+    } else if (remove_cover_img === 'true') {
+      admin.cover_img_url = null;
     }
 
     // Update addresses
@@ -603,7 +621,13 @@ class UserManagementService {
   /**
    * Update salesperson
    */
-  async updateSalesperson(salespersonId, updateData, req) {
+  async updateSalesperson(
+    salespersonId,
+    updateData,
+    profileImage,
+    coverImage,
+    req
+  ) {
     const {
       fullName,
       email,
@@ -612,6 +636,8 @@ class UserManagementService {
       gender,
       dateOfBirth,
       branches_to_be_managed,
+      remove_profile_img,
+      remove_cover_img,
     } = updateData;
 
     const salesperson = await Salesperson.findById(salespersonId);
@@ -641,6 +667,26 @@ class UserManagementService {
         throw new Error('INVALID_BRANCH_IDS');
       }
       salesperson.branches_to_be_managed = branches_to_be_managed;
+    }
+
+    // Handle profile image
+    if (profileImage) {
+      salesperson.profile_img_url = await uploadToCloudinary(
+        profileImage.path,
+        'salespersons/profiles'
+      );
+    } else if (remove_profile_img === 'true') {
+      salesperson.profile_img_url = null;
+    }
+
+    // Handle cover image
+    if (coverImage) {
+      salesperson.cover_img_url = await uploadToCloudinary(
+        coverImage.path,
+        'salespersons/covers'
+      );
+    } else if (remove_cover_img === 'true') {
+      salesperson.cover_img_url = null;
     }
 
     await salesperson.save();

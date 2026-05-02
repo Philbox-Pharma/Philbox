@@ -88,6 +88,10 @@ router.delete('/admin/:id', roleMiddleware('super_admin'), deleteAdmin);
 router.post(
   '/salesperson',
   roleMiddleware('super_admin'),
+  upload.fields([
+    { name: 'profile_img', maxCount: 1 },
+    { name: 'cover_img', maxCount: 1 },
+  ]),
   validate(createSalespersonDTO),
   createSalesperson
 );
@@ -118,6 +122,10 @@ router.get(
 router.put(
   '/salesperson/:id',
   roleMiddleware('super_admin'),
+  upload.fields([
+    { name: 'profile_img', maxCount: 1 },
+    { name: 'cover_img', maxCount: 1 },
+  ]),
   validate(updateSalespersonDTO),
   updateSalesperson
 );

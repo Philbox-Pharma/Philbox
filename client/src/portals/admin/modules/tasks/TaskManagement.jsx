@@ -50,6 +50,8 @@ export default function TaskManagement() {
     deadline: '',
   });
 
+  const [formErrors, setFormErrors] = useState({});
+
   // Fetch all data on mount
   useEffect(() => {
     fetchData();
@@ -90,6 +92,7 @@ export default function TaskManagement() {
 
   const handleCreateTask = async e => {
     e.preventDefault();
+    setFormErrors({});
     try {
       const res = await salespersonTaskApi.createTask(formData);
       if (res.status === 201) {
@@ -99,12 +102,23 @@ export default function TaskManagement() {
         fetchData();
       }
     } catch (error) {
-      alert(error.message || 'Failed to create task');
+      console.error('Create task error:', error);
+      if (error.data?.error && Array.isArray(error.data.error)) {
+        const errors = {};
+        error.data.error.forEach(err => {
+          const field = err.split(' ')[0].toLowerCase().replace(/"/g, '');
+          errors[field] = err.replace(/"/g, '');
+        });
+        setFormErrors(errors);
+      } else {
+        alert(error.message || 'Failed to create task');
+      }
     }
   };
 
   const handleUpdateTask = async e => {
     e.preventDefault();
+    setFormErrors({});
     try {
       const res = await salespersonTaskApi.updateTask(
         selectedTask._id,
@@ -117,7 +131,17 @@ export default function TaskManagement() {
         fetchData();
       }
     } catch (error) {
-      alert(error.message || 'Failed to update task');
+      console.error('Update task error:', error);
+      if (error.data?.error && Array.isArray(error.data.error)) {
+        const errors = {};
+        error.data.error.forEach(err => {
+          const field = err.split(' ')[0].toLowerCase().replace(/"/g, '');
+          errors[field] = err.replace(/"/g, '');
+        });
+        setFormErrors(errors);
+      } else {
+        alert(error.message || 'Failed to update task');
+      }
     }
   };
 
@@ -186,6 +210,7 @@ export default function TaskManagement() {
       priority: 'medium',
       deadline: '',
     });
+    setFormErrors({});
     setSelectedTask(null);
     setModalMode('create');
   };
@@ -662,8 +687,13 @@ export default function TaskManagement() {
                   onChange={e =>
                     setFormData({ ...formData, title: e.target.value })
                   }
-                  className="mt-1 block w-full border border-gray-300 rounded px-3 py-2"
+                  className={`mt-1 block w-full border rounded px-3 py-2 ${
+                    formErrors.title ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
+                {formErrors.title && (
+                  <p className="text-red-500 text-xs mt-1">{formErrors.title}</p>
+                )}
               </div>
 
               <div>
@@ -676,8 +706,13 @@ export default function TaskManagement() {
                     setFormData({ ...formData, description: e.target.value })
                   }
                   rows={3}
-                  className="mt-1 block w-full border border-gray-300 rounded px-3 py-2"
+                  className={`mt-1 block w-full border rounded px-3 py-2 ${
+                    formErrors.description ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
+                {formErrors.description && (
+                  <p className="text-red-500 text-xs mt-1">{formErrors.description}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -700,6 +735,9 @@ export default function TaskManagement() {
                       </option>
                     ))}
                   </select>
+                  {formErrors.branch_id && (
+                    <p className="text-red-500 text-xs mt-1">{formErrors.branch_id}</p>
+                  )}
                 </div>
 
                 <div>
@@ -724,6 +762,9 @@ export default function TaskManagement() {
                       </option>
                     ))}
                   </select>
+                  {formErrors.salesperson_id && (
+                    <p className="text-red-500 text-xs mt-1">{formErrors.salesperson_id}</p>
+                  )}
                 </div>
               </div>
 
@@ -757,8 +798,13 @@ export default function TaskManagement() {
                     onChange={e =>
                       setFormData({ ...formData, deadline: e.target.value })
                     }
-                    className="mt-1 block w-full border border-gray-300 rounded px-3 py-2"
+                    className={`mt-1 block w-full border rounded px-3 py-2 ${
+                      formErrors.deadline ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
+                  {formErrors.deadline && (
+                    <p className="text-red-500 text-xs mt-1">{formErrors.deadline}</p>
+                  )}
                 </div>
               </div>
 

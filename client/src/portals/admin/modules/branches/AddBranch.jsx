@@ -99,7 +99,11 @@ export default function AddBranch() {
     name: {
       required: true,
       minLength: 2,
-      message: { required: 'Branch name is required' },
+      pattern: /^[a-zA-Z0-9\s.-]+$/,
+      message: { 
+        required: 'Branch name is required',
+        pattern: 'Letters, numbers, spaces, dots, hyphens only'
+      },
     },
     city: {
       required: true,
@@ -109,8 +113,8 @@ export default function AddBranch() {
     province: { required: true, message: { required: 'Select province' } },
     // Phone is optional - no 'required: true'
     phone: {
-      pattern: /^[\d\s+\-()]*$/,
-      message: { pattern: 'Invalid phone format' },
+      pattern: /^(03\d{9}|\+923\d{9})$/,
+      message: { pattern: 'Must be a valid PK number (e.g., 03XXXXXXXXX)' },
     },
   };
 
@@ -144,9 +148,12 @@ export default function AddBranch() {
   const handleChange = e => {
     const { name, value } = e.target;
 
-    // Only allow digits for phone
+    // Real-time restrictions
     if (name === 'phone') {
-      if (!/^\d*$/.test(value)) return;
+      if (!/^[\d+]*$/.test(value)) return;
+    }
+    if (name === 'name') {
+      if (!/^[a-zA-Z0-9\s.-]*$/.test(value)) return;
     }
 
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -222,7 +229,15 @@ export default function AddBranch() {
       }
     } catch (err) {
       console.error('Submit failed:', err);
-      setErrors({ submit: err.message || 'Create failed' });
+      let errMsg = err.message || 'Create failed';
+      if (err.data && err.data.error) {
+        if (Array.isArray(err.data.error)) {
+          errMsg = err.data.error.join(', ');
+        } else if (typeof err.data.error === 'string') {
+          errMsg = err.data.error;
+        }
+      }
+      setErrors({ submit: errMsg });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
@@ -274,6 +289,7 @@ export default function AddBranch() {
                 onBlur={handleBlur}
                 error={errors.name}
                 required
+                maxLength={100}
               />
               <FormInput
                 label="Phone Number"
@@ -284,7 +300,7 @@ export default function AddBranch() {
                 error={errors.phone}
                 icon={FaPhone}
                 placeholder="03XXXXXXXXX"
-                maxLength={11}
+                maxLength={13}
               />
             </div>
           </div>

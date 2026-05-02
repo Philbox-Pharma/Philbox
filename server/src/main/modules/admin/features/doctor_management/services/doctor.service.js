@@ -587,6 +587,52 @@ class DoctorManagementService {
       throw error;
     }
   }
+
+  /**
+   * Get Doctor Stats (Counts by status)
+   */
+  async getDoctorStats(req) {
+    try {
+      const stats = await Doctor.aggregate([
+        {
+          $group: {
+            _id: '$account_status',
+            count: { $sum: 1 },
+          },
+        },
+      ]);
+
+      const result = {
+        total: 0,
+        active: 0,
+        under_consideration: 0,
+        rejected: 0,
+        'suspended/freezed': 0,
+        'blocked/removed': 0,
+      };
+
+      stats.forEach(item => {
+        if (result[item._id] !== undefined) {
+          result[item._id] = item.count;
+        }
+        result.total += item.count;
+      });
+
+      // Log admin activity
+      await logAdminActivity(
+        req,
+        'view_doctor_stats',
+        'Viewed doctor management statistics',
+        'doctors',
+        null
+      );
+
+      return result;
+    } catch (error) {
+      console.error('Error in getDoctorStats:', error);
+      throw error;
+    }
+  }
 }
 
 export default new DoctorManagementService();

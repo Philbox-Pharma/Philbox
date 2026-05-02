@@ -38,8 +38,13 @@ export const createAdmin = async (req, res) => {
  */
 export const createSalesperson = async (req, res) => {
   try {
+    const profileImage = req.files?.profile_img?.[0] || req.file;
+    const coverImage = req.files?.cover_img?.[0];
+
     const salesperson = await UserManagementService.createSalesperson(
       req.body,
+      profileImage,
+      coverImage,
       req
     );
 
@@ -230,9 +235,14 @@ export const updateSalesperson = async (req, res) => {
   try {
     const { id } = req.params;
 
+    const profileImage = req.files?.profile_img?.[0] || req.file;
+    const coverImage = req.files?.cover_img?.[0];
+
     const salesperson = await UserManagementService.updateSalesperson(
       id,
       req.body,
+      profileImage,
+      coverImage,
       req
     );
 

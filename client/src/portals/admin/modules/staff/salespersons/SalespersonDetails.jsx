@@ -313,7 +313,22 @@ export default function SalespersonDetails() {
       {/* Profile Card */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
         {/* Header Banner */}
-        <div className="h-5=10 sm:h-13 bg-linear-to-r from-orange-500 to-orange-600 relative">
+        <div className="h-32 sm:h-48 relative bg-gray-200">
+          {/* Cover Image */}
+          {person?.cover_img_url ? (
+            <img
+              src={person.cover_img_url}
+              alt="Cover"
+              className="w-full h-full object-cover"
+              onError={e => {
+                e.target.style.display = 'none';
+                e.target.parentElement.classList.add('bg-gradient-to-r', 'from-orange-500', 'to-orange-600');
+              }}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-orange-500 to-orange-600" />
+          )}
+
           <div className="absolute top-3 right-3">
             <span
               className={`px-3 py-1 rounded-full text-xs font-bold uppercase shadow-sm ${getStatusBadge(person?.status)}`}
@@ -324,20 +339,31 @@ export default function SalespersonDetails() {
         </div>
 
         {/* Profile Info */}
-        <div className="px-4 sm:px-6 pb-6">
-          {/* Avatar + Name Section - Fixed overlap */}
-          <div className="flex items-end sm:items-center gap-4 -mt-0.1">
+        <div className="px-4 sm:px-6 pb-6 relative">
+          {/* Avatar + Name Section */}
+          <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-12 sm:-mt-16 relative z-10 mb-6 sm:mb-2">
             {/* Avatar */}
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-orange-100 border-4 border-white shadow-lg flex items-center justify-center shrink-0">
-              <FaUserTie className="text-2xl sm:text-3xl text-orange-600" />
+            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-xl bg-orange-50 border-4 border-white shadow-lg overflow-hidden flex items-center justify-center shrink-0">
+              {person?.profile_img_url ? (
+                <img
+                  src={person.profile_img_url}
+                  alt={person.fullName}
+                  className="w-full h-full object-cover"
+                  onError={e => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <FaUserTie className="text-4xl sm:text-6xl text-orange-400" />
+              )}
             </div>
 
             {/* Name + Role */}
-            <div className="pb-1 sm:pb-0">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800">
+            <div className="text-center sm:text-left sm:pb-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
                 {person?.fullName}
               </h2>
-              <p className="text-gray-500 text-sm">Salesperson</p>
+              <p className="text-gray-500 font-medium">Salesperson</p>
             </div>
           </div>
 

@@ -236,3 +236,22 @@ export const getDoctorPerformanceMetrics = async (req, res) => {
     return sendResponse(res, 500, 'Server Error', null, err);
   }
 };
+
+/**
+ * Get doctor statistics (counts by status)
+ */
+export const getDoctorStats = async (req, res) => {
+  try {
+    const stats = await DoctorManagementService.getDoctorStats(req);
+
+    return sendResponse(
+      res,
+      200,
+      'Doctor statistics fetched successfully',
+      stats
+    );
+  } catch (err) {
+    console.error(err);
+    return sendResponse(res, 500, 'Server Error', null, err);
+  }
+};

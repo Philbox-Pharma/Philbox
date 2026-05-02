@@ -14,9 +14,11 @@ import {
   FaVenusMars,
   FaBirthdayCake,
   FaEye,
-  FaEyeSlash,
   FaCodeBranch,
+  FaCamera,
+  FaTrash,
 } from 'react-icons/fa';
+import { useRef } from 'react';
 import {
   FormInput,
   FormSelect,
@@ -29,11 +31,20 @@ export default function AddSalesperson() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
-  const [showPassword, setShowPassword] = useState(false);
 
   // Branch options for assignment
   const [branchOptions, setBranchOptions] = useState([]);
   const [branchLoading, setBranchLoading] = useState(true);
+
+  // Image States
+  const [profileImg, setProfileImg] = useState(null);
+  const [profilePreview, setProfilePreview] = useState(null);
+  const [coverImg, setCoverImg] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
+
+  // File Input Refs
+  const profileInputRef = useRef(null);
+  const coverInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -162,6 +173,44 @@ export default function AddSalesperson() {
     return '';
   };
 
+  // --- Image Handlers ---
+  const handleImageChange = (e, type) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors(prev => ({
+          ...prev,
+          [type]: 'Image size must be less than 5MB',
+        }));
+        return;
+      }
+      setErrors(prev => ({ ...prev, [type]: null }));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (type === 'profileImg') {
+          setProfileImg(file);
+          setProfilePreview(reader.result);
+        } else {
+          setCoverImg(file);
+          setCoverPreview(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeProfileImg = () => {
+    setProfileImg(null);
+    setProfilePreview(null);
+    if (profileInputRef.current) profileInputRef.current.value = '';
+  };
+
+  const removeCoverImg = () => {
+    setCoverImg(null);
+    setCoverPreview(null);
+    if (coverInputRef.current) coverInputRef.current.value = '';
+  };
+
   const handleChange = e => {
     const { name, value } = e.target;
 
@@ -230,21 +279,30 @@ export default function AddSalesperson() {
 
     setLoading(true);
     try {
-      const payload = {
-        fullName: formData.fullName.trim(),
-        email: formData.email.trim().toLowerCase(),
-        password: formData.password,
-        contactNumber: formData.contactNumber.trim(),
-        gender: formData.gender,
-        branches_to_be_managed: formData.branches_to_be_managed,
-      };
+      const formDataToSend = new FormData();
+      formDataToSend.append('fullName', formData.fullName.trim());
+      formDataToSend.append('email', formData.email.trim().toLowerCase());
+      formDataToSend.append('password', formData.password);
+      formDataToSend.append('contactNumber', formData.contactNumber.trim());
+      formDataToSend.append('gender', formData.gender);
+      
+      formData.branches_to_be_managed.forEach(branch => {
+        formDataToSend.append('branches_to_be_managed[]', branch);
+      });
 
       // Add optional dateOfBirth if provided
       if (formData.dateOfBirth) {
-        payload.dateOfBirth = formData.dateOfBirth;
+        formDataToSend.append('dateOfBirth', formData.dateOfBirth);
+      }
+      
+      if (profileImg) {
+        formDataToSend.append('profile_img', profileImg);
+      }
+      if (coverImg) {
+        formDataToSend.append('cover_img', coverImg);
       }
 
-      const response = await staffApi.createSalesperson(payload);
+      const response = await staffApi.createSalesperson(formDataToSend);
 
       if (
         response.status === 200 ||
@@ -320,6 +378,118 @@ export default function AddSalesperson() {
         )}
 
         <div className="p-6 space-y-8">
+          {/* Cover Image Section */}
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <FaCamera className="text-[#1a365d]" /> Profile Images
+            </h2>
+
+            {/* Cover Image */}
+            <div className="relative mb-6">
+              <div className="h-32 sm:h-40 bg-gradient-to-r from-[#1a365d] to-[#2c5282] rounded-xl overflow-hidden">
+                {coverPreview ? (
+                  <img
+                    src={coverPreview}
+                    alt="Cover Preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-white/50 text-sm">
+                    <span>Cover Image (Optional)</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="absolute bottom-3 right-3 flex gap-2">
+                <input
+                  type="file"
+                  ref={coverInputRef}
+                  onChange={(e) => handleImageChange(e, 'coverImg')}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => coverInputRef.current?.click()}
+                  className="p-2 bg-white rounded-lg shadow hover:bg-gray-50"
+                  title="Upload Cover"
+                >
+                  <FaCamera className="text-gray-600" />
+                </button>
+                {coverPreview && (
+                  <button
+                    type="button"
+                    onClick={removeCoverImg}
+                    className="p-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-600"
+                    title="Remove Cover"
+                  >
+                    <FaTrash />
+                  </button>
+                )}
+              </div>
+
+              {errors.coverImg && (
+                <p className="text-red-500 text-xs mt-1">{errors.coverImg}</p>
+              )}
+            </div>
+
+            {/* Profile Image */}
+            <div className="flex items-center gap-4 sm:gap-6">
+              <div className="relative">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-gray-100 border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
+                  {profilePreview ? (
+                    <img
+                      src={profilePreview}
+                      alt="Profile Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <FaUserTie className="text-3xl sm:text-4xl text-gray-400" />
+                  )}
+                </div>
+
+                <input
+                  type="file"
+                  ref={profileInputRef}
+                  onChange={(e) => handleImageChange(e, 'profileImg')}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => profileInputRef.current?.click()}
+                  className="absolute -bottom-2 -right-2 p-2 bg-[#1a365d] text-white rounded-lg shadow hover:bg-[#2c5282]"
+                  title="Upload Profile Picture"
+                >
+                  <FaCamera className="text-sm" />
+                </button>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-3">
+                  <h3 className="font-medium text-gray-800">Profile Picture</h3>
+                  {profilePreview && (
+                    <button
+                      type="button"
+                      onClick={removeProfileImg}
+                      className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center gap-1"
+                    >
+                      <FaTrash className="text-xs" /> Remove
+                    </button>
+                  )}
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  Upload a professional photo. Recommended size 400x400px.
+                  <br /> Max size: 5MB. Formats: JPG, PNG.
+                </p>
+                {errors.profileImg && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.profileImg}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Personal Information */}
           <div>
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -351,36 +521,18 @@ export default function AddSalesperson() {
                 required
               />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <FaPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    name="contactNumber"
-                    value={formData.contactNumber}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    placeholder="03XXXXXXXXX"
-                    maxLength={11}
-                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg border transition-all duration-200 ${
-                      errors.contactNumber
-                        ? 'border-red-500 focus:ring-red-500 ring-1 ring-red-100'
-                        : 'border-gray-300 focus:ring-[#1a365d] focus:border-[#1a365d] focus:ring-2 focus:ring-opacity-20'
-                    } focus:outline-none`}
-                  />
-                </div>
-                {errors.contactNumber && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.contactNumber}
-                  </p>
-                )}
-                <p className="text-gray-500 text-xs mt-1">
-                  Enter 11 digits only (e.g. 03407799573)
-                </p>
-              </div>
+              <FormInput
+                label="Phone Number"
+                name="contactNumber"
+                value={formData.contactNumber}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={errors.contactNumber}
+                icon={FaPhone}
+                placeholder="03XXXXXXXXX"
+                maxLength={11}
+                required
+              />
 
               <FormSelect
                 label="Gender"
@@ -403,37 +555,19 @@ export default function AddSalesperson() {
                 icon={FaBirthdayCake}
               />
 
-              {/* Password Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Password <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    placeholder="Enter password (min 8 characters)"
-                    className={`w-full pl-10 pr-12 py-2.5 rounded-lg border transition-all duration-200 ${
-                      errors.password
-                        ? 'border-red-500 focus:ring-red-500 ring-1 ring-red-100'
-                        : 'border-gray-300 focus:ring-[#1a365d] focus:border-[#1a365d] focus:ring-2 focus:ring-opacity-20'
-                    } focus:outline-none`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <FaEyeSlash /> : <FaEye />}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="text-red-500 text-xs mt-1">{errors.password}</p>
-                )}
+              <div className="md:col-span-2">
+                <FormInput
+                  label="Password"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={errors.password}
+                  icon={FaLock}
+                  placeholder="Enter password (min 8 characters)"
+                  required
+                />
               </div>
             </div>
           </div>

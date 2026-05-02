@@ -1,108 +1,69 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import {
-    FaBell,
-    FaShoppingBag,
-    FaCalendarCheck,
-    FaFilePrescription,
-    FaTruck,
-    FaCheckCircle,
-    FaExclamationCircle,
-    FaTrash,
-    FaCheck,
-    FaFilter
-} from 'react-icons/fa';
+import { FaBell, FaShoppingBag, FaCalendarCheck, FaFilePrescription, FaTruck, FaCheckCircle, FaExclamationCircle, FaTrash, FaCheck, FaFilter, FaSpinner } from 'react-icons/fa';
+import notificationService from '../../../../core/api/customer/notification.service';
 
 export default function Notifications() {
     const [filter, setFilter] = useState('all');
 
-    // Mock notifications data
-    const [notifications, setNotifications] = useState([
-        {
-            id: 1,
-            type: 'order',
-            title: 'Order Shipped',
-            message: 'Your order #ORD-2024-002 has been shipped. Track your package now.',
-            link: '/orders/ORD-2024-002',
-            time: '2 hours ago',
-            read: false,
-            icon: FaTruck,
-            iconBg: 'bg-purple-100',
-            iconColor: 'text-purple-600',
-        },
-        {
-            id: 2,
-            type: 'appointment',
-            title: 'Appointment Reminder',
-            message: 'Your appointment with Dr. Ahmed Khan is tomorrow at 10:00 AM.',
-            link: '/appointments',
-            time: '5 hours ago',
-            read: false,
-            icon: FaCalendarCheck,
-            iconBg: 'bg-blue-100',
-            iconColor: 'text-blue-600',
-        },
-        {
-            id: 3,
-            type: 'prescription',
-            title: 'New Prescription',
-            message: 'Dr. Sara Ali has sent you a new prescription. View and order medicines.',
-            link: '/prescriptions',
-            time: '1 day ago',
-            read: false,
-            icon: FaFilePrescription,
-            iconBg: 'bg-green-100',
-            iconColor: 'text-green-600',
-        },
-        {
-            id: 4,
-            type: 'order',
-            title: 'Order Delivered',
-            message: 'Your order #ORD-2024-001 has been delivered successfully.',
-            link: '/orders/ORD-2024-001',
-            time: '2 days ago',
-            read: true,
-            icon: FaCheckCircle,
-            iconBg: 'bg-green-100',
-            iconColor: 'text-green-600',
-        },
-        {
-            id: 5,
-            type: 'appointment',
-            title: 'Appointment Confirmed',
-            message: 'Your appointment with Dr. Fatima Noor has been confirmed for Jan 30.',
-            link: '/appointments',
-            time: '3 days ago',
-            read: true,
-            icon: FaCalendarCheck,
-            iconBg: 'bg-blue-100',
-            iconColor: 'text-blue-600',
-        },
-        {
-            id: 6,
-            type: 'system',
-            title: 'Profile Incomplete',
-            message: 'Please complete your profile to get personalized recommendations.',
-            link: '/profile',
-            time: '5 days ago',
-            read: true,
-            icon: FaExclamationCircle,
-            iconBg: 'bg-yellow-100',
-            iconColor: 'text-yellow-600',
-        },
-        {
-            id: 7,
-            type: 'order',
-            title: 'Order Placed',
-            message: 'Your order #ORD-2024-003 has been placed successfully.',
-            link: '/orders/ORD-2024-003',
-            time: '1 week ago',
-            read: true,
-            icon: FaShoppingBag,
-            iconBg: 'bg-blue-100',
-            iconColor: 'text-blue-600',
-        },
-    ]);
+    const [notifications, setNotifications] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchNotifications = async () => {
+        try {
+            setLoading(true);
+            const response = await notificationService.getNotifications({ page: 1, limit: 50 });
+            const fetched = response.data?.data?.notifications || response.data?.notifications || [];
+            
+            const formatted = fetched.map(n => {
+                const date = new Date(n.created_at);
+                let timeAgo = '';
+                const diffMins = Math.floor((new Date() - date) / 60000);
+                if (diffMins < 60) timeAgo = `${diffMins || 1} mins ago`;
+                else if (diffMins < 1440) timeAgo = `${Math.floor(diffMins / 60)} hours ago`;
+                else timeAgo = `${Math.floor(diffMins / 1440)} days ago`;
+
+                let icon = FaBell;
+                let iconBg = 'bg-gray-100';
+                let iconColor = 'text-gray-600';
+                let type = 'system';
+                
+                if (n.notification_type === 'order_status') {
+                    type = 'order';
+                    icon = FaTruck;
+                    iconBg = 'bg-purple-100';
+                    iconColor = 'text-purple-600';
+                } else if (n.notification_type === 'appointment_reminder') {
+                    type = 'appointment';
+                    icon = FaCalendarCheck;
+                    iconBg = 'bg-blue-100';
+                    iconColor = 'text-blue-600';
+                }
+
+                return {
+                    id: n._id,
+                    type,
+                    title: n.title || 'Notification',
+                    message: n.message,
+                    link: n.action_url || '#',
+                    time: timeAgo,
+                    read: n.status === 'read',
+                    icon,
+                    iconBg,
+                    iconColor,
+                };
+            });
+            setNotifications(formatted);
+        } catch (error) {
+            console.error('Failed to load notifications page:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchNotifications();
+    }, []);
 
     // Filter notifications
     const filteredNotifications = notifications.filter(n => {
@@ -115,28 +76,48 @@ export default function Notifications() {
     const unreadCount = notifications.filter(n => !n.read).length;
 
     // Mark as read
-    const markAsRead = (id) => {
-        setNotifications(prev =>
-            prev.map(n => n.id === id ? { ...n, read: true } : n)
-        );
+    const markAsRead = async (id) => {
+        try {
+            await notificationService.markAsRead(id);
+            setNotifications(prev =>
+                prev.map(n => n.id === id ? { ...n, read: true } : n)
+            );
+        } catch (e) {
+            console.error('Failed to mark as read', e);
+        }
     };
 
     // Mark all as read
-    const markAllAsRead = () => {
-        setNotifications(prev =>
-            prev.map(n => ({ ...n, read: true }))
-        );
+    const markAllAsRead = async () => {
+        try {
+            await notificationService.markAllAsRead();
+            setNotifications(prev =>
+                prev.map(n => ({ ...n, read: true }))
+            );
+        } catch (e) {
+            console.error('Failed to mark all as read', e);
+        }
     };
 
     // Delete notification
-    const deleteNotification = (id) => {
-        setNotifications(prev => prev.filter(n => n.id !== id));
+    const deleteNotification = async (id) => {
+        try {
+            // Need an API for delete if one exists. For now just local update:
+            setNotifications(prev => prev.filter(n => n.id !== id));
+        } catch (e) {
+            console.error('Failed to delete notification', e);
+        }
     };
 
     // Clear all notifications
-    const clearAll = () => {
+    const clearAll = async () => {
         if (window.confirm('Are you sure you want to clear all notifications?')) {
-            setNotifications([]);
+            try {
+                // await notificationService.deleteAll(); // if exists
+                setNotifications([]);
+            } catch (e) {
+                console.error('Failed to clear notifications', e);
+            }
         }
     };
 
@@ -197,7 +178,11 @@ export default function Notifications() {
             </div>
 
             {/* Notifications List */}
-            {filteredNotifications.length > 0 ? (
+            {loading ? (
+                <div className="flex justify-center items-center py-16">
+                    <FaSpinner className="animate-spin text-3xl text-blue-500" />
+                </div>
+            ) : filteredNotifications.length > 0 ? (
                 <div className="space-y-3">
                     {filteredNotifications.map((notification) => {
                         const Icon = notification.icon;

@@ -31,6 +31,11 @@ export default function AdminProfile() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
 
+  // Cover Image State
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [selectedCoverFile, setSelectedCoverFile] = useState(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState(null);
+
   // 2FA State
   const [toggling2FA, setToggling2FA] = useState(false);
 
@@ -68,53 +73,105 @@ export default function AdminProfile() {
     setSavingProfile(true);
     setError(null);
     try {
-      // Build FormData with fields matching backend DTO
-      const formData = new FormData();
-      formData.append('name', profileData.name);
-      if (profileData.phone_number) {
-        formData.append('phone_number', profileData.phone_number);
+      let updatedAdminData = { ...admin };
+
+      // 1. Update text info if changed
+      if (
+        profileData.name !== (admin.name || admin.fullName) ||
+        profileData.phone_number !== (admin.phone_number || admin.contactNumber)
+      ) {
+        const payload = { name: profileData.name };
+        if (profileData.phone_number) {
+          payload.phone_number = profileData.phone_number;
+        }
+        const infoRes = await adminAuthApi.updateProfileInfo(payload);
+        if (infoRes.status === 200 || infoRes.success) {
+          const sAdmin = infoRes.data?.admin || infoRes.data || {};
+          updatedAdminData = { ...updatedAdminData, ...sAdmin };
+        } else {
+          throw new Error(infoRes.message || 'Failed to update profile info');
+        }
       }
 
+      // 2. Update profile picture if selected
       if (selectedFile) {
-        formData.append('profile_img', selectedFile);
+        const imgData = new FormData();
+        imgData.append('profile_img', selectedFile);
+        const picRes = await adminAuthApi.updateProfilePicture(imgData);
+        if (picRes.status === 200 || picRes.success) {
+          const sAdmin = picRes.data?.admin || picRes.data || {};
+          updatedAdminData = {
+            ...updatedAdminData,
+            profile_img_url:
+              sAdmin.profile_img_url || updatedAdminData.profile_img_url,
+          };
+        } else {
+          throw new Error(picRes.message || 'Failed to update profile picture');
+        }
       }
 
-      // Pass admin ID to the API
-      const adminId = admin._id || admin.id;
-      if (!adminId) {
-        throw new Error('Admin ID not found. Please login again.');
-      }
+      setAdmin(updatedAdminData);
+      localStorage.setItem('adminData', JSON.stringify(updatedAdminData));
 
-      const response = await adminAuthApi.updateProfile(adminId, formData);
-      if (response.status === 200 || response.success) {
-        // If server returns updated admin object, merge it
-        const updatedAdmin = response.data?.admin || response.data || {};
-
-        const newAdminData = {
-          ...admin,
-          name: profileData.name,
-          phone_number: profileData.phone_number,
-          profile_img_url:
-            updatedAdmin.profile_img_url || admin.profile_img_url,
-        };
-
-        setAdmin(newAdminData);
-        // Update localStorage so header and other components reflect the change
-        localStorage.setItem('adminData', JSON.stringify(newAdminData));
-
-        setSuccessMessage('Profile updated successfully');
-        setEditing(false);
-        setSelectedFile(null);
-        setPreviewUrl(null);
-        setTimeout(() => setSuccessMessage(''), 3000);
-      } else {
-        throw new Error(response.message || 'Failed to update profile');
-      }
+      setSuccessMessage('Profile updated successfully');
+      setEditing(false);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
       console.error('Profile update error:', err);
-      setError(err.message || 'Failed to update profile');
+      let errMsg = err.message || 'Failed to update profile';
+      if (err.data && err.data.error) {
+        if (Array.isArray(err.data.error)) {
+          errMsg = err.data.error.join(', ');
+        } else if (typeof err.data.error === 'string') {
+          errMsg = err.data.error;
+        }
+      }
+      setError(errMsg);
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  // --- Cover Image Handler ---
+  const handleCoverImageUpload = async () => {
+    if (!selectedCoverFile) return;
+
+    setUploadingCover(true);
+    setError(null);
+    try {
+      const coverData = new FormData();
+      coverData.append('cover_img', selectedCoverFile);
+      const coverRes = await adminAuthApi.updateCoverImage(coverData);
+
+      if (coverRes.status === 200 || coverRes.success) {
+        const updatedAdmin = {
+          ...admin,
+          cover_img_url: coverRes.data?.cover_img_url || coverPreviewUrl,
+        };
+        setAdmin(updatedAdmin);
+        localStorage.setItem('adminData', JSON.stringify(updatedAdmin));
+        setSuccessMessage('Cover image updated successfully');
+        setSelectedCoverFile(null);
+        setCoverPreviewUrl(null);
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        throw new Error(coverRes.message || 'Failed to update cover image');
+      }
+    } catch (err) {
+      console.error('Cover image upload error:', err);
+      let errMsg = err.message || 'Failed to upload cover image';
+      if (err.data && err.data.error) {
+        if (Array.isArray(err.data.error)) {
+          errMsg = err.data.error.join(', ');
+        } else if (typeof err.data.error === 'string') {
+          errMsg = err.data.error;
+        }
+      }
+      setError(errMsg);
+    } finally {
+      setUploadingCover(false);
     }
   };
 
@@ -182,7 +239,64 @@ export default function AdminProfile() {
         {/* Sidebar / Profile Card */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="h-24 bg-gradient-to-r from-[#1a365d] to-[#2f855a]"></div>
+            {admin?.cover_img_url ? (
+              <div className="h-24 w-full relative group">
+                <img
+                  src={coverPreviewUrl || admin.cover_img_url}
+                  alt="Cover"
+                  className="w-full h-full object-cover"
+                />
+                <input
+                  type="file"
+                  id="cover-upload"
+                  hidden
+                  accept="image/*"
+                  onChange={e => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setSelectedCoverFile(file);
+                      setCoverPreviewUrl(URL.createObjectURL(file));
+                    }
+                  }}
+                />
+                <label
+                  htmlFor="cover-upload"
+                  className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                  title="Change Cover Image"
+                >
+                  <div className="text-white text-center">
+                    <FaCamera className="text-2xl mx-auto mb-1" />
+                    <span className="text-xs">Change Cover</span>
+                  </div>
+                </label>
+              </div>
+            ) : (
+              <div className="h-24 bg-gradient-to-r from-[#1a365d] to-[#2f855a] relative group">
+                <input
+                  type="file"
+                  id="cover-upload"
+                  hidden
+                  accept="image/*"
+                  onChange={e => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setSelectedCoverFile(file);
+                      setCoverPreviewUrl(URL.createObjectURL(file));
+                    }
+                  }}
+                />
+                <label
+                  htmlFor="cover-upload"
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer bg-black/40"
+                  title="Upload Cover Image"
+                >
+                  <div className="text-white text-center">
+                    <FaCamera className="text-2xl mx-auto mb-1" />
+                    <span className="text-xs">Add Cover</span>
+                  </div>
+                </label>
+              </div>
+            )}
             <div className="px-6 pb-6 text-center -mt-12">
               <div className="relative inline-block">
                 <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-100 flex items-center justify-center shadow-md overflow-hidden relative">
@@ -248,6 +362,54 @@ export default function AdminProfile() {
             </div>
           </div>
 
+          {/* Cover Image Upload Preview */}
+          {selectedCoverFile && (
+            <Motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3"
+            >
+              <div>
+                <p className="text-sm font-medium text-blue-900">
+                  Cover image selected for upload
+                </p>
+                <p className="text-xs text-blue-700 mt-1">
+                  {selectedCoverFile.name} (
+                  {(selectedCoverFile.size / 1024).toFixed(2)} KB)
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCoverImageUpload}
+                  disabled={uploadingCover}
+                  className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  {uploadingCover ? (
+                    <>
+                      <FaSpinner className="animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <FaCamera />
+                      Upload Cover
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedCoverFile(null);
+                    setCoverPreviewUrl(null);
+                  }}
+                  disabled={uploadingCover}
+                  className="px-3 py-2 border border-blue-300 text-blue-700 text-sm rounded-lg hover:bg-blue-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </Motion.div>
+          )}
+
           {/* Navigation Tabs (Vertical on Desktop) */}
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-2 space-y-1">
             {[
@@ -310,10 +472,13 @@ export default function AdminProfile() {
                           ? profileData.name
                           : admin?.name || admin?.fullName
                       }
-                      onChange={e =>
-                        setProfileData({ ...profileData, name: e.target.value })
-                      }
+                      onChange={e => {
+                        const val = e.target.value;
+                        if (!/^[a-zA-Z\s.-]*$/.test(val)) return;
+                        setProfileData({ ...profileData, name: val });
+                      }}
                       disabled={!editing}
+                      maxLength={50}
                     />
                     <FormInput
                       label="Phone Number"
@@ -324,7 +489,7 @@ export default function AdminProfile() {
                       }
                       onChange={e => {
                         const val = e.target.value;
-                        if (!/^\d*$/.test(val)) return;
+                        if (!/^[\d+]*$/.test(val)) return;
                         setProfileData({
                           ...profileData,
                           phone_number: val,
@@ -332,7 +497,7 @@ export default function AdminProfile() {
                       }}
                       disabled={!editing}
                       placeholder="03XXXXXXXXX"
-                      maxLength={11}
+                      maxLength={13}
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -13,7 +13,10 @@ import {
   FaBirthdayCake,
   FaCodeBranch,
   FaExclamationTriangle,
+  FaCamera,
+  FaTrash,
 } from 'react-icons/fa';
+import { useRef } from 'react';
 import {
   FormInput,
   FormSelect,
@@ -36,6 +39,18 @@ export default function EditSalesperson() {
   // Branch options
   const [branchOptions, setBranchOptions] = useState([]);
   const [branchLoading, setBranchLoading] = useState(true);
+
+  // Image States
+  const [profileImg, setProfileImg] = useState(null);
+  const [profilePreview, setProfilePreview] = useState(null);
+  const [coverImg, setCoverImg] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
+  const [removeProfileImage, setRemoveProfileImage] = useState(false);
+  const [removeCoverImage, setRemoveCoverImage] = useState(false);
+
+  // File Input Refs
+  const profileInputRef = useRef(null);
+  const coverInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -92,7 +107,15 @@ export default function EditSalesperson() {
             person.branches_to_be_managed?.map(b => b._id) || [],
         };
         setFormData(formValues);
-        setOriginalData({ ...formValues, email: person.email });
+        setOriginalData({
+          ...formValues,
+          email: person.email,
+          profile_img_url: person.profile_img_url || null,
+          cover_img_url: person.cover_img_url || null,
+        });
+
+        if (person.profile_img_url) setProfilePreview(person.profile_img_url);
+        if (person.cover_img_url) setCoverPreview(person.cover_img_url);
       } else {
         throw new Error(spResponse.message || 'Failed to fetch salesperson');
       }
@@ -194,6 +217,49 @@ export default function EditSalesperson() {
     setErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
   };
 
+  // Image Handlers
+  const handleProfileImgChange = e => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors(prev => ({ ...prev, profileImg: 'Image must be less than 5MB' }));
+        return;
+      }
+      setProfileImg(file);
+      setProfilePreview(URL.createObjectURL(file));
+      setRemoveProfileImage(false);
+      setErrors(prev => ({ ...prev, profileImg: '' }));
+    }
+  };
+
+  const handleCoverImgChange = e => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        setErrors(prev => ({ ...prev, coverImg: 'Image must be less than 10MB' }));
+        return;
+      }
+      setCoverImg(file);
+      setCoverPreview(URL.createObjectURL(file));
+      setRemoveCoverImage(false);
+      setErrors(prev => ({ ...prev, coverImg: '' }));
+    }
+  };
+
+  const handleRemoveProfileImg = () => {
+    setProfileImg(null);
+    setProfilePreview(null);
+    setRemoveProfileImage(true);
+    if (profileInputRef.current) profileInputRef.current.value = '';
+  };
+
+  const handleRemoveCoverImg = () => {
+    setCoverImg(null);
+    setCoverPreview(null);
+    setRemoveCoverImage(true);
+    if (coverInputRef.current) coverInputRef.current.value = '';
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
 
@@ -243,29 +309,50 @@ export default function EditSalesperson() {
     setSaving(true);
     try {
       // Build payload with only changed/valid fields
-      const payload = {};
+      const submitData = new FormData();
 
-      if (formData.fullName.trim()) {
-        payload.fullName = formData.fullName.trim();
+      if (formData.fullName.trim() && formData.fullName !== originalData?.fullName) {
+        submitData.append('fullName', formData.fullName.trim());
       }
 
-      if (formData.contactNumber.trim()) {
-        payload.contactNumber = formData.contactNumber.trim();
+      if (formData.contactNumber.trim() && formData.contactNumber !== originalData?.contactNumber) {
+        submitData.append('contactNumber', formData.contactNumber.trim());
       }
 
-      if (formData.gender) {
-        payload.gender = formData.gender;
+      if (formData.gender && formData.gender !== originalData?.gender) {
+        submitData.append('gender', formData.gender);
       }
 
-      if (formData.dateOfBirth) {
-        payload.dateOfBirth = formData.dateOfBirth;
+      if (formData.dateOfBirth && formData.dateOfBirth !== originalData?.dateOfBirth) {
+        submitData.append('dateOfBirth', formData.dateOfBirth);
       }
 
-      if (formData.branches_to_be_managed.length > 0) {
-        payload.branches_to_be_managed = formData.branches_to_be_managed;
+      const branchesChanged =
+        JSON.stringify([...formData.branches_to_be_managed].sort()) !==
+        JSON.stringify([...(originalData?.branches_to_be_managed || [])].sort());
+
+      if (branchesChanged) {
+        if (formData.branches_to_be_managed.length > 0) {
+          formData.branches_to_be_managed.forEach((branchId) => {
+            submitData.append('branches_to_be_managed[]', branchId);
+          });
+        }
       }
 
-      const response = await staffApi.updateSalesperson(id, payload);
+      // Handle images
+      if (profileImg) {
+        submitData.append('profile_img', profileImg);
+      } else if (removeProfileImage) {
+        submitData.append('remove_profile_img', 'true');
+      }
+
+      if (coverImg) {
+        submitData.append('cover_img', coverImg);
+      } else if (removeCoverImage) {
+        submitData.append('remove_cover_img', 'true');
+      }
+
+      const response = await staffApi.updateSalesperson(id, submitData);
 
       if (response.status === 200 || response.success) {
         navigate(`/admin/staff/salespersons/${id}`, {
@@ -299,6 +386,27 @@ export default function EditSalesperson() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Check if form has changes
+  const hasChanges = () => {
+    if (!originalData) return false;
+
+    const branchesChanged =
+      JSON.stringify([...formData.branches_to_be_managed].sort()) !==
+      JSON.stringify([...(originalData?.branches_to_be_managed || [])].sort());
+
+    return (
+      formData.fullName !== originalData.fullName ||
+      formData.contactNumber !== originalData.contactNumber ||
+      formData.gender !== originalData.gender ||
+      formData.dateOfBirth !== originalData.dateOfBirth ||
+      branchesChanged ||
+      profileImg !== null ||
+      coverImg !== null ||
+      removeProfileImage ||
+      removeCoverImage
+    );
   };
 
   if (loading) {
@@ -368,6 +476,121 @@ export default function EditSalesperson() {
               <p className="font-medium text-gray-800">{originalData.email}</p>
             </div>
           )}
+
+          {/* Cover Image Section */}
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <FaCamera className="text-[#1a365d]" /> Profile Images
+            </h2>
+
+            {/* Cover Image */}
+            <div className="relative mb-6">
+              <div className="h-32 sm:h-40 bg-gradient-to-r from-[#1a365d] to-[#2c5282] rounded-xl overflow-hidden">
+                {coverPreview ? (
+                  <img
+                    src={coverPreview}
+                    alt="Cover Preview"
+                    className="w-full h-full object-cover"
+                    onError={e => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-white/50 text-sm">
+                    <span>Cover Image (Optional)</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="absolute bottom-3 right-3 flex gap-2">
+                <input
+                  type="file"
+                  ref={coverInputRef}
+                  onChange={handleCoverImgChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => coverInputRef.current?.click()}
+                  className="p-2 bg-white rounded-lg shadow hover:bg-gray-50"
+                  title="Upload Cover"
+                >
+                  <FaCamera className="text-gray-600" />
+                </button>
+                {coverPreview && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveCoverImg}
+                    className="p-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-600"
+                    title="Remove Cover"
+                  >
+                    <FaTrash />
+                  </button>
+                )}
+              </div>
+
+              {errors.coverImg && (
+                <p className="text-red-500 text-xs mt-1">{errors.coverImg}</p>
+              )}
+            </div>
+
+            {/* Profile Image */}
+            <div className="flex items-center gap-4 sm:gap-6">
+              <div className="relative">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl border-4 border-white shadow-lg overflow-hidden flex items-center justify-center bg-blue-100">
+                  {profilePreview ? (
+                    <img
+                      src={profilePreview}
+                      alt="Profile Preview"
+                      className="w-full h-full object-cover"
+                      onError={e => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <FaUserTie className="text-3xl sm:text-4xl text-blue-400" />
+                  )}
+                </div>
+
+                <input
+                  type="file"
+                  ref={profileInputRef}
+                  onChange={handleProfileImgChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => profileInputRef.current?.click()}
+                  className="absolute -bottom-1 -right-1 p-1.5 bg-[#1a365d] text-white rounded-lg shadow hover:bg-[#2c5282]"
+                  title="Upload Photo"
+                >
+                  <FaCamera className="text-xs" />
+                </button>
+              </div>
+
+              <div>
+                <p className="font-medium text-gray-700">Profile Photo</p>
+                <p className="text-sm text-gray-500">JPG, PNG. Max 5MB</p>
+                {profilePreview && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveProfileImg}
+                    className="text-red-500 text-sm hover:underline mt-1"
+                  >
+                    Remove Photo
+                  </button>
+                )}
+                {errors.profileImg && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.profileImg}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Personal Info */}
           <div>
@@ -481,18 +704,28 @@ export default function EditSalesperson() {
         </div>
 
         {/* Footer */}
-        <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-end gap-3">
-          <Link
-            to={`/admin/staff/salespersons/${id}`}
-            className="w-full sm:w-auto px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition-colors text-center"
-          >
-            Cancel
-          </Link>
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2 bg-[#1a365d] text-white rounded-lg hover:bg-[#2c5282] transition-colors disabled:opacity-50"
-          >
+        <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="text-sm text-gray-500 w-full sm:w-auto">
+            {hasChanges() ? (
+              <span className="text-orange-600">
+                • You have unsaved changes
+              </span>
+            ) : (
+              <span>No changes made</span>
+            )}
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <Link
+              to={`/admin/staff/salespersons/${id}`}
+              className="w-full sm:w-auto px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition-colors text-center"
+            >
+              Cancel
+            </Link>
+            <button
+              type="submit"
+              disabled={saving || !hasChanges()}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2 bg-[#1a365d] text-white rounded-lg hover:bg-[#2c5282] transition-colors disabled:opacity-50"
+            >
             {saving ? (
               <>
                 <FaSpinner className="animate-spin" />
@@ -505,6 +738,7 @@ export default function EditSalesperson() {
               </>
             )}
           </button>
+        </div>
         </div>
       </motion.form>
     </div>

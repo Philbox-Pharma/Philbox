@@ -20,6 +20,12 @@ import {
   FaUserShield,
   FaTasks,
   FaUserFriends,
+  FaBullhorn,
+  FaExclamationCircle,
+  FaTags,
+  FaUndo,
+  FaFileAlt,
+  FaTruck,
 } from 'react-icons/fa';
 import ContactSupportModal from '../../../../shared/components/Modal/ContactSupportModal';
 
@@ -143,13 +149,7 @@ export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
       path: '/admin/customers',
       permission: null, // Allow all admins to access
     },
-    {
-      key: 'inventory',
-      label: 'Inventory',
-      icon: FaBoxes,
-      path: '/admin/inventory',
-      permission: 'read_medicines',
-    },
+
     {
       key: 'analytics',
       label: 'Analytics',
@@ -212,6 +212,48 @@ export default function AdminSidebar({ isOpen, closeSidebar, admin }) {
       label: 'Settings',
       icon: FaCog,
       path: '/admin/settings',
+      permission: null,
+    },
+    {
+      key: 'announcements',
+      label: 'Announcements',
+      icon: FaBullhorn,
+      path: '/admin/announcements',
+      permission: null,
+    },
+    {
+      key: 'complaints',
+      label: 'Complaints',
+      icon: FaExclamationCircle,
+      path: '/admin/complaints',
+      permission: null,
+    },
+    {
+      key: 'coupons',
+      label: 'Coupons',
+      icon: FaTags,
+      path: '/admin/coupons',
+      permission: null,
+    },
+    {
+      key: 'refunds',
+      label: 'Refunds',
+      icon: FaUndo,
+      path: '/admin/refunds',
+      permission: null,
+    },
+    {
+      key: 'reports',
+      label: 'Reports',
+      icon: FaFileAlt,
+      path: '/admin/reports',
+      permission: null,
+    },
+    {
+      key: 'delivery-fares',
+      label: 'Delivery Fares',
+      icon: FaTruck,
+      path: '/admin/delivery-fares',
       permission: null,
     },
   ];

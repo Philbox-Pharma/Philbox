@@ -78,13 +78,27 @@ export const adminAuthApi = {
   // GET /api/admin/auth/me (Session Check)
   verifySession: () => fetchWithAuth('/admin/auth/me'),
 
-  // PUT /api/admin/users/admin/:id (Update Admin Profile)
-  updateProfile: (adminId, data) =>
-    fetchWithAuth(`/admin/users/admin/${adminId}`, {
+  // PUT /api/admin/profile (Update Admin Profile Info)
+  updateProfileInfo: data =>
+    fetchWithAuth(`/admin/profile`, {
       method: 'PUT',
-      body: data, // FormData or JSON
-      headers:
-        data instanceof FormData ? {} : { 'Content-Type': 'application/json' }, // fetchWithAuth adds json content type by default but FormData needs none allowed (to let browser set boundary)
+      body: JSON.stringify(data),
+    }),
+
+  // PUT /api/admin/profile/picture (Update Profile Picture)
+  updateProfilePicture: formData =>
+    fetchWithAuth(`/admin/profile/picture`, {
+      method: 'PUT',
+      body: formData,
+      headers: {}, // fetchWithAuth will not set Content-Type so browser can set boundary
+    }),
+
+  // PUT /api/admin/profile/cover (Update Cover Image)
+  updateCoverImage: formData =>
+    fetchWithAuth(`/admin/profile/cover`, {
+      method: 'PUT',
+      body: formData,
+      headers: {}, // fetchWithAuth will not set Content-Type so browser can set boundary
     }),
 
   // POST /api/admin/auth/logout
@@ -245,6 +259,50 @@ export const revenueApi = {
     const query = params.toString() ? `?${params}` : '';
     return fetchWithAuth(`/admin/revenue-analytics/payment-methods${query}`);
   },
+
+  // ===== BRANCH SPECIFIC REVENUE ANALYTICS =====
+  getTrendsForBranch: (branchId, startDate, endDate, period = 'daily') => {
+    const params = new URLSearchParams();
+    if (branchId) params.append('branchId', branchId);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    params.append('period', period);
+    return fetchWithAuth(`/admin/revenue-analytics/trends?${params}`);
+  },
+
+  getSplitForBranch: (branchId, startDate, endDate) => {
+    const params = new URLSearchParams();
+    if (branchId) params.append('branchId', branchId);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    return fetchWithAuth(`/admin/revenue-analytics/split?${params}`);
+  },
+
+  getRefundsForBranch: (branchId, startDate, endDate) => {
+    const params = new URLSearchParams();
+    if (branchId) params.append('branchId', branchId);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    return fetchWithAuth(`/admin/revenue-analytics/refunds?${params}`);
+  },
+
+  getAvgPerCustomerForBranch: (branchId, startDate, endDate) => {
+    const params = new URLSearchParams();
+    if (branchId) params.append('branchId', branchId);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    return fetchWithAuth(
+      `/admin/revenue-analytics/average-per-customer?${params}`
+    );
+  },
+
+  getPaymentMethodsForBranch: (branchId, startDate, endDate) => {
+    const params = new URLSearchParams();
+    if (branchId) params.append('branchId', branchId);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    return fetchWithAuth(`/admin/revenue-analytics/payment-methods?${params}`);
+  },
 };
 
 // ============ STAFF APIs ============
@@ -312,19 +370,25 @@ export const staffApi = {
   // GET /api/admin/users/salesperson/:id
   getSalespersonById: id => fetchWithAuth(`/admin/users/salesperson/${id}`),
 
-  // POST /api/admin/users/salesperson
-  createSalesperson: data =>
-    fetchWithAuth('/admin/users/salesperson', {
+  // POST /api/admin/users/salesperson (multipart/form-data)
+  createSalesperson: async formData => {
+    const response = await fetch(`${BASE_URL}/admin/users/salesperson`, {
       method: 'POST',
-      body: JSON.stringify(data),
-    }),
+      credentials: 'include',
+      body: formData, // FormData for file upload
+    });
+    return response.json();
+  },
 
-  // PUT /api/admin/users/salesperson/:id
-  updateSalesperson: (id, data) =>
-    fetchWithAuth(`/admin/users/salesperson/${id}`, {
+  // PUT /api/admin/users/salesperson/:id (multipart/form-data)
+  updateSalesperson: async (id, formData) => {
+    const response = await fetch(`${BASE_URL}/admin/users/salesperson/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
-    }),
+      credentials: 'include',
+      body: formData,
+    });
+    return response.json();
+  },
 
   // PATCH /api/admin/users/salesperson/:id/status
   changeSalespersonStatus: (id, status) =>
@@ -747,6 +811,9 @@ export const doctorApi = {
       body: JSON.stringify(statusData),
     }),
 
+  // GET /api/admin/doctors/stats - Get doctor stats (counts by status)
+  getDoctorStats: () => fetchWithAuth('/admin/doctors/stats'),
+
   // GET /api/admin/doctors/:id/metrics - Get doctor performance metrics
   getDoctorMetrics: id => fetchWithAuth(`/admin/doctors/${id}/metrics`),
 
@@ -1079,6 +1146,128 @@ export const globalSearchApi = {
   },
 };
 
+// ============ NEW FEATURES APIs ============
+export const announcementsApi = {
+  getAll: (filters = {}) => {
+    const params = new URLSearchParams(filters);
+    return fetchWithAuth(`/admin/announcements?${params}`);
+  },
+  getById: id => fetchWithAuth(`/admin/announcements/${id}`),
+  create: data =>
+    fetchWithAuth('/admin/announcements', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (id, data) =>
+    fetchWithAuth(`/admin/announcements/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  delete: id =>
+    fetchWithAuth(`/admin/announcements/${id}`, { method: 'DELETE' }),
+  send: (id, data) =>
+    fetchWithAuth(`/admin/announcements/${id}/send`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  cancel: id =>
+    fetchWithAuth(`/admin/announcements/${id}/cancel`, { method: 'POST' }),
+  getDeliveryHistory: id =>
+    fetchWithAuth(`/admin/announcements/${id}/delivery-history`),
+};
+
+export const complaintsApi = {
+  getAll: (filters = {}) => {
+    const params = new URLSearchParams(filters);
+    return fetchWithAuth(`/admin/complaints?${params}`);
+  },
+  getById: id => fetchWithAuth(`/admin/complaints/${id}`),
+  updateStatus: (id, status, notes) =>
+    fetchWithAuth(`/admin/complaints/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, internal_notes: notes }),
+    }),
+  assign: (id, adminId) =>
+    fetchWithAuth(`/admin/complaints/${id}/assign`, {
+      method: 'PATCH',
+      body: JSON.stringify({ admin_id: adminId }),
+    }),
+};
+
+export const couponsApi = {
+  getAll: (filters = {}) => {
+    const params = new URLSearchParams(filters);
+    return fetchWithAuth(`/admin/coupons?${params}`);
+  },
+  getById: id => fetchWithAuth(`/admin/coupons/${id}`),
+  create: data =>
+    fetchWithAuth('/admin/coupons', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (id, data) =>
+    fetchWithAuth(`/admin/coupons/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  delete: id => fetchWithAuth(`/admin/coupons/${id}`, { method: 'DELETE' }),
+};
+
+export const refundsApi = {
+  getAllRequests: (filters = {}) => {
+    const params = new URLSearchParams(filters);
+    return fetchWithAuth(`/admin/customer-refunds?${params}`);
+  },
+  getRequestById: id => fetchWithAuth(`/admin/customer-refunds/${id}`),
+  processRequest: (id, data) =>
+    fetchWithAuth(`/admin/customer-refunds/${id}/process`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+
+export const deliveryFaresApi = {
+  getAll: () => fetchWithAuth('/admin/delivery-fares'),
+  create: data =>
+    fetchWithAuth('/admin/delivery-fares', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (id, data) =>
+    fetchWithAuth(`/admin/delivery-fares/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  delete: id =>
+    fetchWithAuth(`/admin/delivery-fares/${id}`, { method: 'DELETE' }),
+};
+
+export const reportsApi = {
+  generate: data =>
+    fetchWithAuth('/admin/reports/generate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getHistory: (filters = {}) => {
+    const params = new URLSearchParams(filters);
+    return fetchWithAuth(`/admin/reports/history?${params}`);
+  },
+  download: id => fetchWithAuth(`/admin/reports/${id}/download`),
+};
+
+export const exportsApi = {
+  requestExport: data =>
+    fetchWithAuth('/admin/exports', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getHistory: (filters = {}) => {
+    const params = new URLSearchParams(filters);
+    return fetchWithAuth(`/admin/exports?${params}`);
+  },
+  download: id => fetchWithAuth(`/admin/exports/${id}/download`),
+};
+
 export default {
   auth: adminAuthApi,
   branches: branchApi,
@@ -1094,4 +1283,11 @@ export default {
   feedbackComplaints: feedbackComplaintsApi,
   appointmentAnalytics: appointmentAnalyticsApi,
   globalSearch: globalSearchApi,
+  announcements: announcementsApi,
+  complaints: complaintsApi,
+  coupons: couponsApi,
+  refunds: refundsApi,
+  deliveryFares: deliveryFaresApi,
+  reports: reportsApi,
+  exports: exportsApi,
 };

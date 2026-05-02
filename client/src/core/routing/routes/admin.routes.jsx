@@ -149,6 +149,14 @@ const Settings = lazy(
   () => import('../../../portals/admin/modules/settings/Settings')
 );
 
+// New Features
+const Announcements = lazy(() => import('../../../portals/admin/modules/announcements/Announcements'));
+const Complaints = lazy(() => import('../../../portals/admin/modules/complaints/Complaints'));
+const Coupons = lazy(() => import('../../../portals/admin/modules/coupons/Coupons'));
+const Refunds = lazy(() => import('../../../portals/admin/modules/refunds/Refunds'));
+const Reports = lazy(() => import('../../../portals/admin/modules/reports/Reports'));
+const DeliveryFares = lazy(() => import('../../../portals/admin/modules/delivery-fares/DeliveryFares'));
+
 const adminRoutes = [
   // ---------------- PUBLIC ROUTES ----------------
   {
@@ -330,6 +338,32 @@ const adminRoutes = [
       {
         path: 'settings',
         element: <Settings />,
+      },
+
+      // --- New Features ---
+      {
+        path: 'announcements',
+        element: <Announcements />,
+      },
+      {
+        path: 'complaints',
+        element: <Complaints />,
+      },
+      {
+        path: 'coupons',
+        element: <Coupons />,
+      },
+      {
+        path: 'refunds',
+        element: <Refunds />,
+      },
+      {
+        path: 'reports',
+        element: <Reports />,
+      },
+      {
+        path: 'delivery-fares',
+        element: <DeliveryFares />,
       },
     ],
   },

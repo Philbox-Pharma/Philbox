@@ -33,7 +33,9 @@ export const updateSalespersonDTO = Joi.object({
   branches_to_be_managed: Joi.array()
     .items(Joi.string().hex().length(24))
     .optional(),
-});
+  remove_profile_img: Joi.string().optional(),
+  remove_cover_img: Joi.string().optional(),
+}).min(0);
 
 export const changeStatusDTO = Joi.object({
   status: Joi.string()

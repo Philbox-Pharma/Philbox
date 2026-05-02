@@ -22,7 +22,7 @@ import {
   FaBoxes,
   FaChartLine,
 } from 'react-icons/fa';
-import {
+import adminApi, {
   adminAuthApi,
   activityLogsApi,
 } from '../../../../core/api/admin/adminApi';
@@ -183,8 +183,8 @@ export default function AdminHeader({ toggleSidebar, admin }) {
     },
   ];
 
-  // Local static search
-  const handleSearch = useCallback(query => {
+  // Real backend search combined with local features
+  const handleSearch = useCallback(async query => {
     if (!query || query.length < 2) {
       setSearchResults([]);
       setShowSearchResults(false);
@@ -194,17 +194,29 @@ export default function AdminHeader({ toggleSidebar, admin }) {
     setSearchLoading(true);
     setShowSearchResults(true);
 
-    const q = query.toLowerCase();
-    const results = adminFeaturesList.filter(
-      feature =>
-        feature.name.toLowerCase().includes(q) ||
-        feature.description.toLowerCase().includes(q) ||
-        feature.type.toLowerCase().includes(q)
-    );
+    try {
+      const q = query.toLowerCase();
+      // 1. Get matching local features
+      const localResults = adminFeaturesList.filter(
+        feature =>
+          feature.name.toLowerCase().includes(q) ||
+          feature.description.toLowerCase().includes(q) ||
+          feature.type.toLowerCase().includes(q)
+      );
 
-    setSearchResults(results.slice(0, 8)); // Return top 8 results
-    setSelectedIndex(-1);
-    setSearchLoading(false);
+      // 2. Fetch real data from backend
+      const apiResults = await adminApi.globalSearch.search(query);
+
+      // 3. Combine them
+      const combinedResults = [...localResults, ...apiResults];
+
+      setSearchResults(combinedResults.slice(0, 10)); // Return top 10 combined
+      setSelectedIndex(-1);
+    } catch (err) {
+      console.error('Search error:', err);
+    } finally {
+      setSearchLoading(false);
+    }
   }, []);
 
   // Handle search input change with debounce
@@ -337,43 +349,33 @@ export default function AdminHeader({ toggleSidebar, admin }) {
           response.data?.timeline ||
           response.data?.logs ||
           [];
-        const formattedNotifications = logs.slice(0, 10).map((log, index) => ({
-          id: log._id || index,
-          text: formatNotificationText(log),
-          time: formatTimeAgo(log.created_at || log.createdAt),
-          type: getNotificationType(log.action_type),
-          unread: index < 3, // First 3 are unread
-        }));
+          
+        const lastReadTimeStr = localStorage.getItem('adminNotificationsLastRead');
+        const lastReadTime = lastReadTimeStr ? new Date(lastReadTimeStr) : new Date(0);
+
+        const formattedNotifications = logs.slice(0, 10).map((log, index) => {
+          const logDate = new Date(log.created_at || log.createdAt);
+          return {
+            id: log._id || index,
+            text: formatNotificationText(log),
+            time: formatTimeAgo(log.created_at || log.createdAt),
+            type: getNotificationType(log.action_type),
+            unread: logDate > lastReadTime,
+          };
+        });
         
         if (formattedNotifications.length > 0) {
           setNotifications(formattedNotifications);
           setUnreadCount(formattedNotifications.filter(n => n.unread).length);
         } else {
           // If no activities yet, show a placeholder gracefully instead of mock data
-          setNotifications([
-            {
-              id: 1,
-              text: 'No recent activities',
-              time: 'Just now',
-              type: 'info',
-              unread: false,
-            },
-          ]);
+          setNotifications([]);
           setUnreadCount(0);
         }
       }
     } catch (err) {
       console.error('Failed to fetch notifications:', err);
-      // Fallback
-      setNotifications([
-        {
-          id: 1,
-          text: 'Failed to load notifications',
-          time: 'Just now',
-          type: 'error',
-          unread: false,
-        },
-      ]);
+      setNotifications([]);
       setUnreadCount(0);
     } finally {
       setNotificationsLoading(false);
@@ -458,6 +460,7 @@ export default function AdminHeader({ toggleSidebar, admin }) {
   };
 
   const markAllAsRead = () => {
+    localStorage.setItem('adminNotificationsLastRead', new Date().toISOString());
     setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
     setUnreadCount(0);
   };

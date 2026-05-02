@@ -32,14 +32,14 @@ const StatusBadge = ({ status }) => {
       label: 'Active',
     },
     suspended: {
-      bg: 'bg-yellow-100',
-      text: 'text-yellow-700',
+      bg: 'bg-orange-100',
+      text: 'text-orange-700',
       icon: FaClock,
       label: 'Suspended',
     },
     'suspended/freezed': {
-      bg: 'bg-yellow-100',
-      text: 'text-yellow-700',
+      bg: 'bg-orange-100',
+      text: 'text-orange-700',
       icon: FaClock,
       label: 'Suspended',
     },
@@ -60,6 +60,12 @@ const StatusBadge = ({ status }) => {
       text: 'text-yellow-700',
       icon: FaClock,
       label: 'Onboarding',
+    },
+    rejected: {
+      bg: 'bg-gray-100',
+      text: 'text-gray-700',
+      icon: FaBan,
+      label: 'Rejected',
     },
     pending: {
       bg: 'bg-blue-100',
@@ -311,9 +317,17 @@ export default function DoctorDetails() {
 
         <div className="flex flex-col md:flex-row md:items-center gap-6">
           {/* Avatar */}
-          <div className="w-24 h-24 rounded-2xl bg-white/20 flex items-center justify-center text-4xl font-bold flex-shrink-0">
-            {doctor.fullName?.charAt(0) || 'D'}
-          </div>
+          {doctor.profile_img_url ? (
+            <img
+              src={doctor.profile_img_url}
+              alt={doctor.fullName}
+              className="w-24 h-24 rounded-2xl border-4 border-white/20 object-cover shadow-xl flex-shrink-0"
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-2xl bg-white/20 flex items-center justify-center text-4xl font-bold flex-shrink-0">
+              {doctor.fullName?.charAt(0) || 'D'}
+            </div>
+          )}
 
           {/* Info */}
           <div className="flex-1">
@@ -364,16 +378,17 @@ export default function DoctorDetails() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={FaUsers}
-          label="Total Patients"
-          value={metrics?.totalPatients || 0}
+          label="Total Consultations"
+          value={metrics?.totalConsultations || 0}
           color="#1a365d"
+          subtext={`${metrics?.totalAppointments || 0} total appts`}
         />
         <StatCard
-          icon={FaCalendarAlt}
-          label="Appointments"
-          value={metrics?.totalAppointments || 0}
+          icon={FaCheckCircle}
+          label="Completion Rate"
+          value={`${metrics?.completionRate || 0}%`}
           color="#38a169"
-          subtext="This month"
+          subtext={`${metrics?.completedAppointments || 0} completed`}
         />
         <StatCard
           icon={FaStar}
@@ -383,11 +398,11 @@ export default function DoctorDetails() {
           subtext={`${metrics?.totalReviews || 0} reviews`}
         />
         <StatCard
-          icon={FaMoneyBillWave}
-          label="Revenue"
-          value={`Rs. ${(metrics?.totalRevenue || 0).toLocaleString()}`}
+          icon={FaClock}
+          label="Response Rate"
+          value={`${metrics?.responseRate || 0}%`}
           color="#805ad5"
-          subtext="This month"
+          subtext="Request handling"
         />
       </div>
 

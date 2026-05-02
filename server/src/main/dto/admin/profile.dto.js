@@ -4,12 +4,22 @@ import Joi from 'joi';
  * DTO for updating admin profile information
  */
 export const updateProfileDTO = Joi.object({
-  name: Joi.string().min(3).max(50).optional(),
+  name: Joi.string()
+    .pattern(/^[a-zA-Z\s.-]+$/)
+    .min(3)
+    .max(50)
+    .optional()
+    .messages({
+      'string.pattern.base': 'Name can only contain letters, spaces, dots, and hyphens',
+      'string.min': 'Name must be at least 3 characters long',
+      'string.max': 'Name cannot exceed 50 characters',
+    }),
   phone_number: Joi.string()
-    .pattern(/^[0-9]+$/)
-    .min(10)
-    .max(15)
-    .optional(),
+    .pattern(/^(03\d{9}|\+923\d{9})$/)
+    .optional()
+    .messages({
+      'string.pattern.base': 'Phone number must be a valid Pakistani number starting with 03 or +923 (e.g., 03XXXXXXXXX)',
+    }),
   // Address fields (to create/update Address document)
   street: Joi.string().optional(),
   town: Joi.string().optional(),
